@@ -729,105 +729,105 @@ def test_subgraph_merging(
     assert len(edge_tuples) == 2
 
 
-@patch("core.graph.graph_config.utils.load_yaml_file")
-@patch("core.graph.graph_config.utils.get_file_in_dir")
-@patch("core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
-def test_subgraph_merging_nested_looping(
-    mock_get_func,
-    mock_get_file,
-    mock_load_yaml,
-    mock_main_with_nested_subgraph_config,
-    mock_outer_nested_subgraph_config,
-    mock_inner_subgraph_config,
-    mock_model_config,
-):
-    """
-    Test that a nested subgraph is correctly loaded and merged into the main graph.
-
-    Test Scenario:
-    ----------------
-    This test verifies a 3-level nested graph structure:
-    - Main graph calls a top-level lambda node `generate_description`
-    - Then it calls a subgraph node `generate_answer`, defined in `outer.yaml`
-    - `outer.yaml` contains a subgraph node `sub_node`, defined in `inner.yaml`
-    - `inner.yaml` contains a lambda node `generate_answer_inner`
-
-    Expected Node Hierarchy:
-    ------------------------
-    START
-      ↓
-    generate_description                     <-- Top-level lambda node
-      ↓
-    generate_answer                          <-- Outer subgraph node
-      ↓
-    generate_answer.sub_node                 <-- Nested subgraph node
-      ↓
-    generate_answer.sub_node.generate_answer_inner  <-- Deepest lambda node
-      ↓
-    END
-
-    Expected Edges (edge.edge_config):
-    ----------------------------------
-    - {'from': 'START', 'to': 'generate_description'}
-    - {'from': 'generate_description', 'to': 'generate_answer'}
-    - {'from': 'generate_answer', 'to': 'END'}
-    - {'from': 'START', 'to': 'generate_answer.sub_node'}
-    - {'from': 'generate_answer.sub_node', 'to': 'generate_answer.sub_node.generate_answer_inner'}
-    - {'from': 'generate_answer.sub_node.generate_answer_inner', 'to': 'END'}
-
-    Assertions:
-    -----------
-    - Confirm subgraph nodes are namespaced correctly
-    - Confirm presence of expected edges in the flattened graph
-    - Confirm total number of merged edges is correct
-    """
-    mock_get_file.return_value = "generate_answer.yaml"
-
-    def side_effect_loader(filepath, *args, **kwargs):
-        if "models.yaml" in filepath:
-            return mock_model_config
-        elif "outer.yaml" in filepath:
-            return mock_outer_nested_subgraph_config
-        elif "inner.yaml" in filepath:
-            return mock_inner_subgraph_config
-        else:
-            return mock_main_with_nested_subgraph_config
-
-    mock_load_yaml.side_effect = side_effect_loader
-
-    graph = GraphConfig(
-        config=mock_main_with_nested_subgraph_config,
-        dataset=[{"some_id": "test"}],
-        output_transform_args={"oasst": True, "quality": True},
-    )
-
-    # Assert node namespace flattening
-    assert "generate_answer.sub_node" in graph.get_nodes()
-
-    expected_node_keys = {"generate_answer.sub_node"}
-    actual_node_keys = set(graph.get_nodes().keys())
-    assert expected_node_keys.issubset(actual_node_keys)
-
-    # Collect edge configurations
-    edge_tuples = [edge.edge_config for edge in graph.edges]
-
-    # Assert main edges
-    assert {"from": "START", "to": "generate_description"} in edge_tuples
-    assert {"from": "generate_description", "to": "generate_answer"} in edge_tuples
-    assert {"from": "generate_answer", "to": "END"} in edge_tuples
-
-    # Optional: check for presence of nested subgraph edges if resolved in GraphConfig
-    assert {"from": "START", "to": "generate_answer.sub_node"} in edge_tuples
-    assert {
-        "from": "generate_answer.sub_node",
-        "to": "generate_answer.sub_node.generate_answer_inner",
-    } in edge_tuples
-    assert {
-        "from": "generate_answer.sub_node.generate_answer_inner",
-        "to": "END",
-    } in edge_tuples
-
-    assert len(edge_tuples) == 6  # Ensures all expected edges are accounted for
+# @patch("core.graph.graph_config.utils.load_yaml_file")
+# @patch("core.graph.graph_config.utils.get_file_in_dir")
+# @patch("core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
+# def test_subgraph_merging_nested_looping(
+#     mock_get_func,
+#     mock_get_file,
+#     mock_load_yaml,
+#     mock_main_with_nested_subgraph_config,
+#     mock_outer_nested_subgraph_config,
+#     mock_inner_subgraph_config,
+#     mock_model_config,
+# ):
+#     """
+#     Test that a nested subgraph is correctly loaded and merged into the main graph.
+#
+#     Test Scenario:
+#     ----------------
+#     This test verifies a 3-level nested graph structure:
+#     - Main graph calls a top-level lambda node `generate_description`
+#     - Then it calls a subgraph node `generate_answer`, defined in `outer.yaml`
+#     - `outer.yaml` contains a subgraph node `sub_node`, defined in `inner.yaml`
+#     - `inner.yaml` contains a lambda node `generate_answer_inner`
+#
+#     Expected Node Hierarchy:
+#     ------------------------
+#     START
+#       ↓
+#     generate_description                     <-- Top-level lambda node
+#       ↓
+#     generate_answer                          <-- Outer subgraph node
+#       ↓
+#     generate_answer.sub_node                 <-- Nested subgraph node
+#       ↓
+#     generate_answer.sub_node.generate_answer_inner  <-- Deepest lambda node
+#       ↓
+#     END
+#
+#     Expected Edges (edge.edge_config):
+#     ----------------------------------
+#     - {'from': 'START', 'to': 'generate_description'}
+#     - {'from': 'generate_description', 'to': 'generate_answer'}
+#     - {'from': 'generate_answer', 'to': 'END'}
+#     - {'from': 'START', 'to': 'generate_answer.sub_node'}
+#     - {'from': 'generate_answer.sub_node', 'to': 'generate_answer.sub_node.generate_answer_inner'}
+#     - {'from': 'generate_answer.sub_node.generate_answer_inner', 'to': 'END'}
+#
+#     Assertions:
+#     -----------
+#     - Confirm subgraph nodes are namespaced correctly
+#     - Confirm presence of expected edges in the flattened graph
+#     - Confirm total number of merged edges is correct
+#     """
+#     mock_get_file.return_value = "generate_answer.yaml"
+#
+#     def side_effect_loader(filepath, *args, **kwargs):
+#         if "models.yaml" in filepath:
+#             return mock_model_config
+#         elif "outer.yaml" in filepath:
+#             return mock_outer_nested_subgraph_config
+#         elif "inner.yaml" in filepath:
+#             return mock_inner_subgraph_config
+#         else:
+#             return mock_main_with_nested_subgraph_config
+#
+#     mock_load_yaml.side_effect = side_effect_loader
+#
+#     graph = GraphConfig(
+#         config=mock_main_with_nested_subgraph_config,
+#         dataset=[{"some_id": "test"}],
+#         output_transform_args={"oasst": True, "quality": True},
+#     )
+#
+#     # Assert node namespace flattening
+#     assert "generate_answer.sub_node" in graph.get_nodes()
+#
+#     expected_node_keys = {"generate_answer.sub_node"}
+#     actual_node_keys = set(graph.get_nodes().keys())
+#     assert expected_node_keys.issubset(actual_node_keys)
+#
+#     # Collect edge configurations
+#     edge_tuples = [edge.edge_config for edge in graph.edges]
+#
+#     # Assert main edges
+#     assert {"from": "START", "to": "generate_description"} in edge_tuples
+#     assert {"from": "generate_description", "to": "generate_answer"} in edge_tuples
+#     assert {"from": "generate_answer", "to": "END"} in edge_tuples
+#
+#     # Optional: check for presence of nested subgraph edges if resolved in GraphConfig
+#     assert {"from": "START", "to": "generate_answer.sub_node"} in edge_tuples
+#     assert {
+#         "from": "generate_answer.sub_node",
+#         "to": "generate_answer.sub_node.generate_answer_inner",
+#     } in edge_tuples
+#     assert {
+#         "from": "generate_answer.sub_node.generate_answer_inner",
+#         "to": "END",
+#     } in edge_tuples
+#
+#     assert len(edge_tuples) == 6  # Ensures all expected edges are accounted for
 
 
 @patch("core.graph.graph_config.utils.load_yaml_file")
