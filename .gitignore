@@ -1,0 +1,10 @@
+__pycache__*
+logs/*
+**/tasks/**/*output*.json*
+**/logs/*
+*.pyc
+.idea**
+.DS_Store
+.vscode/
+.env
+poetry.lock
