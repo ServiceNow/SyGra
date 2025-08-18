@@ -1,0 +1,120 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: "tasks/examples/agent_simulation/categories.json"
+    file_format: "json"
+
+
+
+graph_config:
+  graph_properties:
+    chat_conversation: singleturn
+    chat_history_window_size: 5
+  nodes:
+    persona_assignor:
+      post_process: tasks.examples.agent_simulation.task_executor.PersonaPostProcessor
+      node_type: llm
+      output_keys:
+        - agent_1_role
+        - agent_1_prompt
+        - agent_2_role
+        - agent_2_prompt
+      prompt:
+        - user: |
+            You are simulating a realistic roleplay conversation between two fictional characters discussing a specific topic.
+            The topic is:
+              - Category: {category}
+              - Subcategory: {subcategory}
+            Your task is to generate:
+            1. A **one word name/role** and **full prompt** for agent_1.
+            2. A **one word name/role** and **full prompt** for agent_2.
+            ### Requirements:
+            - Each agent must have a distinct and plausible role or persona **relevant to the topic**.
+            - Prompts must clearly establish their background, emotional tone, communication style, and their stance or opinion.
+            - The conversation should naturally reflect some tension, negotiation, intellectual debate, or contrasting perspectives.
+            - Both the agents must behave according to the prompt and respond according to their persona."
+            - If one agent asks any question, the other agent must reply to that question, and both the agents must not conclude the conversation at any question."
+            - Design the prompts so the agents are naturally inclined to talk about the topic in depth.
+            ### Output Format:
+            Return a valid JSON dictionary with exactly the following keys:
+            {{
+              "agent_1_role": <string>,
+              "agent_1_prompt": <string>,
+              "agent_2_role": <string>,
+              "agent_2_prompt": <string>
+            }}
+            Use proper JSON with double quotes around all keys and values. Do not include any explanation or formatting outside the JSON."
+      model:
+        name: gpt-4o
+        parameters:
+          temperature: 1.0
+
+
+    agent_1:
+      pre_process: tasks.examples.agent_simulation.task_executor.Agent1PreProcess
+      node_type: agent
+      chat_history: true
+      output_keys: agent_1_response
+      inject_system_messages:
+        - 3 : Please continue the discussion by thoughtfully analyzing the previous message. Present your viewpoint or counterpoint in a way that deepens the conversation and encourages the other person to respond.
+        - 5 : Begin wrapping up the conversation while staying in character. Acknowledge any progress or common ground, and prepare to conclude with the required 'FINAL ANSWER' clause.
+      prompt:
+        - user: |
+            {agent_2_response}
+
+      model:
+        name: qwen3_32b
+        parameters:
+          temperature: 1.0
+
+    agent_2:
+      pre_process: tasks.examples.agent_simulation.task_executor.Agent2PreProcess
+      node_type: agent
+      chat_history: true
+      output_keys: agent_2_response
+      inject_system_messages:
+        - 3: Please continue the discussion by thoughtfully analyzing the previous message. Present your viewpoint or counterpoint in a way that deepens the conversation and encourages the other person to respond.
+        - 5 : Begin wrapping up the conversation while staying in character. Acknowledge any progress or common ground, and prepare to conclude with the required 'FINAL ANSWER' clause.
+      prompt:
+        - user: |
+            {agent_1_response}
+
+      model:
+        name: qwen3_32b
+        parameters:
+          temperature: 1.0
+
+
+  edges:
+    - from: START
+      to: persona_assignor
+    - from: persona_assignor
+      condition: tasks.examples.agent_simulation.task_executor.StartConversation
+      path_map:
+        agent_1: agent_1
+        agent_2: agent_2
+    - from: agent_1
+      condition: tasks.examples.agent_simulation.task_executor.ShouldContinueToNextAgent
+      path_map:
+        FINAL_ANSWER: END
+        agent_2: agent_2
+    - from: agent_2
+      condition: tasks.examples.agent_simulation.task_executor.ShouldContinueToNextAgent
+      path_map:
+        FINAL_ANSWER: END
+        agent_1: agent_1
+
+output_config:
+  generator: tasks.examples.agent_simulation.task_executor.ConversationOutputGenerator
+
+  output_map:
+    id:
+      from: "id"
+    conversation:
+      from: "__chat_history__"
+      transform: "build_conversation"
+    taxonomy:
+      from: "category"
+      transform: "build_taxonomy"
+
+

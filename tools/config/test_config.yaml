@@ -1,0 +1,10 @@
+data_config:
+  source:
+    file_path: "<path_to_input_file>" # Replace with the actual path to your input file
+    type: disk
+tools:
+  dummy_processor:
+    config:
+      params:
+        field_name: dummy_processed
+        message: processed in pipeline

@@ -1,0 +1,214 @@
+data_config:
+  source:
+    type: "hf"
+    repo_id: "HuggingFaceM4/Docmatix"
+    config_name: "zero-shot-exp"
+    split: "train"
+    streaming: true
+    transformations:
+      - transform: tasks.examples.image_to_qna.task_executor.ImagesMetadata
+        params:
+          image_field: "images"
+      - transform: processors.data_transform.AddNewFieldTransform
+        params:
+          mapping:
+            loop_count: 0
+            question_counter: 0
+            image: ""
+            ocr_texts: []
+
+graph_config:
+  nodes:
+    extract_text:
+      pre_process: tasks.examples.image_to_qna.task_executor.ImagesPreProcessor
+      post_process: tasks.examples.image_to_qna.task_executor.ExtractTextPostProcessor
+      node_type: llm
+      prompt:
+        - system:
+            - type: text
+              text: |
+                You are a helpful assistant.
+        - user:
+            - type: text
+              text: |
+                Please output all the text in the image and use Markdown to format the output wherever needed.
+    
+                Output Format:
+    
+                <ANSWER>
+                The extracted text from the image goes here.
+                </ANSWER>
+                ...
+            - type: image_url
+              image_url: "{image}"
+
+      model:
+        name: qwen_vl_72b
+        parameters:
+          max_tokens: 1000
+          temperature: 0.3
+    update_loop_count:
+      node_type: lambda
+      lambda: tasks.examples.image_to_qna.task_executor.UpdateLoopCount
+
+    # When OCR is done, generate question and answers with below nodes
+    # input parameter: documents (combine text of all images)
+    token_checker:
+      node_type: lambda
+      output_keys:
+        - token_count
+        - documents
+      lambda: tasks.examples.image_to_qna.task_executor.TokenChecker
+    question_generator_node:
+      node_type: llm
+      post_process: tasks.examples.image_to_qna.task_executor.QuestionExtractProcessor
+      output_keys:
+        - generated_questions
+        - question_response_text
+        - question_types
+        - num_questions
+      prompt:
+        - system:
+            - type: text
+              text: |
+                You are a helpful assistant who should be grounded in the provided documents and generate questions based on them.
+        - user:
+            - type: text
+              text: |
+                You are tasked with generating challenging, high-quality questions that require deep reading comprehension and critical thinking over the provided documents.
+            
+                Requirements:
+                - Please output exactly 3 questions
+                - Each question must require synthesis, inference, or reasoning across multiple parts of one or more documents.
+                - Avoid simple fact recall or surface-level questions.
+                - All questions must be answerable strictly and solely from the information in the provided documents. Do not use outside knowledge or make assumptions.
+                - For each question, briefly indicate which part(s) of the documents support the answer.
+                - Ensure that all 3 questions are distinct and cover different aspects or require different reasoning steps.
+                - A question can be lengthy and does not have to be restricted to a single sentence or be curt.
+                - The questions should be a mix of how, why, how many, what, who, when, etc. You should also think of more varieties.
+                - You should have at least 1 objective question which requires an objective specific answer (e.g., named entities, a number that could be extracted or derived, etc.) and at least 1 subjective question which requires analytical thinking and reasoning. Annotate your question as being objective/subjective
+            
+                Examples:
+                - ❌ Not acceptable: 'What is the capital of France?' (simple fact recall)
+                - ✅ Acceptable: 'Based on the arguments presented in both Document 1 and Document 2, how did the author’s perspective on urban development evolve, and what evidence supports this change?'
+            
+                If you are provided multiple documents, generate questions that require integrating information across them.
+            
+            
+                DOCUMENTS:
+                
+                {documents}
+            
+                ---
+                Output Format Instructions:
+                Please output the questions in the following format for easy parsing:
+                
+                <question1>
+                    <question_type>objective/subjective</question_type>
+                    <supporting_evidence>
+                        reference to document sections that support the answer
+                    </supporting_evidence>
+                    question1 text here
+                </question1>
+            
+                <question2>
+                    <question_type>objective/subjective</question_type>
+                    <supporting_evidence>
+                        reference to document sections that support the answer
+                    </supporting_evidence>
+                    question2 text here
+                </question2>
+                
+                <question3>
+                    <question_type>objective/subjective</question_type>
+                    <supporting_evidence>
+                        reference to document sections that support the answer
+                    </supporting_evidence>
+                    question3 text here
+                </question3>
+
+      model:
+        name: qwen3_32b
+        parameters:
+          max_tokens: 4000
+          temperature: 0.3
+    answer_generator_node:
+      node_type: llm
+      pre_process: tasks.examples.image_to_qna.task_executor.SetCurrentQuestion
+      post_process: tasks.examples.image_to_qna.task_executor.AnswerExtractProcessor
+      output_keys:
+        - generated_responses
+        - answers
+        - thinking
+      prompt:
+        - system:
+            - type: text
+              text: |
+                You are a helpful assistant who should answer the question based only on the one or multiple provided images.
+        - user:
+            - type: text
+              text: |
+                You are given the following images and a question. 
+                Answer the question as accurately and concisely as possible, using only the information in the images. 
+                If the answer cannot be found in the images, say 'Not answerable from the provided images.'
+                
+                
+                Documents:
+                {documents}
+                
+                Question:
+                {question}
+                
+                Answer:
+      model:
+        name: qwen3_32b
+        parameters:
+          max_tokens: 4000
+          temperature: 0.3
+    update_question_counter:
+      node_type: lambda
+      lambda: tasks.examples.image_to_qna.task_executor.UpdateQuestionCounter
+  edges:
+    - from: START
+      to: extract_text
+    - from: extract_text
+      to: update_loop_count
+    - from: update_loop_count
+      condition: tasks.examples.image_to_qna.task_executor.ImageLoopChecker
+      path_map:
+        token_checker: token_checker
+        extract_text: extract_text
+    - from: token_checker
+      condition: tasks.examples.image_to_qna.task_executor.ShouldGenerateQuestion
+      path_map:
+        END: END
+        generate_question: question_generator_node
+    - from: question_generator_node
+      to: answer_generator_node
+    - from: answer_generator_node
+      to: update_question_counter
+    - from: update_question_counter
+      condition: tasks.examples.image_to_qna.task_executor.QuestionLoopChecker
+      path_map:
+        END: END
+        generate_more_answers: answer_generator_node
+output_config:
+    output_map:
+        id:
+          from: "id"
+        num_images:
+          from: "num_images"
+        ocr_texts:
+          from: "ocr_texts"
+        num_questions:
+          from: "num_questions"
+        generated_questions:
+          from: "generated_questions"
+        question_types:
+          from: "question_types"
+        generated_responses:
+          from: "generated_responses"
+        answers:
+          from: "answers"
+        thinking:
+          from: "thinking"

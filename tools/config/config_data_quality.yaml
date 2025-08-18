@@ -1,0 +1,25 @@
+data_config:
+    source:
+        type: "disk"
+        file_path: "<path_to_input_file>" # Replace with the actual path to your input file
+tools:
+    data_quality:
+        config:
+            skip_failed_tasks: true
+            tasks:
+                - name: "conversation_pretokenization"
+                  params:
+                      hf_chat_template_model_id: "Qwen/Qwen2.5-32B-Instruct"
+                - name: "metadata_tagging"
+                - name: "llm_based_quality"
+                - name: "data_characteristics"
+                  params:
+                      model: "Qwen/Qwen2.5-32B-Instruct"
+                - name: "language_tagging"
+                - name: "lexical_diversity"
+                - name: "ppl_score"
+                  params:
+                      model_config:
+                          model_type: "vllm"  # or "tgi"
+                          url: # Add the URL of the model server
+                          model_serving_name: "qwen-32B"
