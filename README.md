@@ -80,6 +80,11 @@ As of now, LLM inference is supported for TGI, vLLM, Azure, OpenAI, Ollama and T
 GraSP requires model configuration as the first step. It supports various clients like HTTP, MistralAzure, AsyncOpenAI, AsyncAzureOpenAI, Ollama and Triton to connect to inference servers (Text Generation Inference (TGI), vLLM server, Azure Cloud Service, Ollama and Triton server).
 The `config` folder contains the main configuration file: `models.yaml`. You can add your model alias as a key and define its properties as shown below.
 
+> **Note:**  
+> For Triton, the pre-processing and post-processing configuration (`payload_json` & `response_key`) can be defined in the [`payload_cfg.json`](./config/payload_cfg.json) file. `payload_key` in the `payload_cfg.json` file should be added to the `models.yaml` file for the corresponding Triton model. If the payload key is not defined in `models.yaml`, the default payload format will be used.
+
+
+
 ### Environment Variables for Credentials and Chat Templates
 
 All sensitive connection information such as model URL and tokens **must be set via environment variables** and not stored in the config file.
