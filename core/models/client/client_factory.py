@@ -23,6 +23,7 @@ class ModelType(StrEnum):
     MISTRALAI = "mistralai"
     TGI = "tgi"
     OLLAMA = "ollama"
+    TRITON = "triton"
 
 # Define which model types do not require a AUTH_TOKEN
 NO_AUTH_TOKEN_NEEDED_MODEL_TYPES = [
@@ -116,6 +117,8 @@ class ClientFactory:
         elif model_type == ModelType.OLLAMA:
             return cls._create_ollama_client(model_config, url, None, async_client,
                                              not model_config.get("completions_api", False))
+        elif model_type == ModelType.TRITON:
+            return cls._create_http_client(model_config, url, auth_token)
         else:
             # This should never be reached due to the validation above, but included for completeness
             logger.error(

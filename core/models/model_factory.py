@@ -6,7 +6,8 @@ from core.models.custom_models import (
     CustomTGI,
     CustomAzure,
     CustomOpenAI,
-    CustomOllama
+    CustomOllama,
+    CustomTriton
 )
 from core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
 from core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
@@ -29,7 +30,8 @@ class ModelFactory:
             "tgi": CustomTGI,
             "azure": CustomAzure,
             "openai": CustomOpenAI,
-            "ollama": CustomOllama
+            "ollama": CustomOllama,
+            "triton": CustomTriton
         },
         "langgraph": {"vllm": CustomVLLMChatModel, "openai": CustomOpenAIChatModel},
     }
