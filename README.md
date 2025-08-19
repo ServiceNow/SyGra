@@ -77,7 +77,7 @@ As of now, LLM inference is supported for TGI, vLLM, Azure, OpenAI, Ollama and T
 
 ![ModelConfig](resources/images/grasp_model_config.png)
 
-GraSP requires model configuration as the first step. It supports various clients like HTTP, MistralAzure, AsyncOpenAI, AsyncAzureOpenAI, Ollama and Triton to connect to inference servers (Text Generation Inference (TGI), vLLM server, Azure Cloud Service, Ollama and Triton server).
+GraSP requires model configuration as the first step. It supports various clients like HTTP, MistralAzure, AsyncOpenAI, AsyncAzureOpenAI, Ollama to connect to inference servers (Text Generation Inference (TGI), vLLM server, Azure Cloud Service, Ollama, Triton etc.).
 The `config` folder contains the main configuration file: `models.yaml`. You can add your model alias as a key and define its properties as shown below.
 
 > **Note:**  
