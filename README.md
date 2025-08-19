@@ -42,7 +42,7 @@ LLM-based nodes require a model configured in `models.yaml` and runtime paramete
 
 You can also define connections (edges) between nodes, which control conditional or parallel data flow.
 
-As of now, LLM inference is supported for TGI, vLLM, Azure, OpenAI, Ollama, Triton compatible servers. Model deployment is external and configured in `models.yaml`.
+As of now, LLM inference is supported for TGI, vLLM, Azure, OpenAI, Ollama and Triton compatible servers. Model deployment is external and configured in `models.yaml`.
 ![GraspComponents](resources/images/grasp_usecase2framework.png)
 
 ---
