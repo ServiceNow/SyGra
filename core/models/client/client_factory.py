@@ -106,19 +106,15 @@ class ClientFactory:
                 async_client,
                 not model_config.get("completions_api", False),
             )
-        elif model_type == ModelType.AZURE:
+        elif model_type == ModelType.AZURE or model_type == ModelType.TGI or model_type == ModelType.TRITON:
             return cls._create_http_client(model_config, url, auth_token)
         elif model_type == ModelType.MISTRALAI:
             return cls._create_mistral_client(
                 model_config, url, auth_token, async_client
             )
-        elif model_type == ModelType.TGI:
-            return cls._create_http_client(model_config, url, auth_token)
         elif model_type == ModelType.OLLAMA:
             return cls._create_ollama_client(model_config, url, None, async_client,
                                              not model_config.get("completions_api", False))
-        elif model_type == ModelType.TRITON:
-            return cls._create_http_client(model_config, url, auth_token)
         else:
             # This should never be reached due to the validation above, but included for completeness
             logger.error(
