@@ -200,6 +200,8 @@ class EdgeFactory:
         Returns:
             None
         """
+        if not src_node:
+            raise RuntimeError("Source node cannot be None for edge configuration.")
         edge_cfg["from"] = src_node.name
         edge_cfg["to"] = tgt_node.name if tgt_node else None
         if condition:
