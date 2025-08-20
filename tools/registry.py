@@ -2,7 +2,7 @@ import importlib
 from typing import Type, Optional
 
 from tools.base_tool import BaseTool
-from logger.logger_config import logger
+from grasp.logger.logger_config import logger
 
 
 class ToolRegistry:

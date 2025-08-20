@@ -35,8 +35,8 @@ You can implement a lambda either as a class or a function:
 
 ```python
 # Example in yaml: lambda: tasks.my_task.task_executor.TestLambda
-from core.graph.functions.lambda_function import LambdaFunction
-from core.graph.grasp_state import GraspState
+from grasp.core.graph.functions.lambda_function import LambdaFunction
+from grasp.core.graph.grasp_state import GraspState
 
 class TestLambda(LambdaFunction):
     def apply(lambda_node_dict: dict, state: GraspState):

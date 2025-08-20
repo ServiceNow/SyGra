@@ -9,7 +9,7 @@ A multi-llm node sends the same prompt to several configured models and collects
 ```yaml
 generate_samples:  
   node_type: multi_llm
-  pre_process: tasks.dpo_samples.task_executor.generate_samples_pre_process
+  pre_process: grasp.tasks.dpo_samples.task_executor.generate_samples_pre_process
   output_keys: model_responses    # Optional: key to store all model responses in state
   prompt:        
     - user: "{user_prompt}"

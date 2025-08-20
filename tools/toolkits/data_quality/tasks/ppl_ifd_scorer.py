@@ -9,7 +9,7 @@ import aiohttp
 from typing import Any
 from tqdm import tqdm
 
-from utils import utils
+from grasp.utils import utils
 
 
 def create_dir(path: str):

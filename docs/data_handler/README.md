@@ -63,7 +63,7 @@ data_config:
 Configure your data source using `DataSourceConfig`:
 
 ```python
-from core.dataset.dataset_config import DataSourceConfig
+from grasp.core.dataset.dataset_config import DataSourceConfig
 
 # For HuggingFace datasets
 hf_config = DataSourceConfig(
@@ -87,7 +87,7 @@ file_config = DataSourceConfig(
 Configure your output destination using `OutputConfig`:
 
 ```python
-from core.dataset.dataset_config import OutputConfig
+from grasp.core.dataset.dataset_config import OutputConfig
 
 # For HuggingFace datasets
 hf_output = OutputConfig(
@@ -123,8 +123,8 @@ data_config:
 Python:
 
 ```python
-from core.dataset.huggingface_handler import HuggingFaceHandler
-from core.dataset.dataset_config import DataSourceConfig
+from grasp.core.dataset.huggingface_handler import HuggingFaceHandler
+from grasp.core.dataset.dataset_config import DataSourceConfig
 
 # Configure source
 config = DataSourceConfig(
@@ -212,7 +212,7 @@ data_config:
     type: "hf"
     repo_id: "dataset/name"
     transformations:
-      - transform: processors.data_transform.RenameFieldsTransform
+      - transform: grasp.processors.data_transform.RenameFieldsTransform
         params:
           mapping:
             old_field: new_field
@@ -222,7 +222,7 @@ data_config:
 Python: 
 
 ```python
-from processors.data_transform import RenameFieldsTransform
+from grasp.processors.data_transform import RenameFieldsTransform
 
 config = DataSourceConfig(
     repo_id="dataset/name",

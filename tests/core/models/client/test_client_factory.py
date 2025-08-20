@@ -4,11 +4,11 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 # Add the parent directory to sys.path to import the necessary modules
-sys.path.append(str(Path(__file__).parent.parent.parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent))
 
-from core.models.client.client_factory import ClientFactory, ModelType
-from core.models.client.openai_client import OpenAIClient
-from core.models.client.openai_azure_client import OpenAIAzureClient
+from grasp.core.models.client.client_factory import ClientFactory, ModelType
+from grasp.core.models.client.openai_client import OpenAIClient
+from grasp.core.models.client.openai_azure_client import OpenAIAzureClient
 from mistralai_azure import MistralAzure
 
 
@@ -23,7 +23,7 @@ class TestClientFactory(unittest.TestCase):
         self.assertEqual(ModelType.MISTRALAI, "mistralai")
         self.assertEqual(ModelType.TGI, "tgi")
 
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_client_invalid_model_type(self, mock_validate):
         """Test create_client with invalid model type raises ValueError"""
         model_url = "http://test-url.com"
@@ -38,7 +38,7 @@ class TestClientFactory(unittest.TestCase):
         self.assertIn("Unsupported model type", str(context.exception))
         self.assertIn("Must be one of", str(context.exception))
 
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_client_missing_model_type(self, mock_validate):
         """Test create_client with missing model_type key"""
         mock_validate.side_effect = ValueError("Missing required key: model_type")
@@ -67,8 +67,8 @@ class TestClientFactory(unittest.TestCase):
             "Auth token/API key is required for client creation", str(context.exception)
         )
 
-    @patch("core.models.client.client_factory.OpenAIClient")
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.OpenAIClient")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_openai_client(self, mock_validate, mock_openai_client):
         """Test _create_openai_client method"""
         # Setup mock
@@ -102,8 +102,8 @@ class TestClientFactory(unittest.TestCase):
         self.assertEqual(kwargs["timeout"], 60)
         self.assertEqual(kwargs["max_retries"], 5)
 
-    @patch("core.models.client.client_factory.OpenAIClient")
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.OpenAIClient")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_openai_client_multi_url(self, mock_validate, mock_openai_client):
         """Test _create_openai_client method"""
         # Setup mock
@@ -140,8 +140,8 @@ class TestClientFactory(unittest.TestCase):
         self.assertEqual(kwargs["timeout"], 60)
         self.assertEqual(kwargs["max_retries"], 5)
 
-    @patch("core.models.client.client_factory.OpenAIClient")
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.OpenAIClient")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_openai_client_multi_url_single_auth_token(
         self, mock_validate, mock_openai_client
     ):
@@ -179,8 +179,8 @@ class TestClientFactory(unittest.TestCase):
         self.assertEqual(kwargs["timeout"], 60)
         self.assertEqual(kwargs["max_retries"], 5)
 
-    @patch("core.models.client.client_factory.OpenAIClient")
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.OpenAIClient")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_openai_client_with_completions_api(
         self, mock_validate, mock_openai_client
     ):
@@ -213,8 +213,8 @@ class TestClientFactory(unittest.TestCase):
             True, False, **mock_openai_client.call_args[1]
         )
 
-    @patch("core.models.client.client_factory.OpenAIAzureClient")
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.OpenAIAzureClient")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_openai_azure_client(self, mock_validate, mock_openai_client):
         """Test _create_openai_client method"""
         # Setup mock
@@ -254,8 +254,8 @@ class TestClientFactory(unittest.TestCase):
         self.assertEqual(kwargs["timeout"], 90)
         self.assertEqual(kwargs["max_retries"], 2)
 
-    @patch("core.models.client.client_factory.OpenAIAzureClient")
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.OpenAIAzureClient")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_openai_azure_client(self, mock_validate, mock_openai_client):
         """Test _create_openai_client method"""
         # Setup mock
@@ -295,8 +295,8 @@ class TestClientFactory(unittest.TestCase):
         self.assertEqual(kwargs["timeout"], 90)
         self.assertEqual(kwargs["max_retries"], 2)
 
-    @patch("core.models.client.client_factory.OpenAIAzureClient")
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.OpenAIAzureClient")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_openai_azure_client_multi_url(
         self, mock_validate, mock_openai_client
     ):
@@ -340,8 +340,8 @@ class TestClientFactory(unittest.TestCase):
         self.assertEqual(kwargs["timeout"], 90)
         self.assertEqual(kwargs["max_retries"], 2)
 
-    @patch("core.models.client.client_factory.OpenAIAzureClient")
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.OpenAIAzureClient")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_openai_azure_client_multi_url_single_auth_token(
         self, mock_validate, mock_openai_client
     ):
@@ -384,7 +384,7 @@ class TestClientFactory(unittest.TestCase):
         self.assertEqual(kwargs["timeout"], 90)
         self.assertEqual(kwargs["max_retries"], 2)
 
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_azure_client(self, mock_validate):
         """Test _create_azure_client method"""
         # Test with valid config
@@ -410,7 +410,7 @@ class TestClientFactory(unittest.TestCase):
         self.assertEqual(http_client.headers["Content-Type"], "application/json")
         self.assertEqual(http_client.timeout, 75)
 
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_azure_client_with_bearer_token(self, mock_validate):
         """Test _create_azure_client method with token that already has Bearer prefix"""
         # Test with valid config where token already has Bearer prefix
@@ -430,7 +430,7 @@ class TestClientFactory(unittest.TestCase):
         # Verify the client config was created with the right parameters
         self.assertEqual(http_client.headers["Authorization"], "Bearer test-token")
 
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_azure_client_with_multi_url(self, mock_validate):
         """Test _create_azure_client method with token that already has Bearer prefix"""
         # Test with valid config where token already has Bearer prefix
@@ -452,7 +452,7 @@ class TestClientFactory(unittest.TestCase):
         # Verify the client config was created with the right parameters
         self.assertEqual(http_client.headers["Authorization"], model_auth_token1)
 
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_azure_client_with_multi_url_single_auth_token(self, mock_validate):
         """Test _create_azure_client method with token that already has Bearer prefix"""
         # Test with valid config where token already has Bearer prefix
@@ -473,7 +473,7 @@ class TestClientFactory(unittest.TestCase):
         # Verify the client config was created with the right parameters
         self.assertEqual(http_client.headers["Authorization"], model_auth_token)
 
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_azure_client_with_token_list(self, mock_validate):
         """Test _create_azure_client method with token provided as a list"""
         # Test with valid config where token is provided as a list
@@ -493,8 +493,8 @@ class TestClientFactory(unittest.TestCase):
         # Verify the client config was created with the right parameters
         self.assertEqual(http_client.headers["Authorization"], "Bearer test-token")
 
-    @patch("core.models.client.client_factory.MistralAzure")
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.MistralAzure")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_mistral_client(self, mock_validate, mock_mistral_client):
         """Test _create_mistral_client method"""
         # Setup mock
@@ -528,8 +528,8 @@ class TestClientFactory(unittest.TestCase):
         self.assertIn("retry_config", kwargs)
         self.assertIn("async_client", kwargs)  # Should have the async client parameter
 
-    @patch("core.models.client.client_factory.MistralAzure")
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.MistralAzure")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_mistral_client_multi_url(self, mock_validate, mock_mistral_client):
         """Test _create_mistral_client method"""
         # Setup mock
@@ -563,8 +563,8 @@ class TestClientFactory(unittest.TestCase):
         self.assertIn("retry_config", kwargs)
         self.assertIn("async_client", kwargs)  # Should have the async client parameter
 
-    @patch("core.models.client.client_factory.MistralAzure")
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.MistralAzure")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_mistral_client_multi_url_single_auth_token(
         self, mock_validate, mock_mistral_client
     ):
@@ -599,8 +599,8 @@ class TestClientFactory(unittest.TestCase):
         self.assertIn("retry_config", kwargs)
         self.assertIn("async_client", kwargs)  # Should have the async client parameter
 
-    @patch("core.models.client.client_factory.MistralAzure")
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.MistralAzure")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_mistral_client_sync(self, mock_validate, mock_mistral_client):
         """Test _create_mistral_client method with synchronous client"""
         # Setup mock
@@ -631,7 +631,7 @@ class TestClientFactory(unittest.TestCase):
         self.assertIn("client", kwargs)  # Should have the sync client parameter
         self.assertNotIn("async_client", kwargs)
 
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_tgi_client(self, mock_validate):
         """Test _create_tgi_client method"""
         # Test with valid config
@@ -657,7 +657,7 @@ class TestClientFactory(unittest.TestCase):
         self.assertEqual(http_client.headers["Content-Type"], "application/json")
         self.assertEqual(http_client.timeout, 180)
 
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_tgi_client_multi_url(self, mock_validate):
         """Test _create_tgi_client method"""
         # Test with valid config
@@ -685,7 +685,7 @@ class TestClientFactory(unittest.TestCase):
         self.assertEqual(http_client.headers["Content-Type"], "application/json")
         self.assertEqual(http_client.timeout, 180)
 
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_tgi_client_multi_url_single_auth_token(self, mock_validate):
         """Test _create_tgi_client method"""
         # Test with valid config
@@ -712,7 +712,7 @@ class TestClientFactory(unittest.TestCase):
         self.assertEqual(http_client.headers["Content-Type"], "application/json")
         self.assertEqual(http_client.timeout, 180)
 
-    @patch("core.models.client.client_factory.utils.validate_required_keys")
+    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_tgi_client_with_bearer_token(self, mock_validate):
         """Test _create_tgi_client method with token that already has Bearer prefix"""
         # Test with valid config where token already has Bearer prefix
@@ -732,7 +732,7 @@ class TestClientFactory(unittest.TestCase):
         # Verify the client config was created with the right parameters
         self.assertEqual(http_client.headers["Authorization"], model_auth_token)
 
-    @patch("core.models.client.client_factory.ClientFactory._create_openai_client")
+    @patch("grasp.core.models.client.client_factory.ClientFactory._create_openai_client")
     def test_create_client_openai(self, mock_create_vllm):
         """Test create_client with VLLM model type"""
         mock_create_vllm.return_value = MagicMock()
@@ -753,7 +753,7 @@ class TestClientFactory(unittest.TestCase):
         )
 
     @patch(
-        "core.models.client.client_factory.ClientFactory._create_openai_azure_client"
+        "grasp.core.models.client.client_factory.ClientFactory._create_openai_azure_client"
     )
     def test_create_client_openai_azure(self, mock_create_openai):
         """Test create_client with OpenAI model type"""
@@ -774,7 +774,7 @@ class TestClientFactory(unittest.TestCase):
             model_config, model_url, model_auth_token, True, True
         )
 
-    @patch("core.models.client.client_factory.ClientFactory._create_http_client")
+    @patch("grasp.core.models.client.client_factory.ClientFactory._create_http_client")
     def test_create_client_azure(self, mock_create_http):
         """Test create_client with Azure model type"""
         mock_create_http.return_value = {"headers": {}, "timeout": 120}
@@ -793,7 +793,7 @@ class TestClientFactory(unittest.TestCase):
         )
         self.assertEqual(result, {"headers": {}, "timeout": 120})
 
-    @patch("core.models.client.client_factory.ClientFactory._create_mistral_client")
+    @patch("grasp.core.models.client.client_factory.ClientFactory._create_mistral_client")
     def test_create_client_mistralai(self, mock_create_mistral):
         """Test create_client with MistralAI model type"""
         mock_create_mistral.return_value = MagicMock()
@@ -813,7 +813,7 @@ class TestClientFactory(unittest.TestCase):
             model_config, model_url, model_auth_token, True
         )
 
-    @patch("core.models.client.client_factory.ClientFactory._create_http_client")
+    @patch("grasp.core.models.client.client_factory.ClientFactory._create_http_client")
     def test_create_client_tgi(self, mock_create_http):
         """Test create_client with TGI model type"""
         mock_create_http.return_value = {"headers": {}, "timeout": 120}
@@ -832,7 +832,7 @@ class TestClientFactory(unittest.TestCase):
         )
         self.assertEqual(result, {"headers": {}, "timeout": 120})
 
-    @patch("core.models.client.client_factory.ClientFactory._create_openai_client")
+    @patch("grasp.core.models.client.client_factory.ClientFactory._create_openai_client")
     def test_create_client_completions_api(self, mock_create_openai):
         """Test create_client with completions_api flag"""
         mock_create_openai.return_value = MagicMock()

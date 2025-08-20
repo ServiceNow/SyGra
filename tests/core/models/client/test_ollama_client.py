@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 from pydantic import BaseModel
 
 # Add the parent directory to sys.path to import the necessary modules
-sys.path.append(str(Path(__file__).parent.parent.parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent))
 
 from langchain_core.messages import HumanMessage, SystemMessage
 

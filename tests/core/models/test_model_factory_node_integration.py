@@ -4,11 +4,11 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 # Add the parent directory to sys.path to import the necessary modules
-sys.path.append(str(Path(__file__).parent.parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
-from core.models.model_factory import ModelFactory
-from core.models.custom_models import CustomVLLM
-from core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
+from grasp.core.models.model_factory import ModelFactory
+from grasp.core.models.custom_models import CustomVLLM
+from grasp.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
 
 
 class TestModelFactoryNodeIntegration(unittest.TestCase):
@@ -25,14 +25,14 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
             }
         }
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.utils.get_graph_properties")
-    @patch("utils.utils.get_func_from_str")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.utils.get_graph_properties")
+    @patch("grasp.utils.utils.get_func_from_str")
     def test_llm_node_model_initialization(
         self, mock_get_func, mock_get_props, mock_load_model_config
     ):
         """Test that LLMNode initializes model using ModelFactory.get_model"""
-        from core.graph.nodes.llm_node import LLMNode
+        from grasp.core.graph.nodes.llm_node import LLMNode
 
         # Configure mocks
         mock_load_model_config.return_value = self.base_model_config
@@ -51,15 +51,15 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
             # Verify get_model was called
             mock_get_model.assert_called_once_with({"name": "test_model"})
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.utils.get_graph_properties")
-    @patch("utils.utils.get_func_from_str")
-    @patch("utils.utils.get_graph_factory")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.utils.get_graph_properties")
+    @patch("grasp.utils.utils.get_func_from_str")
+    @patch("grasp.utils.utils.get_graph_factory")
     def test_agent_node_model_initialization(
         self, mock_graph_factory, mock_get_func, mock_get_props, mock_load_model_config
     ):
         """Test that AgentNode initializes model using ModelFactory.get_model with the correct backend"""
-        from core.graph.nodes.agent_node import AgentNode
+        from grasp.core.graph.nodes.agent_node import AgentNode
 
         # Configure mocks
         mock_load_model_config.return_value = self.base_model_config
@@ -68,7 +68,7 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
         mock_graph_factory.return_value = MagicMock()
 
         # Test with langgraph backend specifically
-        with patch("utils.constants.BACKEND", "langgraph"):
+        with patch("grasp.utils.constants.BACKEND", "langgraph"):
             # Reset and reconfigure mocks
             mock_load_model_config.return_value = self.base_model_config
 
@@ -86,7 +86,7 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
                     {"name": "test_model"}, "langgraph"
                 )
 
-    @patch("utils.utils.load_model_config")
+    @patch("grasp.utils.utils.load_model_config")
     def test_model_factory_backend_selection(self, mock_load_model_config):
         """Test that ModelFactory selects the appropriate model class based on backend"""
         # Configure mock
@@ -106,19 +106,19 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
             ModelFactory.create_model(model_config, "langgraph")
             mock_langgraph.assert_called_once()
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.utils.get_graph_factory")
-    @patch("utils.utils.get_graph_properties")
-    @patch("utils.utils.get_func_from_str")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.utils.get_graph_factory")
+    @patch("grasp.utils.utils.get_graph_properties")
+    @patch("grasp.utils.utils.get_func_from_str")
     def test_agent_node_ensures_chat_model(
         self, mock_get_func, mock_get_props, mock_graph_factory, mock_load_model_config
     ):
         """Test that AgentNode ensures using a model extended from BaseChatModel via ModelFactory.get_model"""
-        from core.graph.nodes.agent_node import AgentNode
+        from grasp.core.graph.nodes.agent_node import AgentNode
         from langchain_core.language_models import BaseChatModel
 
         # Test that with langgraph backend, we get a proper BaseChatModel
-        with patch("utils.constants.BACKEND", "langgraph"):
+        with patch("grasp.utils.constants.BACKEND", "langgraph"):
             # Configure mocks
             mock_load_model_config.return_value = self.base_model_config
             mock_get_props.return_value = {}
@@ -153,7 +153,7 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
                     issubclass(node.model.__class__.__bases__[0], BaseChatModel)
                 )
 
-    @patch("utils.utils.load_model_config")
+    @patch("grasp.utils.utils.load_model_config")
     def test_incompatible_model_for_agent_node(self, mock_load_model_config):
         """Test handling of model types not supported in langgraph backend"""
         # Configure mock for a model type that doesn't have a langgraph implementation
@@ -171,7 +171,7 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
             model_config = {"name": "test_model", "model_type": "mistralai"}
             ModelFactory.create_model(model_config, "langgraph")
 
-    @patch('utils.utils.load_model_config')
+    @patch('grasp.utils.utils.load_model_config')
     def test_incompatible_ollama_model_for_agent_node(self, mock_load_model_config):
         """Test handling of ollama model type which is not supported in langgraph backend"""
         # Configure mock for a model type that doesn't have a langgraph implementation

@@ -8,7 +8,7 @@ edges:
   - from: node1
     to: node2
   - from: node2
-    condition: tasks.example.task_executor.ShouldContinueCondition
+    condition: grasp.tasks.example.task_executor.ShouldContinueCondition
     path_map:
       result1: node3
       result2: node4

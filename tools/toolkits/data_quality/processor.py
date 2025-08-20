@@ -3,11 +3,11 @@ import tempfile
 from typing import Dict, Any, Optional, Type
 
 import ujson
-from logger.logger_config import logger
+from grasp.logger.logger_config import logger
 from tools.base_tool import BaseTool
 from tools.registry import register_tool
-from utils import utils
-from utils.dotenv import load_dotenv
+from grasp.utils import utils
+from grasp.utils.dotenv import load_dotenv
 
 load_dotenv()
 

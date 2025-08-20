@@ -1,6 +1,6 @@
 import os
 from argparse import Namespace
-from logger.logger_config import logger
+from grasp.logger.logger_config import logger
 
 
 class MetadataTaggingTask:

@@ -75,7 +75,7 @@ class CustomUserSchema(BaseModel):
 
 ```yaml
 schema_config:
-  schema: validators.custom_schemas.CustomUserSchema
+  schema: grasp.validators.custom_schemas.CustomUserSchema
 ```
 #### Sample YAML configuration to define schema in YAML:-
 

@@ -46,7 +46,7 @@ nodes:
         temperature: 0.1
     structured_output:
       enabled: true
-      schema: "structured_output.schemas_factory.CustomUserSchema"
+      schema: "grasp.core.models.structured_output.schemas_factory.CustomUserSchema"
 
   node2:
     node_type: llm

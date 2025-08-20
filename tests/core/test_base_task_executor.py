@@ -8,8 +8,8 @@ from unittest.mock import Mock, patch, mock_open, MagicMock
 import hashlib
 import json
 import pytest
-from core.dataset.dataset_config import OutputType
-from core.base_task_executor import BaseTaskExecutor
+from grasp.core.dataset.dataset_config import OutputType
+from grasp.core.base_task_executor import BaseTaskExecutor
 
 # ---------------------- Fixtures ----------------------
 
@@ -109,7 +109,7 @@ def mock_model_config():
 # Sets up a BaseTaskExecutor instance with mocked config loading and graph
 @pytest.fixture
 def dummy_instance(mock_args, mock_grasp_config, mock_model_config):
-    from core.base_task_executor import BaseTaskExecutor
+    from grasp.core.base_task_executor import BaseTaskExecutor
 
     def mock_load_yaml_file(*args, **kwargs):
         path = args[0] if args else kwargs.get("filepath", "")
@@ -119,15 +119,15 @@ def dummy_instance(mock_args, mock_grasp_config, mock_model_config):
 
     with (
         patch(
-            "core.base_task_executor.utils.load_yaml_file",
+            "grasp.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "core.base_task_executor.utils.get_file_in_task_dir",
+            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "core.dataset.file_handler.FileHandler.read",
+            "grasp.core.dataset.file_handler.FileHandler.read",
             return_value=[{"id": "abc", "evol_instruct_final_prompt": "hello"}],
         ),
     ):
@@ -147,11 +147,11 @@ def dummy_instance(mock_args, mock_grasp_config, mock_model_config):
 # ------------------ End Fixtures ------------------
 
 
-@patch("core.base_task_executor.utils.get_file_in_task_dir")
-@patch("core.base_task_executor.utils.load_yaml_file")
-@patch("core.base_task_executor.GraphConfig")
-@patch("core.base_task_executor.BaseTaskExecutor.init_dataset")
-@patch("core.base_task_executor.BaseTaskExecutor._init_output_generator")
+@patch("grasp.core.base_task_executor.utils.get_file_in_task_dir")
+@patch("grasp.core.base_task_executor.utils.load_yaml_file")
+@patch("grasp.core.base_task_executor.GraphConfig")
+@patch("grasp.core.base_task_executor.BaseTaskExecutor.init_dataset")
+@patch("grasp.core.base_task_executor.BaseTaskExecutor._init_output_generator")
 def test_executor_initialization(
     mock_output_gen,
     mock_init_dataset,
@@ -331,17 +331,17 @@ def test_output_record_generator_with_output_gen():
     assert executor.output_record_generator(state) == "processed"
 
 
-@patch("core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}])
-@patch("core.base_task_executor.logger.warning")
-@patch("core.base_task_executor.logger.info")
-@patch("core.base_task_executor.utils.delete_file")
+@patch("grasp.core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}])
+@patch("grasp.core.base_task_executor.logger.warning")
+@patch("grasp.core.base_task_executor.logger.info")
+@patch("grasp.core.base_task_executor.utils.delete_file")
 @patch(
-    "core.base_task_executor.utils.get_file_in_task_dir",
+    "grasp.core.base_task_executor.utils.get_file_in_task_dir",
     return_value="/tmp/fake_input.json",
 )
-@patch("core.base_task_executor.os.path.join", return_value="/tmp/test/metadata.json")
-@patch("core.base_task_executor.os.makedirs")
-@patch("core.base_task_executor.os.path.exists", return_value=False)
+@patch("grasp.core.base_task_executor.os.path.join", return_value="/tmp/test/metadata.json")
+@patch("grasp.core.base_task_executor.os.makedirs")
+@patch("grasp.core.base_task_executor.os.path.exists", return_value=False)
 @patch(
     "builtins.open",
     new_callable=mock_open,
@@ -369,7 +369,7 @@ def test_execute_basic_flow(
     dummy_instance.graph_config.config = {"output_config": {}}
 
     with patch(
-        "core.base_task_executor.DatasetProcessor", return_value=dummy_processor
+        "grasp.core.base_task_executor.DatasetProcessor", return_value=dummy_processor
     ):
         dummy_instance.execute()
 
@@ -377,10 +377,10 @@ def test_execute_basic_flow(
     dummy_processor.process_and_store_results.assert_called_once()
 
 
-@patch("core.base_task_executor.logger.info")
-@patch("core.base_task_executor.os.path.splitext", return_value=("existing", ".json"))
+@patch("grasp.core.base_task_executor.logger.info")
+@patch("grasp.core.base_task_executor.os.path.splitext", return_value=("existing", ".json"))
 @patch(
-    "core.base_task_executor.json.load",
+    "grasp.core.base_task_executor.json.load",
     return_value={"task_name": "test_task", "output_file": "existing.json"},
 )
 @patch(
@@ -388,7 +388,7 @@ def test_execute_basic_flow(
     new_callable=mock_open,
     read_data='{"task_name": "test_task", "output_file": "existing.json"}',
 )
-@patch("core.base_task_executor.os.path.exists", side_effect=[True, True, True])
+@patch("grasp.core.base_task_executor.os.path.exists", side_effect=[True, True, True])
 def test_resume_existing_file(
     mock_exists,
     mock_open_file,
@@ -405,28 +405,28 @@ def test_resume_existing_file(
 
     with (
         patch(
-            "core.base_task_executor.DatasetProcessor", return_value=MagicMock()
+            "grasp.core.base_task_executor.DatasetProcessor", return_value=MagicMock()
         ) as mock_processor,
-        patch("core.base_task_executor.DataQuality", return_value=MagicMock()),
+        patch("grasp.core.base_task_executor.DataQuality", return_value=MagicMock()),
     ):
         dummy_instance.execute()
         mock_processor.return_value.process_and_store_results.assert_called_once()
         mock_info.assert_any_call("Resuming with existing output file: existing.json")
 
 
-@patch("core.base_task_executor.logger")
-@patch("core.base_task_executor.utils.delete_file")
+@patch("grasp.core.base_task_executor.logger")
+@patch("grasp.core.base_task_executor.utils.delete_file")
 @patch(
-    "core.base_task_executor.utils.get_file_in_task_dir",
+    "grasp.core.base_task_executor.utils.get_file_in_task_dir",
     side_effect=["/tmp/output.json", "/tmp/metadata.json"],
 )
 @patch("builtins.open", new_callable=mock_open)
 @patch(
-    "core.base_task_executor.json.load",
+    "grasp.core.base_task_executor.json.load",
     return_value={"task_name": "dummy_task", "output_file": "existing.json"},
 )
 @patch(
-    "core.base_task_executor.os.path.exists",
+    "grasp.core.base_task_executor.os.path.exists",
     side_effect=[True, True, False, True, True],
 )
 def test_delete_non_resumable_files(
@@ -447,9 +447,9 @@ def test_delete_non_resumable_files(
 
     with (
         patch(
-            "core.base_task_executor.DatasetProcessor", return_value=MagicMock()
+            "grasp.core.base_task_executor.DatasetProcessor", return_value=MagicMock()
         ) as mock_processor,
-        patch("core.base_task_executor.DataQuality", return_value=MagicMock()),
+        patch("grasp.core.base_task_executor.DataQuality", return_value=MagicMock()),
     ):
         dummy_instance.execute()
 
@@ -457,9 +457,9 @@ def test_delete_non_resumable_files(
         mock_processor.return_value.process_and_store_results.assert_called_once()
 
 
-@patch("core.base_task_executor.logger.error")
-@patch("core.base_task_executor.utils.delete_file")
-@patch("core.base_task_executor.os.path.exists", return_value=True)
+@patch("grasp.core.base_task_executor.logger.error")
+@patch("grasp.core.base_task_executor.utils.delete_file")
+@patch("grasp.core.base_task_executor.os.path.exists", return_value=True)
 @patch("builtins.open", new_callable=mock_open, read_data='{"id": 1}\n')
 def test_output_sink_error_handling(
     mock_open_file, mock_exists, mock_delete_file, mock_logger_error, dummy_instance
@@ -478,10 +478,10 @@ def test_output_sink_error_handling(
     dummy_processor.is_valid_schema = True
 
     with (
-        patch("core.base_task_executor.DatasetProcessor", return_value=dummy_processor),
-        patch("core.base_task_executor.DataQuality", return_value=MagicMock()),
+        patch("grasp.core.base_task_executor.DatasetProcessor", return_value=dummy_processor),
+        patch("grasp.core.base_task_executor.DataQuality", return_value=MagicMock()),
         patch(
-            "core.base_task_executor.FileHandler.write",
+            "grasp.core.base_task_executor.FileHandler.write",
             side_effect=Exception("Write error"),
         ),
         patch("json.loads", return_value={"id": 1}),
@@ -491,14 +491,14 @@ def test_output_sink_error_handling(
         mock_logger_error.assert_called_with("Error writing to sink: Write error")
 
 
-@patch("core.base_task_executor.os.remove")
+@patch("grasp.core.base_task_executor.os.remove")
 @patch(
-    "core.base_task_executor.utils.get_file_in_task_dir",
+    "grasp.core.base_task_executor.utils.get_file_in_task_dir",
     return_value="/tmp/test_output/output.json",
 )
-@patch("core.base_task_executor.logger.info")
+@patch("grasp.core.base_task_executor.logger.info")
 @patch("builtins.open", new_callable=mock_open, read_data='{"id": 1}\n')
-@patch("core.base_task_executor.os.path.exists", return_value=True)
+@patch("grasp.core.base_task_executor.os.path.exists", return_value=True)
 def test_output_sink_success(
     mock_exists,
     mock_open_file,
@@ -523,23 +523,23 @@ def test_output_sink_success(
     dummy_processor.resume_manager = None
 
     with (
-        patch("core.base_task_executor.DatasetProcessor", return_value=dummy_processor),
-        patch("core.base_task_executor.DataQuality", return_value=MagicMock()),
-        patch("core.base_task_executor.FileHandler.write") as mock_write,
+        patch("grasp.core.base_task_executor.DatasetProcessor", return_value=dummy_processor),
+        patch("grasp.core.base_task_executor.DataQuality", return_value=MagicMock()),
+        patch("grasp.core.base_task_executor.FileHandler.write") as mock_write,
         patch("json.loads", return_value={"id": 1}),
     ):
         dummy_instance.execute()
         mock_write.assert_called_once()
 
 
-@patch("core.base_task_executor.os.remove")
+@patch("grasp.core.base_task_executor.os.remove")
 @patch(
-    "core.base_task_executor.utils.get_file_in_task_dir",
+    "grasp.core.base_task_executor.utils.get_file_in_task_dir",
     return_value="/tmp/test_output/output.json",
 )
-@patch("core.base_task_executor.logger.info")
+@patch("grasp.core.base_task_executor.logger.info")
 @patch("builtins.open", new_callable=mock_open, read_data='{"id": 1}\n')
-@patch("core.base_task_executor.os.path.exists", return_value=True)
+@patch("grasp.core.base_task_executor.os.path.exists", return_value=True)
 def test_output_sink_success(
     mock_exists,
     mock_open_file,
@@ -564,11 +564,11 @@ def test_output_sink_success(
     dummy_processor.resume_manager = None
 
     with (
-        patch("core.base_task_executor.DatasetProcessor", return_value=dummy_processor),
+        patch("grasp.core.base_task_executor.DatasetProcessor", return_value=dummy_processor),
         patch(
-            "core.base_task_executor.DataQuality", return_value=MagicMock()
+            "grasp.core.base_task_executor.DataQuality", return_value=MagicMock()
         ) as mock_quality,
-        patch("core.base_task_executor.FileHandler.write") as mock_write,
+        patch("grasp.core.base_task_executor.FileHandler.write") as mock_write,
         patch("json.loads", return_value={"id": 1}),
     ):
         dummy_instance.execute()
@@ -577,14 +577,14 @@ def test_output_sink_success(
         mock_quality.assert_called_once()
 
 
-@patch("core.base_task_executor.os.remove")
+@patch("grasp.core.base_task_executor.os.remove")
 @patch(
-    "core.base_task_executor.utils.get_file_in_task_dir",
+    "grasp.core.base_task_executor.utils.get_file_in_task_dir",
     return_value="/tmp/test_output/output.json",
 )
-@patch("core.base_task_executor.logger.info")
+@patch("grasp.core.base_task_executor.logger.info")
 @patch("builtins.open", new_callable=mock_open, read_data='{"id": 1}\n{"id": 2}\n')
-@patch("core.base_task_executor.os.path.exists", return_value=True)
+@patch("grasp.core.base_task_executor.os.path.exists", return_value=True)
 def test_output_sink_jsonl_reading(
     mock_exists, mock_open_file, mock_info, mock_get_file, mock_remove, dummy_instance
 ):
@@ -604,9 +604,9 @@ def test_output_sink_jsonl_reading(
     dummy_processor.resume_manager = None
 
     with (
-        patch("core.base_task_executor.DatasetProcessor", return_value=dummy_processor),
-        patch("core.base_task_executor.DataQuality", return_value=MagicMock()),
-        patch("core.base_task_executor.FileHandler.write") as mock_write,
+        patch("grasp.core.base_task_executor.DatasetProcessor", return_value=dummy_processor),
+        patch("grasp.core.base_task_executor.DataQuality", return_value=MagicMock()),
+        patch("grasp.core.base_task_executor.FileHandler.write") as mock_write,
         patch("json.loads", side_effect=[{"id": 1}, {"id": 2}]),
     ):
         dummy_instance.execute()

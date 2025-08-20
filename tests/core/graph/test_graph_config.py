@@ -1,18 +1,17 @@
 import sys
 import os
 
-from utils import utils
-
 # Add project root to sys.path for relative imports to work
 sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 )
 
+from grasp.utils import utils
 from unittest.mock import Mock, patch, mock_open, MagicMock
 import pytest
-from core.dataset.dataset_config import OutputType
-from core.base_task_executor import BaseTaskExecutor
-from core.graph.graph_config import GraphConfig
+from grasp.core.dataset.dataset_config import OutputType
+from grasp.core.base_task_executor import BaseTaskExecutor
+from grasp.core.graph.graph_config import GraphConfig
 from unittest.mock import patch
 from datasets import Dataset
 from datasets import IterableDataset, Features, Value
@@ -508,15 +507,15 @@ def dummy_instance(mock_args, mock_grasp_config, mock_model_config):
 
     with (
         patch(
-            "core.base_task_executor.utils.load_yaml_file",
+            "grasp.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "core.base_task_executor.utils.get_file_in_task_dir",
+            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "core.dataset.file_handler.FileHandler.read",
+            "grasp.core.dataset.file_handler.FileHandler.read",
             return_value=[{"id": "abc", "evol_instruct_final_prompt": "hello"}],
         ),
     ):
@@ -566,15 +565,15 @@ def test_init_from_dict_config(mock_args, mock_grasp_config, mock_model_config):
 
     with (
         patch(
-            "core.base_task_executor.utils.load_yaml_file",
+            "grasp.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "core.base_task_executor.utils.get_file_in_task_dir",
+            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "core.dataset.file_handler.FileHandler.read", return_value=[{"id": "abc"}]
+            "grasp.core.dataset.file_handler.FileHandler.read", return_value=[{"id": "abc"}]
         ),
     ):
         executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
@@ -596,15 +595,15 @@ def test_missing_graph_config_key(mock_args, mock_model_config):
 
     with (
         patch(
-            "core.base_task_executor.utils.load_yaml_file",
+            "grasp.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "core.base_task_executor.utils.get_file_in_task_dir",
+            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "core.dataset.file_handler.FileHandler.read", return_value=[{"id": "abc"}]
+            "grasp.core.dataset.file_handler.FileHandler.read", return_value=[{"id": "abc"}]
         ),
     ):
         with pytest.raises(ValueError, match="graph_config key is required"):
@@ -628,15 +627,15 @@ def test_invalid_variable_type_in_output(
 
     with (
         patch(
-            "core.base_task_executor.utils.load_yaml_file",
+            "grasp.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "core.base_task_executor.utils.get_file_in_task_dir",
+            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "core.dataset.file_handler.FileHandler.read", return_value=[{"id": "abc"}]
+            "grasp.core.dataset.file_handler.FileHandler.read", return_value=[{"id": "abc"}]
         ),
     ):
         with pytest.raises(ValueError, match="Invalid variable format"):
@@ -648,9 +647,9 @@ def test_invalid_variable_type_in_output(
 # ----------------------------
 
 
-@patch("core.graph.graph_config.utils.load_yaml_file")
-@patch("core.graph.graph_config.utils.get_file_in_dir")
-@patch("core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
+@patch("grasp.core.graph.graph_config.utils.load_yaml_file")
+@patch("grasp.core.graph.graph_config.utils.get_file_in_dir")
+@patch("grasp.core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
 def test_subgraph_merging(
     mock_get_func,
     mock_get_file,
@@ -729,9 +728,9 @@ def test_subgraph_merging(
     assert len(edge_tuples) == 2
 
 
-@patch("core.graph.graph_config.utils.load_yaml_file")
-@patch("core.graph.graph_config.utils.get_file_in_dir")
-@patch("core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
+@patch("grasp.core.graph.graph_config.utils.load_yaml_file")
+@patch("grasp.core.graph.graph_config.utils.get_file_in_dir")
+@patch("grasp.core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
 def test_subgraph_merging_nested_looping(
     mock_get_func,
     mock_get_file,
@@ -830,9 +829,9 @@ def test_subgraph_merging_nested_looping(
     assert len(edge_tuples) == 6  # Ensures all expected edges are accounted for
 
 
-@patch("core.graph.graph_config.utils.load_yaml_file")
-@patch("core.graph.graph_config.utils.get_file_in_dir")
-@patch("core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
+@patch("grasp.core.graph.graph_config.utils.load_yaml_file")
+@patch("grasp.core.graph.graph_config.utils.get_file_in_dir")
+@patch("grasp.core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
 def test_subgraph_merging_with_looping_edge(
     mock_get_func,
     mock_get_file,
@@ -914,9 +913,9 @@ def test_subgraph_merging_with_looping_edge(
     assert len(edge_configs) == 2
 
 
-@patch("core.graph.graph_config.utils.load_yaml_file")
-@patch("core.graph.graph_config.utils.get_file_in_dir")
-@patch("core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
+@patch("grasp.core.graph.graph_config.utils.load_yaml_file")
+@patch("grasp.core.graph.graph_config.utils.get_file_in_dir")
+@patch("grasp.core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
 def test_multiple_subgraphs_merging(
     mock_get_func,
     mock_get_file,
@@ -968,9 +967,9 @@ def test_multiple_subgraphs_merging(
     assert len(edge_configs) == 3
 
 
-@patch("core.graph.graph_config.utils.load_yaml_file")
-@patch("core.graph.graph_config.utils.get_file_in_dir")
-@patch("core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
+@patch("grasp.core.graph.graph_config.utils.load_yaml_file")
+@patch("grasp.core.graph.graph_config.utils.get_file_in_dir")
+@patch("grasp.core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
 def test_conditional_edge_from_subgraph(
     mock_get_func,
     mock_get_file,
@@ -1070,11 +1069,11 @@ def test_prompt_placeholder_override(mock_args, mock_grasp_config, mock_model_co
 
     with (
         patch(
-            "core.graph.graph_config.utils.load_yaml_file",
+            "grasp.core.graph.graph_config.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "core.graph.graph_config.utils.get_file_in_dir",
+            "grasp.core.graph.graph_config.utils.get_file_in_dir",
             return_value="dummy_path.yaml",
         ),
     ):
@@ -1108,14 +1107,14 @@ def test_nested_config_override_merging(
 
     with (
         patch(
-            "core.base_task_executor.utils.load_yaml_file",
+            "grasp.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "core.base_task_executor.utils.get_file_in_task_dir",
+            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
-        patch("core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}]),
+        patch("grasp.core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}]),
     ):
         executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
         updated_temp = executor.graph_config.graph_config["nodes"]["evol_text_node"][
@@ -1141,14 +1140,14 @@ def test_override_applied_only_to_specified_node(
 
     with (
         patch(
-            "core.base_task_executor.utils.load_yaml_file",
+            "grasp.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "core.base_task_executor.utils.get_file_in_task_dir",
+            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
-        patch("core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}]),
+        patch("grasp.core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}]),
     ):
         executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
         evol_lambda = executor.graph_config.graph_config["nodes"]["build_text_node"][
@@ -1181,15 +1180,15 @@ def test_extract_from_dataset_list(mock_args, mock_grasp_config, mock_model_conf
 
     with (
         patch(
-            "core.base_task_executor.utils.load_yaml_file",
+            "grasp.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "core.base_task_executor.utils.get_file_in_task_dir",
+            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "core.dataset.file_handler.FileHandler.read",
+            "grasp.core.dataset.file_handler.FileHandler.read",
             return_value=[{"foo": "bar", "baz": 1}],
         ),
     ):
@@ -1214,14 +1213,14 @@ def test_extract_from_dataset_object(mock_args, mock_grasp_config, mock_model_co
 
     with (
         patch(
-            "core.base_task_executor.utils.load_yaml_file",
+            "grasp.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "core.base_task_executor.utils.get_file_in_task_dir",
+            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
-        patch("core.dataset.file_handler.FileHandler.read", return_value=data_as_list),
+        patch("grasp.core.dataset.file_handler.FileHandler.read", return_value=data_as_list),
     ):
         executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
         assert "name" in executor.graph_config.state_variables
@@ -1242,14 +1241,14 @@ def test_extract_from_iterable_dataset(mock_args, mock_grasp_config, mock_model_
 
     with (
         patch(
-            "core.base_task_executor.utils.load_yaml_file",
+            "grasp.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "core.base_task_executor.utils.get_file_in_task_dir",
+            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
-        patch("core.dataset.file_handler.FileHandler.read", return_value=dummy_data),
+        patch("grasp.core.dataset.file_handler.FileHandler.read", return_value=dummy_data),
     ):
         executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
         assert "x" in executor.graph_config.state_variables
@@ -1272,18 +1271,18 @@ def test_extract_from_prompt_templates(mock_args, mock_grasp_config, mock_model_
 
     with (
         patch(
-            "core.base_task_executor.utils.load_yaml_file",
+            "grasp.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "core.base_task_executor.utils.get_file_in_task_dir",
+            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "core.dataset.file_handler.FileHandler.read",
+            "grasp.core.dataset.file_handler.FileHandler.read",
             return_value=[{"text": "hello"}],
         ),
-        patch("core.base_task_executor.utils.extract_pattern", return_value={"text"}),
+        patch("grasp.core.base_task_executor.utils.extract_pattern", return_value={"text"}),
     ):
         executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
         assert "text" in executor.graph_config.state_variables
@@ -1405,15 +1404,15 @@ def test_duplicate_state_variables_error(
 
     with (
         patch(
-            "core.base_task_executor.utils.load_yaml_file",
+            "grasp.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "core.base_task_executor.utils.get_file_in_task_dir",
+            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "core.dataset.file_handler.FileHandler.read", return_value=[{"dup": "val"}]
+            "grasp.core.dataset.file_handler.FileHandler.read", return_value=[{"dup": "val"}]
         ),
     ):
         executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)

@@ -1,6 +1,6 @@
 import os
 from argparse import Namespace
-from utils import utils
+from grasp.utils import utils
 
 
 class LLMBasedQualityTask:
