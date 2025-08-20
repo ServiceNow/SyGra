@@ -314,17 +314,17 @@ class EdgeFactory:
         # First, try to retrieve the node by its name.
         if self.nodes.get(node_name):
             node = self.nodes.get(node_name)
+        elif self.nodes.get(sub_node):
+            node = self.nodes.get(sub_node)
         else:
-            if sub_node:
-                # For nested subgraphs, find any node that has the correct prefix pattern
-                for qualified_name in self.nodes:
-                    if qualified_name.startswith(sub_node) or qualified_name == sub_node:
-                        return self.nodes[qualified_name]
-
             if node_name in SpecialNode.SPECIAL_NODES:
                 node = get_node(node_name, {"node_type": NodeType.SPECIAL})
             else:
-                raise RuntimeError(f"Node {node_name} not found in graph or as a special node in edge configuration.")
+                raise RuntimeError(
+                    f"Node {node_name} not found in graph or as a special node in edge configuration."
+                )
         if not node.is_valid():
-            raise RuntimeError(f"Node {node_name} is idle, can't be used for edge creation.")
+            raise RuntimeError(
+                f"Node {node_name} is idle, can't be used for edge creation."
+            )
         return node
