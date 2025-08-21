@@ -130,12 +130,7 @@ class EdgeFactory:
     Additionally, it updates condition path_map values if they refer to subgraphs.
     """
 
-    def __init__(
-        self,
-        edges_config: list[dict[str, Any]],
-        nodes: dict[str, BaseNode],
-        subgraphs: dict[str, Any],
-    ):
+    def __init__(self, edges_config: list[dict[str, Any]], nodes: dict[str, BaseNode], subgraphs: dict[str, Any]):
         """
         Initialize the EdgeFactory.
 
@@ -167,6 +162,8 @@ class EdgeFactory:
                     new_pm[k] = self._resolve_mapping_value(v)
                 path_map = new_pm
 
+            self.update_edge_config(edge_cfg, src_node, tgt_node, condition, path_map)
+
             edge_obj = BaseEdge(src_node, tgt_node)
             edge_obj.set_condition(condition)
             edge_obj.set_path_map(path_map or {})
@@ -175,9 +172,7 @@ class EdgeFactory:
             if tgt_node_name:
                 logger.info(f"Edge created from {src_node_name} to {tgt_node_name}")
             elif path_map:
-                logger.info(
-                    f"Edge created from {src_node_name} with path_map: {path_map}"
-                )
+                logger.info(f"Edge created from {src_node_name} with path_map: {path_map}")
 
         # Process internal subgraph edges.
         # Instead of scanning the raw configuration, we assume subgraphs have already computed their edges.
@@ -185,13 +180,34 @@ class EdgeFactory:
         for sg_name, sg in self.subgraphs.items():
             for e in sg.edges:
                 # Skip subgraph placeholder edges.
-                if (
-                    e.edge_config.get("from") == constants.START
-                    or e.edge_config.get("to") == constants.END
-                ):
+                if e.edge_config.get("from") == constants.START or e.edge_config.get("to") == constants.END:
                     continue
                 self.edges.append(e)
             logger.info(f"Subgraph {sg_name} edges inlined.")
+
+    def update_edge_config(self, edge_cfg: dict, src_node: BaseNode, tgt_node: BaseNode, condition: str,
+                           path_map: dict):
+        """
+        Updates the edge configuration dictionary with resolved source and target nodes.
+
+        Args:
+            edge_cfg: The edge configuration dictionary to update.
+            src_node: The resolved source BaseNode object.
+            tgt_node: The resolved target BaseNode object.
+            condition: The condition string for the edge.
+            path_map: The path map dictionary for the edge.
+
+        Returns:
+            None
+        """
+        if not src_node:
+            raise RuntimeError("Source node cannot be None for edge configuration.")
+        edge_cfg["from"] = src_node.name
+        edge_cfg["to"] = tgt_node.name if tgt_node else None
+        if condition:
+            edge_cfg["condition"] = condition
+        if path_map:
+            edge_cfg["path_map"] = path_map
 
     def get_edges(self) -> list[BaseEdge]:
         """
