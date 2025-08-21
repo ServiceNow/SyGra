@@ -1,11 +1,4 @@
-import sys
-import os
-
 from utils import utils
-
-# Add project root to sys.path for relative imports to work
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
-
 from unittest.mock import Mock, patch, mock_open, MagicMock
 import pytest
 from core.dataset.dataset_config import OutputType
