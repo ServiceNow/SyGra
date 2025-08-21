@@ -1,7 +1,7 @@
 data_config:
   source:
     type: "disk"
-    file_path: "tasks/examples/agent_tool_simulation/user_queries.json"
+    file_path: "grasp/tasks/examples/agent_tool_simulation/user_queries.json"
     file_format: "json"
 
 graph_config:
@@ -25,7 +25,7 @@ graph_config:
         - user: |
             {user_query}
       model:
-        name: gpt4o-mini
+        name: gpt-4o
         parameters:
           temperature: 0
   edges:

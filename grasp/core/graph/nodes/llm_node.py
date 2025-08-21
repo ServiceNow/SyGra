@@ -71,7 +71,7 @@ class LLMNode(BaseNode):
         This method calls `ModelFactory.get_model` to initialize the model using the
         configuration from the node configuration.
         """
-        from core.models.model_factory import ModelFactory
+        from grasp.core.models.model_factory import ModelFactory
 
         self.model = ModelFactory.get_model(self.node_config["model"])
 

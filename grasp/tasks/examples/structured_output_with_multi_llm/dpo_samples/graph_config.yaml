@@ -1,7 +1,7 @@
 data_config:
   source:
     type: "disk"
-    file_path: "tasks/examples/structured_output_with_multi_llm/dpo_samples/dpo_conversation.json"
+    file_path: "grasp/tasks/examples/structured_output_with_multi_llm/dpo_samples/dpo_conversation.json"
     transformations:
       - transform: tasks.examples.structured_output_with_multi_llm.dpo_samples.data_transform.ExtractUserPromptTransform
         params: {}
@@ -73,7 +73,7 @@ graph_config:
             
             {assistant_responses}
       model:
-        name: gpt4
+        name: gpt-4o
         parameters:
           max_tokens: 1000
           temperature: 0.1
@@ -101,8 +101,7 @@ output_config:
       value: [
         "scale",
         "gpt4",
-        "gpt-4o",
-        "gpt4o-mini"
+        "gpt-4o"
       ]
     language:
       value: "en"

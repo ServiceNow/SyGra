@@ -26,7 +26,7 @@ class AgentNode(LLMNode):
         self.tools = []
         tool_paths = self.node_config.get("tools", [])
         if tool_paths:
-            from utils.tool_utils import load_tools
+            from grasp.utils.tool_utils import load_tools
 
             self.tools = load_tools(tool_paths)
 
@@ -40,7 +40,7 @@ class AgentNode(LLMNode):
         configuration from the node configuration.
         """
 
-        from core.models.model_factory import ModelFactory
+        from grasp.core.models.model_factory import ModelFactory
 
         self.model = ModelFactory.create_model(
             self.node_config["model"], constants.BACKEND

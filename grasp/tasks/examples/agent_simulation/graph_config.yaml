@@ -1,7 +1,7 @@
 data_config:
   source:
     type: "disk"
-    file_path: "tasks/examples/agent_simulation/categories.json"
+    file_path: "grasp/tasks/examples/agent_simulation/categories.json"
     file_format: "json"
 
 
@@ -63,7 +63,7 @@ graph_config:
             {agent_2_response}
 
       model:
-        name: qwen3_32b
+        name: gpt-4o
         parameters:
           temperature: 1.0
 
@@ -80,7 +80,7 @@ graph_config:
             {agent_1_response}
 
       model:
-        name: qwen3_32b
+        name: gpt-4o
         parameters:
           temperature: 1.0
 
