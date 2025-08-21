@@ -45,7 +45,7 @@ def mock_grasp_config():
                 "build_text_node": {
                     "node_type": "lambda",
                     "output_keys": "evol_instruct_final_prompt",
-                    "lambda": "recipes.evol_instruct.task_executor.EvolInstructPromptGenerator",
+                    "lambda": "grasp.recipes.evol_instruct.task_executor.EvolInstructPromptGenerator",
                 },
                 "evol_text_node": {
                     "node_type": "llm",

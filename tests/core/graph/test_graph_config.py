@@ -56,7 +56,7 @@ def mock_grasp_config():
                 "build_text_node": {
                     "node_type": "lambda",
                     "output_keys": "evol_instruct_final_prompt",
-                    "lambda": "recipes.evol_instruct.task_executor.EvolInstructPromptGenerator",
+                    "lambda": "grasp.recipes.evol_instruct.task_executor.EvolInstructPromptGenerator",
                 },
                 "evol_text_node": {
                     "node_type": "llm",
@@ -497,7 +497,7 @@ def mock_model_config():
 # Sets up a BaseTaskExecutor instance with mocked config loading and graph
 @pytest.fixture
 def dummy_instance(mock_args, mock_grasp_config, mock_model_config):
-    from core.base_task_executor import BaseTaskExecutor
+    from grasp.core.base_task_executor import BaseTaskExecutor
 
     def mock_load_yaml_file(*args, **kwargs):
         path = args[0] if args else kwargs.get("filepath", "")
@@ -1157,7 +1157,7 @@ def test_override_applied_only_to_specified_node(
         # Check that no override is accidentally applied
         assert (
             evol_lambda
-            == "recipes.evol_instruct.task_executor.EvolInstructPromptGenerator"
+            == "grasp.recipes.evol_instruct.task_executor.EvolInstructPromptGenerator"
         )
 
 

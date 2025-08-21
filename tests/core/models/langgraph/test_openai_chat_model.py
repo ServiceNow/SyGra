@@ -10,7 +10,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent))
 
 from grasp.core.models.custom_models import ModelParams
 from grasp.core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
-from utils import constants
+from grasp.utils import constants
 
 
 class TestOpenAIChatModel(unittest.TestCase):

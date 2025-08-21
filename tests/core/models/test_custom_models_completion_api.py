@@ -7,7 +7,7 @@ from unittest.mock import patch
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
 from grasp.core.models.custom_models import BaseCustomModel, CustomVLLM, CustomOpenAI, CustomOllama
-import utils.constants as constants
+import grasp.utils.constants as constants
 
 
 class TestValidateCompletionApiSupport(unittest.TestCase):
