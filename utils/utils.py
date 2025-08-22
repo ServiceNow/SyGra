@@ -4,13 +4,12 @@ import json
 import os
 import re
 import threading
+from pathlib import Path
 from typing import Any, Union, Iterator
 from typing import Callable
 
-from datasets import IterableDataset, Dataset
-from typing_extensions import deprecated
-
 import yaml
+from datasets import IterableDataset
 from langchain_core.messages import HumanMessage, AIMessage, AnyMessage, SystemMessage
 from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
@@ -18,6 +17,7 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
     BaseMessagePromptTemplate,
 )
+from typing_extensions import deprecated
 
 from core.dataset.dataset_config import DataSourceConfig
 from core.dataset.file_handler import FileHandler
@@ -103,6 +103,35 @@ def get_updated_model_config(model_config: dict) -> dict:
         ssl_cert = ssl_cert if ssl_cert and ssl_cert != "None" else None
         model_config["ssl_cert"] = ssl_cert
     return model_config
+
+
+def get_payload(inference_server: str, key="default") -> Any:
+    """Get the payload for the specific inference server using the key.
+
+    JSON format:
+    triton -> default/api_based_key -> payload_json/test_payload/response_key
+    tgi -> None
+    vllm -> None
+
+    Args:
+        inference_server: inference server type, as of now we support
+            only triton, may extend in future
+        key: value to fetch for this payload key, this key defines
+            input/output/test payload for an api
+
+    Returns:
+        json containing keys payload_json, test_payload, response_key in
+        triton flow this returns None if inference type is not defined
+        in the configuration file like tgi or vllm
+    """
+    payload_cfg = {}
+    if Path(constants.PAYLOAD_CFG_FILE).exists():
+        payload_cfg.update(load_json_file(constants.PAYLOAD_CFG_FILE))
+    # get inference server specific config, it can be None for tgi and vllm for now
+    inference_server_cfg = payload_cfg.get(inference_server)
+
+    # return the value, if not found return default for a valid inference server(triton), else return none
+    return inference_server_cfg.get(key, inference_server_cfg.get("default")) if inference_server_cfg else None
 
 def get_env_name(name):
     """

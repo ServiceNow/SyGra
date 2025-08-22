@@ -1108,3 +1108,149 @@ class CustomOllama(BaseCustomModel):
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
         return resp_text, ret_code
+
+class CustomTriton(BaseCustomModel):
+
+    def _get_payload_config_template(self, inference_server: str, payload_key: str = "default"):
+        """
+        Get the payload configuration template for the Triton server.
+
+        If the Triton server does not define a payload key, read the default flow.
+
+        Args:
+            inference_server (str): Inference server type, as of now we support
+                only triton, may extend in future
+            payload_key (str): Payload key to read from the configuration file.
+
+        Returns:
+            dict: The payload configuration template from the configuration file.
+        """
+        # if triton server does not define payload key, read the default flow
+        try:
+            payload_cfg = (
+                utils.get_payload(inference_server, payload_key)
+                if payload_key
+                else utils.get_payload(inference_server)
+            )
+        except Exception as e:
+            logger.error(f"Failed to get payload config: {e}")
+            raise Exception(f"Failed to get payload config: {e}")
+        return payload_cfg
+
+    def _get_payload_json_template(self, payload_cfg: dict):
+        """
+        Get the payload JSON template for the Triton server.
+
+        If the Triton server does not define a payload key, read the default flow.
+
+        Args:
+            payload_cfg (dict): Payload configuration template from the configuration file.
+        Returns:
+            dict: The payload JSON template from the configuration file.
+        """
+        # get the payload JSON
+        payload_json_template = payload_cfg.get(constants.PAYLOAD_JSON)
+        # payload json must be defined for triton server(for the specific API or default)
+        assert payload_json_template is not None, "Payload JSON must be defined for Triton server."
+        return payload_json_template
+
+    def _create_triton_request(self, payload_dict: dict, messages: list[dict], generation_params: dict):
+        """This is the triton request payload.
+
+        Read from the config file and build the final payload
+
+        Args:
+            payload_dict: payload template dictionary
+            messages: messages to be embedded in the configured payload
+            generation_params: parameters to be embedded in the configured payload
+
+        Returns:
+            final json
+        """
+
+        for inp in payload_dict["inputs"]:
+            if inp.get("name") == "request":
+                inp["data"] = [json.dumps(messages, ensure_ascii=False)]
+            elif inp.get("name") == "options":
+                inp["data"] = [json.dumps(generation_params, ensure_ascii=False)]
+
+        return payload_dict
+
+    def _get_response_text(self, resp_text: str, payload_config_template: dict):
+
+        try:
+            json_resp = json.loads(resp_text)
+            final_resp_text = json_resp["outputs"][0]["data"][0]
+            # get the response key
+            resp_key = payload_config_template.get(constants.RESPONSE_KEY)
+            # if resp_text is a dict, just fetch the data or else extract it from json
+            final_resp_text = (
+                final_resp_text.get(resp_key, "") if isinstance(final_resp_text, dict) else json.loads(final_resp_text).get(resp_key)
+            )
+
+        except Exception as e:
+            logger.error(f"Failed to get response text: {e}")
+            try:
+                json_resp = json.loads(resp_text)
+                outer_error = json.loads(json_resp.get("error", "{}"))
+                inner_error = json.loads(outer_error.get("error", "{}"))
+                error_msg = inner_error.get("error_message")
+
+                if error_msg == "Invalid JSON returned by model.":
+                    logger.error("Invalid JSON returned, JSON mode specified")
+                    final_resp_text = inner_error.get("model_output") or inner_error.get("response_metadata", {}).get(
+                        "models", [{}]
+                    )[0].get("debug_info", {}).get("raw_model_output", "")
+                else:
+                    logger.error(f"Not a JSON error. Error message: {error_msg}")
+                    raise RuntimeError("Not a JSON error")
+            except Exception:
+                logger.error(f"Unable to parse error response {resp_text}")
+                final_resp_text = ""
+        return final_resp_text
+
+    def __init__(self, model_config: dict[str, Any]) -> None:
+        super().__init__(model_config)
+        utils.validate_required_keys(["url", "auth_token"], model_config, "model")
+        self.model_config = model_config
+        self.auth_token = model_config.get("auth_token").replace("Bearer ", "")
+
+    async def _generate_text(
+            self, input: ChatPromptValue, model_params: ModelParams
+    ) -> Tuple[str, int]:
+        ret_code = 200
+        model_url = model_params.url
+        try:
+            # Set Client
+            self._set_client(model_url, model_params.auth_token)
+
+            # Build Request
+            payload_key = self.model_config.get("payload_key", "default")
+            payload_config_template = self._get_payload_config_template(constants.INFERENCE_SERVER_TRITON, payload_key)
+            payload_json_template = self._get_payload_json_template(payload_config_template)
+            conversation = utils.convert_messages_from_langchain_to_chat_format(input.messages)
+            payload = self._create_triton_request(payload_json_template, conversation, self.generation_params)
+            payload = self._client.build_request(payload=payload)
+
+            # Send Request
+            resp = await self._client.async_send_request(payload)
+
+            logger.debug(f"[{self.name()}]\n[{model_url}] \n REQUEST DATA: {payload}")
+
+            resp_text = resp.text
+            if resp.status_code != 200:
+                logger.error(
+                    f"[{self.name()}] HTTP request failed with code: {resp.status_code} and error: {resp_text}"
+                )
+                resp_text = ""
+                rcode = self._get_status_from_body(resp_text)
+                ret_code = rcode if rcode else 999
+            else:
+                resp_text = self._get_response_text(resp_text, payload_config_template)
+
+        except Exception as x:
+            resp_text = f"Http request failed {x}"
+            logger.error(resp_text)
+            rcode = self._get_status_from_body(x)
+            ret_code = rcode if rcode else 999
+        return resp_text, ret_code

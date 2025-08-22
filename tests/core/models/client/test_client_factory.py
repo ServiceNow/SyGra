@@ -7,9 +7,6 @@ from unittest.mock import patch, MagicMock
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
 from core.models.client.client_factory import ClientFactory, ModelType
-from core.models.client.openai_client import OpenAIClient
-from core.models.client.openai_azure_client import OpenAIAzureClient
-from mistralai_azure import MistralAzure
 
 
 class TestClientFactory(unittest.TestCase):
@@ -783,6 +780,25 @@ class TestClientFactory(unittest.TestCase):
 
         model_config = {
             "model_type": "azure",
+            "url": model_url,
+            "auth_token": model_auth_token,
+        }
+        result = ClientFactory.create_client(model_config, model_url, model_auth_token)
+
+        mock_create_http.assert_called_once_with(
+            model_config, model_url, model_auth_token
+        )
+        self.assertEqual(result, {"headers": {}, "timeout": 120})
+
+    @patch("core.models.client.client_factory.ClientFactory._create_http_client")
+    def test_create_client_triton(self, mock_create_http):
+        """Test create_client with Triton model type"""
+        mock_create_http.return_value = {"headers": {}, "timeout": 120}
+        model_url = "http://triton-test.com"
+        model_auth_token = "test-token"
+
+        model_config = {
+            "model_type": "triton",
             "url": model_url,
             "auth_token": model_auth_token,
         }
