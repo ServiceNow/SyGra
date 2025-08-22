@@ -28,7 +28,7 @@ graph_config:
           temperature: 1.0
     generate_answer_and_critique:
       node_type: subgraph
-      subgraph: tasks.examples.subgraph_recipes.subgraphs.generate_answer_and_critique
+      subgraph: grasp.tasks.examples.subgraph_recipes.subgraphs.generate_answer_and_critique
 
 
   edges:

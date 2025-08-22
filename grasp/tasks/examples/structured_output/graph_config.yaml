@@ -6,7 +6,7 @@ data_config:
     split: "train"
 
     transformations:
-      - transform: processors.data_transform.RenameFieldsTransform
+      - transform: grasp.processors.data_transform.RenameFieldsTransform
         params:
           mapping:
             task_id: id
@@ -26,9 +26,9 @@ graph_config:
       output_keys:
         - category
         - sub_category
-      post_process: tasks.examples.structured_output.task_executor.GenerateTaxonomyPostProcessor
+      post_process: grasp.tasks.examples.structured_output.task_executor.GenerateTaxonomyPostProcessor
       model:
-        name: qwen3_1.7b
+        name: gpt-4o
         parameters:
           temperature: 0.1
         structured_output:

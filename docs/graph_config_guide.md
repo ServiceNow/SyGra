@@ -61,7 +61,7 @@ data_config:
 
     # Optional transformations to apply to the input data
     transformations:
-      - transform: processors.data_transform.RenameFieldsTransform  # Path to transformation class
+      - transform: grasp.processors.data_transform.RenameFieldsTransform  # Path to transformation class
         params:                                                     # Parameters for the transformation
           mapping:
             task_id: id                     # Rename 'task_id' field to 'id'
@@ -532,7 +532,7 @@ data_config:
     split: ["train", "validation", "prompt"]
 
     transformations:
-      - transform: processors.data_transform.RenameFieldsTransform
+      - transform: grasp.processors.data_transform.RenameFieldsTransform
         params:
           mapping:
             task_id: id
@@ -577,7 +577,7 @@ graph_config:
           temperature: 0.1
         
     critique_answer:  
-      pre_process: tasks.mbpp.code_generation_with_graph_builder.task_executor.CritiqueAnsNodePreProcessor
+      pre_process: grasp.tasks.mbpp.code_generation_with_graph_builder.task_executor.CritiqueAnsNodePreProcessor
       node_type: llm 
       output_role: user 
       prompt:        
@@ -601,7 +601,7 @@ graph_config:
     - from: generate_answer
       to: critique_answer
     - from: critique_answer
-      condition: tasks.mbpp.code_generation_with_graph_builder.task_executor.ShouldContinueCondition
+      condition: grasp.tasks.mbpp.code_generation_with_graph_builder.task_executor.ShouldContinueCondition
       path_map:
         END: END
         generate_answer: generate_answer

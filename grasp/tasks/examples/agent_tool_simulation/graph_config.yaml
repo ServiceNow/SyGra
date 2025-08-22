@@ -8,12 +8,12 @@ graph_config:
   nodes:
     math_agent:
       node_type: agent
-      post_process: tasks.examples.agent_tool_simulation.task_executor.MathAgentPostProcessor
+      post_process: grasp.tasks.examples.agent_tool_simulation.task_executor.MathAgentPostProcessor
       output_keys: math_result
       tools:
-          - tasks.examples.agent_tool_simulation.tools.add
-          - tasks.examples.agent_tool_simulation.tools_from_class.ToolClass
-          - tasks.examples.agent_tool_simulation.tools_from_module
+          - grasp.tasks.examples.agent_tool_simulation.tools.add
+          - grasp.tasks.examples.agent_tool_simulation.tools_from_class.ToolClass
+          - grasp.tasks.examples.agent_tool_simulation.tools_from_module
       prompt:
         - system: |
             You are a math agent that can perform basic arithmetic operations.
