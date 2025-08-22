@@ -1,9 +1,15 @@
-from utils import utils
+import sys
+from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 import pytest
+
+sys.path.append(str(Path(__file__).parent.parent.parent.parent))
+
 from grasp.core.dataset.dataset_config import OutputType
 from grasp.core.base_task_executor import BaseTaskExecutor
 from grasp.core.graph.graph_config import GraphConfig
+from grasp.utils import utils
+
 from datasets import Dataset
 from datasets import IterableDataset, Features, Value
 
