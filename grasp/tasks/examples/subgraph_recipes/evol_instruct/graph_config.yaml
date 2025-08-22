@@ -1,7 +1,7 @@
 data_config:
     source:
       type: "disk"
-      file_path: "tasks/test_evol/test.json"
+      file_path: "grasp/tasks/examples/subgraph_recipes/evol_instruct/test.json"
       file_format: "json"
       encoding: "utf-8"
 graph_config:
