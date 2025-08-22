@@ -16,8 +16,11 @@ Go to our [Installation](https://github.com/ServiceNow/GraSP?tab=readme-ov-file#
 [//]: # (It is encouraged to be familiar with our [development best practices]&#40;https://servicenow.github.io/grasp/development/dev-practices/&#41;.)
 
 
-When everything is set up, you can refer to the [Setting up a new Datagen Pipeline](https://github.com/ServiceNow/GraSP?tab=readme-ov-file#steps-to-create-a-synthetic-data-pipeline), [Graph Configuration Guide](https://github.com/ServiceNow/GraSP/blob/main/docs/graph_config_guide.md)
-section to setup a synthetic data generation pipeline.
+When everything is set up, you can refer to the
+* [Setting up a new Datagen Pipeline](https://github.com/ServiceNow/GraSP?tab=readme-ov-file#steps-to-create-a-synthetic-data-pipeline)
+* [Graph Configuration Guide](https://github.com/ServiceNow/GraSP/blob/main/docs/graph_config_guide.md)
+
+sections to setup a synthetic data generation pipeline.
 
 ## How to submit a bug report
 
