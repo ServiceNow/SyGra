@@ -4,7 +4,7 @@ from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from lexicalrichness import LexicalRichness
 
-from utils import utils
+from grasp.utils import utils
 
 
 class TTRTaggingTask:

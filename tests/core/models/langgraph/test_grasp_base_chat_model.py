@@ -8,14 +8,14 @@ from unittest.mock import patch, MagicMock, call, ANY, PropertyMock
 from openai.types.chat.chat_completion import Choice
 
 # Add the parent directory to sys.path to import the necessary modules
-sys.path.append(str(Path(__file__).parent.parent.parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent))
 
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from openai.types.chat import ChatCompletion, ChatCompletionMessage
 
-from core.models.langgraph.grasp_base_chat_model import GraspBaseChatModel
-from core.models.custom_models import ModelParams
-import utils.constants as constants
+from grasp.core.models.langgraph.grasp_base_chat_model import GraspBaseChatModel
+from grasp.core.models.custom_models import ModelParams
+import grasp.utils.constants as constants
 
 
 class TestBaseChatModel(unittest.TestCase):
@@ -105,8 +105,8 @@ class TestBaseChatModel(unittest.TestCase):
         if hasattr(constants, "MODEL_FAILURE_WINDOW_IN_SEC"):
             constants.MODEL_FAILURE_WINDOW_IN_SEC = self.original_model_failure_window
 
-    @patch("core.models.langgraph.grasp_base_chat_model.AutoTokenizer")
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.AutoTokenizer")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_init_basic_config(self, mock_client_factory, mock_tokenizer):
         """Test initialization with basic configuration"""
         model = self.TestChatModel(self.base_config)
@@ -126,8 +126,8 @@ class TestBaseChatModel(unittest.TestCase):
         # Verify tokenizer was not loaded since hf_chat_template_model_id was not provided
         mock_tokenizer.from_pretrained.assert_not_called()
 
-    @patch("core.models.langgraph.grasp_base_chat_model.AutoTokenizer")
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.AutoTokenizer")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_init_with_hf_template(self, mock_client_factory, mock_tokenizer):
         """Test initialization with HuggingFace template"""
         # Set up mock tokenizer
@@ -141,7 +141,7 @@ class TestBaseChatModel(unittest.TestCase):
         }
 
         with patch(
-            "core.models.langgraph.grasp_base_chat_model.os.environ",
+            "grasp.core.models.langgraph.grasp_base_chat_model.os.environ",
             {"HF_TOKEN": "test-hf-token"},
         ):
             model = self.TestChatModel(config)
@@ -154,7 +154,7 @@ class TestBaseChatModel(unittest.TestCase):
         # Verify _set_chat_template was called
         self.assertIsNotNone(model._tokenizer)
 
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_validate_completions_api_support_error(self, mock_client_factory):
         """Test _validate_completions_api_support raises error when completions_api is True"""
         config = {**self.base_config, "completions_api": True}
@@ -167,7 +167,7 @@ class TestBaseChatModel(unittest.TestCase):
         self.assertIn(self.base_config["name"], str(context.exception))
         self.assertIn("models.yaml", str(context.exception))
 
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_validate_completions_api_support_no_error(self, mock_client_factory):
         """Test _validate_completions_api_support doesn't raise error when completions_api is False"""
         config = {**self.base_config, "completions_api": False}
@@ -179,7 +179,7 @@ class TestBaseChatModel(unittest.TestCase):
                 f"_validate_completions_api_support raised ValueError unexpectedly: {e}"
             )
 
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_get_model_params_single_url(self, mock_client_factory):
         """Test _get_model_params with a single URL"""
         model = self.TestChatModel(self.base_config)
@@ -194,7 +194,7 @@ class TestBaseChatModel(unittest.TestCase):
         # Verify call count was incremented
         self.assertEqual(model._call_count, 1)
 
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_get_model_params_round_robin(self, mock_client_factory):
         """Test _get_model_params with multiple URLs and round_robin load balancing"""
         config = {
@@ -230,8 +230,8 @@ class TestBaseChatModel(unittest.TestCase):
         self.assertEqual(params4.auth_token, "token1")
         self.assertEqual(model._call_count, 4)
 
-    @patch("core.models.langgraph.grasp_base_chat_model.random.choice")
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.random.choice")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_get_model_params_least_requests(
         self, mock_client_factory, mock_random_choice
     ):
@@ -278,7 +278,7 @@ class TestBaseChatModel(unittest.TestCase):
         self.assertEqual(params4.url, "http://model2.com")
         self.assertEqual(model._url_reqs_count["http://model2.com"], 2)
 
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_get_model_params_invalid_load_balancing(self, mock_client_factory):
         """Test _get_model_params with invalid load balancing type"""
         config = {
@@ -297,7 +297,7 @@ class TestBaseChatModel(unittest.TestCase):
         self.assertIn("round_robin", str(context.exception))
         self.assertIn("least_requests", str(context.exception))
 
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_get_model_params_invalid_url_type(self, mock_client_factory):
         """Test _get_model_params with invalid URL type"""
         config = {
@@ -315,7 +315,7 @@ class TestBaseChatModel(unittest.TestCase):
             "Model URL should be a string or a list of strings", str(context.exception)
         )
 
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_set_chat_template_mixtral(self, mock_client_factory):
         """Test _set_chat_template with a model name containing 'mixtral'"""
         # Set up mock tokenizer
@@ -333,8 +333,8 @@ class TestBaseChatModel(unittest.TestCase):
         # Verify template was set correctly
         self.assertTrue(hasattr(mock_tokenizer, "chat_template"))
 
-    @patch("core.models.langgraph.grasp_base_chat_model.logger")
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.logger")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_update_model_stats(self, mock_client_factory, mock_logger):
         """Test _update_model_stats method for updating statistics"""
         self.base_config.update({"stats_interval": 3})
@@ -427,8 +427,8 @@ class TestBaseChatModel(unittest.TestCase):
         self.assertIn("resp_code_dist", log_message)
         self.assertIn("errors", log_message)
 
-    @patch("core.models.langgraph.grasp_base_chat_model.logger")
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.logger")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_update_model_stats_token_exceeded(self, mock_client_factory, mock_logger):
         """Test _update_model_stats with token exceeded error"""
         model = self.TestChatModel(self.base_config)
@@ -459,9 +459,9 @@ class TestBaseChatModel(unittest.TestCase):
         self.assertEqual(model._model_stats["resp_code_dist"][413], 1)
         self.assertEqual(model._model_stats["errors"]["tokens_exceeded"], 1)
 
-    @patch("core.models.langgraph.grasp_base_chat_model.sys.exit")
-    @patch("core.models.langgraph.grasp_base_chat_model.logger")
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.sys.exit")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.logger")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_handle_server_down_disabled(
         self, mock_client_factory, mock_logger, mock_exit
     ):
@@ -481,9 +481,9 @@ class TestBaseChatModel(unittest.TestCase):
         # Restore HANDLE_SERVER_DOWN
         constants.HANDLE_SERVER_DOWN = True
 
-    @patch("core.models.langgraph.grasp_base_chat_model.sys.exit")
-    @patch("core.models.langgraph.grasp_base_chat_model.logger")
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.sys.exit")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.logger")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_handle_server_down_normal_operation(
         self, mock_client_factory, mock_logger, mock_exit
     ):
@@ -507,10 +507,10 @@ class TestBaseChatModel(unittest.TestCase):
         # Verify that exit was not called since we don't have enough errors
         mock_exit.assert_not_called()
 
-    @patch("core.models.langgraph.grasp_base_chat_model.time")
-    @patch("core.models.langgraph.grasp_base_chat_model.sys.exit")
-    @patch("core.models.langgraph.grasp_base_chat_model.logger")
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.time")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.sys.exit")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.logger")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_handle_server_down_critical(
         self, mock_client_factory, mock_logger, mock_exit, mock_time
     ):
@@ -547,10 +547,10 @@ class TestBaseChatModel(unittest.TestCase):
             f"Server failure count: {constants.MAX_FAILED_ERROR}", warning_message
         )
 
-    @patch("core.models.langgraph.grasp_base_chat_model.time")
-    @patch("core.models.langgraph.grasp_base_chat_model.sys.exit")
-    @patch("core.models.langgraph.grasp_base_chat_model.logger")
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.time")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.sys.exit")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.logger")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_handle_server_down_spread_out(
         self, mock_client_factory, mock_logger, mock_exit, mock_time
     ):
@@ -586,10 +586,10 @@ class TestBaseChatModel(unittest.TestCase):
         # Verify that exit was NOT called since errors are spread out over time
         mock_exit.assert_not_called()
 
-    @patch("core.models.langgraph.grasp_base_chat_model.time")
-    @patch("core.models.langgraph.grasp_base_chat_model.sys.exit")
-    @patch("core.models.langgraph.grasp_base_chat_model.logger")
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.time")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.sys.exit")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.logger")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_handle_server_down_max_queue(
         self, mock_client_factory, mock_logger, mock_exit, mock_time
     ):
@@ -622,7 +622,7 @@ class TestBaseChatModel(unittest.TestCase):
         self.assertEqual(model._model_failed_response_timestamp[0], timestamps[3])
         self.assertEqual(model._model_failed_response_timestamp[-1], timestamps[-1])
 
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_is_retryable_error(self, mock_client_factory):
         """Test _is_retryable_error method with various error codes"""
         model = self.TestChatModel(self.base_config)
@@ -651,7 +651,7 @@ class TestBaseChatModel(unittest.TestCase):
         # Restore original retryable error codes
         constants.RETRYABLE_HTTP_ERROR = original_retryable_errors
 
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_is_retryable_error_edge_cases(self, mock_client_factory):
         """Test _is_retryable_error method with edge cases"""
         model = self.TestChatModel(self.base_config)
@@ -686,8 +686,8 @@ class TestBaseChatModel(unittest.TestCase):
         # Restore original retryable error codes
         constants.RETRYABLE_HTTP_ERROR = original_retryable_errors
 
-    @patch("core.models.langgraph.grasp_base_chat_model.logger")
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.logger")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_log_before_retry(self, mock_client_factory, mock_logger):
         """Test _log_before_retry method that logs before retrying a request"""
         model = self.TestChatModel(self.base_config)
@@ -723,12 +723,12 @@ class TestBaseChatModel(unittest.TestCase):
             self.assertIn("2.5", warning_message)
             self.assertIn("Retrying the request", warning_message)
 
-    @patch("core.models.langgraph.grasp_base_chat_model.AsyncRetrying")
-    @patch("core.models.langgraph.grasp_base_chat_model.wait_random_exponential")
-    @patch("core.models.langgraph.grasp_base_chat_model.stop_after_attempt")
-    @patch("core.models.langgraph.grasp_base_chat_model.retry_if_result")
-    @patch("core.models.langgraph.grasp_base_chat_model.logger")
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.AsyncRetrying")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.wait_random_exponential")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.stop_after_attempt")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.retry_if_result")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.logger")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_generate_response_with_retry_success(
         self,
         mock_client_factory,
@@ -785,12 +785,12 @@ class TestBaseChatModel(unittest.TestCase):
             before_sleep=model._log_before_retry,
         )
 
-    @patch("core.models.langgraph.grasp_base_chat_model.AsyncRetrying")
-    @patch("core.models.langgraph.grasp_base_chat_model.wait_random_exponential")
-    @patch("core.models.langgraph.grasp_base_chat_model.stop_after_attempt")
-    @patch("core.models.langgraph.grasp_base_chat_model.retry_if_result")
-    @patch("core.models.langgraph.grasp_base_chat_model.logger")
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.AsyncRetrying")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.wait_random_exponential")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.stop_after_attempt")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.retry_if_result")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.logger")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_generate_response_with_retry_failure(
         self,
         mock_client_factory,
@@ -841,11 +841,11 @@ class TestBaseChatModel(unittest.TestCase):
             f"Request failed after {model._retry_attempts} attempts", error_message
         )
 
-    @patch("core.models.langgraph.grasp_base_chat_model.Retrying")
-    @patch("core.models.langgraph.grasp_base_chat_model.wait_random_exponential")
-    @patch("core.models.langgraph.grasp_base_chat_model.stop_after_attempt")
-    @patch("core.models.langgraph.grasp_base_chat_model.retry_if_result")
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.Retrying")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.wait_random_exponential")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.stop_after_attempt")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.retry_if_result")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_sync_generate_response_with_retry_success(
         self,
         mock_client_factory,
@@ -897,12 +897,12 @@ class TestBaseChatModel(unittest.TestCase):
             before_sleep=model._log_before_retry,
         )
 
-    @patch("core.models.langgraph.grasp_base_chat_model.Retrying")
-    @patch("core.models.langgraph.grasp_base_chat_model.wait_random_exponential")
-    @patch("core.models.langgraph.grasp_base_chat_model.stop_after_attempt")
-    @patch("core.models.langgraph.grasp_base_chat_model.retry_if_result")
-    @patch("core.models.langgraph.grasp_base_chat_model.logger")
-    @patch("core.models.langgraph.grasp_base_chat_model.ClientFactory")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.Retrying")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.wait_random_exponential")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.stop_after_attempt")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.retry_if_result")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.logger")
+    @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_sync_generate_response_with_retry_failure(
         self,
         mock_client_factory,

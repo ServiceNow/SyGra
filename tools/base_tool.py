@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
-from core.dataset.dataset_config import DataSourceConfig, OutputConfig
+from grasp.core.dataset.dataset_config import DataSourceConfig, OutputConfig
 
 
 class BaseTool(ABC):

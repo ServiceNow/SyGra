@@ -16,8 +16,8 @@ research_agent:
     - user: |
         Please help me research {topic}. I'm particularly interested in {specific_aspect}.
   tools:
-    - tasks.agent_tool_simulation.tools.search_tool.search
-    - tasks.agent_tool_simulation.tools.calculator_tool.calculate
+    - grasp.tasks.agent_tool_simulation.tools.search_tool.search
+    - grasp.tasks.agent_tool_simulation.tools.calculator_tool.calculate
   inject_system_messages:
     2: "Remember to cite your sources when providing information."
     4: "If you're unsure about something, acknowledge the uncertainty rather than making up information."
@@ -38,9 +38,8 @@ research_agent:
 
 - `tools`: A list of tools that the agent can use. Tools are provided to the agent through the `create_react_agent` function from LangGraph.
   The following tools are currently supported:
-  - `tasks.agent_task.tools.func_name` Tool passed as function name.
-  - `tasks.agent_task.tools_from_module` All valid tools from a module.
-  - `tasks.agent_task.tools_from_class` All valid tools from a class.
+  - `grasp.tasks.examples.agent_tool_simulation.tools_from_module` All valid tools from a module.
+  - `grasp.tasks.examples.agent_tool_simulation.tools_from_class` All valid tools from a class.
   
   Make sure all the necessary tools are decorated with `@tool` from `langchain_core.tools`
 

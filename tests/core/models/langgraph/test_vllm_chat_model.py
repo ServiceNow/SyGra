@@ -1,12 +1,16 @@
+import sys
 import unittest
+from pathlib import Path
 from unittest.mock import patch, MagicMock, AsyncMock
 
 from langchain_core.messages import HumanMessage
 import openai
 
-from core.models.custom_models import ModelParams
-from core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
-from utils import constants
+sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent))
+
+from grasp.core.models.custom_models import ModelParams
+from grasp.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
+from grasp.utils import constants
 
 
 class TestVLLMChatModel(unittest.TestCase):
@@ -39,7 +43,7 @@ class TestVLLMChatModel(unittest.TestCase):
         # Restore original constants
         constants.ERROR_PREFIX = self.original_error_prefix
 
-    @patch("core.models.langgraph.vllm_chat_model.logger")
+    @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
     async def test_generate_response_success(self, mock_logger):
         """Test successful response generation with VLLM model."""
         model = CustomVLLMChatModel(self.base_config)
@@ -85,7 +89,7 @@ class TestVLLMChatModel(unittest.TestCase):
         # Verify no errors were logged
         mock_logger.error.assert_not_called()
 
-    @patch("core.models.langgraph.vllm_chat_model.logger")
+    @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
     async def test_generate_response_rate_limit_error(self, mock_logger):
         """Test handling of rate limit errors from VLLM server."""
         model = CustomVLLMChatModel(self.base_config)
@@ -133,7 +137,7 @@ class TestVLLMChatModel(unittest.TestCase):
         warn_message = mock_logger.warn.call_args[0][0]
         self.assertIn("VLLM api request exceeded rate limit", warn_message)
 
-    @patch("core.models.langgraph.vllm_chat_model.logger")
+    @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
     async def test_generate_response_generic_exception(self, mock_logger):
         """Test handling of generic exceptions with VLLM model."""
         model = CustomVLLMChatModel(self.base_config)
@@ -172,7 +176,7 @@ class TestVLLMChatModel(unittest.TestCase):
         error_message = mock_logger.error.call_args[0][0]
         self.assertIn("Http request failed", error_message)
 
-    @patch("core.models.langgraph.vllm_chat_model.logger")
+    @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
     async def test_generate_response_status_not_found(self, mock_logger):
         """Test handling of exceptions where status code cannot be extracted from VLLM response."""
         model = CustomVLLMChatModel(self.base_config)
@@ -209,8 +213,8 @@ class TestVLLMChatModel(unittest.TestCase):
         # Verify error was logged
         mock_logger.error.assert_called_once()
 
-    @patch("core.models.langgraph.vllm_chat_model.logger")
-    @patch("core.models.langgraph.vllm_chat_model.GraspBaseChatModel._set_client")
+    @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
+    @patch("grasp.core.models.langgraph.vllm_chat_model.GraspBaseChatModel._set_client")
     async def test_generate_response_with_client_factory(
         self, mock_set_client, mock_logger
     ):
@@ -258,7 +262,7 @@ class TestVLLMChatModel(unittest.TestCase):
             {"id": "test-id", "choices": [{"message": {"content": "Test response"}}]},
         )
 
-    @patch("core.models.langgraph.vllm_chat_model.logger")
+    @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
     async def test_generate_response_with_additional_kwargs(self, mock_logger):
         """Test synchronous response generation with additional kwargs passed."""
         model = CustomVLLMChatModel(self.base_config)
@@ -323,7 +327,7 @@ class TestVLLMChatModel(unittest.TestCase):
         # Verify no errors were logged
         mock_logger.error.assert_not_called()
 
-    @patch("core.models.langgraph.vllm_chat_model.logger")
+    @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
     def test_sync_generate_response_success(self, mock_logger):
         """Test successful synchronous response generation with VLLM model."""
         model = CustomVLLMChatModel(self.base_config)
@@ -372,7 +376,7 @@ class TestVLLMChatModel(unittest.TestCase):
         # Verify no errors were logged
         mock_logger.error.assert_not_called()
 
-    @patch("core.models.langgraph.vllm_chat_model.logger")
+    @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
     def test_sync_generate_response_rate_limit_error(self, mock_logger):
         """Test handling of rate limit errors in synchronous mode with VLLM model."""
         model = CustomVLLMChatModel(self.base_config)
@@ -423,7 +427,7 @@ class TestVLLMChatModel(unittest.TestCase):
         warn_message = mock_logger.warn.call_args[0][0]
         self.assertIn("VLLM api request exceeded rate limit", warn_message)
 
-    @patch("core.models.langgraph.vllm_chat_model.logger")
+    @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
     def test_sync_generate_response_generic_exception(self, mock_logger):
         """Test handling of generic exceptions in synchronous mode with VLLM model."""
         model = CustomVLLMChatModel(self.base_config)
@@ -465,7 +469,7 @@ class TestVLLMChatModel(unittest.TestCase):
         error_message = mock_logger.error.call_args[0][0]
         self.assertIn("Http request failed", error_message)
 
-    @patch("core.models.langgraph.vllm_chat_model.logger")
+    @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
     def test_sync_generate_response_status_not_found(self, mock_logger):
         """Test handling of exceptions where status code cannot be extracted."""
         model = CustomVLLMChatModel(self.base_config)
@@ -505,7 +509,7 @@ class TestVLLMChatModel(unittest.TestCase):
         # Verify error was logged
         mock_logger.error.assert_called_once()
 
-    @patch("core.models.langgraph.vllm_chat_model.logger")
+    @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
     def test_sync_generate_response_with_additional_kwargs(self, mock_logger):
         """Test synchronous response generation with additional kwargs passed."""
         model = CustomVLLMChatModel(self.base_config)
@@ -571,8 +575,8 @@ class TestVLLMChatModel(unittest.TestCase):
         # Verify no errors were logged
         mock_logger.error.assert_not_called()
 
-    @patch("core.models.langgraph.vllm_chat_model.logger")
-    @patch("core.models.langgraph.vllm_chat_model.GraspBaseChatModel._set_client")
+    @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
+    @patch("grasp.core.models.langgraph.vllm_chat_model.GraspBaseChatModel._set_client")
     def test_sync_generate_response_with_client_factory(
         self, mock_set_client, mock_logger
     ):

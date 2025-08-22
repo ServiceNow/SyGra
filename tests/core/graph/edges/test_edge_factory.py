@@ -8,13 +8,13 @@ sys.path.insert(
 
 from unittest.mock import Mock, patch, mock_open, MagicMock
 import pytest
-from core.dataset.dataset_config import OutputType
-from core.base_task_executor import BaseTaskExecutor
-from core.graph.graph_config import GraphConfig
-from core.graph.nodes.base_node import BaseNode, NodeType
-from core.graph.nodes.special_node import SpecialNode
-from core.graph.edges.edge_factory import EdgeFactory
-from core.graph.edges.edge_factory import BaseEdge
+from grasp.core.dataset.dataset_config import OutputType
+from grasp.core.base_task_executor import BaseTaskExecutor
+from grasp.core.graph.graph_config import GraphConfig
+from grasp.core.graph.nodes.base_node import BaseNode, NodeType
+from grasp.core.graph.nodes.special_node import SpecialNode
+from grasp.core.graph.edges.edge_factory import EdgeFactory
+from grasp.core.graph.edges.edge_factory import BaseEdge
 from unittest.mock import patch
 from types import SimpleNamespace
 from datasets import Dataset

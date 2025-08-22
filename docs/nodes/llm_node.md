@@ -17,7 +17,7 @@ paraphrase_question:
         USER QUERY: Provide a brief description of the problem the code is trying to solve and a brief explanation of the code. Do NOT generate any conversational text and respond ONLY with the problem the code is trying to solve and the explanation of the code.
 
         {code}
-  post_process: tasks.mbpp.code_explanation.task_executor.ParaphraseQuestionNodePostProcessor
+  post_process: grasp.tasks.mbpp.code_explanation.task_executor.ParaphraseQuestionNodePostProcessor
   output_keys:
     - rephrased_text
   model:

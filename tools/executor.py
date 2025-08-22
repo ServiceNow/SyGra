@@ -5,11 +5,11 @@ import time
 import shutil
 from typing import Any, Optional, Union
 
-from utils import constants
-from core.dataset.dataset_config import OutputType, DataSourceType
-from core.dataset.huggingface_handler import HuggingFaceHandler
-from core.dataset.file_handler import FileHandler
-from logger.logger_config import logger
+from grasp.utils import constants
+from grasp.core.dataset.dataset_config import OutputType, DataSourceType
+from grasp.core.dataset.huggingface_handler import HuggingFaceHandler
+from grasp.core.dataset.file_handler import FileHandler
+from grasp.logger.logger_config import logger
 from tools.registry import ToolRegistry
 from tools.config import Config, ToolConfig
 

@@ -1,6 +1,6 @@
 import os
 from argparse import Namespace
-from logger.logger_config import logger
+from grasp.logger.logger_config import logger
 
 
 class MetadataTaggingTask:
@@ -30,7 +30,7 @@ class MetadataTaggingTask:
         Returns:
             str: Path to the output file containing the results.
         """
-        from tasks.data_quality.metadata_tagging.task_executor import TaskExecutor
+        from grasp.tasks.data_quality.metadata_tagging.task_executor import TaskExecutor
 
         args = self._construct_args()
         TaskExecutor(args).execute()

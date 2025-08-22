@@ -4,9 +4,9 @@ import pandas as pd
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
 from huggingface_hub import hf_hub_download
-from logger.logger_config import logger
+from grasp.logger.logger_config import logger
 
-from utils import utils, constants, dotenv
+from grasp.utils import utils, constants, dotenv
 import fasttext
 
 dotenv.load_dotenv()

@@ -4,10 +4,10 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock, AsyncMock
 
 # Add the parent directory to sys.path to import the necessary modules
-sys.path.append(str(Path(__file__).parent.parent.parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent))
 
 import json
-from core.models.client.http_client import HttpClient, HttpClientConfig
+from grasp.core.models.client.http_client import HttpClient, HttpClientConfig
 
 
 class TestHttpClientConfig(unittest.TestCase):

@@ -4,10 +4,10 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 # Add the parent directory to sys.path to import the necessary modules
-sys.path.append(str(Path(__file__).parent.parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
-from core.models.model_factory import ModelFactory
-from core.models.custom_models import (
+from grasp.core.models.model_factory import ModelFactory
+from grasp.core.models.custom_models import (
     CustomVLLM,
     CustomMistralAPI,
     CustomTGI,
@@ -15,14 +15,14 @@ from core.models.custom_models import (
     CustomOpenAI,
     CustomOllama, CustomTriton
 )
-from core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
-from core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
+from grasp.core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
+from grasp.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
 
 
 class TestModelFactory(unittest.TestCase):
     """Unit tests for the ModelFactory class"""
 
-    @patch("utils.utils.load_model_config")
+    @patch("grasp.utils.utils.load_model_config")
     def test_update_model_config(self, mock_load_model_config):
         """Test _update_model_config static method"""
         # Mock the global model config
@@ -50,8 +50,8 @@ class TestModelFactory(unittest.TestCase):
             updated_config["url"], "http://test-url.com"
         )  # Should retain the global value
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.utils.validate_required_keys")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.utils.validate_required_keys")
     def test_update_model_config_with_nested_dict(
         self, mock_validate, mock_load_model_config
     ):
@@ -78,8 +78,8 @@ class TestModelFactory(unittest.TestCase):
         self.assertEqual(updated_config["additional_params"]["param1"], "new_value")
         self.assertEqual(updated_config["additional_params"]["param2"], "value2")
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.utils.validate_required_keys")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.utils.validate_required_keys")
     def test_create_model_vllm(self, mock_validate, mock_load_model_config):
         """Test create_model with VLLM model type"""
         mock_load_model_config.return_value = {
@@ -96,8 +96,8 @@ class TestModelFactory(unittest.TestCase):
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.utils.validate_required_keys")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.utils.validate_required_keys")
     def test_create_model_mistralai(self, mock_validate, mock_load_model_config):
         """Test create_model with MistralAI model type"""
         mock_load_model_config.return_value = {
@@ -114,8 +114,8 @@ class TestModelFactory(unittest.TestCase):
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.utils.validate_required_keys")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.utils.validate_required_keys")
     def test_create_model_tgi(self, mock_validate, mock_load_model_config):
         """Test create_model with TGI model type"""
         mock_load_model_config.return_value = {
@@ -132,8 +132,8 @@ class TestModelFactory(unittest.TestCase):
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.utils.validate_required_keys")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.utils.validate_required_keys")
     def test_create_model_azure(self, mock_validate, mock_load_model_config):
         """Test create_model with Azure model type"""
         mock_load_model_config.return_value = {
@@ -150,8 +150,8 @@ class TestModelFactory(unittest.TestCase):
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.utils.validate_required_keys")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.utils.validate_required_keys")
     def test_create_model_openai(self, mock_validate, mock_load_model_config):
         """Test create_model with OpenAI model type"""
         mock_load_model_config.return_value = {
@@ -170,7 +170,7 @@ class TestModelFactory(unittest.TestCase):
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
-    @patch('utils.utils.load_model_config')
+    @patch('grasp.utils.utils.load_model_config')
     def test_create_model_ollama(self, mock_load_model_config):
         """Test create_model with Ollama model type"""
         mock_load_model_config.return_value = {
@@ -185,7 +185,7 @@ class TestModelFactory(unittest.TestCase):
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
-    @patch('utils.utils.load_model_config')
+    @patch("grasp.utils.utils.load_model_config")
     def test_create_model_triton(self, mock_load_model_config):
         """Test create_model with Triton model type"""
         mock_load_model_config.return_value = {
@@ -203,8 +203,8 @@ class TestModelFactory(unittest.TestCase):
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.utils.validate_required_keys")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.utils.validate_required_keys")
     def test_create_model_langgraph_vllm(self, mock_validate, mock_load_model_config):
         """Test create_model with VLLM model type for langgraph backend"""
         mock_load_model_config.return_value = {
@@ -223,8 +223,8 @@ class TestModelFactory(unittest.TestCase):
             ModelFactory.create_model(model_config, "langgraph")
             mock_init.assert_called_once()
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.utils.validate_required_keys")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.utils.validate_required_keys")
     def test_create_model_langgraph_openai(self, mock_validate, mock_load_model_config):
         """Test create_model with OpenAI model type for langgraph backend"""
         mock_load_model_config.return_value = {
@@ -245,8 +245,8 @@ class TestModelFactory(unittest.TestCase):
             ModelFactory.create_model(model_config, "langgraph")
             mock_init.assert_called_once()
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.utils.validate_required_keys")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.utils.validate_required_keys")
     def test_create_model_unsupported_type(self, mock_validate, mock_load_model_config):
         """Test create_model with unsupported model type"""
         mock_load_model_config.return_value = {
@@ -262,8 +262,8 @@ class TestModelFactory(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             ModelFactory.create_model(model_config)
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.utils.validate_required_keys")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.utils.validate_required_keys")
     def test_create_model_unsupported_backend(
         self, mock_validate, mock_load_model_config
     ):
@@ -281,8 +281,8 @@ class TestModelFactory(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             ModelFactory.create_model(model_config, "unsupported_backend")
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.utils.validate_required_keys")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.utils.validate_required_keys")
     @patch("langchain_core.runnables.RunnableLambda")
     def test_get_model(self, mock_runnable, mock_validate, mock_load_model_config):
         """Test get_model method"""
@@ -309,8 +309,8 @@ class TestModelFactory(unittest.TestCase):
             # Verify RunnableLambda was called
             mock_runnable.assert_called()
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.utils.validate_required_keys")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.utils.validate_required_keys")
     def test_missing_required_keys(self, mock_validate, mock_load_model_config):
         """Test handling of missing required keys"""
         mock_load_model_config.return_value = {}
@@ -321,11 +321,11 @@ class TestModelFactory(unittest.TestCase):
         with self.assertRaises(ValueError):
             ModelFactory.create_model({"name": "test_model"})
 
-    @patch("utils.utils.load_model_config")
-    @patch("utils.constants.BACKEND", "langgraph")
+    @patch("grasp.utils.utils.load_model_config")
+    @patch("grasp.utils.constants.BACKEND", "langgraph")
     def test_agent_node_model_initialization(self, mock_load_model_config):
         """Test that AgentNode uses the correct model type based on backend"""
-        from core.graph.nodes.agent_node import AgentNode
+        from grasp.core.graph.nodes.agent_node import AgentNode
 
         # Mock model config loading
         mock_load_model_config.return_value = {
@@ -345,9 +345,9 @@ class TestModelFactory(unittest.TestCase):
             node_config = {"model": {"name": "test_model"}, "prompt": "test prompt"}
 
             # Patch any other required methods that might be called during initialization
-            with patch("utils.utils.get_graph_factory", return_value=MagicMock()):
-                with patch("utils.utils.get_func_from_str", return_value=MagicMock()):
-                    with patch("utils.utils.get_graph_properties", return_value={}):
+            with patch("grasp.utils.utils.get_graph_factory", return_value=MagicMock()):
+                with patch("grasp.utils.utils.get_func_from_str", return_value=MagicMock()):
+                    with patch("grasp.utils.utils.get_graph_properties", return_value={}):
                         node = AgentNode("test_node", node_config)
 
                         # Verify create_model was called with langgraph backend
