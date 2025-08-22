@@ -13,7 +13,7 @@ from core.models.custom_models import (
     CustomTGI,
     CustomAzure,
     CustomOpenAI,
-    CustomOllama
+    CustomOllama, CustomTriton
 )
 from core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
 from core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
@@ -182,6 +182,24 @@ class TestModelFactory(unittest.TestCase):
 
         with patch.object(CustomOllama, '__init__', return_value=None) as mock_init:
             model_config = {"name": "test_ollama", "model_type": "ollama"}
+            ModelFactory.create_model(model_config)
+            mock_init.assert_called_once()
+
+    @patch('utils.utils.load_model_config')
+    def test_create_model_triton(self, mock_load_model_config):
+        """Test create_model with Triton model type"""
+        mock_load_model_config.return_value = {
+            "test_triton": {
+                "model_type": "triton",
+                "url": "http://triton-test.com",
+                "auth_token": "test-token",
+                "payload_key": "default",
+                "parameters": {}
+            }
+        }
+
+        with patch.object(CustomTriton, '__init__', return_value=None) as mock_init:
+            model_config = {"name": "test_triton", "model_type": "triton"}
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 

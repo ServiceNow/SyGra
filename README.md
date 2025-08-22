@@ -42,7 +42,7 @@ LLM-based nodes require a model configured in `models.yaml` and runtime paramete
 
 You can also define connections (edges) between nodes, which control conditional or parallel data flow.
 
-As of now, LLM inference is supported for TGI, vLLM, Azure, OpenAI and Ollama compatible servers. Model deployment is external and configured in `models.yaml`.
+As of now, LLM inference is supported for TGI, vLLM, Azure, OpenAI, Ollama and Triton compatible servers. Model deployment is external and configured in `models.yaml`.
 ![GraspComponents](resources/images/grasp_usecase2framework.png)
 
 ---
@@ -77,8 +77,11 @@ As of now, LLM inference is supported for TGI, vLLM, Azure, OpenAI and Ollama co
 
 ![ModelConfig](resources/images/grasp_model_config.png)
 
-GraSP requires model configuration as the first step. It supports various clients like HTTP, MistralAzure, AsyncOpenAI, AsyncAzureOpenAI and Ollama to connect to inference servers (Text Generation Inference (TGI), vLLM server, Azure Cloud Service, Ollama etc.).
+GraSP requires model configuration as the first step. It supports various clients like HTTP, MistralAzure, AsyncOpenAI, AsyncAzureOpenAI, Ollama to connect to inference servers (Text Generation Inference (TGI), vLLM server, Azure Cloud Service, Ollama, Triton etc.).
 The `config` folder contains the main configuration file: `models.yaml`. You can add your model alias as a key and define its properties as shown below.
+
+> **Note:**  
+> For Triton, the pre-processing and post-processing configuration (`payload_json` & `response_key`) can be defined in the [`payload_cfg.json`](./config/payload_cfg.json) file. `payload_key` in the `payload_cfg.json` file should be added to the `models.yaml` file for the corresponding Triton model. If the payload key is not defined in `models.yaml`, the default payload format will be used.
 
 ### Environment Variables for Credentials and Chat Templates
 
@@ -118,7 +121,7 @@ GRASP_MIXTRAL_8X7B_CHAT_TEMPLATE={% for m in messages %} ... {% endfor %}
 
 | Key                          | Description                                                                                           |
 |------------------------------|-------------------------------------------------------------------------------------------------------|
-| `model_type`                 | Type of backend server (`tgi`, `vllm`, `openai`, `azure`, `mistralai`, `ollama`)                       |
+| `model_type`                 | Type of backend server (`tgi`, `vllm`, `openai`, `azure`, `mistralai`, `ollama`, `triton`)             |
 | `model_name`                 | Model name for your deployments (for Azure/OpenAI)                                                    |
 | `api_version`                | API version for Azure or OpenAI                                                                       |
 | `hf_chat_template_model_id`  | Hugging Face model ID                                                                                 |
@@ -184,6 +187,16 @@ qwen3_1.7b:
   parameters:
     max_tokens: 2048
     temperature: 0.8
+
+qwen3-32b-triton:
+  hf_chat_template_model_id: Qwen/Qwen3-32B
+  post_process: core.models.model_postprocessor.RemoveThinkData
+  model_type: triton
+  payload_key: default 
+  # Uses default payload format defined in config/payload_cfg.json.
+  # Add/Update the payload_cfg.json if you need to use a different payload format with new key.
+  parameters:
+    temperature: 0.7
 
 ```
 

@@ -1,6 +1,6 @@
 # mixtral API Errors
-import sys
 import os
+import sys
 
 MIXTRAL_API_RATE_LIMIT_ERROR = "rate limit"
 MIXTRAL_API_MODEL_OVERLOAD_ERROR = "model has no capacity"
@@ -83,3 +83,12 @@ LIST_SEPARATOR = "|"
 
 # TODO: Unused variable, to be removed later
 COMPLETION_ONLY_MODELS = []
+
+# constants for template based payload
+PAYLOAD_CFG_FILE = "config/payload_cfg.json"
+PAYLOAD_JSON = "payload_json"
+TEST_PAYLOAD = "test_payload"
+RESPONSE_KEY = "response_key"
+
+# constants for inference server types
+INFERENCE_SERVER_TRITON = "triton"
