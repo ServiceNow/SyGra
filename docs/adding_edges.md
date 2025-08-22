@@ -8,7 +8,7 @@ edges:
   - from: node1
     to: node2
   - from: node2
-    condition: tasks.example.task_executor.ShouldContinueCondition
+    condition: grasp.tasks.example.task_executor.ShouldContinueCondition
     path_map:
       result1: node3
       result2: node4
@@ -38,7 +38,7 @@ In conditional edges, you can direct flow to the END node to terminate processin
 ```yaml
 edges:
   - from: some_node
-    condition: tasks.example.ShouldContinueCondition
+    condition: grasp.tasks.example.ShouldContinueCondition
     path_map:
       END: END                # Terminates processing when condition returns "END"
       continue: next_node     # Continues to next_node when condition returns "continue"
@@ -79,11 +79,11 @@ class ShouldContinueCondition(EdgeCondition):
         return "generate_answer"
 ```
 ```yaml
-condition: tasks.example.ShouldContinueCondition
+condition: grasp.tasks.example.ShouldContinueCondition
 ```
 The `condition` class should accept the current state of the graph(`GraspState`) and return a value that matches one of the keys in the `path_map` (explained below).
 
-Alternatively, it also supports a direct method like `tasks.example.should_continue` for backward compatibility.
+Alternatively, it also supports a direct method like `grasp.tasks.example.should_continue` for backward compatibility.
 #### `path_map` (optional)
 
 The `path_map` property is used in conjunction with the `condition` property. It defines a mapping between the possible results of the condition function and the corresponding target nodes.
@@ -126,7 +126,7 @@ edges:
   - from: node2
     to: node3
   - from: node3
-    condition: tasks.example.MyCondition
+    condition: grasp.tasks.example.MyCondition
     path_map:
       success: node4
       failure: node5

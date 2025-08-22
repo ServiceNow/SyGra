@@ -1,0 +1,74 @@
+data_config:
+  source:
+    type: "hf"
+    repo_id: "glaiveai/glaive-code-assistant-v2"
+    config_name: "default"
+    split: "train"
+
+    transformations:
+      - transform: grasp.processors.data_transform.RenameFieldsTransform
+        params:
+          mapping:
+            task_id: id
+          overwrite: false
+
+graph_config:
+  nodes:
+    generate_answer:
+      node_type: llm
+      prompt:
+        - system: |
+            You are an assistant tasked with solving coding problems. 
+            If the user provides critique, respond with a revised answer of your previous attempts. Do NOT generate any conversational text or apologize if your previous answer was incorrect. Respond only with the answer for the question.
+        - user: |
+            {question}
+      model:
+        name: gpt-4o
+        parameters:
+          temperature: 0.1
+    critique_answer:
+      pre_process: grasp.tasks.examples.glaive_code_assistant.task_executor.CritiqueAnsNodePreProcessor
+      node_type: llm
+      prompt:
+        - system: |              
+            You are a teacher grading a solution to a coding problem. Generate critique and recommendations for the user's submission by using the reference solution as a guide. It is not mandatory for the user solution to match exactly with the reference solution as long as it is logical and leads to the right solution.
+            If the answer, including all the steps, is correct, respond with 'NO MORE FEEDBACK'. Respond with 'NO MORE FEEDBACK' only after the user has corrected all the steps. Address the user in second person using 'you' and 'your'.
+            
+            QUESTION: {question}
+            REFERENCE SOLUTION: {answer}
+      model:
+        name: gpt-4o
+        parameters:
+          temperature: 0.1
+      post_process: grasp.tasks.examples.glaive_code_assistant.task_executor.CritiqueAnsNodePostProcessor
+
+  edges:
+    - from: START
+      to: generate_answer
+    - from: generate_answer
+      to: critique_answer
+    - from: critique_answer
+      condition: grasp.tasks.examples.glaive_code_assistant.task_executor.ShouldContinueCondition
+      path_map:
+        END: END
+        generate_answer: generate_answer
+
+output_config:
+  generator: grasp.tasks.examples.glaive_code_assistant.task_executor.CodeGenOutputGenerator
+
+  output_map:
+    id:
+      from: "id"
+    conversation:
+      from: "messages"
+      transform: "build_conversation"
+    taxonomy:
+      value:
+        - category: "Coding"
+          subcategory: ""
+    annotation_type:
+      value: [ "mistral-large" ]
+    language:
+      value: "en"
+    tags:
+      value: ["glaiveai/glaive-code-assistant-v2", "reannotate", "self-critique"]

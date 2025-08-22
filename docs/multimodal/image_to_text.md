@@ -160,7 +160,7 @@ data_config:
     split: "train"
     streaming: true
     transformations:
-      - transform: processors.data_transform.AddNewFieldTransform
+      - transform: grasp.processors.data_transform.AddNewFieldTransform
         params:
           mapping:
             graph_judgement: ""
@@ -170,7 +170,7 @@ graph_config:
   nodes:
     judge_synthetic_graph_quality:
       node_type: llm
-      post_process: tasks.image_description.task_executor.GraphJudgementPostProcessor
+      post_process: grasp.tasks.image_description.task_executor.GraphJudgementPostProcessor
       prompt:
         - user:
             - type: text

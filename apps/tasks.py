@@ -14,7 +14,7 @@ from streamlit_flow.layouts import (
     RandomLayout,
 )
 
-TASKS_DIR = Path("tasks")
+TASKS_DIR = Path("grasp/tasks")
 
 
 class GraphConfigVisualizer:

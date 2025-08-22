@@ -61,7 +61,7 @@ data_config:
 
     # Optional transformations to apply to the input data
     transformations:
-      - transform: processors.data_transform.RenameFieldsTransform  # Path to transformation class
+      - transform: grasp.processors.data_transform.RenameFieldsTransform  # Path to transformation class
         params:                                                     # Parameters for the transformation
           mapping:
             task_id: id                     # Rename 'task_id' field to 'id'
@@ -122,7 +122,7 @@ Transformations allow you to modify the input data before processing.
 It renames the fields in the dataset, so the prompt variables used are meaningful and reusable.
 The Below example shows how the `page` is renamed to `id`, `llm_extract` is renamed to `text` and `type` is renamed to `text_format`.
 ```yaml
-      - transform: processors.data_transform.RenameFieldsTransform
+      - transform: grasp.processors.data_transform.RenameFieldsTransform
         params:
           mapping:
             page: id
@@ -136,7 +136,7 @@ For example record `11` and `12` will be combined to form `page`=`11-12`, in thi
 And `type`, `model`, `metadata` is just picking data from first record. `$1` denotes first record, `$2` denotes second record and so on. 
 Once `11` and `12` is combined to form `11-12`, it shift by 1 and combines `12` with `13` to form `12-13`.
 ```yaml
-      - transform: processors.data_transform.CombineRecords
+      - transform: grasp.processors.data_transform.CombineRecords
         params:
           skip:
             from_beginning: 10
@@ -155,7 +155,7 @@ Once `11` and `12` is combined to form `11-12`, it shift by 1 and combines `12` 
 When we want to skip records for a dataset, we can use this transform.
 Below example shows how to skip first 10 and last 10 records using count.
 ```yaml
-      - transform: processors.data_transform.SkipRecords
+      - transform: grasp.processors.data_transform.SkipRecords
         params:
           skip_type: "count"
           count:
@@ -164,7 +164,7 @@ Below example shows how to skip first 10 and last 10 records using count.
 ```
 Below example shows how to skip first 10 and last 10 records using range.
 ```yaml
-      - transform: processors.data_transform.SkipRecords
+      - transform: grasp.processors.data_transform.SkipRecords
         params:
           skip_type: "range"
           range: "[:10],[-10:]"
@@ -282,7 +282,7 @@ Conditional edges define different paths based on a condition. Conditions can di
 
 ```yaml
 - from: critique_answer
-  condition: tasks.mbpp.code_generation_with_graph_builder.task_executor.ShouldContinueCondition
+  condition: grasp.tasks.mbpp.code_generation_with_graph_builder.task_executor.ShouldContinueCondition
   path_map:
     END: END                          # Path to END when condition returns "END" (terminates processing)
     generate_answer: generate_answer  # Path to generate_answer when condition returns "generate_answer"
@@ -329,7 +329,7 @@ This approach uses declarative configuration to map state variables to output fi
 ```yaml
 output_config:
   # Path to a class that inherits from BaseOutputGenerator
-  generator: tasks.mbpp.code_generation_with_graph_builder.task_executor.CodeGenOutputGenerator
+  generator: grasp.tasks.mbpp.code_generation_with_graph_builder.task_executor.CodeGenOutputGenerator
 
   # Map of output fields and how to populate them
   output_map:
@@ -532,7 +532,7 @@ data_config:
     split: ["train", "validation", "prompt"]
 
     transformations:
-      - transform: processors.data_transform.RenameFieldsTransform
+      - transform: grasp.processors.data_transform.RenameFieldsTransform
         params:
           mapping:
             task_id: id
@@ -577,7 +577,7 @@ graph_config:
           temperature: 0.1
         
     critique_answer:  
-      pre_process: tasks.mbpp.code_generation_with_graph_builder.task_executor.CritiqueAnsNodePreProcessor
+      pre_process: grasp.tasks.mbpp.code_generation_with_graph_builder.task_executor.CritiqueAnsNodePreProcessor
       node_type: llm 
       output_role: user 
       prompt:        
@@ -601,13 +601,13 @@ graph_config:
     - from: generate_answer
       to: critique_answer
     - from: critique_answer
-      condition: tasks.mbpp.code_generation_with_graph_builder.task_executor.ShouldContinueCondition
+      condition: grasp.tasks.mbpp.code_generation_with_graph_builder.task_executor.ShouldContinueCondition
       path_map:
         END: END
         generate_answer: generate_answer
 
 output_config:
-  generator: tasks.mbpp.code_generation_with_graph_builder.task_executor.CodeGenOutputGenerator
+  generator: grasp.tasks.mbpp.code_generation_with_graph_builder.task_executor.CodeGenOutputGenerator
 
   output_map:
     id:
@@ -704,7 +704,7 @@ class CustomUserSchema(BaseModel):
 
 ```yaml
 schema_config:
-  schema: validators.custom_schemas.CustomUserSchema
+  schema: grasp.validators.custom_schemas.CustomUserSchema
 ```
 #### Sample YAML configuration to define schema in YAML: 
 

@@ -4,7 +4,7 @@ from typing import Any, Optional
 
 from tools.base_tool import BaseTool
 from tools.registry import register_tool
-from utils import utils
+from grasp.utils import utils
 
 
 @register_tool

@@ -1,11 +1,15 @@
+import sys
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 import os
 
-from utils import utils
-from utils import constants
+from grasp.utils import utils
+from grasp.utils import constants
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 
 class TestToolUtils(unittest.TestCase):
@@ -66,7 +70,7 @@ class TestToolUtils(unittest.TestCase):
         result = utils.extract_pattern(test_string, pattern)
         assert result == ["123", "456"]
 
-    @patch("core.dataset.huggingface_handler.HuggingFaceHandler.read")
+    @patch("grasp.core.dataset.huggingface_handler.HuggingFaceHandler.read")
     def test_get_dataset(self, hf_read):
         dataset_mocked = [
             {"code": "my python code"},
@@ -89,7 +93,7 @@ class TestToolUtils(unittest.TestCase):
         obj = utils.get_dataset(data_src)
         assert isinstance(obj, list) and len(obj) > 0
 
-    @patch("utils.utils.get_dataset")
+    @patch("grasp.utils.utils.get_dataset")
     def test_fetch_next_record(self, mock_get_dataset):
         data_src = {
             "type": "hf",
@@ -114,7 +118,7 @@ class TestToolUtils(unittest.TestCase):
         assert "python" in rec1 and "java" in rec2
 
     @patch.dict(os.environ, {}, clear=True)
-    @patch("utils.utils.load_yaml_file")
+    @patch("grasp.utils.utils.load_yaml_file")
     def test_load_model_config_url_list(self, mock_load_yaml):
         """Test that pipe-separated URLs in environment variables are correctly parsed into lists."""
         # Mock the base configs loaded from YAML

@@ -4,9 +4,9 @@ import torch
 from tqdm import tqdm
 from typing import List, Dict, Any
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
-from logger.logger_config import logger
+from grasp.logger.logger_config import logger
 
-from utils import utils, constants, dotenv
+from grasp.utils import utils, constants, dotenv
 
 dotenv.load_dotenv()
 

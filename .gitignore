@@ -8,3 +8,4 @@ logs/*
 .vscode/
 .env
 poetry.lock
+**/grasp.egg-info/*

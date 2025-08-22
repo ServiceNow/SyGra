@@ -1,6 +1,0 @@
-default_transformations:
-  - transform: processors.data_transform.CreateImageUrlTransform
-  - transform: processors.data_transform.CreateAudioUrlTransform
-model_config:
-  ssl_verify: true
-  ssl_cert: None

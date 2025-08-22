@@ -3,9 +3,9 @@ from typing import Optional, Dict, Any
 
 from tools.base_tool import BaseTool
 from tools.registry import register_tool
-from utils import utils
-from logger.logger_config import logger
-from data_mapper.mapper import DataMapper  # Assuming you've modularized it to mapper.py
+from grasp.utils import utils
+from grasp.logger.logger_config import logger
+from grasp.data_mapper.mapper import DataMapper  # Assuming you've modularized it to mapper.py
 
 
 @register_tool

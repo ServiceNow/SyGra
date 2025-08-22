@@ -20,8 +20,8 @@ lambda_function_node:
 
 - **`lambda`**:  
   Fully qualified path to the function or class to execute.  
-  - Can be a direct function (e.g., `tasks.my_task.task_executor.lambda_function`)
-  - Or a class that implements the `LambdaFunction` interface (e.g., `tasks.my_task.task_executor.TestLambda`)
+  - Can be a direct function (e.g., `grasp.tasks.my_task.task_executor.lambda_function`)
+  - Or a class that implements the `LambdaFunction` interface (e.g., `grasp.tasks.my_task.task_executor.TestLambda`)
 
 - **`output_keys`**:  
   List of keys from the return dictionary or state that will be made available to subsequent nodes.
@@ -34,9 +34,9 @@ lambda_function_node:
 You can implement a lambda either as a class or a function:
 
 ```python
-# Example in yaml: lambda: tasks.my_task.task_executor.TestLambda
-from core.graph.functions.lambda_function import LambdaFunction
-from core.graph.grasp_state import GraspState
+# Example in yaml: lambda: grasp.tasks.my_task.task_executor.TestLambda
+from grasp.core.graph.functions.lambda_function import LambdaFunction
+from grasp.core.graph.grasp_state import GraspState
 
 class TestLambda(LambdaFunction):
     def apply(lambda_node_dict: dict, state: GraspState):

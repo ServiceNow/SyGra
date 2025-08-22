@@ -8,7 +8,7 @@ import tempfile
 import pytest
 from unittest.mock import patch, mock_open
 
-from core.resumable_execution import (
+from grasp.core.resumable_execution import (
     ResumableExecutionManager,
     StreamingPositionTracker,
 )

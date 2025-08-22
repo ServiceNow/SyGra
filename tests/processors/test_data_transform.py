@@ -1,5 +1,8 @@
 import io
+import sys
 import tempfile
+from pathlib import Path
+
 import pytest
 import soundfile as sf
 from unittest.mock import patch
@@ -10,9 +13,10 @@ import base64
 import os
 from PIL import Image
 
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from processors.data_transform import SkipRecords
-from processors.data_transform import CreateImageUrlTransform, CreateAudioUrlTransform
+from grasp.processors.data_transform import SkipRecords
+from grasp.processors.data_transform import CreateImageUrlTransform, CreateAudioUrlTransform
 
 # -----------------------------
 # Fixtures
@@ -85,8 +89,8 @@ def test_skip_records_count():
 # --- Real File Test ---
 
 
-@patch("utils.image_utils.get_image_fields", return_value=["img"])
-@patch("utils.image_utils.is_data_url", return_value=False)
+@patch("grasp.utils.image_utils.get_image_fields", return_value=["img"])
+@patch("grasp.utils.image_utils.is_data_url", return_value=False)
 def test_image_transform_with_generated_chart(
     mock_is_data_url, mock_get_fields, image_transform
 ):
@@ -124,8 +128,8 @@ def test_image_transform_with_generated_chart(
 # --- Dict with Bytes ---
 
 
-@patch("utils.image_utils.get_image_fields", return_value=["img"])
-@patch("utils.image_utils.is_data_url", return_value=False)
+@patch("grasp.utils.image_utils.get_image_fields", return_value=["img"])
+@patch("grasp.utils.image_utils.is_data_url", return_value=False)
 def test_image_transform_with_dict_bytes(
     mock_is_data_url, mock_get_fields, image_transform
 ):
@@ -140,8 +144,8 @@ def test_image_transform_with_dict_bytes(
 # --- Raw Bytes ---
 
 
-@patch("utils.image_utils.get_image_fields", return_value=["img"])
-@patch("utils.image_utils.is_data_url", return_value=False)
+@patch("grasp.utils.image_utils.get_image_fields", return_value=["img"])
+@patch("grasp.utils.image_utils.is_data_url", return_value=False)
 def test_image_transform_with_raw_bytes(
     mock_is_data_url, mock_get_fields, image_transform
 ):
@@ -156,9 +160,9 @@ def test_image_transform_with_raw_bytes(
 # --- List Input (Valid and Invalid Items) ---
 
 
-@patch("utils.image_utils.get_image_fields", return_value=["img"])
-@patch("utils.image_utils.is_data_url", return_value=False)
-@patch("utils.image_utils.load_image", side_effect=[None, None])
+@patch("grasp.utils.image_utils.get_image_fields", return_value=["img"])
+@patch("grasp.utils.image_utils.is_data_url", return_value=False)
+@patch("grasp.utils.image_utils.load_image", side_effect=[None, None])
 def test_image_transform_with_invalid_list_items(
     mock_load_image, mock_is_data_url, mock_get_fields, image_transform
 ):
@@ -204,10 +208,10 @@ from unittest.mock import patch
 import os
 
 
-@patch("utils.image_utils.get_image_fields", return_value=["img"])
-@patch("utils.image_utils.is_data_url", side_effect=[True, False])
-@patch("utils.image_utils.load_image")
-@patch("utils.image_utils.get_image_url", return_value="data:image/png;base64,abc")
+@patch("grasp.utils.image_utils.get_image_fields", return_value=["img"])
+@patch("grasp.utils.image_utils.is_data_url", side_effect=[True, False])
+@patch("grasp.utils.image_utils.load_image")
+@patch("grasp.utils.image_utils.get_image_url", return_value="data:image/png;base64,abc")
 @patch("os.path.exists", return_value=True)
 def test_image_transform_preserves_base64_items(
     mock_exists,
@@ -227,7 +231,7 @@ def test_image_transform_preserves_base64_items(
 # --- Empty or None Input ---
 
 
-@patch("utils.image_utils.get_image_fields", return_value=["img"])
+@patch("grasp.utils.image_utils.get_image_fields", return_value=["img"])
 def test_image_transform_with_empty_string(mock_get_fields, image_transform):
     data = [{"img": ""}, {"img": None}]
     result = image_transform.transform(data, {})
@@ -242,12 +246,12 @@ def test_image_transform_with_empty_string(mock_get_fields, image_transform):
 # --- Real File Test ---
 
 
-@patch("utils.audio_utils.get_audio_fields", return_value=["audio"])
-@patch("utils.audio_utils.is_data_url", return_value=False)
+@patch("grasp.utils.audio_utils.get_audio_fields", return_value=["audio"])
+@patch("grasp.utils.audio_utils.is_data_url", return_value=False)
 @patch(
-    "utils.audio_utils.get_audio_url", return_value="data:audio/wav;base64,dummybase64"
+    "grasp.utils.audio_utils.get_audio_url", return_value="data:audio/wav;base64,dummybase64"
 )
-@patch("utils.audio_utils.load_audio")
+@patch("grasp.utils.audio_utils.load_audio")
 def test_audio_transform_with_temp_audio_file(
     mock_load_audio,
     mock_get_audio_url,
@@ -283,8 +287,8 @@ def test_audio_transform_with_temp_audio_file(
 # --- HuggingFace Dict ---
 
 
-@patch("utils.audio_utils.get_audio_fields", return_value=["audio"])
-@patch("utils.audio_utils.is_data_url", return_value=False)
+@patch("grasp.utils.audio_utils.get_audio_fields", return_value=["audio"])
+@patch("grasp.utils.audio_utils.is_data_url", return_value=False)
 def test_audio_transform_with_hf_dict(
     mock_is_data_url, mock_get_fields, audio_transform
 ):
@@ -297,12 +301,12 @@ def test_audio_transform_with_hf_dict(
 # --- Field Remapping ---
 
 
-@patch("utils.audio_utils.get_audio_fields", return_value=["audio"])
-@patch("utils.audio_utils.is_data_url", return_value=False)
+@patch("grasp.utils.audio_utils.get_audio_fields", return_value=["audio"])
+@patch("grasp.utils.audio_utils.is_data_url", return_value=False)
 @patch(
-    "utils.audio_utils.get_audio_url", return_value="data:audio/wav;base64,dummybase64"
+    "grasp.utils.audio_utils.get_audio_url", return_value="data:audio/wav;base64,dummybase64"
 )
-@patch("utils.audio_utils.load_audio")
+@patch("grasp.utils.audio_utils.load_audio")
 def test_audio_transform_with_output_field_map(
     mock_load_audio,
     mock_get_audio_url,

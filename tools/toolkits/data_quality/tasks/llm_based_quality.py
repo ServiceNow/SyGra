@@ -1,6 +1,6 @@
 import os
 from argparse import Namespace
-from utils import utils
+from grasp.utils import utils
 
 
 class LLMBasedQualityTask:
@@ -79,7 +79,7 @@ class LLMBasedQualityTask:
                 "file_path": self.input_file,
                 "transformations": [
                     {
-                        "transform": "processors.data_transform.AddNewFieldTransform",
+                        "transform": "grasp.processors.data_transform.AddNewFieldTransform",
                         "params": {
                             "mapping": {
                                 "category": self.task_params.get("category", "Generic")

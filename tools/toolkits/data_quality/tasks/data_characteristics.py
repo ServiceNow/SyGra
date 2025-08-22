@@ -2,10 +2,10 @@ import os
 import subprocess
 
 from transformers import AutoTokenizer, PreTrainedTokenizer
-from utils.utils import save_json_file
-from utils import utils, constants
-from utils.decorators import future_deprecation
-from logger.logger_config import logger
+from grasp.utils.utils import save_json_file
+from grasp.utils import utils, constants
+from grasp.utils.decorators import future_deprecation
+from grasp.logger.logger_config import logger
 
 
 class DataCharacteristicsTask:
