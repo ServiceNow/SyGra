@@ -79,7 +79,7 @@ class LLMBasedQualityTask:
                 "file_path": self.input_file,
                 "transformations": [
                     {
-                        "transform": "grasp.processors.data_transform.AddNewFieldTransform",
+                        "transform": "processors.data_transform.AddNewFieldTransform",
                         "params": {
                             "mapping": {
                                 "category": self.task_params.get("category", "Generic")

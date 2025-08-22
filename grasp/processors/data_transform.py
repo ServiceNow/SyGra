@@ -60,7 +60,7 @@ class SkipRecords(DataTransform):
     """
     Skip records based on variables
     Example:
-    - transform: grasp.processors.data_transform.SkipRecords
+    - transform: processors.data_transform.SkipRecords
         params:
           skip_type: "range"/"count" (default:"range")
           range: "[:10],[-10:]"
@@ -143,7 +143,7 @@ class CombineRecords(DataTransform):
     """
     Combine records based on variables
     Example:
-    - transform: grasp.processors.data_transform.CombineRecords
+    - transform: processors.data_transform.CombineRecords
         params:
           skip:                        (Skip 10 records from front and end of dataset)
             from_beginning: 10

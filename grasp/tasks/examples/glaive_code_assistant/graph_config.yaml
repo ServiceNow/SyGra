@@ -6,7 +6,7 @@ data_config:
     split: "train"
 
     transformations:
-      - transform: grasp.processors.data_transform.RenameFieldsTransform
+      - transform: processors.data_transform.RenameFieldsTransform
         params:
           mapping:
             task_id: id
@@ -27,7 +27,7 @@ graph_config:
         parameters:
           temperature: 0.1
     critique_answer:
-      pre_process: grasp.tasks.examples.glaive_code_assistant.task_executor.CritiqueAnsNodePreProcessor
+      pre_process: tasks.examples.glaive_code_assistant.task_executor.CritiqueAnsNodePreProcessor
       node_type: llm
       prompt:
         - system: |              
@@ -40,7 +40,7 @@ graph_config:
         name: gpt-4o
         parameters:
           temperature: 0.1
-      post_process: grasp.tasks.examples.glaive_code_assistant.task_executor.CritiqueAnsNodePostProcessor
+      post_process: tasks.examples.glaive_code_assistant.task_executor.CritiqueAnsNodePostProcessor
 
   edges:
     - from: START
@@ -48,13 +48,13 @@ graph_config:
     - from: generate_answer
       to: critique_answer
     - from: critique_answer
-      condition: grasp.tasks.examples.glaive_code_assistant.task_executor.ShouldContinueCondition
+      condition: tasks.examples.glaive_code_assistant.task_executor.ShouldContinueCondition
       path_map:
         END: END
         generate_answer: generate_answer
 
 output_config:
-  generator: grasp.tasks.examples.glaive_code_assistant.task_executor.CodeGenOutputGenerator
+  generator: tasks.examples.glaive_code_assistant.task_executor.CodeGenOutputGenerator
 
   output_map:
     id:

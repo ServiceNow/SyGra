@@ -30,7 +30,7 @@ class MetadataTaggingTask:
         Returns:
             str: Path to the output file containing the results.
         """
-        from grasp.tasks.data_quality.metadata_tagging.task_executor import TaskExecutor
+        from tasks.data_quality.metadata_tagging.task_executor import TaskExecutor
 
         args = self._construct_args()
         TaskExecutor(args).execute()

@@ -24,7 +24,7 @@ generate_samples:
       parameters:
         temperature: 0.7
         max_tokens: 2000
-  multi_llm_post_process: grasp.tasks.dpo_samples.task_executor.post_process_responses  # Optional
+  multi_llm_post_process: tasks.dpo_samples.task_executor.post_process_responses  # Optional
 ```
 
 ### Configuration Fields
