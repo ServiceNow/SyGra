@@ -2,6 +2,9 @@
   <img width=30% src="resources/images/grasp_logo.png">
 
   <h1>GRASP: GRAph-oriented Synthetic data generation Pipeline</h1>
+
+<a href="http://arxiv.org/abs/2508.15432">
+    <img src="https://img.shields.io/badge/arXiv-2508.15432-blue.svg" alt="arXiv"></a>
 </div>
 
 
