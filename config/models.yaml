@@ -41,6 +41,16 @@ gpt-4o:
     max_tokens: 500
     temperature: 1.0
 
+gpt4o-mini:
+  model_type: openai
+  model: gpt-4o-mini
+  # URL and api_key should be defined at .env file as GRASP_GPT4O-MINI_URL and GRASP_GPT4O-MINI_TOKEN
+  backend: langgraph
+  api_version: 2024-08-01-preview
+  parameters:
+    max_tokens: 5000
+    temperature: 0.0001
+
 #QWEN VL 72b deployed in vllm
 qwen_vl_72b:
   # URL and api_key should be defined at .env file as GRASP_QWEN_VL_72B_URL and GRASP_QWEN_VL_72B_TOKEN
