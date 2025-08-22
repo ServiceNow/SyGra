@@ -692,7 +692,7 @@ class DefaultTaskExecutor(BaseTaskExecutor):
     """
     A universal executor for tasks that only need the YAML config
     and do NOT define their own TaskExecutor class.
-    If the user doesn't define tasks.<task_name>.task_executor.TaskExecutor,
+    If the user doesn't define grasp.tasks.<task_name>.task_executor.TaskExecutor,
     we fall back to this class by default.
     """
 

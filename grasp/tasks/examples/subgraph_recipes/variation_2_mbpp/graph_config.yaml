@@ -28,10 +28,10 @@ graph_config:
           temperature: 1.0
     generate_answer:  
       node_type: subgraph
-      subgraph: tasks.examples.subgraph_recipes.subgraphs.generate_answer
+      subgraph: grasp.tasks.examples.subgraph_recipes.subgraphs.generate_answer
         
     critique_answer:
-      pre_process: tasks.examples.subgraph_recipes.variation_2_mbpp.task_executor.critique_answer_node_pre_process
+      pre_process: grasp.tasks.examples.subgraph_recipes.variation_2_mbpp.task_executor.critique_answer_node_pre_process
       node_type: llm 
       output_role: user 
       prompt:        
@@ -59,7 +59,7 @@ graph_config:
     - from: generate_answer
       to: critique_answer
     - from: critique_answer
-      condition: tasks.examples.subgraph_recipes.variation_2_mbpp.task_executor.should_continue
+      condition: grasp.tasks.examples.subgraph_recipes.variation_2_mbpp.task_executor.should_continue
       path_map:
         END: END
         generate_answer: generate_answer

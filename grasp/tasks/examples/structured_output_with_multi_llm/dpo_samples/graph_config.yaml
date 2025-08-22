@@ -3,11 +3,11 @@ data_config:
     type: "disk"
     file_path: "grasp/tasks/examples/structured_output_with_multi_llm/dpo_samples/dpo_conversation.json"
     transformations:
-      - transform: tasks.examples.structured_output_with_multi_llm.dpo_samples.data_transform.ExtractUserPromptTransform
+      - transform: grasp.tasks.examples.structured_output_with_multi_llm.dpo_samples.data_transform.ExtractUserPromptTransform
         params: {}
-      - transform: tasks.examples.structured_output_with_multi_llm.dpo_samples.data_transform.ExtractResponseScaleTransform
+      - transform: grasp.tasks.examples.structured_output_with_multi_llm.dpo_samples.data_transform.ExtractResponseScaleTransform
         params: {}
-      - transform: tasks.examples.structured_output_with_multi_llm.dpo_samples.data_transform.InitializeStateVariablesTransform
+      - transform: grasp.tasks.examples.structured_output_with_multi_llm.dpo_samples.data_transform.InitializeStateVariablesTransform
         params: {}
 
 
@@ -15,7 +15,7 @@ graph_config:
   nodes:
     generate_samples:
       node_type: multi_llm
-      pre_process: tasks.examples.structured_output_with_multi_llm.dpo_samples.task_executor.GenerateSamplesPreProcessor
+      pre_process: grasp.tasks.examples.structured_output_with_multi_llm.dpo_samples.task_executor.GenerateSamplesPreProcessor
       output_keys: model_responses
       prompt:
         - user: "{user_prompt}"
@@ -59,8 +59,8 @@ graph_config:
 
     rate_samples:
       node_type: llm
-      pre_process: tasks.examples.structured_output_with_multi_llm.dpo_samples.task_executor.RateSamplesPreProcessor
-      post_process: tasks.examples.structured_output_with_multi_llm.dpo_samples.task_executor.RateSamplesPostProcessor
+      pre_process: grasp.tasks.examples.structured_output_with_multi_llm.dpo_samples.task_executor.RateSamplesPreProcessor
+      post_process: grasp.tasks.examples.structured_output_with_multi_llm.dpo_samples.task_executor.RateSamplesPostProcessor
       prompt:
         - system: You are a helpful assistant
         - user: |
@@ -84,13 +84,13 @@ graph_config:
     - from: generate_samples
       to: rate_samples
     - from: rate_samples
-      condition: tasks.examples.structured_output_with_multi_llm.dpo_samples.task_executor.ShouldContinueCondition
+      condition: grasp.tasks.examples.structured_output_with_multi_llm.dpo_samples.task_executor.ShouldContinueCondition
       path_map:
         END: END
         generate_samples: generate_samples
 
 output_config:
-  generator: tasks.examples.structured_output_with_multi_llm.dpo_samples.task_executor.DpoSamplesOutputGenerator
+  generator: grasp.tasks.examples.structured_output_with_multi_llm.dpo_samples.task_executor.DpoSamplesOutputGenerator
 
   output_map:
     id:
