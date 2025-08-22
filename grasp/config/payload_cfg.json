@@ -1,0 +1,41 @@
+{
+  "triton": {
+    "default": {
+      "payload_json": {
+        "id": "42",
+        "inputs": [
+          {
+            "data": "<replace this : Array of json>",
+            "datatype": "BYTES",
+            "name": "request",
+            "shape": [
+              1,
+              1
+            ]
+          },
+          {
+            "data": "<replace this: Array of options json>",
+            "datatype": "BYTES",
+            "name": "options",
+            "shape": [
+              1,
+              1
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "name": "response"
+          },
+          {
+            "name": "response_metadata"
+          },
+          {
+            "name": "error"
+          }
+        ]
+      },
+      "response_key": "model_output"
+    }
+  }
+}
