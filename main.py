@@ -155,7 +155,7 @@ if __name__ == "__main__":
     # initialize logger with/without debug mode
     configure_logger(args.debug, args.clear_logs, args.run_name)
     # this import cannot be moved to the top because logger is not yet initialized
-    from logger.logger_config import logger
+    from grasp.logger.logger_config import logger
 
     logger.info("------------------------------------")
     logger.info(f"STARTING SYNTHESIS FOR TASK: {task_name}")
