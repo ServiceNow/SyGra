@@ -41,8 +41,8 @@ graph_config:
             max_tokens: 2000
           structured_output:
             schema: "core.models.structured_output.schemas_factory.SimpleResponse"
-        gpt4o-mini:
-          name: gpt4o-mini
+        gpt-4o-mini:
+          name: gpt-4o-mini
           parameters:
             temperature: 0.7
             max_tokens: 2000
@@ -102,7 +102,7 @@ output_config:
         "scale",
         "gpt4",
         "gpt-4o",
-        "gpt4o-mini"
+        "gpt-4o-mini"
       ]
     language:
       value: "en"

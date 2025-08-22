@@ -15,7 +15,7 @@ The DPO Samples task follows this workflow:
    - Initialize state variables for tracking ratings
 
 2. **Generation Phase**:
-   - Send the user prompt to multiple LLMs (gpt4, gpt-4o, gpt4o-mini)
+   - Send the user prompt to multiple LLMs (gpt4, gpt-4o, gpt-4o-mini)
    - Collect structured responses from each model
 
 3. **Rating Phase**:
@@ -47,7 +47,7 @@ The task uses three custom data transforms:
 The graph consists of two main nodes:
 
 1. **generate_samples (multi_llm)**:
-   - Uses three different models: gpt4, gpt-4o, and gpt4o-mini
+   - Uses three different models: gpt4, gpt-4o, and gpt-4o-mini
    - Each model has different structured output configurations:
      - gpt4: YAML-defined schema
      ```yaml
@@ -68,7 +68,7 @@ The graph consists of two main nodes:
       schema: "models.structured_output.schemas_factory.SimpleResponse"
      
      ```
-     - gpt4o-mini: YAML-defined schema with structured output disabled
+     - gpt-4o-mini: YAML-defined schema with structured output disabled
      ```yaml
      structured_output:
       enabled: false
@@ -129,7 +129,7 @@ To run the task:
 ```json
 {
   "id": "test_id",
-  "annotation_type": ["scale", "gpt4", "gpt-4o", "gpt4o-mini"],
+  "annotation_type": ["scale", "gpt4", "gpt-4o", "gpt-4o-mini"],
   "language": "en",
   "tags": ["dpo_samples_rating"],
   "conversation": [
@@ -154,7 +154,7 @@ To run the task:
 {
   "id": "test_id",
   "taxonomy": ["test_taxonomy"],
-  "annotation_type": ["scale", "gpt4", "gpt-4o", "gpt4o-mini"],
+  "annotation_type": ["scale", "gpt4", "gpt-4o", "gpt-4o-mini"],
   "language": "en",
   "tags": ["dpo_samples_rating"],
   "conversation": [
@@ -185,7 +185,7 @@ To run the task:
         },
         {
           "generation": "A sustainable urban transportation system should focus on...",
-          "model": "gpt4o-mini",
+          "model": "gpt-4o-mini",
           "judge_rating": 6,
           "judge_explanation": "The response covers basic aspects but lacks depth..."
         }
