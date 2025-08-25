@@ -1,6 +1,13 @@
 default_transformations:
   - transform: grasp.processors.data_transform.CreateImageUrlTransform
   - transform: grasp.processors.data_transform.CreateAudioUrlTransform
+
 model_config:
   ssl_verify: true
   ssl_cert: None
+
+post_generation_tasks:
+  oasst_mapper:
+    required: "yes"
+    type: "sft"
+    intermediate_writing: "yes"
