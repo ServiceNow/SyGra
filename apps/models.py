@@ -139,7 +139,7 @@ if st.session_state.get("show_add_model_form", False):
     with st.form("add_model_form"):
         new_model_name = st.text_input("Name").strip()
         new_model_type = st.selectbox(
-            "Model Type", ["openai", "tgi", "vllm", "mistralai"], index=0
+            "Model Type", ["azure_openai", "tgi", "vllm", "mistralai"], index=0
         )
         new_model_model = st.text_input("Model")
         new_model_url = st.text_input("URL")

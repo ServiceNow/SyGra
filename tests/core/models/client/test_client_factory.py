@@ -15,7 +15,7 @@ class TestClientFactory(unittest.TestCase):
     def test_model_type_enum(self):
         """Test ModelType enum values are correct"""
         self.assertEqual(ModelType.VLLM, "vllm")
-        self.assertEqual(ModelType.OPENAI, "openai")
+        self.assertEqual(ModelType.OPENAI, "azure_openai")
         self.assertEqual(ModelType.AZURE, "azure")
         self.assertEqual(ModelType.MISTRALAI, "mistralai")
         self.assertEqual(ModelType.TGI, "tgi")
@@ -222,7 +222,7 @@ class TestClientFactory(unittest.TestCase):
 
         # Test with valid config
         model_config = {
-            "model_type": "openai",
+            "model_type": "azure_openai",
             "url": model_url,
             "api_key": auth_token,
             "api_version": "2023-05-15",
@@ -263,7 +263,7 @@ class TestClientFactory(unittest.TestCase):
 
         # Test with valid config
         model_config = {
-            "model_type": "openai",
+            "model_type": "azure_openai",
             "url": model_url,
             "api_key": auth_token,
             "api_version": "2023-05-15",
@@ -308,7 +308,7 @@ class TestClientFactory(unittest.TestCase):
 
         # Test with valid config
         model_config = {
-            "model_type": "openai",
+            "model_type": "azure_openai",
             "url": [model_url1, model_url2],
             "api_key": [auth_token1, auth_token2],
             "api_version": "2023-05-15",
@@ -352,7 +352,7 @@ class TestClientFactory(unittest.TestCase):
 
         # Test with valid config
         model_config = {
-            "model_type": "openai",
+            "model_type": "azure_openai",
             "url": [model_url1, model_url2],
             "api_key": auth_token,
             "api_version": "2023-05-15",
@@ -759,7 +759,7 @@ class TestClientFactory(unittest.TestCase):
         model_auth_token = "test-token"
 
         model_config = {
-            "model_type": "openai",
+            "model_type": "azure_openai",
             "url": model_url,
             "auth_token": model_auth_token,
         }

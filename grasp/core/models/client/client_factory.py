@@ -18,7 +18,7 @@ class ModelType(StrEnum):
     """Enum representing the supported model types for client creation."""
 
     VLLM = "vllm"
-    OPENAI = "openai"
+    OPENAI = "azure_openai"
     AZURE = "azure"
     MISTRALAI = "mistralai"
     TGI = "tgi"
