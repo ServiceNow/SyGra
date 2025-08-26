@@ -29,11 +29,11 @@ class ModelFactory:
             "mistralai": CustomMistralAPI,
             "tgi": CustomTGI,
             "azure": CustomAzure,
-            "openai": CustomOpenAI,
+            "azure_openai": CustomOpenAI,
             "ollama": CustomOllama,
             "triton": CustomTriton
         },
-        "langgraph": {"vllm": CustomVLLMChatModel, "openai": CustomOpenAIChatModel},
+        "langgraph": {"vllm": CustomVLLMChatModel, "azure_openai": CustomOpenAIChatModel},
     }
 
     @classmethod
