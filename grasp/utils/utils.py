@@ -75,7 +75,7 @@ def load_model_config() -> Any:
             model_type = config.get("model_type", "").lower()
 
             # OpenAI models use api_key, others use auth_token
-            if model_type == "openai":
+            if model_type == "azure_openai":
                 config["api_key"] = token
             else:
                 config["auth_token"] = token
