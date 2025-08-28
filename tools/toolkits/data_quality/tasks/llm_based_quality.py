@@ -30,13 +30,13 @@ class LLMBasedQualityTask:
         Returns:
             str: Path to the output file containing the results.
         """
-        from core.judge_task_executor import JudgeQualityTaskExecutor
+        from grasp.core.base_task_executor import BaseTaskExecutor
 
         args = self._construct_args()
         data_config = self._construct_data_config()
         graph_config_dict = self._load_and_update_graph_config(data_config)
 
-        JudgeQualityTaskExecutor(args, graph_config_dict).execute()
+        BaseTaskExecutor(args, graph_config_dict).execute()
 
         output_file = os.path.join(self.output_dir, "llm_based_quality_output.jsonl")
         if os.path.exists(output_file):
@@ -60,7 +60,6 @@ class LLMBasedQualityTask:
             "debug": self.task_params.get("debug", False),
             "output_with_ts": self.task_params.get("output_with_ts", False),
             "output_dir": self.output_dir,
-            "run_args": {},
             "oasst": False,
             "quality": False,
         }

@@ -11,3 +11,22 @@ post_generation_tasks:
     required: "yes"
     type: "sft"
     intermediate_writing: "yes"
+
+  data_quality:
+    tasks:
+      - name: "conversation_pretokenization"
+        params:
+          hf_chat_template_model_id: "Qwen/Qwen2.5-32B-Instruct"
+      - name: "metadata_tagging"
+      - name: "llm_based_quality"
+      - name: "data_characteristics"
+        params:
+          model: "Qwen/Qwen2.5-32B-Instruct"
+      - name: "language_tagging"
+      - name: "lexical_diversity"
+      - name: "ppl_score"
+        params:
+          model_config:
+            model_type: "vllm"  # or "tgi"
+            url: # Add the URL of the model server
+            model_serving_name: # Add the serving name of the model
