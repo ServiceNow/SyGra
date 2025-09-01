@@ -1,0 +1,53 @@
+# Glaive Code Assistant
+
+This example demonstrates how to build a self-improving code assistant using the GraSP framework. It implements a feedback loop where an LLM generates code solutions and then critiques and refines its own answers through multiple iterations.
+
+## Overview
+
+The Glaive Code Assistant example is designed to:
+
+- **Generate code solutions**: Create solutions to coding problems using LLMs
+- **Implement self-critique**: Evaluate generated code against reference solutions
+- **Enable iterative improvement**: Refine solutions based on critique feedback
+
+## Directory Contents
+
+- `task_executor.py`: Contains the processor classes and logic for the critique cycle
+- `graph_config.yaml`: Configuration file defining the workflow graph for code generation and critique
+
+## How It Works
+
+1. **Data Source**:
+   - The system loads coding problems from the "glaiveai/glaive-code-assistant-v2" HuggingFace dataset
+   - Each problem includes a question and a reference solution
+
+2. **Solution Generation**:
+   - The `generate_answer` node produces an initial code solution for the problem
+   - The model responds directly with code, avoiding conversational text
+
+3. **Critique Cycle**:
+   - The `critique_answer` node evaluates the solution against the reference
+   - It identifies issues and provides specific recommendations for improvement
+   - The critique is passed back to the solution generator for refinement
+
+4. **Iterative Refinement**:
+   - The system cycles between generation and critique nodes
+   - With each iteration, the solution is improved based on feedback
+   - The `ShouldContinueCondition` determines when to stop refinement
+
+5. **Completion**:
+   - The cycle ends when either:
+     - The critique responds with "NO MORE FEEDBACK" (indicating a correct solution)
+     - The maximum number of iterations is reached (8 rounds)
+
+## Usage
+
+This example demonstrates techniques for:
+- Building self-improving systems through critical feedback loops
+- Implementing iterative refinement processes for complex tasks
+
+To customize this example:
+- Adjust the system prompts to focus on different programming languages or paradigms
+- Modify the critique criteria for specific coding standards
+- Change the iteration limit or stopping conditions
+
