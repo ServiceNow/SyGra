@@ -156,7 +156,7 @@ class TestModelFactory(unittest.TestCase):
         """Test create_model with OpenAI model type"""
         mock_load_model_config.return_value = {
             "test_openai": {
-                "model_type": "openai",
+                "model_type": "azure_openai",
                 "url": "http://openai-test.com",
                 "api_key": "test-key",
                 "api_version": "2023-05-15",
@@ -166,7 +166,7 @@ class TestModelFactory(unittest.TestCase):
         }
 
         with patch.object(CustomOpenAI, "__init__", return_value=None) as mock_init:
-            model_config = {"name": "test_openai", "model_type": "openai"}
+            model_config = {"name": "test_openai", "model_type": "azure_openai"}
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
@@ -229,7 +229,7 @@ class TestModelFactory(unittest.TestCase):
         """Test create_model with OpenAI model type for langgraph backend"""
         mock_load_model_config.return_value = {
             "test_openai": {
-                "model_type": "openai",
+                "model_type": "azure_openai",
                 "url": "http://openai-test.com",
                 "api_key": "test-key",
                 "api_version": "2023-05-15",
@@ -241,7 +241,7 @@ class TestModelFactory(unittest.TestCase):
         with patch.object(
             CustomOpenAIChatModel, "__init__", return_value=None
         ) as mock_init:
-            model_config = {"name": "test_openai", "model_type": "openai"}
+            model_config = {"name": "test_openai", "model_type": "azure_openai"}
             ModelFactory.create_model(model_config, "langgraph")
             mock_init.assert_called_once()
 

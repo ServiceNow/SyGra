@@ -29,7 +29,7 @@ class TestOpenAIChatModel(unittest.TestCase):
         """Set up test environment before each test."""
         self.base_config = {
             "name": "test_openai_model",
-            "model_type": "openai",
+            "model_type": "azure_openai",
             "url": "https://test-openai-endpoint.com",
             "api_key": "test_api_key",
             "parameters": {"temperature": 0.7, "max_tokens": 500},
