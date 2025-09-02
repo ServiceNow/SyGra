@@ -38,7 +38,6 @@ class ToolRegistry:
     @classmethod
     def auto_discover(cls, base_package: str = "grasp.tools.toolkits"):
         """Auto-import all processor.py modules under tools/toolkits/*"""
-        import os
         import pathlib
 
         logger.info(f"Auto-discovering tools in {base_package}...")

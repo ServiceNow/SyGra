@@ -114,7 +114,7 @@ class DataQuality(BaseTool):
             except Exception as e:
                 logger.error(f"Task {task_name} failed: {e}", exc_info=True)
                 if self.config.get("skip_failed_tasks", True):
-                    logger.info(f"Continuing with next task...")
+                    logger.info("Continuing with next task...")
                 else:
                     raise e
 

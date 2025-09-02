@@ -128,7 +128,7 @@ class LogProbModel:
                     return [e["logprob"] for e in data["details"]["prefill"]]
                 return data["choices"][0]["prompt_logprobs"]
 
-            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            except (aiohttp.ClientError, asyncio.TimeoutError):
                 retry_count += 1
                 if retry_count >= self.max_retries:
                     raise

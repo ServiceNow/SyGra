@@ -2,7 +2,10 @@ import os
 import logging
 from argparse import Namespace
 from grasp.utils import utils
-from grasp.tasks.data_quality.metadata_tagging.filter_tags import PipelineConfig, extract_instag_stats
+from grasp.tasks.data_quality.metadata_tagging.filter_tags import (
+    PipelineConfig,
+    extract_instag_stats,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -80,12 +83,7 @@ class MetadataTaggingTask:
         Returns:
             dict: A dictionary containing the data configuration.
         """
-        return {
-            "source": {
-                "type": "disk",
-                "file_path": self.input_file
-            }
-        }
+        return {"source": {"type": "disk", "file_path": self.input_file}}
 
     def _load_and_update_graph_config(self, data_config: dict) -> dict:
         """
@@ -110,37 +108,43 @@ class MetadataTaggingTask:
         graph_config.update({"data_config": data_config})
         graph_config["data_config"]["source"]["transformations"] = transformations
         return graph_config
-        
+
     def _run_filter_tags(self, input_file: str) -> None:
         """
         Runs the filter_tags.py script on the given input file to normalize instruction tags.
-        
+
         Args:
             input_file (str): Path to the input file to process.
         """
         try:
             import json
-            
+
             with open(input_file, "r", encoding="utf-8") as f:
                 try:
                     data = json.load(f)
-                    logger.info(f"Loaded {len(data)} records from {input_file} for tag filtering")
+                    logger.info(
+                        f"Loaded {len(data)} records from {input_file} for tag filtering"
+                    )
                 except json.JSONDecodeError:
                     f.seek(0)
                     data = [json.loads(line) for line in f if line.strip()]
-                    logger.info(f"Loaded {len(data)} records from JSONL file {input_file} for tag filtering")
-            
+                    logger.info(
+                        f"Loaded {len(data)} records from JSONL file {input_file} for tag filtering"
+                    )
+
             cfg = PipelineConfig()
-            
+
             logger.info("Running instruction tag filtering and normalization...")
             stats = extract_instag_stats(data, cfg)
-            
+
             with open(input_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
-            
-            logger.info(f"Tag filtering complete. Stats: {stats['instag_stats']['num_unique_tags']} unique tags after processing")
+
+            logger.info(
+                f"Tag filtering complete. Stats: {stats['instag_stats']['num_unique_tags']} unique tags after processing"
+            )
             logger.info(f"Updated data written back to {input_file}")
-            
+
         except Exception as e:
             logger.error(f"Error running filter_tags: {e}")
             logger.exception("Filter tags processing failed")
