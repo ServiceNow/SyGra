@@ -22,6 +22,7 @@ Input JSON format (list of records):
 ]
 
 """
+
 from __future__ import annotations
 
 import argparse
@@ -54,6 +55,7 @@ logger = logging.getLogger("instag_pipeline")
 # Utility
 # ----------------------------
 
+
 def convert_seconds_to_hhmmss(seconds: float) -> str:
     """Convert seconds to HH:MM:SS string (utility)."""
     import time as _time
@@ -64,6 +66,7 @@ def convert_seconds_to_hhmmss(seconds: float) -> str:
 # ----------------------------
 # Configuration
 # ----------------------------
+
 
 @dataclass(frozen=True)
 class ClusterConfig:
@@ -89,6 +92,7 @@ class PipelineConfig:
 # ----------------------------
 # Preprocessing
 # ----------------------------
+
 
 @dataclass
 class PreprocessResult:
@@ -136,6 +140,7 @@ class TagPreprocessor:
 # Embeddings + Clustering
 # ----------------------------
 
+
 class SemanticClusterer:
     def __init__(self, cfg: ClusterConfig) -> None:
         self.cfg = cfg
@@ -145,7 +150,9 @@ class SemanticClusterer:
             # Attempt HF auth only if token present; avoid hard dependency
             if token:
                 try:
-                    from huggingface_hub import login  # local import to avoid hard dep at import time
+                    from huggingface_hub import (
+                        login,
+                    )  # local import to avoid hard dep at import time
 
                     login(token=token)
                     logger.info("Authenticated to Hugging Face hub via HF_TOKEN.")
@@ -153,7 +160,9 @@ class SemanticClusterer:
                     logger.warning("HF login failed; continuing anonymously: %s", e)
             self._model = SentenceTransformer(self.cfg.model_name, device=self._device)
         except Exception as e:
-            raise RuntimeError(f"Failed to load SentenceTransformer '{self.cfg.model_name}': {e}") from e
+            raise RuntimeError(
+                f"Failed to load SentenceTransformer '{self.cfg.model_name}': {e}"
+            ) from e
 
     def _cluster_sklearn(self, X) -> List[int]:
         db = DBSCAN(eps=self.cfg.eps, min_samples=self.cfg.min_samples, metric="cosine")
@@ -164,10 +173,14 @@ class SemanticClusterer:
             import cupy as cp
             from cuml.cluster import DBSCAN as CuDBSCAN
         except Exception as e:
-            logger.warning("cuML not available; falling back to scikit-learn DBSCAN: %s", e)
+            logger.warning(
+                "cuML not available; falling back to scikit-learn DBSCAN: %s", e
+            )
             return self._cluster_sklearn(X)
 
-        db = CuDBSCAN(eps=self.cfg.eps, min_samples=self.cfg.min_samples, metric="cosine")
+        db = CuDBSCAN(
+            eps=self.cfg.eps, min_samples=self.cfg.min_samples, metric="cosine"
+        )
         labels = db.fit_predict(cp.asarray(X))
         return cp.asnumpy(labels).astype(int).tolist()
 
@@ -192,6 +205,7 @@ class SemanticClusterer:
 # ----------------------------
 # Association (FP-Growth + Rules)
 # ----------------------------
+
 
 @dataclass
 class AssocResult:
@@ -238,7 +252,9 @@ class AssociationMerger:
         if freq.empty:
             return AssocResult(groups={}, tag_to_group={})
 
-        rules = association_rules(freq, metric="confidence", min_threshold=self.cfg.min_confidence)
+        rules = association_rules(
+            freq, metric="confidence", min_threshold=self.cfg.min_confidence
+        )
         if rules.empty:
             return AssocResult(groups={}, tag_to_group={})
 
@@ -263,6 +279,7 @@ class AssociationMerger:
 # ----------------------------
 # Canonical selection & application
 # ----------------------------
+
 
 def select_canonical_original(
     candidates: Iterable[str],
@@ -299,6 +316,7 @@ def select_canonical_original(
 # Stats helpers
 # ----------------------------
 
+
 def unique_tags_and_count(records: Sequence[Sequence[str]]) -> Tuple[int, List[str]]:
     s = sorted({t for rec in records for t in rec})
     return len(s), s
@@ -313,6 +331,7 @@ def average_tags_per_record(records: Sequence[Sequence[str]]) -> float:
 # ----------------------------
 # Core pipeline
 # ----------------------------
+
 
 @dataclass
 class PipelineOutput:
@@ -399,10 +418,14 @@ class InstaGPipeline:
             if label == -1 or len(members) == 1:
                 # noise or singleton: pick best variant of its own
                 for n in members:
-                    canon = select_canonical_original([n], pre.norm_to_originals, global_original_counts)
+                    canon = select_canonical_original(
+                        [n], pre.norm_to_originals, global_original_counts
+                    )
                     norm_to_canonical[n] = canon
             else:
-                canon = select_canonical_original(members, pre.norm_to_originals, global_original_counts)
+                canon = select_canonical_original(
+                    members, pre.norm_to_originals, global_original_counts
+                )
                 for n in members:
                     norm_to_canonical[n] = canon
 
@@ -411,7 +434,9 @@ class InstaGPipeline:
         for label, members in clusters.items():
             if len(members) <= 1:
                 continue
-            canonical = select_canonical_original(members, pre.norm_to_originals, global_original_counts)
+            canonical = select_canonical_original(
+                members, pre.norm_to_originals, global_original_counts
+            )
             member_originals: Set[str] = set()
             for n in members:
                 member_originals.update(pre.norm_to_originals.get(n, {}).keys())
@@ -437,8 +462,12 @@ class InstaGPipeline:
             final_lists = normalized_lists
 
         # Update metadata
-        changed_flags = [set(orig) != set(proc) for orig, proc in zip(tag_lists, final_lists)]
-        self._update_metadata(output_data, final_lists, changed_flags, update_original=True)
+        changed_flags = [
+            set(orig) != set(proc) for orig, proc in zip(tag_lists, final_lists)
+        ]
+        self._update_metadata(
+            output_data, final_lists, changed_flags, update_original=True
+        )
 
         # Stats
         num_unique_after, unique_after = unique_tags_and_count(final_lists)
@@ -461,6 +490,7 @@ class InstaGPipeline:
 # Public API
 # ----------------------------
 
+
 def extract_instag_stats(
     output_data: List[Dict[str, Any]],
     config: Optional[PipelineConfig] = None,
@@ -475,6 +505,7 @@ def extract_instag_stats(
 # ----------------------------
 # CLI
 # ----------------------------
+
 
 def _read_input(path: Optional[str]) -> List[Dict[str, Any]]:
     if path in (None, "-"):
@@ -499,18 +530,59 @@ def _write_output(obj: Mapping[str, Any], path: Optional[str]) -> None:
 
 def _parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Normalize & analyze instruction tags")
-    p.add_argument("--input", "-i", help="Path to input JSON (list of records); '-' for STDIN", default=None)
-    p.add_argument("--output", "-o", help="Path to output JSON with updated tags; omit to update input file", default=None)
+    p.add_argument(
+        "--input",
+        "-i",
+        help="Path to input JSON (list of records); '-' for STDIN",
+        default=None,
+    )
+    p.add_argument(
+        "--output",
+        "-o",
+        help="Path to output JSON with updated tags; omit to update input file",
+        default=None,
+    )
 
-    p.add_argument("--model", default=ClusterConfig.model_name, help="SentenceTransformer model name")
-    p.add_argument("--eps", type=float, default=ClusterConfig.eps, help="DBSCAN eps (cosine distance)")
-    p.add_argument("--min-samples", type=int, default=ClusterConfig.min_samples, help="DBSCAN min_samples")
-    p.add_argument("--gpu", action="store_true", help="Use GPU (cuML DBSCAN if available)")
+    p.add_argument(
+        "--model",
+        default=ClusterConfig.model_name,
+        help="SentenceTransformer model name",
+    )
+    p.add_argument(
+        "--eps",
+        type=float,
+        default=ClusterConfig.eps,
+        help="DBSCAN eps (cosine distance)",
+    )
+    p.add_argument(
+        "--min-samples",
+        type=int,
+        default=ClusterConfig.min_samples,
+        help="DBSCAN min_samples",
+    )
+    p.add_argument(
+        "--gpu", action="store_true", help="Use GPU (cuML DBSCAN if available)"
+    )
 
-    p.add_argument("--min-support", type=float, default=AssocConfig.min_support, help="FP-Growth min_support")
-    p.add_argument("--min-confidence", type=float, default=AssocConfig.min_confidence, help="Association rules min_confidence")
+    p.add_argument(
+        "--min-support",
+        type=float,
+        default=AssocConfig.min_support,
+        help="FP-Growth min_support",
+    )
+    p.add_argument(
+        "--min-confidence",
+        type=float,
+        default=AssocConfig.min_confidence,
+        help="Association rules min_confidence",
+    )
 
-    p.add_argument("--alpha", type=int, default=PipelineConfig.frequency_alpha, help="Frequency filter alpha")
+    p.add_argument(
+        "--alpha",
+        type=int,
+        default=PipelineConfig.frequency_alpha,
+        help="Frequency filter alpha",
+    )
 
     return p.parse_args(argv)
 
@@ -536,7 +608,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         data = _read_input(args.input)
         stats = extract_instag_stats(data, cfg)
         logger.info(json.dumps(stats, indent=2))
-        
+
         # Write the updated data back to the input file or output file
         if args.output:
             _write_output(data, args.output)
@@ -545,7 +617,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             # If no output file specified, update the input file directly
             _write_output(data, args.input)
             logger.info(f"Updated data written back to {args.input}")
-        
+
         return 0
     except Exception as e:
         logger.exception("Pipeline failed: %s", e)
