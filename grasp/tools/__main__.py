@@ -1,4 +1,4 @@
-from tools.cli import main
+from grasp.tools.cli import main
 
 if __name__ == "__main__":
     import sys

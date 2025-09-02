@@ -10,8 +10,8 @@ from grasp.core.dataset.dataset_config import OutputType, DataSourceType
 from grasp.core.dataset.huggingface_handler import HuggingFaceHandler
 from grasp.core.dataset.file_handler import FileHandler
 from grasp.logger.logger_config import logger
-from tools.registry import ToolRegistry
-from tools.config import Config, ToolConfig
+from grasp.tools.registry import ToolRegistry
+from grasp.tools.config import Config, ToolConfig
 
 
 class ToolExecutor:
