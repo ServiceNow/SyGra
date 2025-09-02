@@ -10,11 +10,9 @@ Key features
 - Clear stats output + metadata updates (boolean flags)
 - CLI for batch processing JSON files or STDIN
 
-Requires Python 3.9+
-
 Example
 -------
-python instag_pipeline.py --input sample.json --output stats.json
+python filter_tags.py --input sample.json --output stats.json
 
 Input JSON format (list of records):
 [
@@ -346,6 +344,7 @@ class InstaGPipeline:
         output_data: List[Dict[str, Any]],
         processed: List[List[str]],
         changed_flags: List[bool],
+        update_original: bool = True,
     ) -> None:
         for rec, tags, changed in zip(output_data, processed, changed_flags):
             md = rec.setdefault("metadata", {})
@@ -353,7 +352,10 @@ class InstaGPipeline:
                 continue
             tax = md.setdefault("data_taxonomy", {})
             if isinstance(tax, dict):
-                tax["instruction_tags_processed"] = list(tags)
+                if update_original:
+                    tax["instruction_tags"] = list(tags)
+                else:
+                    tax["instruction_tags_processed"] = list(tags)
                 tax["are_tags_normalized"] = bool(changed)
 
     def run(self, output_data: List[Dict[str, Any]]) -> PipelineOutput:
@@ -436,7 +438,7 @@ class InstaGPipeline:
 
         # Update metadata
         changed_flags = [set(orig) != set(proc) for orig, proc in zip(tag_lists, final_lists)]
-        self._update_metadata(output_data, final_lists, changed_flags)
+        self._update_metadata(output_data, final_lists, changed_flags, update_original=True)
 
         # Stats
         num_unique_after, unique_after = unique_tags_and_count(final_lists)
@@ -498,6 +500,7 @@ def _write_output(obj: Mapping[str, Any], path: Optional[str]) -> None:
 def _parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Normalize & analyze instruction tags")
     p.add_argument("--input", "-i", help="Path to input JSON (list of records); '-' for STDIN", default=None)
+    p.add_argument("--output", "-o", help="Path to output JSON with updated tags; omit to update input file", default=None)
 
     p.add_argument("--model", default=ClusterConfig.model_name, help="SentenceTransformer model name")
     p.add_argument("--eps", type=float, default=ClusterConfig.eps, help="DBSCAN eps (cosine distance)")
@@ -533,6 +536,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         data = _read_input(args.input)
         stats = extract_instag_stats(data, cfg)
         logger.info(json.dumps(stats, indent=2))
+        
+        # Write the updated data back to the input file or output file
+        if args.output:
+            _write_output(data, args.output)
+            logger.info(f"Updated data written to {args.output}")
+        else:
+            # If no output file specified, update the input file directly
+            _write_output(data, args.input)
+            logger.info(f"Updated data written back to {args.input}")
+        
         return 0
     except Exception as e:  # pragma: no cover - CLI safety
         logger.exception("Pipeline failed: %s", e)

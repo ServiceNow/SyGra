@@ -1,7 +1,6 @@
 import json
 from typing import Any
 
-from grasp.core.graph.functions.edge_condition import EdgeCondition
 from grasp.core.graph.functions.node_processor import NodePreProcessor, NodePostProcessorWithState
 from grasp.core.graph.grasp_message import GraspMessage
 from grasp.core.graph.grasp_state import GraspState
@@ -30,8 +29,7 @@ class ExtractCategoryPostProcess(NodePostProcessorWithState):
             category = resp.message.content
             category = category if category in state.get("categories") else ""
             state.update({
-                "category": category,
-                "subcategory": ""
+                "category": category
             })
             state["messages"] = []
         except Exception as e:
@@ -49,13 +47,6 @@ class ExtractTagsPostProcess(NodePostProcessorWithState):
         state["instruction_tags"] = tag_list
         state["messages"] = []
         return state
-
-class ShouldContinue(EdgeCondition):
-    def apply(state: GraspState) -> str:
-        if state.get("category") is not None and state.get("category") != "":
-            return "extract_subcategory"
-        else:
-            return constants.GRASP_END
 
 class MetadataTaggingDataTransform(DataTransform):
     """Transform to prepare data for metadata tagging task.
@@ -139,7 +130,6 @@ class MetaTaggingOutputGenerator(BaseOutputGenerator):
         return {
             "data_taxonomy": {
             "category": state.get("category", ""),
-            "subcategory": state.get("subcategory", ""),
             "instruction_tags": state.get("instruction_tags", [])
             }
         }
