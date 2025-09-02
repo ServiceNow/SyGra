@@ -32,7 +32,7 @@ import re
 import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
 import pandas as pd
 import torch
@@ -149,7 +149,7 @@ class SemanticClusterer:
 
                     login(token=token)
                     logger.info("Authenticated to Hugging Face hub via HF_TOKEN.")
-                except Exception as e:  # pragma: no cover - non-critical path
+                except Exception as e:
                     logger.warning("HF login failed; continuing anonymously: %s", e)
             self._model = SentenceTransformer(self.cfg.model_name, device=self._device)
         except Exception as e:
@@ -159,7 +159,7 @@ class SemanticClusterer:
         db = DBSCAN(eps=self.cfg.eps, min_samples=self.cfg.min_samples, metric="cosine")
         return db.fit_predict(X).tolist()
 
-    def _cluster_cuml(self, X) -> List[int]:  # pragma: no cover - optional GPU
+    def _cluster_cuml(self, X) -> List[int]:
         try:
             import cupy as cp
             from cuml.cluster import DBSCAN as CuDBSCAN
@@ -547,10 +547,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             logger.info(f"Updated data written back to {args.input}")
         
         return 0
-    except Exception as e:  # pragma: no cover - CLI safety
+    except Exception as e:
         logger.exception("Pipeline failed: %s", e)
         return 1
 
 
-if __name__ == "__main__":  # pragma: no cover
-    raise SystemExit(main())
+if __name__ == "__main__":
+    raise sys.exit(main())
