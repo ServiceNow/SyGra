@@ -271,10 +271,10 @@ if __name__ == "__main__":
         output_dir="/private/var/folders/b0/rzsw244n619b6_yq7_72jzhh0000gp/T/tmpr9zdb21x/",
         model_config={
             "model_type": "vllm",  # or "vllm"
-            "url": "http://sk8s-worker-1663623000049.dvt100.service-now.com:8082/v1",
+            "url": "",
             "model_serving_name": "qwen-32B",  # only for vllm
             "timeout_seconds": 120,
-            "max_retries": 3,
+            "max_retries": 3
         },
         model_max_len=17000,
         doc_colname="conversation_pretokenized",
