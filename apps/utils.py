@@ -137,7 +137,7 @@ async def check_vllm_status(session, model_name, model_data):
 
 async def check_model_status(session, model_name, model_data):
     model_type = model_data.get("model_type", "unknown")
-    if model_type == "openai":
+    if model_type == "azure_openai":
         return await check_openai_status(session, model_name, model_data)
     elif model_type == "mistralai":
         return await check_mistralai_status(session, model_name, model_data)
