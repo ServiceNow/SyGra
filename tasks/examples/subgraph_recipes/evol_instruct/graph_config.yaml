@@ -1,7 +1,7 @@
 data_config:
     source:
       type: "disk"
-      file_path: "grasp/tasks/examples/subgraph_recipes/evol_instruct/test.json"
+      file_path: "tasks/examples/subgraph_recipes/evol_instruct/test.json"
       file_format: "json"
       encoding: "utf-8"
 graph_config:
@@ -29,6 +29,6 @@ graph_config:
 
 
 output_config:
-  generator: grasp.tasks.examples.subgraph_recipes.evol_instruct.task_executor.EvolTextGenerator
+  generator: tasks.examples.subgraph_recipes.evol_instruct.task_executor.EvolTextGenerator
 
 

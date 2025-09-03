@@ -236,7 +236,7 @@ def delete_file(filepath: str):
 @deprecated("Use get_file_in_task_dir instead")
 def get_file_in_task_dir(task: str, file: str):
     task_dir = "/".join(task.split("."))
-    return os.path.join(constants.ROOT_DIR, "tasks", task_dir, file) or f"tasks/{task_dir}/{file}"
+    return os.path.join(task_dir, file) or f"{task_dir}/{file}"
 
 
 def get_file_in_dir(dot_walk_path: str, file: str):
@@ -364,7 +364,7 @@ def get_models_used(task: str):
     task = "/".join(task.split("."))
     # Use load_model_config instead of directly loading models.yaml
     all_model_config = load_model_config()
-    grasp_yaml = load_yaml_file(os.path.join(constants.ROOT_DIR, f"tasks/{task}/graph_config.yaml"))
+    grasp_yaml = load_yaml_file(os.path.join(task, "graph_config.yaml"))
     nodes = grasp_yaml.get("graph_config", {}).get("nodes", {})
     models_used = set()
     for k, n in nodes.items():
@@ -404,7 +404,7 @@ def get_graph_properties(task_name: str = None) -> dict:
         return {}
 
     formatted_task_name = "/".join(task.split("."))
-    path = os.path.join(constants.ROOT_DIR, f"tasks/{formatted_task_name}/graph_config.yaml")
+    path = os.path.join(f"{formatted_task_name}/graph_config.yaml")
     yaml_config = load_yaml_file(path)
     return yaml_config.get("graph_config", {}).get("graph_properties", {})
 

@@ -112,7 +112,10 @@ class Workflow:
         """Add data sink with full framework support."""
         if isinstance(sink, (str, Path)):
             output_path = str(sink)
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            path_dir = os.path.dirname(output_path)
+            if path_dir == "":
+                path_dir = os.getcwd()
+            os.makedirs(path_dir, exist_ok=True)
             sink_config = {
                 "type": "json" if output_path.endswith(".json") else "jsonl",
                 "file_path": output_path,
@@ -544,15 +547,12 @@ class Workflow:
         current_task = utils.get_dot_walk_path(task_name)
         utils.current_task = current_task
 
-        task_dir = os.path.join(constants.ROOT_DIR, f"tasks/{task_name}")
-        config_file = f"{task_dir}/graph_config.yaml"
+        config_file = f"{task_name}/graph_config.yaml"
 
         if not os.path.exists(config_file):
-            available_tasks = self._list_available_tasks()
             raise ConfigurationError(
                 f"Task '{task_name}' not found.\n"
                 f"Expected config file: {config_file}\n"
-                f"{available_tasks}\n"
                 f"Or create a programmatic workflow: workflow.source(...).llm(...).run()"
             )
 
@@ -618,14 +618,13 @@ class Workflow:
         try:
             task_name = self.name
             utils.current_task = self.name
-            task_dir = os.path.join(constants.ROOT_DIR, f"tasks/{task_name}")
-            os.makedirs(task_dir, exist_ok=True)
-            self._temp_files.append(task_dir)
+            os.makedirs(task_name, exist_ok=True)
+            self._temp_files.append(task_name)
 
             if not kwargs.get("enable_default_transforms", False):
                 self.disable_default_transforms()
 
-            config_file = f"{task_dir}/graph_config.yaml"
+            config_file = f"{task_name}/graph_config.yaml"
             with open(config_file, "w") as f:
                 yaml.dump(self._config, f, default_flow_style=False)
 
@@ -635,7 +634,7 @@ class Workflow:
                 task=self.name,
                 num_records=num_records,
                 start_index=start_index,
-                output_dir=output_dir or task_dir,
+                output_dir=output_dir or task_name,
                 batch_size=kwargs.get("batch_size", 50),
                 checkpoint_interval=kwargs.get("checkpoint_interval", 100),
                 debug=kwargs.get("debug", False),
@@ -727,26 +726,6 @@ class Workflow:
             e for e in self._config["graph_config"]["edges"] if e.get("to") != "END"
         ]
         self._config["graph_config"]["edges"].append(end_edge)
-
-    def _list_available_tasks(self) -> str:
-        """List available tasks in the tasks directory."""
-        tasks_dir = os.path.join(constants.ROOT_DIR, "tasks") or "tasks"
-        if not os.path.exists(tasks_dir):
-            return "No tasks directory found"
-
-        available_tasks = []
-        for item in os.listdir(tasks_dir):
-            task_path = os.path.join(tasks_dir, item)
-            if os.path.isdir(task_path) and not item.startswith("_"):
-                config_file = os.path.join(task_path, "graph_config.yaml")
-                if os.path.exists(config_file):
-                    available_tasks.append(item)
-
-        return (
-            f"Available: {', '.join(available_tasks[:10])}"
-            if available_tasks
-            else "No valid tasks found"
-        )
 
     def _cleanup(self):
         """Clean up temporary files."""

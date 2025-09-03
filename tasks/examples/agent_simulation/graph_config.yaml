@@ -1,7 +1,7 @@
 data_config:
   source:
     type: "disk"
-    file_path: "grasp/tasks/examples/agent_simulation/categories.json"
+    file_path: "tasks/examples/agent_simulation/categories.json"
     file_format: "json"
 
 
@@ -12,7 +12,7 @@ graph_config:
     chat_history_window_size: 5
   nodes:
     persona_assignor:
-      post_process: grasp.tasks.examples.agent_simulation.task_executor.PersonaPostProcessor
+      post_process: tasks.examples.agent_simulation.task_executor.PersonaPostProcessor
       node_type: llm
       output_keys:
         - agent_1_role
@@ -51,7 +51,7 @@ graph_config:
 
 
     agent_1:
-      pre_process: grasp.tasks.examples.agent_simulation.task_executor.Agent1PreProcess
+      pre_process: tasks.examples.agent_simulation.task_executor.Agent1PreProcess
       node_type: agent
       chat_history: true
       output_keys: agent_1_response
@@ -68,7 +68,7 @@ graph_config:
           temperature: 1.0
 
     agent_2:
-      pre_process: grasp.tasks.examples.agent_simulation.task_executor.Agent2PreProcess
+      pre_process: tasks.examples.agent_simulation.task_executor.Agent2PreProcess
       node_type: agent
       chat_history: true
       output_keys: agent_2_response
@@ -89,23 +89,23 @@ graph_config:
     - from: START
       to: persona_assignor
     - from: persona_assignor
-      condition: grasp.tasks.examples.agent_simulation.task_executor.StartConversation
+      condition: tasks.examples.agent_simulation.task_executor.StartConversation
       path_map:
         agent_1: agent_1
         agent_2: agent_2
     - from: agent_1
-      condition: grasp.tasks.examples.agent_simulation.task_executor.ShouldContinueToNextAgent
+      condition: tasks.examples.agent_simulation.task_executor.ShouldContinueToNextAgent
       path_map:
         FINAL_ANSWER: END
         agent_2: agent_2
     - from: agent_2
-      condition: grasp.tasks.examples.agent_simulation.task_executor.ShouldContinueToNextAgent
+      condition: tasks.examples.agent_simulation.task_executor.ShouldContinueToNextAgent
       path_map:
         FINAL_ANSWER: END
         agent_1: agent_1
 
 output_config:
-  generator: grasp.tasks.examples.agent_simulation.task_executor.ConversationOutputGenerator
+  generator: tasks.examples.agent_simulation.task_executor.ConversationOutputGenerator
 
   output_map:
     id:
