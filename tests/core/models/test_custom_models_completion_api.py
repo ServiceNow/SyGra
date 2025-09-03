@@ -41,7 +41,7 @@ class TestValidateCompletionApiSupport(unittest.TestCase):
         self.openai_config = {
             **self.base_config,
             "name": "test_openai",
-            "model_type": "openai",
+            "model_type": "azure_openai",
             "url": "http://openai-test.com",
             "api_key": "test-key",
             "api_version": "2023-05-15",

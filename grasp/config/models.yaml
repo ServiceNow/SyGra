@@ -24,7 +24,7 @@ mistralai:
     temperature: 1.0
 
 gpt4:
-  model_type: openai    
+  model_type: azure_openai
   model: gpt-4-32k
   # URL and api_key should be defined at .env file as GRASP_GPT4_URL and GRASP_GPT4_TOKEN
   api_version: 2024-05-01-preview
@@ -33,7 +33,7 @@ gpt4:
     temperature: 1.0
 
 gpt-4o:
-  model_type: openai
+  model_type: azure_openai
   model: gpt-4o
   # URL and api_key should be defined at .env file as GRASP_GPT-4O_URL and GRASP_GPT-4O_TOKEN
   api_version: 2024-02-15-preview
@@ -42,7 +42,7 @@ gpt-4o:
     temperature: 1.0
 
 gpt-4o-mini:
-  model_type: openai
+  model_type: azure_openai
   model: gpt-4o-mini
   # URL and api_key should be defined at .env file as GRASP_GPT-4O-MINI_URL and GRASP_GPT-4O-MINI_TOKEN
   api_version: 2024-08-01-preview

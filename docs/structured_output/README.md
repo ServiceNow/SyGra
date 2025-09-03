@@ -3,7 +3,7 @@
 ## 📌 Introduction
 
 This module introduces a flexible and extensible framework to generate and validate **structured outputs** from LLMs. It
-is designed to work **natively with OpenAI, VLLM and Ollama**, leveraging their structured output capabilities, while
+is designed to work **natively with Azure OpenAI, VLLM and Ollama**, leveraging their structured output capabilities, while
 providing **fallback support for any other LLM or custom model wrapper** through JSON schema-based validation.
 ### 🔧 Why This is Helpful
 
@@ -149,7 +149,7 @@ To ensure the structured output validation runs smoothly, follow these rules:
 
 ## 📝 Limitations
 
-- Native structured output generation is currently supported exclusively for `vllm`, `openai`, `tgi` and `ollama` ModelTypes.
+- Native structured output generation is currently supported exclusively for `vllm`, `azure_openai`, `tgi` and `ollama` ModelTypes.
 - For OpenAI ModelType, structured output functionality requires API versions `2024-08-01-preview` or later.
 - For VLLM ModelType, structured output functionality requires version `0.8.4` or later.
 - For all other ModelTypes, structured output generation is supported through fallback JSON schema validation.
