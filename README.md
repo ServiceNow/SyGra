@@ -334,7 +334,7 @@ For a **complete reference** of all YAML configuration options, node/edge types,
 
 ## Contact
 
-To contact us, join our channel or send us an [email](grasp-team@servicenow.com)!
+To contact us, join our channel or send us an [email](grasp_team@servicenow.com)!
 
 ## License
 
