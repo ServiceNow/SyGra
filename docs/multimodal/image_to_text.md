@@ -170,7 +170,7 @@ graph_config:
   nodes:
     judge_synthetic_graph_quality:
       node_type: llm
-      post_process: grasp.tasks.image_description.task_executor.GraphJudgementPostProcessor
+      post_process: tasks.image_description.task_executor.GraphJudgementPostProcessor
       prompt:
         - user:
             - type: text
