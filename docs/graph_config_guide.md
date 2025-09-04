@@ -282,7 +282,7 @@ Conditional edges define different paths based on a condition. Conditions can di
 
 ```yaml
 - from: critique_answer
-  condition: grasp.tasks.mbpp.code_generation_with_graph_builder.task_executor.ShouldContinueCondition
+  condition: tasks.mbpp.code_generation_with_graph_builder.task_executor.ShouldContinueCondition
   path_map:
     END: END                          # Path to END when condition returns "END" (terminates processing)
     generate_answer: generate_answer  # Path to generate_answer when condition returns "generate_answer"
@@ -329,7 +329,7 @@ This approach uses declarative configuration to map state variables to output fi
 ```yaml
 output_config:
   # Path to a class that inherits from BaseOutputGenerator
-  generator: grasp.tasks.mbpp.code_generation_with_graph_builder.task_executor.CodeGenOutputGenerator
+  generator: tasks.mbpp.code_generation_with_graph_builder.task_executor.CodeGenOutputGenerator
 
   # Map of output fields and how to populate them
   output_map:
@@ -577,7 +577,7 @@ graph_config:
           temperature: 0.1
         
     critique_answer:  
-      pre_process: grasp.tasks.mbpp.code_generation_with_graph_builder.task_executor.CritiqueAnsNodePreProcessor
+      pre_process: tasks.mbpp.code_generation_with_graph_builder.task_executor.CritiqueAnsNodePreProcessor
       node_type: llm 
       output_role: user 
       prompt:        
@@ -601,13 +601,13 @@ graph_config:
     - from: generate_answer
       to: critique_answer
     - from: critique_answer
-      condition: grasp.tasks.mbpp.code_generation_with_graph_builder.task_executor.ShouldContinueCondition
+      condition: tasks.mbpp.code_generation_with_graph_builder.task_executor.ShouldContinueCondition
       path_map:
         END: END
         generate_answer: generate_answer
 
 output_config:
-  generator: grasp.tasks.mbpp.code_generation_with_graph_builder.task_executor.CodeGenOutputGenerator
+  generator: tasks.mbpp.code_generation_with_graph_builder.task_executor.CodeGenOutputGenerator
 
   output_map:
     id:
