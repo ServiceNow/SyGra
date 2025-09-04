@@ -2,15 +2,15 @@ from typing import Any
 
 
 try:
-    from core.models.model_factory import ModelFactory
-    from core.models.custom_models import (
+    from grasp.core.models.model_factory import ModelFactory
+    from grasp.core.models.custom_models import (
         CustomVLLM,
         CustomOpenAI,
         CustomTGI,
         CustomAzure,
         CustomMistralAPI,
     )
-    from utils import utils
+    from grasp.utils import utils
 
     MODELS_AVAILABLE = True
 except ImportError:
