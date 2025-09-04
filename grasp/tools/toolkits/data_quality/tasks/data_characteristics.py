@@ -1,10 +1,8 @@
 import os
-import subprocess
 
 from transformers import AutoTokenizer, PreTrainedTokenizer
 from grasp.utils.utils import save_json_file
 from grasp.utils import utils, constants
-from grasp.utils.decorators import future_deprecation
 from grasp.logger.logger_config import logger
 
 
@@ -43,7 +41,7 @@ class DataCharacteristicsTask:
             logger.warning("No model provided. Skipping data characteristics check.")
             return self.input_file
 
-        self._set_tokenizer(model_path, os.environ.get("HF_TOKEN"))
+        tokenizer = self._set_tokenizer(model_path)
 
         if self.input_file.endswith(".json"):
             data = utils.load_json_file(self.input_file)
@@ -95,7 +93,8 @@ class DataCharacteristicsTask:
         logger.info("Data characteristics saved to %s", output_file)
         return output_file
 
-    def _set_tokenizer(self, model_path, tokenizer_class) -> PreTrainedTokenizer:
+    @staticmethod
+    def _set_tokenizer(model_path) -> PreTrainedTokenizer:
         return AutoTokenizer.from_pretrained(
             model_path, token=os.environ.get(constants.HF_TOKEN)
         )

@@ -301,9 +301,9 @@ class DatasetProcessor:
             and self.graph_config.oasst_mapper.get("intermediate_writing") == "yes"
         ):
             intermediate_write_path = (
-                self.output_file.split(".")[0]
+                ".".join(self.output_file.split(".")[:-1])
                 + constants.INTERMEDIATE
-                + " ".join(self.output_file.split(".")[1:])
+                + self.output_file.split(".")[-1]
             )
             logger.info(f"Writing intermediate file: {intermediate_write_path}")
             if ".jsonl" in self.output_file:

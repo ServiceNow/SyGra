@@ -1,7 +1,7 @@
 import importlib
 from typing import Type, Optional
 
-from tools.base_tool import BaseTool
+from grasp.tools.base_tool import BaseTool
 from grasp.logger.logger_config import logger
 
 
@@ -36,9 +36,8 @@ class ToolRegistry:
         return list(cls._tools.keys())
 
     @classmethod
-    def auto_discover(cls, base_package: str = "tools.toolkits"):
+    def auto_discover(cls, base_package: str = "grasp.tools.toolkits"):
         """Auto-import all processor.py modules under tools/toolkits/*"""
-        import os
         import pathlib
 
         logger.info(f"Auto-discovering tools in {base_package}...")
@@ -49,7 +48,7 @@ class ToolRegistry:
             if tool_dir.is_dir():
                 processor_file = tool_dir / "processor.py"
                 if processor_file.exists():
-                    # Convert path to module name: tools.toolkits.tool_name.processor
+                    # Convert path to module name: grasp.tools.toolkits.tool_name.processor
                     module_name = f"{base_package}.{tool_dir.name}.processor"
                     try:
                         importlib.import_module(module_name)

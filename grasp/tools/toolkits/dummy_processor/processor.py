@@ -2,8 +2,8 @@ import json
 import os
 from typing import Any, Optional
 
-from tools.base_tool import BaseTool
-from tools.registry import register_tool
+from grasp.tools.base_tool import BaseTool
+from grasp.tools.registry import register_tool
 from grasp.utils import utils
 
 

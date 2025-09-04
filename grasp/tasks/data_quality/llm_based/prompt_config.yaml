@@ -1,0 +1,15 @@
+Mapping:
+  #Generic Judge Prompt
+  Generic: generic_prompt
+  #Reasoning Judge Prompts
+  Reasoning: reasoning_prompt
+  #Mathematics Judge Prompts
+  Math Solving: math_prompt
+  #Coding Judge Prompts
+  Code Writing: coding_prompt
+  # Instruction Following Judge Prompts
+  Complex Instruction Following: instruction_following_prompt
+  # Open Domain QnA
+  Open-Domain Question Answering: open_qa_prompt
+  # Closed Domain QnA
+  Closed-Domain Question Answering: closed_qa_prompt
