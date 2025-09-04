@@ -1,0 +1,23 @@
+{
+  "Code Writing" : {
+    "Description": "Tasks involving the creation, comprehension, or debugging of code in any programming language. Examples include:\n        Developing algorithms or functions in any of the programming language.\n        Resolving syntax or logical errors in code segments.\n        Clarifying programming concepts with illustrative code samples."
+  },
+  "Math Solving" : {
+    "Description": "Tasks necessitating mathematical computations, equation solving, or interpretation of mathematical symbols. This covers:\n        Addressing algebraic equations or inequalities.\n        Computing derivatives, integrals, or limits.\n        Analyzing or simplifying mathematical expressions."
+  },
+  "Reasoning" : {
+    "Description": "Tasks requiring logical analysis, planning and reasoning, problem-solving, decision making or deriving conclusions without reliance on any programming or code or mathematical formulas. This includes:\n        Evaluating scenarios to inform decisions.\n        Deciphering riddles or puzzles that don't involve mathematical calculations.\n        Offering explanations or rationales based on provided data."
+  },
+  "Closed-Domain Question Answering" : {
+    "Description": "Tasks where the assistant derives answers from external sources or specific provided materials. \n    This does not involve generation following multiple constraints. Multiple constrained generations fall into category of Complex Instruction Following.\n    Open-Book Question Answering involves: \n        Responding to inquiries using a supplied passage, document, or dataset.\n        Consulting external references to furnish precise answers."
+  },
+  "Open-Domain Question Answering" : {
+    "Description": "Tasks that require the assistant to do some kind of creative writing taking into account multple constraints in response generation like:\n    length constraints - less than or greater than so many words/lines/paragraphs\n    language constraints - wrtining in specific language\n    keywords constraints - inclusion/exclusion of certain keywords\n    formatting constraints - format the output in yaml,json, markdown, bullet, list etc.\n    tone/style constraints - constraining style or tone of the text\n    or other kind of constrained generation."
+  },
+  "Complex Instruction Following" : {
+    "Description": "Tasks that require the assistant to do some kind of creative writing taking into account multiple constraints in response generation like:\n    length constraints - less than or greater than so many words/lines/paragraphs\n    language constraints - wrtining in specific language\n    keywords constraints - inclusion/exclusion of certain keywords\n    formatting constraints - format the output in yaml,json, markdown, bullet, list etc.\n    tone/style constraints - constraining style or tone of the text\n    or other kind of constrained generation."
+  },
+  "Others": {
+    "Description": "Miscellaneous topics and categories that do not fit into above predefined classifications."
+  }
+}

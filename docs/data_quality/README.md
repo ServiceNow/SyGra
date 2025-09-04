@@ -57,7 +57,7 @@ The following data quality tasks are available:
 6. lexical_diversity: Computes lexical diversity metrics (TTR - Type-Token Ratio).
 7. ppl_score: Calculates perplexity scores for text quality assessment.
    
-    `Note`: You need to host the model first and share the URL in the parameters.
+    `Note`: You need to host the model first and share the URL in the parameters. The model should be hosted either in a vLLM or TGI server.
 8. reward_score: Calculates reward scores from the reward model. (Offline setup)
 
     `Note`: This task requires running the codebase in an environment with a GPU, or using a reward model compatible with CPU execution.
@@ -73,7 +73,7 @@ You can run the Data Quality in two modes:
 Run with:
 
 ```
---oasst True
+--quality True
 ```
 
 This uses the configuration specified in `configuration.yaml`

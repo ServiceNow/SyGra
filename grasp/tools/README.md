@@ -13,8 +13,8 @@ tools/
 ├── executor.py            # Executes one or more tools as a pipeline
 ├── registry.py            # Tool registration and dynamic discovery
 ├── cli.py                 # CLI logic
-├── __main__.py            # Entry point for `python -m tools`
-└── toolkits/              # 🔌 All tools live here
+├── __main__.py            # Entry point for `python -m grasp.tools`
+└── toolkits/              # All tools live here
     └── tool_name/
         └── processor.py   # File containing tool logic
 ```
@@ -34,7 +34,7 @@ Each tool:
 Example:
 
 ```python
-# tools/toolkits/dummy_processor/processor.py
+# grasp/tools/toolkits/dummy_processor/processor.py
 
 @register_tool
 class DummyProcessor(BaseTool):
@@ -55,7 +55,7 @@ class DummyProcessor(BaseTool):
 ### 2. List Available Tools
 
 ```bash
-python -m tools --list-tools
+./run_tools.sh --list-tools
 ```
 
 ---
@@ -72,7 +72,7 @@ data_config:
 
   sink:
     type: jsonl
-    file_path: tools/tool_runs/output.jsonl
+    file_path: grasp/tools/tool_runs/output.jsonl
 
 tools:
   dummy_processor:
@@ -84,7 +84,7 @@ tools:
 Then run:
 
 ```bash
-python -m tools --config tools/config/my_pipeline.yaml
+./run_tools.sh --config grasp/tools/config/my_pipeline.yaml
 ```
 
 This executes the full pipeline and saves the final output.
@@ -93,7 +93,7 @@ This executes the full pipeline and saves the final output.
 
 ## ✅ Tool Auto-Discovery
 
-The framework will automatically detect all tools under `tools/toolkits/*/processor.py`, so you don't need to import them manually.
+The framework will automatically detect all tools under `grasp/tools/toolkits/*/processor.py`, so you don't need to import them manually.
 
 Each discovered tool must:
 - Be in a directory under `toolkits/`
@@ -104,7 +104,7 @@ Each discovered tool must:
 
 ## 🔧 Add Your Own Tool
 
-1. Create a new folder under `tools/toolkits/your_tool_name/`
+1. Create a new folder under `grasp/tools/toolkits/your_tool_name/`
 2. Add a `processor.py` file
 3. Define your tool class:
 
@@ -153,7 +153,7 @@ tools:
     config:
       type: "sft" # or dpo
 ```
-For more details, refer to the [OASST Mapper documentation](../docs/data_mapper/README.md).
+For more details, refer to the [OASST Mapper documentation](../../docs/data_mapper/README.md).
 
 ### 3. `data_quality`
 Runs a sequence of quality tagging tasks on conversation data. The tasks include:
@@ -179,4 +179,4 @@ tools:
         - name: "llm_based_quality"
 ```
 
-For more details on data quality config, refer to the [Data Quality documentation](../docs/data_quality/README.md).
+For more details on data quality config, refer to the [Data Quality documentation](../../docs/data_quality/README.md).
