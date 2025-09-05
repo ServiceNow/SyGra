@@ -2,6 +2,9 @@
 
 This example demonstrates how to use a subgraph within the GraSP framework. It showcases usage of [Evol-Instruct](https://arxiv.org/pdf/2304.12244) recipe which is a evolution techniques that can transform simple prompts into more complex, nuanced, and challenging instructions through automated prompt engineering.
 
+> **Key Features**:
+> `prompt evolution`, `subgraphs`, `automated prompt engineering`, `depth/breadth techniques`, `prompt transformation`
+
 ## Overview
 
 The Evol-Instruct example is designed to:
@@ -36,15 +39,3 @@ The Evol-Instruct example is designed to:
 4. **Response Generation**:
    - The LLM responds to the evolved prompt
    - The system captures both the original text, evolved text, and the LLM response
-
-## Usage
-
-This example demonstrates techniques for:
-- Creating more challenging and nuanced prompts using a seed data
-- Using subgraphs for modular functionality
-
-To customize this example:
-- Modify the evolution techniques in the recipe files
-- Change the algorithm selection logic (currently random)
-- Adjust the model parameters for different response characteristics
-- Create new evolution techniques by adding your own subgraphs or extending the recipe

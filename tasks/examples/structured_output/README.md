@@ -1,14 +1,15 @@
 # Structured Output
 
-This example demonstrates how to implement structured output from LLM responses within the GraSP framework. It showcases how to extract specific information from LLM responses in a standardized JSON format that can be reliably parsed and processed in downstream applications.
+This example demonstrates how to implement structured output from LLM responses within the GraSP framework. It showcases how to extract specific information from LLM responses in a standardized JSON format using structured output that can be reliably parsed and processed in downstream applications.
+
+> **Key Features**:
+> `structured JSON output`, `schema definition`, `post-processing`, `code taxonomy`, `response normalization`
 
 ## Overview
 
 The Structured Output example is designed to:
 
-- **Extract structured data**: Automatically convert free-form LLM responses into structured JSON objects
-- **Process code snippets**: Analyze and categorize code based on its purpose and structure
-- **Demonstrate post-processing**: Handle and normalize LLM responses that may not perfectly match the expected schema
+- **Extract structured data**: Automatically respond in a well-defined schema for easy parsing and processing
 
 ## Directory Contents
 
@@ -40,15 +41,3 @@ The Structured Output example is designed to:
    - The system formats the final output with:
      - Original question ID and content
      - Extracted category and subcategory information
-
-## Usage
-
-This example demonstrates techniques for:
-- Defining structured output schemas for LLM responses
-- Implementing robust parsing of LLM-generated JSON
-- Extracting taxonomic information from code
-
-To customize this example:
-- Modify the schema definition to capture different structured information
-- Adjust the post-processor to handle different JSON formats or error cases
-- Change the system prompt to focus on different aspects of code analysis

@@ -2,6 +2,9 @@
 
 This example demonstrates how to integrate external tools with AI agents using the GraSP framework. It showcases how to structure and use function calling with agents to perform tasks requiring specific capabilities, in this case mathematical operations.
 
+> **Key Features**:
+> `function calling`, `tool integration`, `mathematical operations`, `class-based tools`, `module-based tools`
+
 ## Overview
 
 The agent tool simulation is designed to:
@@ -37,12 +40,3 @@ The agent tool simulation is designed to:
 4. **Result Capture**:
    - The `MathAgentPostProcessor` extracts the calculated result
    - The system stores this in the state for structured output
-
-## Usage
-
-To customize this example:
-
-- Add new tools by creating additional functions with the `@tool` decorator
-- Modify the existing tools or create new tool collections in classes or modules
-- Update the `graph_config.yaml` to reference your new tools
-- Expand `user_queries.json` with different types of questions

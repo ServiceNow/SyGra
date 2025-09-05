@@ -2,6 +2,9 @@
 
 This example demonstrates how to build an intelligent Question and Answer (QnA) system for images using the GraSP framework. The system extracts text from images, generates thoughtful questions about the content, and then provides detailed answers to those questions.
 
+> **Key Features**:
+> `multimodal LLMs`, `text extraction`, `question generation`, `image processing`, `multi-step reasoning`
+
 ## Overview
 
 The Image to QnA example is designed to:
@@ -45,17 +48,3 @@ The Image to QnA example is designed to:
      - Original image references and extracted text
      - Generated questions with their types (objective/subjective)
      - Detailed answers and reasoning for each question
-
-## Usage
-
-This example demonstrates techniques for:
-- Processing document images to extract meaningful information
-- Creating sophisticated question generation systems
-- Implementing multi-step reasoning workflows
-- How to loop over a list of items (images, questions) in GraSP
-
-To customize this example:
-- Modify the prompts to focus on specific types of questions or content
-- Adjust the token limits or model parameters for different complexity levels
-- Change the number of questions or reasoning requirements
-- Implement additional post-processing for specialized applications

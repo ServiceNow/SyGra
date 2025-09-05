@@ -2,6 +2,9 @@
 
 This example demonstrates how to build a self-improving code assistant using the GraSP framework. It implements a feedback loop where an LLM generates code solutions and then critiques and refines its own answers through multiple iterations.
 
+> **Key Features**:
+> `self-critique`, `iterative refinement`, `code generation`, `feedback loop`, `stopping conditions`
+
 ## Overview
 
 The Glaive Code Assistant example is designed to:
@@ -39,15 +42,4 @@ The Glaive Code Assistant example is designed to:
    - The cycle ends when either:
      - The critique responds with "NO MORE FEEDBACK" (indicating a correct solution)
      - The maximum number of iterations is reached (8 rounds)
-
-## Usage
-
-This example demonstrates techniques for:
-- Building self-improving systems through critical feedback loops
-- Implementing iterative refinement processes for complex tasks
-
-To customize this example:
-- Adjust the system prompts to focus on different programming languages or paradigms
-- Modify the critique criteria for specific coding standards
-- Change the iteration limit or stopping conditions
 

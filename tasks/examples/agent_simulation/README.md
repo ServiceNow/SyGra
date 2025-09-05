@@ -2,6 +2,9 @@
 
 This example demonstrates how to create structured AI agent dialogues with opposing viewpoints using the GraSP framework. It showcases a directed graph implementation that orchestrates a realistic, multi-turn conversation between two dynamically generated personas discussing a specific topic using agentic nodes.
 
+> **Key Features**:
+> `agent nodes`, `chat history`, `system message intervention`, `multi-turn dialogue`, `multi-agent`
+
 ## Overview
 
 The agent simulation is designed to:
@@ -36,13 +39,3 @@ The agent simulation is designed to:
 5. **Conversation Conclusion**:
    - The conversation ends when an agent includes "FINAL ANSWER" in their response
    - The system generates structured output including the conversation history and taxonomy
-
-## Usage
-
-To modify the topics for discussion, edit the `categories.json` file with new categories and subcategories.
-
-To customize the agent behaviors:
-- Adjust the prompt templates in `graph_config.yaml`
-- Modify the system messages injected at specific turns
-- Change the model parameters like temperature to control response variability
-

@@ -2,6 +2,9 @@
 
 This example demonstrates how to create a multimodal pipeline for processing audio inputs and generating textual outputs using the GraSP framework. It showcases the integration of audio-capable LLMs like Qwen2-Audio-7B for tasks such as audio classification, speech recognition, and audio content analysis.
 
+> **Key Features**:
+> `multimodal processing`, `audio classification`, `base64 encoding`, `audio-capable LLMs`, `HuggingFace dataset integration`
+
 ## Overview
 
 The audio to text example is designed to:
@@ -34,20 +37,3 @@ The audio to text example is designed to:
 4. **Result Collection**:
    - The system captures the LLM's textual analysis
    - Results are structured into standardized output formats
-
-## Usage
-
-To customize it:
-
-- Modify the prompt text in `graph_config.yaml` to change the analysis task
-- Replace the HuggingFace dataset with your own audio sources
-- Adjust model parameters like temperature to control output variability
-
-## Example Output
-
-The system produces structured output containing:
-- The ID of the processed record
-- The reference to the original audio
-- The identified animal or other requested analysis
-
-This example demonstrates GraSP's ability to handle multimodal data processing, combining audio inputs with AI-powered analysis to generate meaningful textual insights.
