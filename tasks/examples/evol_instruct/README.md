@@ -1,6 +1,6 @@
 # Evol-Instruct
 
-This example demonstrates how to use a subgraph within the GraSP framework. It showcases prompt evolution techniques that can transform simple prompts into more complex, nuanced, and challenging instructions through automated prompt engineering.
+This example demonstrates how to use a subgraph within the GraSP framework. It showcases usage of [Evol-Instruct](https://arxiv.org/pdf/2304.12244) recipe which is a evolution techniques that can transform simple prompts into more complex, nuanced, and challenging instructions through automated prompt engineering.
 
 ## Overview
 
@@ -8,7 +8,6 @@ The Evol-Instruct example is designed to:
 
 - **Transform simple prompts**: Evolve basic instructions into more sophisticated variants
 - **Apply various evolution techniques**: Implement depth-based (constraints, deepening, concretizing, reasoning) and breadth-based transformations
-- **Demonstrate prompt engineering automation**: Show how prompt evolution can be systematically applied in a workflow
 
 ## Directory Contents
 
@@ -23,7 +22,7 @@ The Evol-Instruct example is designed to:
    - Each prompt is a basic instruction or question (e.g., "tell me a story about a jungle and river")
 
 2. **Evolution Process**:
-   - The prompt is passed to the `evol_text` subgraph (defined in `recipes.evol_instruct`)
+   - The prompt is passed to the `evol_text` subgraph (defined in [recipes/evol_instruct](../../../grasp/recipes/evol_instruct/Readme.md))
    - The `EvolInstructPromptGenerator` lambda function transforms the input prompt
    - A random evolution technique is applied from available methods:
      - **Depth techniques**: Add constraints, increase depth/breadth, concretize concepts, require multi-step reasoning
@@ -41,8 +40,7 @@ The Evol-Instruct example is designed to:
 ## Usage
 
 This example demonstrates techniques for:
-- Implementing automated prompt engineering
-- Creating more challenging and nuanced prompts
+- Creating more challenging and nuanced prompts using a seed data
 - Using subgraphs for modular functionality
 
 To customize this example:
