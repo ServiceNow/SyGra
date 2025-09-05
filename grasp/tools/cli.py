@@ -1,6 +1,6 @@
 import argparse
-from tools.registry import ToolRegistry
-from tools.executor import ToolExecutor
+from grasp.tools.registry import ToolRegistry
+from grasp.tools.executor import ToolExecutor
 
 
 def main():

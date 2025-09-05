@@ -4,8 +4,8 @@ from typing import Dict, Any, Optional, Type
 
 import ujson
 from grasp.logger.logger_config import logger
-from tools.base_tool import BaseTool
-from tools.registry import register_tool
+from grasp.tools.base_tool import BaseTool
+from grasp.tools.registry import register_tool
 from grasp.utils import utils
 from grasp.utils.dotenv import load_dotenv
 
@@ -21,28 +21,28 @@ OASST_REPRESENTATIVE_FIELDS = [
 
 TASK_REGISTRY: dict[str, Type] = {
     "conversation_pretokenization": utils.get_class_from(
-        "tools.toolkits.data_quality.tasks.conversation_pretokenization_task.ConversationPreTokenizationTask"
+        "grasp.tools.toolkits.data_quality.tasks.conversation_pretokenization_task.ConversationPreTokenizationTask"
     ),
     "metadata_tagging": utils.get_class_from(
-        "tools.toolkits.data_quality.tasks.metadata_tagging.MetadataTaggingTask"
+        "grasp.tools.toolkits.data_quality.tasks.metadata_tagging.MetadataTaggingTask"
     ),
     "llm_based_quality": utils.get_class_from(
-        "tools.toolkits.data_quality.tasks.llm_based_quality.LLMBasedQualityTask"
+        "grasp.tools.toolkits.data_quality.tasks.llm_based_quality.LLMBasedQualityTask"
     ),
     "data_characteristics": utils.get_class_from(
-        "tools.toolkits.data_quality.tasks.data_characteristics.DataCharacteristicsTask"
+        "grasp.tools.toolkits.data_quality.tasks.data_characteristics.DataCharacteristicsTask"
     ),
     "language_tagging": utils.get_class_from(
-        "tools.toolkits.data_quality.tasks.language_tagging.LanguageTaggingTask"
+        "grasp.tools.toolkits.data_quality.tasks.language_tagging.LanguageTaggingTask"
     ),
     "lexical_diversity": utils.get_class_from(
-        "tools.toolkits.data_quality.tasks.ttr_tagging.TTRTaggingTask"
+        "grasp.tools.toolkits.data_quality.tasks.ttr_tagging.TTRTaggingTask"
     ),
     "ppl_score": utils.get_class_from(
-        "tools.toolkits.data_quality.tasks.ppl_ifd_scorer.PPLInferenceTask"
+        "grasp.tools.toolkits.data_quality.tasks.ppl_ifd_scorer.PPLInferenceTask"
     ),
     "reward_score": utils.get_class_from(
-        "tools.toolkits.data_quality.tasks.reward_score.RewardScoringTask"
+        "grasp.tools.toolkits.data_quality.tasks.reward_score.RewardScoringTask"
     ),
 }
 
@@ -114,7 +114,7 @@ class DataQuality(BaseTool):
             except Exception as e:
                 logger.error(f"Task {task_name} failed: {e}", exc_info=True)
                 if self.config.get("skip_failed_tasks", True):
-                    logger.info(f"Continuing with next task...")
+                    logger.info("Continuing with next task...")
                 else:
                     raise e
 
