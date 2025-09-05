@@ -43,3 +43,41 @@ The Glaive Code Assistant example is designed to:
      - The critique responds with "NO MORE FEEDBACK" (indicating a correct solution)
      - The maximum number of iterations is reached (8 rounds)
 
+## Example Output
+
+```json
+[
+    {
+        "id": "299392dcbd6a991853554c2869deeff6f97b13db6a3a4c7f6e25fb41778dafc2",
+        "conversation": [
+            {
+                "role": "user",
+                "content": "I want to create a function in Python that checks whether a given substring is present in a given string. How can I do that?"
+            },
+            {
+                "role": "assistant",
+                "content": "```python\ndef is_substring_present(main_string, substring):\n    return substring in main_string\n```"
+            },
+            {
+                "role": "user",
+                "content": "NO MORE FEEDBACK"
+            }
+        ],
+        "taxonomy": [
+            {
+                "category": "Coding"
+            }
+        ],
+        "annotation_type": [
+            "mistral-large"
+        ],
+        "language": "en",
+        "tags": [
+            "glaiveai/glaive-code-assistant-v2",
+            "reannotate",
+            "self-critique"
+        ]
+    }
+]
+```
+

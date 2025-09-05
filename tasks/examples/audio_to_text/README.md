@@ -37,3 +37,20 @@ The audio to text example is designed to:
 4. **Result Collection**:
    - The system captures the LLM's textual analysis
    - Results are structured into standardized output formats
+
+## Example Output
+
+```json
+[
+    {
+        "id": "sample1",
+        "audio_url": "data:audio/wav;base64,UklGRuQAAABXQVZFZm10IBAAAAABAAEA...",
+        "analysis": "The audio contains the sound of a dog barking."
+    },
+    {
+        "id": "sample2",
+        "audio_url": "data:audio/wav;base64,UklGRuQAAABXQVZFZm10IBAAAAABAAEA...",
+        "analysis": "The audio contains the sound of a cat meowing."
+    }
+]
+```

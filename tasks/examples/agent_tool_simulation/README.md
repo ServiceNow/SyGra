@@ -40,3 +40,26 @@ The agent tool simulation is designed to:
 4. **Result Capture**:
    - The `MathAgentPostProcessor` extracts the calculated result
    - The system stores this in the state for structured output
+
+## Example Output
+
+```json
+[
+    {
+        "id": "6b9e75c4fe9b803f0c6f1dd59081750fa100db56874a12b0b83683b7ea9a0c8b",
+        "user_query": "Can you give me answer for 3/2?",
+        "math_result": "The result of \\( \\frac{3}{2} \\) is 1.5."
+    },
+    {
+        "id": "e79908ac2f64bbdf7611c307ba3b73f647a2bbcf06d42e9c16c6321aa9ac3e1d",
+        "user_query": "Can you give me answer for (2+3)*5?",
+        "math_result": "The answer to \\((2+3) \\times 5\\) is \\(25\\)."
+    },
+    {
+        "id": "6af6cadbfaa3eda3b9eb678dece24dac211c8bd3cd62e8742d8364422cfeecb2",
+        "user_query": "Can you give me answer for multiplying 2 and 3 and then subtract 1 from answer?",
+        "math_result": "The result of multiplying 2 and 3 and then subtracting 1 is 5."
+    }
+]
+```
+
