@@ -1,7 +1,7 @@
 data_config:
     source:
       type: "disk"
-      file_path: "tasks/examples/subgraph_recipes/evol_instruct/test.json"
+      file_path: "tasks/examples/evol_instruct/test.json"
       file_format: "json"
       encoding: "utf-8"
 graph_config:
@@ -11,11 +11,12 @@ graph_config:
       subgraph: recipes.evol_instruct
     query_llm:
       node_type: llm
+      output_keys: llm_response
       prompt:
         - user: |
            {evolved_text}
       model:
-        name: gpt-4o-mini
+        name: gpt-4o
         parameters:
           temperature: 1.0
 
@@ -29,6 +30,14 @@ graph_config:
 
 
 output_config:
-  generator: tasks.examples.subgraph_recipes.evol_instruct.task_executor.EvolTextGenerator
+  output_map:
+    id:
+      from: id
+    text:
+      from: text
+    evolved_text:
+      from: evolved_text
+    llm_response:
+      from: llm_response
 
 
