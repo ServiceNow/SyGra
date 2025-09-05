@@ -25,7 +25,7 @@ The Evol-Instruct example is designed to:
    - Each prompt is a basic instruction or question (e.g., "tell me a story about a jungle and river")
 
 2. **Evolution Process**:
-   - The prompt is passed to the `evol_text` subgraph (defined in [recipes/evol_instruct](../../../grasp/recipes/evol_instruct/Readme.md))
+   - The prompt is passed to the `evol_text` subgraph (defined in [grasp/recipes/evol_instruct](../../../grasp/recipes/evol_instruct/Readme.md))
    - The `EvolInstructPromptGenerator` lambda function transforms the input prompt
    - A random evolution technique is applied from available methods:
      - **Depth techniques**: Add constraints, increase depth/breadth, concretize concepts, require multi-step reasoning
