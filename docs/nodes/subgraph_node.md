@@ -51,7 +51,7 @@ graph_config:
 nodes:
   generate_question:
     node_type: subgraph
-    subgraph: grasp.tasks.subgraph_examples.subgraphs.generate_question
+    subgraph: tasks.subgraph_examples.subgraphs.generate_question
     node_config_map:
       paraphrase_question:
         output_keys: rephrased_text

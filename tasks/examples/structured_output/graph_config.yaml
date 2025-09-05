@@ -1,0 +1,58 @@
+data_config:
+  source:
+    type: "hf"
+    repo_id: "glaiveai/glaive-code-assistant-v2"
+    config_name: "default"
+    split: "train"
+
+    transformations:
+      - transform: grasp.processors.data_transform.RenameFieldsTransform
+        params:
+          mapping:
+            task_id: id
+          overwrite: false
+
+graph_config:
+  nodes:
+    generate_taxonomy:
+      node_type: llm
+      prompt:
+        - system: |
+            You are an assistant tasked with identifying category and sub category of a code snippet.
+            You should respond only with the category and subcategory of the code snippet.
+
+        - user: |
+            {question}
+      output_keys:
+        - category
+        - sub_category
+      post_process: tasks.examples.structured_output.task_executor.GenerateTaxonomyPostProcessor
+      model:
+        name: gpt-4o
+        parameters:
+          temperature: 0.1
+        structured_output:
+          schema:
+            fields:
+              category:
+                type: str
+                description: "Category of the code snippet"
+              sub_category:
+                type: str
+                description: "Sub category of the code snippet"
+
+  edges:
+    - from: START
+      to: generate_taxonomy
+    - from: generate_taxonomy
+      to: END
+output_config:
+  output_map:
+    id:
+      from: "id"
+    question:
+      from: "question"
+    category:
+      from: "category"
+    sub_category:
+      from: "sub_category"
