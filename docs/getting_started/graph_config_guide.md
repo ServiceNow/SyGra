@@ -247,7 +247,7 @@ All node types support these common parameters:
 | `node_type` | string | Type of node ("llm", "multi_llm", "weighted_sampler", "lambda", etc.) | Required  |
 | `node_state`| string | Node state ("active" or "idle") to enable/disable the node | "active" |
 
-**For detailed documentation and configuration options for each node type, see [nodes/](concepts/nodes/).**
+**For detailed documentation and configuration options for each node type, see [nodes/](https://github.com/ServiceNow/GraSP/tree/main/docs/concepts/nodes).**
 
 ### Edges
 
