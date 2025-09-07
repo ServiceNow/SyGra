@@ -12,7 +12,7 @@ from PIL import Image
 import os
 from langgraph.graph import StateGraph
 
-from tools.toolkits.data_quality.processor import DataQuality
+from grasp.tools.toolkits.data_quality.processor import DataQuality
 from grasp.core.dataset.dataset_config import (
     DataSourceConfig,
     OutputConfig,

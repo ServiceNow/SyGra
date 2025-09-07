@@ -1,0 +1,46 @@
+[
+    {
+        "id": "ce16ff25",
+        "conversation": [
+          {
+            "role": "user",
+            "content": "Hello, how are you?"
+          },
+            {
+                "role": "assistant",
+                "content": "I'm fine, thank you! How can I help?"
+            },
+            {
+                "role": "user",
+                "content": "What's the weather today?"
+            },
+            {
+                "role": "assistant",
+                "content": "Today's weather is sunny with a high of 75°F."
+            },
+            {
+                "role": "user",
+                "content": "Thanks! And tomorrow?"
+            },
+            {
+                "role": "assistant",
+                "content": "Tomorrow will be partly cloudy with a high of 70°F."
+            }
+        ],
+        "taxonomy": [
+            {
+                "category": "",
+                "subcategory": ""
+            }
+        ],
+        "annotation_type": [
+            "mistral-large"
+        ],
+        "language": "en",
+        "tags": [
+            "glaiveai/glaive-code-assistant-v2",
+            "reannotate",
+            "self-critique"
+        ]
+    }
+]
