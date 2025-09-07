@@ -1,0 +1,2803 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="GRAph-oriented Synthetic data generation Pipeline">
+      
+      
+      
+        <link rel="canonical" href="https://servicenow.github.io/grasp/getting_started/graph_config_guide/">
+      
+      
+        <link rel="prev" href="../Task_Executor/">
+      
+      
+        <link rel="next" href="../adding_edges/">
+      
+      
+      <link rel="icon" href="../../resources/images/grasp_logo.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.18">
+    
+    
+      
+        <title>Graph Config Guide - GraSP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.7e37652d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#grasp-graph-configuration-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="GraSP" class="md-header__button md-logo" aria-label="GraSP" data-md-component="logo">
+      
+  <img src="../../resources/images/grasp_logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GraSP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Graph Config Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ServiceNow/grasp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="GraSP" class="md-nav__button md-logo" aria-label="GraSP" data-md-component="logo">
+      
+  <img src="../../resources/images/grasp_logo.png" alt="logo">
+
+    </a>
+    GraSP
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ServiceNow/grasp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Getting Started
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Task_Executor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Executor
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Graph Config Guide
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Graph Config Guide
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structure-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Structure Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-source-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Source Options
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Source Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#huggingface-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      HuggingFace Source
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#local-file-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      Local File Source
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transformations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Transformations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Transformations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#some-of-the-available-transformations-are" class="md-nav__link">
+    <span class="md-ellipsis">
+      Some of the available transformations are:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#renamefieldstransform" class="md-nav__link">
+    <span class="md-ellipsis">
+      RenameFieldsTransform
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#combinerecords" class="md-nav__link">
+    <span class="md-ellipsis">
+      CombineRecords
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skiprecords" class="md-nav__link">
+    <span class="md-ellipsis">
+      SkipRecords
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-sink-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Sink Options
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Sink Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#huggingface-sink" class="md-nav__link">
+    <span class="md-ellipsis">
+      HuggingFace Sink
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#file-sink" class="md-nav__link">
+    <span class="md-ellipsis">
+      File Sink
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-less-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Less Configuration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#graph-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Graph Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Graph Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#graph-properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      Graph Properties
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nodes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#edges" class="md-nav__link">
+    <span class="md-ellipsis">
+      Edges
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Edges">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#special-nodes-start-and-end" class="md-nav__link">
+    <span class="md-ellipsis">
+      Special Nodes: START and END
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simple-edges" class="md-nav__link">
+    <span class="md-ellipsis">
+      Simple Edges
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditional-edges" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conditional Edges
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Output Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#yaml-driven-output-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      YAML-Driven Output Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="YAML-Driven Output Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-output_map-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      How output_map works
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-output-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example output record
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-transformations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Transformations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fully-custom-output-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fully Custom Output Generation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#full-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Full Example
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schema-validator" class="md-nav__link">
+    <span class="md-ellipsis">
+      Schema Validator
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Schema Validator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Introduction
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage-illustration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage Illustration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage Illustration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sample-yaml-configuration-to-use-custom-schema-defined-in-custom_schemaspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sample YAML configuration to use custom schema defined in custom_schemas.py
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sample-yaml-configuration-to-define-schema-in-yaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sample YAML configuration to define schema in YAML:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-generation-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Post Generation Tasks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Post Generation Tasks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-mapper-or-oasst_mapper" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data mapper or oasst_mapper
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-quality-tagging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Quality tagging
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adding_edges/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adding Edges
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Model Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create_new_pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Create a Synthetic Datagen Pipeline
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../create_task_ui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Create a task with UI
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Concepts
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Concepts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/data_handler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data Handler
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/data_mapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data Mapper
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/data_quality/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data Quality
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Multimodal
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4">
+            <span class="md-nav__icon md-icon"></span>
+            Multimodal
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/multimodal/audio_to_text/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Audio to Text
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/multimodal/image_to_text/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Image to Text
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_5" id="__nav_4_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Nodes
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_5">
+            <span class="md-nav__icon md-icon"></span>
+            Nodes
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/nodes/agent_node/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Agent Node
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/nodes/lambda_node/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Lambda Node
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/nodes/llm_node/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    LLM Node
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/nodes/multi_llm_node/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Multi LLM Node
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/nodes/subgraph_node/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Subgraph Node
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/nodes/weighted_sampler_node/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Weighted Sampler Node
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Processors
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_6">
+            <span class="md-nav__icon md-icon"></span>
+            Processors
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/processors/output_record_generator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Output Record Generator
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/schema_validator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Schema Validator
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/structured_output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Structured Output
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../grasp_library/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    GraSP Library
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structure-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Structure Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-source-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Source Options
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Source Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#huggingface-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      HuggingFace Source
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#local-file-source" class="md-nav__link">
+    <span class="md-ellipsis">
+      Local File Source
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transformations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Transformations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Transformations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#some-of-the-available-transformations-are" class="md-nav__link">
+    <span class="md-ellipsis">
+      Some of the available transformations are:
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#renamefieldstransform" class="md-nav__link">
+    <span class="md-ellipsis">
+      RenameFieldsTransform
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#combinerecords" class="md-nav__link">
+    <span class="md-ellipsis">
+      CombineRecords
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#skiprecords" class="md-nav__link">
+    <span class="md-ellipsis">
+      SkipRecords
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-sink-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Sink Options
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Sink Options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#huggingface-sink" class="md-nav__link">
+    <span class="md-ellipsis">
+      HuggingFace Sink
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#file-sink" class="md-nav__link">
+    <span class="md-ellipsis">
+      File Sink
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-less-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Less Configuration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#graph-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Graph Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Graph Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#graph-properties" class="md-nav__link">
+    <span class="md-ellipsis">
+      Graph Properties
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Nodes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#edges" class="md-nav__link">
+    <span class="md-ellipsis">
+      Edges
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Edges">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#special-nodes-start-and-end" class="md-nav__link">
+    <span class="md-ellipsis">
+      Special Nodes: START and END
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simple-edges" class="md-nav__link">
+    <span class="md-ellipsis">
+      Simple Edges
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditional-edges" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conditional Edges
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Output Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#yaml-driven-output-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      YAML-Driven Output Configuration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="YAML-Driven Output Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-output_map-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      How output_map works
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-output-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example output record
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-transformations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Custom Transformations
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fully-custom-output-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fully Custom Output Generation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#full-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Full Example
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schema-validator" class="md-nav__link">
+    <span class="md-ellipsis">
+      Schema Validator
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Schema Validator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Introduction
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage-illustration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage Illustration
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage Illustration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sample-yaml-configuration-to-use-custom-schema-defined-in-custom_schemaspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sample YAML configuration to use custom schema defined in custom_schemas.py
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sample-yaml-configuration-to-define-schema-in-yaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sample YAML configuration to define schema in YAML:
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-generation-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Post Generation Tasks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Post Generation Tasks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-mapper-or-oasst_mapper" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data mapper or oasst_mapper
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-quality-tagging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Quality tagging
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="grasp-graph-configuration-guide">GraSP Graph Configuration Guide<a class="headerlink" href="#grasp-graph-configuration-guide" title="Permanent link">&para;</a></h1>
+<h2 id="table-of-contents">Table of Contents<a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="#structure-overview">Structure Overview</a></li>
+<li><a href="#data-configuration">Data Configuration</a></li>
+<li><a href="#graph-configuration">Graph Configuration</a></li>
+<li><a href="#nodes">Nodes</a></li>
+<li><a href="#edges">Edges</a><ul>
+<li><a href="#simple-edges">Simple Edges</a></li>
+<li><a href="#conditional-edges">Conditional Edges</a></li>
+</ul>
+</li>
+<li><a href="#output-configuration">Output Configuration</a></li>
+<li><a href="#full-example">Full Example</a></li>
+<li><a href="#schema-validator">Schema_Validator</a></li>
+</ul>
+<h2 id="structure-overview">Structure Overview<a class="headerlink" href="#structure-overview" title="Permanent link">&para;</a></h2>
+<p>A GraSP configuration file is a YAML document with these main sections:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">data_config</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># Source data configuration</span>
+
+<span class="nt">graph_config</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">nodes</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># Node definitions</span>
+<span class="w">  </span><span class="nt">edges</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># Edge definitions</span>
+
+<span class="nt">output_config</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># Output generation configuration</span>
+
+<span class="nt">schema_config</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># Output schema validation </span>
+</code></pre></div>
+<p>Let's look at each section in detail. The sections below document all the available options and properties for each part of the configuration.</p>
+<h2 id="data-configuration">Data Configuration<a class="headerlink" href="#data-configuration" title="Permanent link">&para;</a></h2>
+<p>The <code>data_config</code> section defines your input data sources, output destinations (sinks), and any transformations to apply.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">data_config</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">source</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># Example 1: HuggingFace dataset source</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;hf&quot;</span><span class="w">                               </span><span class="c1"># HuggingFace dataset</span>
+<span class="w">    </span><span class="nt">repo_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;google-research-datasets/mbpp&quot;</span><span class="w"> </span><span class="c1"># HuggingFace repository ID</span>
+<span class="w">    </span><span class="nt">config_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;sanitized&quot;</span><span class="w">                 </span><span class="c1"># Dataset configuration name</span>
+<span class="w">    </span><span class="nt">split</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;train&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;validation&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;prompt&quot;</span><span class="p p-Indicator">]</span><span class="w"> </span><span class="c1"># Dataset splits to use</span>
+
+<span class="w">    </span><span class="c1"># OR</span>
+
+<span class="w">    </span><span class="c1"># Example 2: Local file source</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;disk&quot;</span><span class="w">                             </span><span class="c1"># Local file source</span>
+<span class="w">    </span><span class="nt">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/data.json&quot;</span><span class="w">          </span><span class="c1"># Path to input file</span>
+<span class="w">    </span><span class="nt">file_format</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;json&quot;</span><span class="w">                      </span><span class="c1"># Format (json, jsonl, csv, parquet)</span>
+<span class="w">    </span><span class="nt">encoding</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;utf-8&quot;</span><span class="w">                        </span><span class="c1"># File encoding</span>
+
+<span class="w">    </span><span class="c1"># Optional transformations to apply to the input data</span>
+<span class="w">    </span><span class="nt">transformations</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">transform</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">grasp.processors.data_transform.RenameFieldsTransform</span><span class="w">  </span><span class="c1"># Path to transformation class</span>
+<span class="w">        </span><span class="nt">params</span><span class="p">:</span><span class="w">                                                     </span><span class="c1"># Parameters for the transformation</span>
+<span class="w">          </span><span class="nt">mapping</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">task_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">id</span><span class="w">                     </span><span class="c1"># Rename &#39;task_id&#39; field to &#39;id&#39;</span>
+<span class="w">          </span><span class="nt">overwrite</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span><span class="w">                  </span><span class="c1"># Don&#39;t overwrite existing fields</span>
+
+<span class="w">  </span><span class="c1"># Optional sink configuration for where to store output data</span>
+<span class="w">  </span><span class="nt">sink</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># Example 1: HuggingFace dataset sink</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;hf&quot;</span><span class="w">                               </span><span class="c1"># HuggingFace dataset</span>
+<span class="w">    </span><span class="nt">repo_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;output-dataset/synthetic-mbpp&quot;</span><span class="w"> </span><span class="c1"># Where to upload the data</span>
+<span class="w">    </span><span class="nt">split</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;train&quot;</span><span class="w">                           </span><span class="c1"># Split to write to</span>
+<span class="w">    </span><span class="nt">private</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">                            </span><span class="c1"># Create a private dataset</span>
+
+<span class="w">    </span><span class="c1"># OR</span>
+
+<span class="w">    </span><span class="c1"># Example 2: Local file sink</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;json&quot;</span><span class="w">                             </span><span class="c1"># File format (json, jsonl, csv, parquet)</span>
+<span class="w">    </span><span class="nt">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;/path/to/output/file.json&quot;</span><span class="w">   </span><span class="c1"># Path to save the file</span>
+<span class="w">    </span><span class="nt">encoding</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;utf-8&quot;</span><span class="w">                        </span><span class="c1"># File encoding</span>
+</code></pre></div>
+<h3 id="data-source-options">Data Source Options<a class="headerlink" href="#data-source-options" title="Permanent link">&para;</a></h3>
+<p>The <code>source</code> subsection of <code>data_config</code> configures where the input data will come from.</p>
+<h4 id="huggingface-source">HuggingFace Source<a class="headerlink" href="#huggingface-source" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>Source type: "hf"</td>
+<td>Required</td>
+</tr>
+<tr>
+<td><code>repo_id</code></td>
+<td>string</td>
+<td>HuggingFace dataset repository ID</td>
+<td>Required</td>
+</tr>
+<tr>
+<td><code>config_name</code></td>
+<td>string</td>
+<td>Dataset configuration name</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>split</code></td>
+<td>string or list</td>
+<td>Dataset split(s) to use</td>
+<td>"train"</td>
+</tr>
+<tr>
+<td><code>token</code></td>
+<td>string</td>
+<td>HuggingFace API token</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>streaming</code></td>
+<td>boolean</td>
+<td>Whether to stream the dataset</td>
+<td>false</td>
+</tr>
+<tr>
+<td><code>shard</code></td>
+<td>object</td>
+<td>Configuration for sharded processing</td>
+<td>None</td>
+</tr>
+</tbody>
+</table>
+<h4 id="local-file-source">Local File Source<a class="headerlink" href="#local-file-source" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>Source type: "disk"</td>
+<td>Required</td>
+</tr>
+<tr>
+<td><code>file_path</code></td>
+<td>string</td>
+<td>Path to local file</td>
+<td>Required</td>
+</tr>
+<tr>
+<td><code>file_format</code></td>
+<td>string</td>
+<td>File format (json, jsonl, csv, parquet)</td>
+<td>Required</td>
+</tr>
+<tr>
+<td><code>encoding</code></td>
+<td>string</td>
+<td>Character encoding</td>
+<td>"utf-8"</td>
+</tr>
+</tbody>
+</table>
+<h3 id="transformations">Transformations<a class="headerlink" href="#transformations" title="Permanent link">&para;</a></h3>
+<p>Transformations allow you to modify the input data before processing.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>transform</code></td>
+<td>string</td>
+<td>Fully qualified path to a transformation class</td>
+</tr>
+<tr>
+<td><code>params</code></td>
+<td>object</td>
+<td>Parameters for the transformation</td>
+</tr>
+</tbody>
+</table>
+<h4 id="some-of-the-available-transformations-are">Some of the available transformations are:<a class="headerlink" href="#some-of-the-available-transformations-are" title="Permanent link">&para;</a></h4>
+<h4 id="renamefieldstransform">RenameFieldsTransform<a class="headerlink" href="#renamefieldstransform" title="Permanent link">&para;</a></h4>
+<p>It renames the fields in the dataset, so the prompt variables used are meaningful and reusable.
+The Below example shows how the <code>page</code> is renamed to <code>id</code>, <code>llm_extract</code> is renamed to <code>text</code> and <code>type</code> is renamed to <code>text_format</code>.
+<div class="highlight"><pre><span></span><code><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">transform</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">grasp.processors.data_transform.RenameFieldsTransform</span>
+<span class="w">        </span><span class="nt">params</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">mapping</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">page</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">id</span>
+<span class="w">            </span><span class="nt">llm_extract</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text</span>
+<span class="w">            </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_format</span>
+</code></pre></div></p>
+<h4 id="combinerecords">CombineRecords<a class="headerlink" href="#combinerecords" title="Permanent link">&para;</a></h4>
+<p>When you want to combine records to form a new dataset, you can use this transformation.
+Below example shows how we can skip 10 records from beginning and from end, and combine 2 records by shifting 1.
+For example record <code>11</code> and <code>12</code> will be combined to form <code>page</code>=<code>11-12</code>, in this example, <code>pdf_reader</code> and <code>llm_extract</code> columns are combined with two new lines. 
+And <code>type</code>, <code>model</code>, <code>metadata</code> is just picking data from first record. <code>$1</code> denotes first record, <code>$2</code> denotes second record and so on. 
+Once <code>11</code> and <code>12</code> is combined to form <code>11-12</code>, it shift by 1 and combines <code>12</code> with <code>13</code> to form <code>12-13</code>.
+<div class="highlight"><pre><span></span><code><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">transform</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">grasp.processors.data_transform.CombineRecords</span>
+<span class="w">        </span><span class="nt">params</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">skip</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">from_beginning</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+<span class="w">            </span><span class="nt">from_end</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+<span class="w">          </span><span class="nt">combine</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">          </span><span class="nt">shift</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">          </span><span class="nt">join_column</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">page</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;$1-$2&quot;</span>
+<span class="w">            </span><span class="nt">pdf_reader</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;$1\n\n$2&quot;</span>
+<span class="w">            </span><span class="nt">llm_extract</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;$1\n\n$2&quot;</span>
+<span class="w">            </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;$1&quot;</span>
+<span class="w">            </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;$1&quot;</span>
+<span class="w">            </span><span class="nt">metadata</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;$1&quot;</span>
+</code></pre></div></p>
+<h4 id="skiprecords">SkipRecords<a class="headerlink" href="#skiprecords" title="Permanent link">&para;</a></h4>
+<p>When we want to skip records for a dataset, we can use this transform.
+Below example shows how to skip first 10 and last 10 records using count.
+<div class="highlight"><pre><span></span><code><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">transform</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">grasp.processors.data_transform.SkipRecords</span>
+<span class="w">        </span><span class="nt">params</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">skip_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;count&quot;</span>
+<span class="w">          </span><span class="nt">count</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">from_start</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+<span class="w">            </span><span class="nt">from_end</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+</code></pre></div>
+Below example shows how to skip first 10 and last 10 records using range.
+<div class="highlight"><pre><span></span><code><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">transform</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">grasp.processors.data_transform.SkipRecords</span>
+<span class="w">        </span><span class="nt">params</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">skip_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;range&quot;</span>
+<span class="w">          </span><span class="nt">range</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;[:10],[-10:]&quot;</span>
+</code></pre></div></p>
+<h3 id="data-sink-options">Data Sink Options<a class="headerlink" href="#data-sink-options" title="Permanent link">&para;</a></h3>
+<p>The <code>sink</code> subsection of <code>data_config</code> configures where the output data will be stored.</p>
+<h4 id="huggingface-sink">HuggingFace Sink<a class="headerlink" href="#huggingface-sink" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>Sink type: "hf"</td>
+<td>Required</td>
+</tr>
+<tr>
+<td><code>repo_id</code></td>
+<td>string</td>
+<td>HuggingFace dataset repository ID</td>
+<td>Required</td>
+</tr>
+<tr>
+<td><code>config_name</code></td>
+<td>string</td>
+<td>Dataset configuration name</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>split</code></td>
+<td>string</td>
+<td>Dataset split to write to</td>
+<td>"train"</td>
+</tr>
+<tr>
+<td><code>token</code></td>
+<td>string</td>
+<td>HuggingFace API token</td>
+<td>None</td>
+</tr>
+<tr>
+<td><code>private</code></td>
+<td>boolean</td>
+<td>Whether to create a private dataset</td>
+<td>true</td>
+</tr>
+</tbody>
+</table>
+<h4 id="file-sink">File Sink<a class="headerlink" href="#file-sink" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>type</code></td>
+<td>string</td>
+<td>File format: "json", "jsonl", "csv", "parquet"</td>
+<td>Required</td>
+</tr>
+<tr>
+<td><code>file_path</code></td>
+<td>string</td>
+<td>Path to output file</td>
+<td>Required</td>
+</tr>
+<tr>
+<td><code>encoding</code></td>
+<td>string</td>
+<td>Character encoding</td>
+<td>"utf-8"</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data-less-configuration">Data Less Configuration<a class="headerlink" href="#data-less-configuration" title="Permanent link">&para;</a></h3>
+<p>GraSP supports generating data without requiring an input data source. This is useful for knowledge distillation from models, creating purely synthetic datasets, or any scenario where you want to generate content from scratch.</p>
+<p>To generate data without a source:</p>
+<ol>
+<li>Simply omit the <code>source</code> configuration in the <code>data_config</code> section</li>
+<li>Keep the <code>sink</code> configuration to specify where to store the generated data</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="nt">data_config</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># No source configuration</span>
+
+<span class="w">  </span><span class="c1"># Only sink configuration</span>
+<span class="w">  </span><span class="nt">sink</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;json&quot;</span>
+<span class="w">    </span><span class="nt">file_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;output/synthetic_data.jsonl&quot;</span>
+</code></pre></div>
+<h2 id="graph-configuration">Graph Configuration<a class="headerlink" href="#graph-configuration" title="Permanent link">&para;</a></h2>
+<p>The <code>graph_config</code> section defines the nodes and edges of your computational graph.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">graph_config</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">nodes</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># Node definitions</span>
+<span class="w">  </span><span class="nt">edges</span><span class="p">:</span>
+<span class="w">    </span><span class="c1"># Edge definitions</span>
+</code></pre></div>
+<p>This section is where you define the processing steps (nodes) and the flow between them (edges) that make up your data generation pipeline.</p>
+<h3 id="graph-properties">Graph Properties<a class="headerlink" href="#graph-properties" title="Permanent link">&para;</a></h3>
+<p>This defines the graph level properties, it can be a common properties but controlled from the task.
+<div class="highlight"><pre><span></span><code><span class="w">  </span><span class="nt">graph_properties</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">chat_conversation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">singleturn</span><span class="w">   </span><span class="c1">#singleturn or multiturn</span>
+<span class="w">    </span><span class="nt">chat_history_window_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+</code></pre></div></p>
+<h3 id="nodes">Nodes<a class="headerlink" href="#nodes" title="Permanent link">&para;</a></h3>
+<p>Nodes represent the processing steps in your pipeline. GraSP supports multiple types of nodes, such as LLM, multi_llm, weighted_sampler, lambda, agent, subgraph, and more.</p>
+<p>All node types support these common parameters:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>node_type</code></td>
+<td>string</td>
+<td>Type of node ("llm", "multi_llm", "weighted_sampler", "lambda", etc.)</td>
+<td>Required</td>
+</tr>
+<tr>
+<td><code>node_state</code></td>
+<td>string</td>
+<td>Node state ("active" or "idle") to enable/disable the node</td>
+<td>"active"</td>
+</tr>
+</tbody>
+</table>
+<p><strong>For detailed documentation and configuration options for each node type, see <a href="https://github.com/ServiceNow/GraSP/tree/main/docs/concepts/nodes">nodes/</a>.</strong></p>
+<h3 id="edges">Edges<a class="headerlink" href="#edges" title="Permanent link">&para;</a></h3>
+<p>Edges define the flow of execution between nodes.</p>
+<h4 id="special-nodes-start-and-end">Special Nodes: START and END<a class="headerlink" href="#special-nodes-start-and-end" title="Permanent link">&para;</a></h4>
+<p>GraSP graphs automatically include two special nodes:</p>
+<ul>
+<li><strong>START</strong>: The entry point of the graph. Every graph must have at least one edge from START to another node.</li>
+<li><strong>END</strong>: The exit point of the graph. When execution reaches the END node, the graph processing is complete.</li>
+</ul>
+<p>These special nodes are handled automatically by the framework and don't need to be defined in the <code>nodes</code> section. They are only referenced in edge definitions.</p>
+<h4 id="simple-edges">Simple Edges<a class="headerlink" href="#simple-edges" title="Permanent link">&para;</a></h4>
+<p>Simple edges define a direct path from one node to another.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">edges</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">START</span><span class="w">              </span><span class="c1"># Source START node (entry point)</span>
+<span class="w">    </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">persona_sampler</span><span class="w">      </span><span class="c1"># Target node</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">persona_sampler</span><span class="w">    </span><span class="c1"># Source node</span>
+<span class="w">    </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">paraphrase_question</span><span class="w">  </span><span class="c1"># Target node</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">final_node</span><span class="w">         </span><span class="c1"># Last processing node</span>
+<span class="w">    </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">END</span><span class="w">                  </span><span class="c1"># Exit point of the graph</span>
+</code></pre></div>
+<h4 id="conditional-edges">Conditional Edges<a class="headerlink" href="#conditional-edges" title="Permanent link">&para;</a></h4>
+<p>Conditional edges define different paths based on a condition. Conditions can direct flow to the END node to terminate processing.</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">critique_answer</span>
+<span class="w">  </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tasks.mbpp.code_generation_with_graph_builder.task_executor.ShouldContinueCondition</span>
+<span class="w">  </span><span class="nt">path_map</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">END</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">END</span><span class="w">                          </span><span class="c1"># Path to END when condition returns &quot;END&quot; (terminates processing)</span>
+<span class="w">    </span><span class="nt">generate_answer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">generate_answer</span><span class="w">  </span><span class="c1"># Path to generate_answer when condition returns &quot;generate_answer&quot;</span>
+</code></pre></div>
+<p>In condition functions, you can return <code>constants.GRASP_END</code> to direct flow to the END node:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">ShouldContinueCondition</span><span class="p">(</span><span class="n">EdgeCondition</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">GraspState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="c1"># End after 4 iterations or the last feedback response contains &quot;NO MORE FEEDBACK&quot;</span>
+        <span class="n">messages</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;messages&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">8</span> <span class="ow">or</span> <span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="s2">&quot;no more feedback&quot;</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="n">constants</span><span class="o">.</span><span class="n">GRASP_END</span>  <span class="c1"># This will direct flow to the END node</span>
+        <span class="k">return</span> <span class="s2">&quot;generate_answer&quot;</span>
+</code></pre></div>
+<p><strong>Edge Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>from</code></td>
+<td>string</td>
+<td>Source node name (can be a regular node or START)</td>
+</tr>
+<tr>
+<td><code>to</code></td>
+<td>string</td>
+<td>Target node name (can be a regular node or END)</td>
+</tr>
+<tr>
+<td><code>condition</code></td>
+<td>string</td>
+<td>Fully qualified path to a condition class or function (for conditional edges)</td>
+</tr>
+<tr>
+<td><code>path_map</code></td>
+<td>object</td>
+<td>Map of condition results to target node names (for conditional edges)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="output-configuration">Output Configuration<a class="headerlink" href="#output-configuration" title="Permanent link">&para;</a></h2>
+<p>The <code>output_config</code> section defines how to generate the final output records. This component translates the final state of the graph into the desired output format for each processed record.</p>
+<h3 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h3>
+<p>There are two approaches to generating output records:</p>
+<ol>
+<li><strong>YAML-driven</strong> with the <code>output_map</code> configuration (recommended)</li>
+<li><strong>Custom Python implementation</strong> by overriding the <code>generate()</code> method</li>
+</ol>
+<h3 id="yaml-driven-output-configuration">YAML-Driven Output Configuration<a class="headerlink" href="#yaml-driven-output-configuration" title="Permanent link">&para;</a></h3>
+<p>This approach uses declarative configuration to map state variables to output fields. The <code>output_map</code> section defines how to construct your final output records by specifying what goes into each field:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">output_config</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># Path to a class that inherits from BaseOutputGenerator</span>
+<span class="w">  </span><span class="nt">generator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tasks.mbpp.code_generation_with_graph_builder.task_executor.CodeGenOutputGenerator</span>
+
+<span class="w">  </span><span class="c1"># Map of output fields and how to populate them</span>
+<span class="w">  </span><span class="nt">output_map</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">id</span><span class="p">:</span><span class="w">                       </span><span class="c1"># Output field name</span>
+<span class="w">      </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;id&quot;</span><span class="w">              </span><span class="c1"># Get value from this state variable</span>
+<span class="w">    </span><span class="nt">conversation</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;messages&quot;</span><span class="w">        </span><span class="c1"># Get value from this state variable</span>
+<span class="w">      </span><span class="nt">transform</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;build_conversation&quot;</span><span class="w">  </span><span class="c1"># Apply this method from the generator class to transform the value</span>
+<span class="w">    </span><span class="nt">taxonomy</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w">                  </span><span class="c1"># Use this static value (not from state)</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">category</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Coding&quot;</span>
+<span class="w">          </span><span class="nt">subcategory</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+<span class="w">    </span><span class="nt">annotation_type</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;mistral-large&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">language</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;en&quot;</span>
+<span class="w">    </span><span class="nt">tags</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;mbpp&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;self-critique&quot;</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<h4 id="how-output_map-works">How <code>output_map</code> works<a class="headerlink" href="#how-output_map-works" title="Permanent link">&para;</a></h4>
+<p>The <code>output_map</code> is a dictionary where:
+1. Each <strong>key</strong> becomes a field name in your output record
+2. Each <strong>value</strong> is a configuration object that defines how to populate that field</p>
+<p>For each field, you have two main ways to populate it:</p>
+<ol>
+<li>
+<p><strong>Dynamic values from state</strong> (using <code>from</code>):
+   <div class="highlight"><pre><span></span><code><span class="nt">id</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;id&quot;</span><span class="w">  </span><span class="c1"># Takes the value from state[&quot;id&quot;]</span>
+</code></pre></div>
+   This retrieves the value with the key "id" from the graph state and puts it in the output record's "id" field.</p>
+</li>
+<li>
+<p><strong>Static values</strong> (using <code>value</code>):
+   <div class="highlight"><pre><span></span><code><span class="nt">language</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;en&quot;</span><span class="w">  </span><span class="c1"># Hardcoded value &quot;en&quot;</span>
+</code></pre></div>
+   This puts the literal value "en" in the output record's "language" field.</p>
+</li>
+<li>
+<p><strong>Transformed values</strong> (using <code>from</code> + <code>transform</code>):
+   <div class="highlight"><pre><span></span><code><span class="nt">conversation</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;messages&quot;</span><span class="w">  </span><span class="c1"># Takes the value from state[&quot;messages&quot;]</span>
+<span class="w">  </span><span class="nt">transform</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;build_conversation&quot;</span><span class="w">  </span><span class="c1"># Passes it through a transformation method</span>
+</code></pre></div>
+   This takes the value from state["messages"], passes it through the <code>build_conversation</code> method defined in your generator class, and puts the result in the output record's "conversation" field.</p>
+</li>
+</ol>
+<h4 id="example-output-record">Example output record<a class="headerlink" href="#example-output-record" title="Permanent link">&para;</a></h4>
+<p>With the configuration above, your final output record would look like:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mbpp-125&quot;</span><span class="p">,</span><span class="w">  </span><span class="c1">// Value from state[&quot;id&quot;]</span>
+<span class="w">  </span><span class="nt">&quot;conversation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">  </span><span class="c1">// Result of build_conversation(state[&quot;messages&quot;])</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Write a function to check if a number is prime&quot;</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;assistant&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Here&#39;s a function...&quot;</span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;taxonomy&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">  </span><span class="c1">// Static value from configuration</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Coding&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;subcategory&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;annotation_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;mistral-large&quot;</span><span class="p">],</span><span class="w">  </span><span class="c1">// Static value</span>
+<span class="w">  </span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span><span class="p">,</span><span class="w">  </span><span class="c1">// Static value</span>
+<span class="w">  </span><span class="nt">&quot;tags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;mbpp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;self-critique&quot;</span><span class="p">]</span><span class="w">  </span><span class="c1">// Static value</span>
+<span class="p">}</span>
+</code></pre></div>
+<p><strong>Output Configuration Parameters:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>generator</code></td>
+<td>string</td>
+<td>Fully qualified path to a class that inherits from <code>BaseOutputGenerator</code></td>
+</tr>
+<tr>
+<td><code>output_map</code></td>
+<td>object</td>
+<td>Map of output field names to mappings</td>
+</tr>
+<tr>
+<td><code>output_map.&lt;field&gt;.from</code></td>
+<td>string</td>
+<td>State variable to get value from (mutually exclusive with <code>value</code>)</td>
+</tr>
+<tr>
+<td><code>output_map.&lt;field&gt;.value</code></td>
+<td>any</td>
+<td>Static value for the field (mutually exclusive with <code>from</code>)</td>
+</tr>
+<tr>
+<td><code>output_map.&lt;field&gt;.transform</code></td>
+<td>string</td>
+<td>Method name in the generator class to transform the value</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Metadata in Output Map</strong></p>
+<p>Metadata can be any supported data for the record, sometimes we want to put datasource as metadata.
+However, datasource is already mentioned in the current YAML file. output_map value supports \$ variables which points to a node in the YAML.
+\$ variables are only supported under <code>value</code> key.</p>
+<p>Below example shows how a dictionary value can have \$ variables as dictionary values,
+list values and direct string value. 
+It can read the path with dot format, also supports list with subscript operator.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">output_config</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">output_map</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">id</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;id&quot;</span>
+<span class="w">    </span><span class="nt">content</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;text&quot;</span>
+<span class="w">    </span><span class="nt">metadata</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">source</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">$data_config.source.type</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">$data_config.source.config_name</span><span class="p p-Indicator">]</span>
+<span class="w">            </span><span class="nt">location</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$data_config.source.repo_id</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$graph_config.nodes.extract_question.node_type</span>
+<span class="w">            </span><span class="nt">location</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$graph_config.nodes.extract_question.model.name</span>
+<span class="w">        </span><span class="nt">start_node</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$graph_config.edges[0].from</span>
+<span class="w">        </span><span class="nt">author</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">john doe</span>
+</code></pre></div>
+<h3 id="custom-transformations">Custom Transformations<a class="headerlink" href="#custom-transformations" title="Permanent link">&para;</a></h3>
+<p>When using <code>transform</code> in the <code>output_map</code>, you must implement the corresponding method in your generator class:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">CodeGenOutputGenerator</span><span class="p">(</span><span class="n">BaseOutputGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Example output generator with custom transformations</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">build_conversation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Transform messages into a conversation format</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data: The value from the state (from the &#39;from&#39; field)</span>
+<span class="sd">            state: The entire graph state</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The transformed value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">chat_format_messages</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">convert_messages_from_langchain_to_chat_format</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="c1"># Example transformation logic:</span>
+        <span class="k">if</span> <span class="n">chat_format_messages</span> <span class="ow">and</span> <span class="s2">&quot;no more feedback&quot;</span> <span class="ow">in</span> <span class="n">chat_format_messages</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s2">&quot;content&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+            <span class="c1"># Remove the last message with &quot;no more feedback&quot;</span>
+            <span class="n">chat_format_messages</span> <span class="o">=</span> <span class="n">chat_format_messages</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Add additional messages or modify existing ones</span>
+        <span class="k">if</span> <span class="s2">&quot;rephrased_text&quot;</span> <span class="ow">in</span> <span class="n">state</span> <span class="ow">and</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;rephrased_text&quot;</span><span class="p">]:</span>
+            <span class="c1"># output keys can be directly accessed from state</span>
+            <span class="n">question</span> <span class="o">=</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;rephrased_text&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;PARAPHRASED QUESTION: &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">chat_format_messages</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">question</span><span class="p">})</span>
+
+        <span class="k">return</span> <span class="n">chat_format_messages</span>
+</code></pre></div>
+<h3 id="fully-custom-output-generation">Fully Custom Output Generation<a class="headerlink" href="#fully-custom-output-generation" title="Permanent link">&para;</a></h3>
+<p>For more complex output generation logic, you can override the <code>generate()</code> method:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">CustomOutputGenerator</span><span class="p">(</span><span class="n">BaseOutputGenerator</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">GraspState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a custom output record from the graph state</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            state: The final graph state</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            The output record as a dictionary</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Custom logic to build the output record</span>
+        <span class="k">if</span> <span class="s2">&quot;messages&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">state</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># Skip records that don&#39;t have messages</span>
+
+        <span class="c1"># Build your output record with custom logic</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;conversation&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_conversation</span><span class="p">(</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;messages&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_metadata</span><span class="p">(</span><span class="n">state</span><span class="p">),</span>
+            <span class="c1"># Other fields...</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">record</span>
+
+    <span class="k">def</span> <span class="nf">_process_conversation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">):</span>
+        <span class="c1"># Helper method for processing messages</span>
+        <span class="c1"># ...</span>
+
+    <span class="k">def</span> <span class="nf">_build_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="c1"># Helper method for building metadata</span>
+        <span class="c1"># ...</span>
+</code></pre></div>
+<p>The output generator is the final step in the pipeline and determines what data gets saved as the result of your synthetic data generation process.</p>
+<h2 id="full-example">Full Example<a class="headerlink" href="#full-example" title="Permanent link">&para;</a></h2>
+<p>Here's a complete example based on the code generation task:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">data_config</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">source</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;hf&quot;</span>
+<span class="w">    </span><span class="nt">repo_id</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;google-research-datasets/mbpp&quot;</span>
+<span class="w">    </span><span class="nt">config_name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;sanitized&quot;</span>
+<span class="w">    </span><span class="nt">split</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;train&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;validation&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;prompt&quot;</span><span class="p p-Indicator">]</span>
+
+<span class="w">    </span><span class="nt">transformations</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">transform</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">grasp.processors.data_transform.RenameFieldsTransform</span>
+<span class="w">        </span><span class="nt">params</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">mapping</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">task_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">id</span>
+<span class="w">          </span><span class="nt">overwrite</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+
+<span class="nt">graph_config</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">nodes</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">persona_sampler</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">node_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">weighted_sampler</span>
+<span class="w">      </span><span class="nt">attributes</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">num_turns</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">values</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">2</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">4</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">5</span><span class="p p-Indicator">]</span>
+<span class="w">        </span><span class="nt">tone1</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">values</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">professional</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">casual</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">friendly</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">inquisitive</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">formal</span><span class="p p-Indicator">]</span>
+<span class="w">        </span><span class="nt">persona1</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">values</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">high school teacher</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">college professor</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">software engineer</span><span class="p p-Indicator">]</span>
+
+<span class="w">    </span><span class="nt">paraphrase_question</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">node_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">llm</span><span class="w">        </span>
+<span class="w">      </span><span class="nt">output_keys</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rephrased_text</span>
+<span class="w">      </span><span class="nt">prompt</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">system</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">            </span><span class="no">Assume you are {persona1} persona.</span>
+<span class="w">            </span><span class="no">You are an assistant tasked with paraphrasing a user question.</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">            </span><span class="no">QUESTION: {prompt}. Write the program in python.      </span>
+<span class="w">      </span><span class="nt">model</span><span class="p">:</span><span class="w">      </span>
+<span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mistralai</span><span class="w">      </span>
+<span class="w">        </span><span class="nt">parameters</span><span class="p">:</span><span class="w">          </span>
+<span class="w">          </span><span class="nt">temperature</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+
+<span class="w">    </span><span class="nt">generate_answer</span><span class="p">:</span><span class="w">  </span>
+<span class="w">      </span><span class="nt">node_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">llm</span><span class="w">        </span>
+<span class="w">      </span><span class="nt">prompt</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">system</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">            </span><span class="no">You are an assistant tasked with solving python coding problems.</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">user</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">            </span><span class="no">{prompt}      </span>
+<span class="w">      </span><span class="nt">model</span><span class="p">:</span><span class="w">      </span>
+<span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span><span class="w">            </span><span class="c1"># Must match a model defined in config/models.yaml</span>
+<span class="w">        </span><span class="nt">parameters</span><span class="p">:</span><span class="w">             </span><span class="c1"># Override default parameters from models.yaml</span>
+<span class="w">          </span><span class="nt">temperature</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
+
+<span class="w">    </span><span class="nt">critique_answer</span><span class="p">:</span><span class="w">  </span>
+<span class="w">      </span><span class="nt">pre_process</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tasks.mbpp.code_generation_with_graph_builder.task_executor.CritiqueAnsNodePreProcessor</span>
+<span class="w">      </span><span class="nt">node_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">llm</span><span class="w"> </span>
+<span class="w">      </span><span class="nt">output_role</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">user</span><span class="w"> </span>
+<span class="w">      </span><span class="nt">prompt</span><span class="p">:</span><span class="w">        </span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">system</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span><span class="w">              </span>
+<span class="w">            </span><span class="no">You are a teacher grading a solution to a python coding problem.</span>
+
+<span class="w">            </span><span class="no">QUESTION: {prompt}            </span>
+<span class="w">            </span><span class="no">TEST CASES: {test_list}</span>
+<span class="w">      </span><span class="nt">model</span><span class="p">:</span><span class="w">      </span>
+<span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gpt-4o</span>
+<span class="w">        </span><span class="nt">parameters</span><span class="p">:</span><span class="w">          </span>
+<span class="w">          </span><span class="nt">temperature</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+
+<span class="w">  </span><span class="nt">edges</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">START</span>
+<span class="w">      </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">persona_sampler</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">persona_sampler</span>
+<span class="w">      </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">paraphrase_question</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">paraphrase_question</span>
+<span class="w">      </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">generate_answer</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">generate_answer</span>
+<span class="w">      </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">critique_answer</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">critique_answer</span>
+<span class="w">      </span><span class="nt">condition</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tasks.mbpp.code_generation_with_graph_builder.task_executor.ShouldContinueCondition</span>
+<span class="w">      </span><span class="nt">path_map</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">END</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">END</span>
+<span class="w">        </span><span class="nt">generate_answer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">generate_answer</span>
+
+<span class="nt">output_config</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">generator</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tasks.mbpp.code_generation_with_graph_builder.task_executor.CodeGenOutputGenerator</span>
+
+<span class="w">  </span><span class="nt">output_map</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">id</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;id&quot;</span>
+<span class="w">    </span><span class="nt">conversation</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;messages&quot;</span>
+<span class="w">      </span><span class="nt">transform</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;build_conversation&quot;</span>
+<span class="w">    </span><span class="nt">taxonomy</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">category</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Coding&quot;</span>
+<span class="w">          </span><span class="nt">subcategory</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+<span class="w">    </span><span class="nt">annotation_type</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;mistral-large&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">language</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;en&quot;</span>
+<span class="w">    </span><span class="nt">tags</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;mbpp&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;reannotate&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;self-critique&quot;</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+<h2 id="schema-validator">Schema Validator<a class="headerlink" href="#schema-validator" title="Permanent link">&para;</a></h2>
+<h3 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h3>
+<p>Schema validator enables users to ensure correctness of generated data before uploading to HF or File System.</p>
+<p>Key features supported for schema validation are as follows: </p>
+<ol>
+<li><strong>YAML based schema check:</strong> Users can define their schema using YAML config files in the following ways:-</li>
+<li>Define a custom schema class inside <code>custom_schemas.py</code> and add it's path in <code>schema</code> key inside <code>schema_config</code>.</li>
+<li>
+<p>Add expected schema config in a list of dict format inside <code>fields</code> key inside <code>schema_config</code>.</p>
+</li>
+<li>
+<p><strong>Rule based validation support:</strong> Aside from adding validator rules inside custom class, users can choose from validation methods supported(details in additional validation rules section) and add it as a key for a particular field's dict.</p>
+</li>
+</ol>
+<h3 id="usage-illustration">Usage Illustration<a class="headerlink" href="#usage-illustration" title="Permanent link">&para;</a></h3>
+<p>Let's assume we have the following record generated which we want to validate: </p>
+<p><div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">130426</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;conversation&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;I am trying to get the CPU cycles at a specific point in my code.&quot;</span>
+<span class="w">            </span><span class="p">},</span>
+<span class="w">            </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;assistant&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;The `rdtsc` function you&#39;re using gives you the number of cycles since the CPU was last reset, which is not what you want in this case.&quot;</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;taxonomy&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="p">{</span>
+<span class="w">                </span><span class="nt">&quot;category&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Coding&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="nt">&quot;subcategory&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;annotation_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="s2">&quot;mistral-large&quot;</span>
+<span class="w">        </span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="s2">&quot;en&quot;</span>
+<span class="w">        </span><span class="p">],</span>
+<span class="w">        </span><span class="nt">&quot;tags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="s2">&quot;glaiveai/glaive-code-assistant-v2&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="s2">&quot;reannotate&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="s2">&quot;self-critique&quot;</span>
+<span class="w">        </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+For the above record, user can have the following class defined inside <code>custom_schemas.py</code> defining the 
+expected keys and values along with additional validation rules if any. </p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">CustomUserSchema</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    This demonstrates an example of a customizable user schema that can be modified or redefined by the end user.</span>
+<span class="sd">    Below is a sample schema with associated validator methods.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">conversation</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span><span class="n">Any</span><span class="p">]]</span>
+    <span class="n">taxonomy</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+    <span class="n">annotation_type</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">language</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">tags</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+    <span class="nd">@root_validator</span><span class="p">(</span><span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">check_non_empty_lists</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;id cannot be empty&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">values</span>
+</code></pre></div>
+<h4 id="sample-yaml-configuration-to-use-custom-schema-defined-in-custom_schemaspy">Sample YAML configuration to use custom schema defined in <code>custom_schemas.py</code><a class="headerlink" href="#sample-yaml-configuration-to-use-custom-schema-defined-in-custom_schemaspy" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="nt">schema_config</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">grasp.validators.custom_schemas.CustomUserSchema</span>
+</code></pre></div>
+<h4 id="sample-yaml-configuration-to-define-schema-in-yaml">Sample YAML configuration to define schema in YAML:<a class="headerlink" href="#sample-yaml-configuration-to-define-schema-in-yaml" title="Permanent link">&para;</a></h4>
+<p><div class="highlight"><pre><span></span><code><span class="nt">schema_config</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">fields</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">id</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="nt">is_greater_than</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">99999</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">conversation</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list[dict[str, any]]</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">taxonomy</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list[dict[str, any]]</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">annotation_type</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list[str]</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">language</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list[str]</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tags</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">list[str]</span>
+</code></pre></div>
+Note that <code>fields</code> is expected to be a list of dicts with <code>name</code> and <code>type</code> present in each dict with additional option
+of providing validation key. In the above example <code>is_greater_than</code> is a validation key shown for demonstration purpose 
+to ensure <code>id</code> key in each record has a value with 6 digits or more. </p>
+<h2 id="post-generation-tasks">Post Generation Tasks<a class="headerlink" href="#post-generation-tasks" title="Permanent link">&para;</a></h2>
+<p>Post generation tasks are tasks that are executed after the graph has been executed. These tasks can be used to perform additional processing on the generated data, such as <strong>OASST Mapper</strong> and <strong>Data Quality</strong> tagging. </p>
+<h3 id="data-mapper-or-oasst_mapper"><code>Data mapper</code> or <code>oasst_mapper</code><a class="headerlink" href="#data-mapper-or-oasst_mapper" title="Permanent link">&para;</a></h3>
+<p>OASST Mapper enables users to transform data coming from output record generator into SFT/DPO format depending upon user's choice in the <a href="https://huggingface.co/datasets/OpenAssistant/oasst2">OASST2 fomat</a>.</p>
+<p>By default, the Data Mapper is <strong>disabled</strong>. To enable it, add the following runtime argument:</p>
+<div class="highlight"><pre><span></span><code>--oasst True
+</code></pre></div>
+<p>You can refer to <a href="../../concepts/data_mapper/">Data Mapper</a> for more details on how to configure the OASST Mapper.</p>
+<h3 id="data-quality-tagging"><code>Data Quality</code> tagging<a class="headerlink" href="#data-quality-tagging" title="Permanent link">&para;</a></h3>
+<p>Data Quality tagging is a feature that allows users to tag the generated data with quality metrics which can be useful for evaluation of the generated data and act as a filtering mechanism during training.</p>
+<p>By default, the Data Quality tagging is <strong>disabled</strong>. To enable it, add the following runtime argument:</p>
+<p><div class="highlight"><pre><span></span><code>--quality True
+</code></pre></div>
+You can refer to <a href="../../concepts/data_quality/">Data Quality Tagging</a> for more details on how to configure the Data Quality tagging.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.top", "toc.follow", "content.code.copy"], "search": "../../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.92b07e13.min.js"></script>
+      
+    
+  </body>
+</html>

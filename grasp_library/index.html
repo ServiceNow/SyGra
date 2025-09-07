@@ -1,0 +1,2573 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="GRAph-oriented Synthetic data generation Pipeline">
+      
+      
+      
+        <link rel="canonical" href="https://servicenow.github.io/grasp/grasp_library/">
+      
+      
+        <link rel="prev" href="../concepts/structured_output/">
+      
+      
+      
+      <link rel="icon" href="../resources/images/grasp_logo.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.18">
+    
+    
+      
+        <title>GraSP Library - GraSP</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.7e37652d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#grasp-library-documentation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GraSP" class="md-header__button md-logo" aria-label="GraSP" data-md-component="logo">
+      
+  <img src="../resources/images/grasp_logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GraSP
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              GraSP Library
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ServiceNow/grasp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GraSP" class="md-nav__button md-logo" aria-label="GraSP" data-md-component="logo">
+      
+  <img src="../resources/images/grasp_logo.png" alt="logo">
+
+    </a>
+    GraSP
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ServiceNow/grasp" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Getting Started
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Getting Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting_started/Task_Executor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Task Executor
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting_started/graph_config_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Graph Config Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting_started/adding_edges/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adding Edges
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting_started/model_configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Model Configuration
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting_started/create_new_pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Create a Synthetic Datagen Pipeline
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting_started/create_task_ui/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Create a task with UI
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Concepts
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Concepts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/data_handler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data Handler
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/data_mapper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data Mapper
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/data_quality/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Data Quality
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Multimodal
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4">
+            <span class="md-nav__icon md-icon"></span>
+            Multimodal
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/multimodal/audio_to_text/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Audio to Text
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/multimodal/image_to_text/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Image to Text
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_5" id="__nav_4_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Nodes
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_5">
+            <span class="md-nav__icon md-icon"></span>
+            Nodes
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/nodes/agent_node/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Agent Node
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/nodes/lambda_node/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Lambda Node
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/nodes/llm_node/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    LLM Node
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/nodes/multi_llm_node/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Multi LLM Node
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/nodes/subgraph_node/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Subgraph Node
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/nodes/weighted_sampler_node/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Weighted Sampler Node
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Processors
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_6">
+            <span class="md-nav__icon md-icon"></span>
+            Processors
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/processors/output_record_generator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Output Record Generator
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/schema_validator/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Schema Validator
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/structured_output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Structured Output
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    GraSP Library
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    GraSP Library
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Features
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quick Start
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick Start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Workflow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#override-existing-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Override Existing Tasks
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      API Reference
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#workflow-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      Workflow Class
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Workflow Class">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constructor" class="md-nav__link">
+    <span class="md-ellipsis">
+      Constructor
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#core-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Methods
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#node-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Node Types
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Node Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#llm-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      LLM Nodes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LLM Nodes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Usage
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Configuration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-llm-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multi-LLM Nodes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Agent Nodes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lambda-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Lambda Nodes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lambda Nodes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using Classes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using Functions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-callable-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using Callable Objects
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration System
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration System">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#universal-override-method" class="md-nav__link">
+    <span class="md-ellipsis">
+      Universal Override Method
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#helper-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Helper Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Helper Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Overrides
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prompt-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prompt Overrides
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#graph-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      Graph Builder
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Graph Builder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Construction
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#processor-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Processor Classes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Processor Classes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pre-processors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pre-Processors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-processors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Post-Processors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-processors-with-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      Post-Processors with State
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-sources-and-sinks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Sources and Sinks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Sources and Sinks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#source-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Source Options
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-data-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Data Sources
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Features
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quality-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quality Control
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oasst-conversation-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      OASST Conversation Mapping
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resumable-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Resumable Execution
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#content-analysis-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      Content Analysis Pipeline
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#research-assistant" class="md-nav__link">
+    <span class="md-ellipsis">
+      Research Assistant
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-reference_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      API Reference
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#return-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Return Types
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Overview">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Features
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Installation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quick Start
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick Start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Workflow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#override-existing-tasks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Override Existing Tasks
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      API Reference
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#workflow-class" class="md-nav__link">
+    <span class="md-ellipsis">
+      Workflow Class
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Workflow Class">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constructor" class="md-nav__link">
+    <span class="md-ellipsis">
+      Constructor
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#core-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Methods
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#node-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Node Types
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Node Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#llm-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      LLM Nodes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LLM Nodes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Usage
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Configuration
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-llm-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multi-LLM Nodes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agent-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Agent Nodes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lambda-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Lambda Nodes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lambda Nodes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using Classes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using Functions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-callable-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using Callable Objects
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration System
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration System">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#universal-override-method" class="md-nav__link">
+    <span class="md-ellipsis">
+      Universal Override Method
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#helper-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Helper Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Helper Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#model-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Overrides
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prompt-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prompt Overrides
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#graph-builder" class="md-nav__link">
+    <span class="md-ellipsis">
+      Graph Builder
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Graph Builder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-construction" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Construction
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#processor-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Processor Classes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Processor Classes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pre-processors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pre-Processors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-processors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Post-Processors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-processors-with-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      Post-Processors with State
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-sources-and-sinks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data Sources and Sinks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Sources and Sinks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#source-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Source Options
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-data-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Data Sources
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Advanced Features
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Features">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quality-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      Quality Control
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oasst-conversation-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      OASST Conversation Mapping
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resumable-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Resumable Execution
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      Examples
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#content-analysis-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      Content Analysis Pipeline
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#research-assistant" class="md-nav__link">
+    <span class="md-ellipsis">
+      Research Assistant
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-reference_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      API Reference
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#return-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Return Types
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="grasp-library-documentation">GraSP Library Documentation<a class="headerlink" href="#grasp-library-documentation" title="Permanent link">&para;</a></h1>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>The <strong>GraSP Library</strong> provides a high-level Python interface for building and executing complex data processing workflows with LLMs, agents, and advanced orchestration features. This library enables both programmatic workflow creation and existing YAML task execution with override capabilities.</p>
+<h3 id="key-features">Key Features<a class="headerlink" href="#key-features" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Workflow Builder</strong> - Programmatic workflow construction with method chaining</li>
+<li><strong>Multiple Node Types</strong> - LLM, Multi-LLM, Agent, Lambda, Weighted Sampler, Subgraph nodes</li>
+<li><strong>Configuration Overrides</strong> - Dynamic runtime modifications with dot notation</li>
+<li><strong>Data Processing</strong> - Multi-format support (JSON, JSONL, CSV, HuggingFace datasets)</li>
+<li><strong>Advanced Features</strong> - Quality tagging, OASST mapping, resumable execution</li>
+<li><strong>Callable Support</strong> - Pass Python functions, classes, and methods directly</li>
+</ul>
+<hr />
+<h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code>chmod<span class="w"> </span>+x<span class="w"> </span>setup_grasp_lib.sh
+./setup_grasp_lib.sh
+</code></pre></div>
+<hr />
+<h2 id="quick-start">Quick Start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
+<h3 id="basic-workflow">Basic Workflow<a class="headerlink" href="#basic-workflow" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">grasp</span>
+
+<span class="c1"># Simple text processing workflow</span>
+<span class="n">workflow</span> <span class="o">=</span> <span class="n">grasp</span><span class="o">.</span><span class="n">Workflow</span><span class="p">()</span> \
+    <span class="o">.</span><span class="n">source</span><span class="p">(</span><span class="s2">&quot;data.json&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">llm</span><span class="p">(</span><span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span> <span class="s2">&quot;Rewrite this text: </span><span class="si">{text}</span><span class="s2">&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="s2">&quot;output.json&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div>
+<h3 id="override-existing-tasks">Override Existing Tasks<a class="headerlink" href="#override-existing-tasks" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Execute existing YAML task with runtime modifications</span>
+<span class="n">workflow</span> <span class="o">=</span> <span class="n">grasp</span><span class="o">.</span><span class="n">Workflow</span><span class="p">(</span><span class="s2">&quot;my_existing_task&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">override_prompt</span><span class="p">(</span><span class="s2">&quot;generate_answer&quot;</span><span class="p">,</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;Solve: </span><span class="si">{question}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">override_model</span><span class="p">(</span><span class="s2">&quot;analyzer&quot;</span><span class="p">,</span> <span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">num_records</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="api-reference">API Reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h2>
+<h3 id="workflow-class">Workflow Class<a class="headerlink" href="#workflow-class" title="Permanent link">&para;</a></h3>
+<p>The main entry point for creating and executing workflows.</p>
+<h4 id="constructor">Constructor<a class="headerlink" href="#constructor" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="n">grasp</span><span class="o">.</span><span class="n">Workflow</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>Parameters:</strong>
+- <code>name</code> (str, optional): Workflow name. Auto-generated if not provided.</p>
+<h4 id="core-methods">Core Methods<a class="headerlink" href="#core-methods" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>source(source)</code></td>
+<td>Set data source</td>
+<td><code>Workflow</code></td>
+</tr>
+<tr>
+<td><code>sink(sink)</code></td>
+<td>Set data sink</td>
+<td><code>Workflow</code></td>
+</tr>
+<tr>
+<td><code>llm(model, prompt, **kwargs)</code></td>
+<td>Add LLM node</td>
+<td><code>Workflow</code></td>
+</tr>
+<tr>
+<td><code>agent(model, tools, prompt, **kwargs)</code></td>
+<td>Add agent node</td>
+<td><code>Workflow</code></td>
+</tr>
+<tr>
+<td><code>lambda_func(func, output, **kwargs)</code></td>
+<td>Add lambda node</td>
+<td><code>Workflow</code></td>
+</tr>
+<tr>
+<td><code>run(**kwargs)</code></td>
+<td>Execute workflow</td>
+<td><code>Any</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="node-types">Node Types<a class="headerlink" href="#node-types" title="Permanent link">&para;</a></h2>
+<h3 id="llm-nodes">LLM Nodes<a class="headerlink" href="#llm-nodes" title="Permanent link">&para;</a></h3>
+<p>Process text using Large Language Models.</p>
+<h4 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="c1"># Simple LLM node</span>
+<span class="n">workflow</span><span class="o">.</span><span class="n">llm</span><span class="p">(</span><span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span> <span class="s2">&quot;Summarize: </span><span class="si">{text}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h4 id="advanced-configuration">Advanced Configuration<a class="headerlink" href="#advanced-configuration" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="n">workflow</span><span class="o">.</span><span class="n">llm</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span> 
+        <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span> <span class="s2">&quot;max_tokens&quot;</span><span class="p">:</span> <span class="mi">2000</span><span class="p">}</span>
+    <span class="p">},</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;system&quot;</span><span class="p">:</span> <span class="s2">&quot;You are an expert analyst&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;user&quot;</span><span class="p">:</span> <span class="s2">&quot;Analyze: </span><span class="si">{data}</span><span class="s2">&quot;</span><span class="p">}</span>
+    <span class="p">],</span>
+    <span class="n">pre_process</span><span class="o">=</span><span class="n">preprocess_function</span><span class="p">,</span>
+    <span class="n">post_process</span><span class="o">=</span><span class="n">postprocess_function</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="multi-llm-nodes">Multi-LLM Nodes<a class="headerlink" href="#multi-llm-nodes" title="Permanent link">&para;</a></h3>
+<p>Compare responses from multiple models simultaneously.</p>
+<div class="highlight"><pre><span></span><code><span class="n">workflow</span><span class="o">.</span><span class="n">multi_llm</span><span class="p">(</span>
+    <span class="n">models</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;gpt4&quot;</span><span class="p">:</span> <span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;claude&quot;</span><span class="p">:</span> <span class="s2">&quot;claude-3-sonnet&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;local&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;llama-3-70b&quot;</span><span class="p">,</span> <span class="s2">&quot;endpoint&quot;</span><span class="p">:</span> <span class="s2">&quot;localhost:8000&quot;</span><span class="p">}</span>
+    <span class="p">},</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;Generate a story about: </span><span class="si">{topic}</span><span class="s2">&quot;</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="agent-nodes">Agent Nodes<a class="headerlink" href="#agent-nodes" title="Permanent link">&para;</a></h3>
+<p>LLM agents with tool access for autonomous task execution.</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">calculator</span><span class="p">(</span><span class="n">expression</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate mathematical expressions&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="nb">eval</span><span class="p">(</span><span class="n">expression</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">web_search</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Search the web for information&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;results&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Search results for: </span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+
+<span class="c1"># Agent with callable tools</span>
+<span class="n">workflow</span><span class="o">.</span><span class="n">agent</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span>
+    <span class="n">tools</span><span class="o">=</span><span class="p">[</span><span class="n">calculator</span><span class="p">,</span> <span class="n">web_search</span><span class="p">],</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;Help solve: </span><span class="si">{problem}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="n">chat_history</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="lambda-nodes">Lambda Nodes<a class="headerlink" href="#lambda-nodes" title="Permanent link">&para;</a></h3>
+<p>Custom processing functions and classes.</p>
+<h4 id="using-classes">Using Classes<a class="headerlink" href="#using-classes" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">grasp.core.graph.functions.lambda_function</span> <span class="kn">import</span> <span class="n">LambdaFunction</span>
+
+<span class="k">class</span> <span class="nc">TextProcessor</span><span class="p">(</span><span class="n">LambdaFunction</span><span class="p">):</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="n">lambda_node_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">GraspState</span><span class="p">):</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="o">**</span><span class="n">state</span><span class="p">,</span> 
+            <span class="s2">&quot;processed_text&quot;</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span> 
+            <span class="s2">&quot;word_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="p">}</span>
+
+<span class="n">workflow</span><span class="o">.</span><span class="n">lambda_func</span><span class="p">(</span><span class="n">TextProcessor</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s2">&quot;processed_data&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h4 id="using-functions">Using Functions<a class="headerlink" href="#using-functions" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">extract_keywords</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract keywords from text&quot;&quot;&quot;</span>
+    <span class="n">words</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;keywords&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">words</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">]}</span>
+
+<span class="n">workflow</span><span class="o">.</span><span class="n">lambda_func</span><span class="p">(</span><span class="n">extract_keywords</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s2">&quot;keywords&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h4 id="using-callable-objects">Using Callable Objects<a class="headerlink" href="#using-callable-objects" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">DataValidator</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">score</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="mi">100</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;quality_score&quot;</span><span class="p">:</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">score</span><span class="p">),</span> 
+            <span class="s2">&quot;is_valid&quot;</span><span class="p">:</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;threshold&quot;</span><span class="p">]</span>
+        <span class="p">}</span>
+
+<span class="n">validator</span> <span class="o">=</span> <span class="n">DataValidator</span><span class="p">({</span><span class="s2">&quot;threshold&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">})</span>
+<span class="n">workflow</span><span class="o">.</span><span class="n">lambda_func</span><span class="p">(</span><span class="n">validator</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s2">&quot;validation&quot;</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="configuration-system">Configuration System<a class="headerlink" href="#configuration-system" title="Permanent link">&para;</a></h2>
+<h3 id="universal-override-method">Universal Override Method<a class="headerlink" href="#universal-override-method" title="Permanent link">&para;</a></h3>
+<p>Modify any configuration parameter using dot notation paths.</p>
+<div class="highlight"><pre><span></span><code><span class="n">workflow</span> <span class="o">=</span> <span class="n">grasp</span><span class="o">.</span><span class="n">Workflow</span><span class="p">(</span><span class="s2">&quot;existing_task&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">override</span><span class="p">(</span><span class="s2">&quot;graph_config.nodes.llm_1.model.parameters.temperature&quot;</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">override</span><span class="p">(</span><span class="s2">&quot;graph_config.nodes.llm_1.prompt.0.system&quot;</span><span class="p">,</span> <span class="s2">&quot;New instructions&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">override</span><span class="p">(</span><span class="s2">&quot;data_config.source.repo_id&quot;</span><span class="p">,</span> <span class="s2">&quot;new/dataset&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div>
+<h3 id="helper-methods">Helper Methods<a class="headerlink" href="#helper-methods" title="Permanent link">&para;</a></h3>
+<h4 id="model-overrides">Model Overrides<a class="headerlink" href="#model-overrides" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="n">workflow</span><span class="o">.</span><span class="n">override_model</span><span class="p">(</span>
+    <span class="n">node_name</span><span class="o">=</span><span class="s2">&quot;analyzer&quot;</span><span class="p">,</span> 
+    <span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span> 
+    <span class="n">temperature</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> 
+    <span class="n">max_tokens</span><span class="o">=</span><span class="mi">1500</span>
+<span class="p">)</span>
+</code></pre></div>
+<h4 id="prompt-overrides">Prompt Overrides<a class="headerlink" href="#prompt-overrides" title="Permanent link">&para;</a></h4>
+<div class="highlight"><pre><span></span><code><span class="n">workflow</span><span class="o">.</span><span class="n">override_prompt</span><span class="p">(</span>
+    <span class="n">node_name</span><span class="o">=</span><span class="s2">&quot;generator&quot;</span><span class="p">,</span> 
+    <span class="n">role</span><span class="o">=</span><span class="s2">&quot;system&quot;</span><span class="p">,</span> 
+    <span class="n">content</span><span class="o">=</span><span class="s2">&quot;You are a helpful assistant&quot;</span><span class="p">,</span> 
+    <span class="n">index</span><span class="o">=</span><span class="mi">0</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Override glaive_code_assistant task configuration</span>
+<span class="n">workflow</span> <span class="o">=</span> <span class="n">grasp</span><span class="o">.</span><span class="n">Workflow</span><span class="p">(</span><span class="s2">&quot;examples/glaive_code_assistant&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">override_prompt</span><span class="p">(</span>
+        <span class="s2">&quot;generate_answer&quot;</span><span class="p">,</span> 
+        <span class="s2">&quot;user&quot;</span><span class="p">,</span> 
+        <span class="s2">&quot;Solve step by step: </span><span class="si">{question}</span><span class="s2">&quot;</span><span class="p">,</span> 
+        <span class="n">index</span><span class="o">=</span><span class="mi">1</span>
+    <span class="p">)</span> \
+    <span class="o">.</span><span class="n">override_prompt</span><span class="p">(</span>
+        <span class="s2">&quot;critique_answer&quot;</span><span class="p">,</span> 
+        <span class="s2">&quot;system&quot;</span><span class="p">,</span> 
+        <span class="s2">&quot;Be thorough in your code review&quot;</span><span class="p">,</span> 
+        <span class="n">index</span><span class="o">=</span><span class="mi">0</span>
+    <span class="p">)</span> \
+    <span class="o">.</span><span class="n">override_model</span><span class="p">(</span><span class="s2">&quot;generate_answer&quot;</span><span class="p">,</span> <span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">num_records</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="graph-builder">Graph Builder<a class="headerlink" href="#graph-builder" title="Permanent link">&para;</a></h2>
+<p>For complex workflows requiring explicit control flow.</p>
+<h3 id="basic-construction">Basic Construction<a class="headerlink" href="#basic-construction" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Create graph with callable conditions</span>
+<span class="k">def</span> <span class="nf">quality_gate</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Route based on quality score&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;approved&quot;</span> <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;quality_score&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.8</span> <span class="k">else</span> <span class="s2">&quot;needs_review&quot;</span>
+
+<span class="n">graph</span> <span class="o">=</span> <span class="n">grasp</span><span class="o">.</span><span class="n">create_graph</span><span class="p">(</span><span class="s2">&quot;advanced_workflow&quot;</span><span class="p">)</span>
+
+<span class="c1"># Add and configure nodes</span>
+<span class="n">analyzer</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">add_llm_node</span><span class="p">(</span><span class="s2">&quot;analyzer&quot;</span><span class="p">,</span> <span class="s2">&quot;gpt-4o&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">system_prompt</span><span class="p">(</span><span class="s2">&quot;Analyze the following content&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">user_prompt</span><span class="p">(</span><span class="s2">&quot;Content: </span><span class="si">{text}</span><span class="s2">&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">temperature</span><span class="p">(</span><span class="mf">0.7</span><span class="p">)</span>
+
+<span class="n">reviewer</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">add_agent_node</span><span class="p">(</span><span class="s2">&quot;reviewer&quot;</span><span class="p">,</span> <span class="s2">&quot;gpt-4o&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">tools</span><span class="p">([</span><span class="n">fact_checker</span><span class="p">,</span> <span class="n">web_search</span><span class="p">])</span> \
+    <span class="o">.</span><span class="n">system_prompt</span><span class="p">(</span><span class="s2">&quot;Review and verify the analysis&quot;</span><span class="p">)</span>
+
+<span class="c1"># Define control flow</span>
+<span class="n">graph</span><span class="o">.</span><span class="n">sequence</span><span class="p">(</span><span class="s2">&quot;analyzer&quot;</span><span class="p">,</span> <span class="s2">&quot;reviewer&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">add_conditional_edge</span><span class="p">(</span>
+        <span class="s2">&quot;reviewer&quot;</span><span class="p">,</span>
+        <span class="n">condition</span><span class="o">=</span><span class="n">quality_gate</span><span class="p">,</span>  <span class="c1"># Callable condition</span>
+        <span class="n">path_map</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;approved&quot;</span><span class="p">:</span> <span class="s2">&quot;END&quot;</span><span class="p">,</span> 
+            <span class="s2">&quot;needs_review&quot;</span><span class="p">:</span> <span class="s2">&quot;analyzer&quot;</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+
+<span class="c1"># Execute</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">set_source</span><span class="p">(</span><span class="s2">&quot;documents.json&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">set_sink</span><span class="p">(</span><span class="s2">&quot;analyzed_docs.json&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">enable_quality_tagging</span><span class="p">()</span> \
+    <span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">num_records</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="processor-classes">Processor Classes<a class="headerlink" href="#processor-classes" title="Permanent link">&para;</a></h2>
+<h3 id="pre-processors">Pre-Processors<a class="headerlink" href="#pre-processors" title="Permanent link">&para;</a></h3>
+<p>Modify state before node execution.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">grasp.core.graph.functions.node_processor</span> <span class="kn">import</span> <span class="n">NodePreProcessor</span>
+
+<span class="k">class</span> <span class="nc">InputValidator</span><span class="p">(</span><span class="n">NodePreProcessor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">GraspState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GraspState</span><span class="p">:</span>
+        <span class="c1"># Validate required fields</span>
+        <span class="k">if</span> <span class="s2">&quot;text&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">state</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">state</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]:</span>
+            <span class="n">state</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;[MISSING_TEXT]&quot;</span>
+
+        <span class="c1"># Add metadata</span>
+        <span class="n">state</span><span class="p">[</span><span class="s2">&quot;validated&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">state</span><span class="p">[</span><span class="s2">&quot;timestamp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">state</span>
+
+<span class="c1"># Use in workflow</span>
+<span class="n">workflow</span><span class="o">.</span><span class="n">llm</span><span class="p">(</span>
+    <span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span> 
+    <span class="s2">&quot;Process: </span><span class="si">{text}</span><span class="s2">&quot;</span><span class="p">,</span> 
+    <span class="n">pre_process</span><span class="o">=</span><span class="n">InputValidator</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="post-processors">Post-Processors<a class="headerlink" href="#post-processors" title="Permanent link">&para;</a></h3>
+<p>Process responses after node execution.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">grasp.core.graph.functions.node_processor</span> <span class="kn">import</span> <span class="n">NodePostProcessor</span>
+
+<span class="k">class</span> <span class="nc">ResponseFormatter</span><span class="p">(</span><span class="n">NodePostProcessor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">GraspMessage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GraspState</span><span class="p">:</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;formatted_response&quot;</span><span class="p">:</span> <span class="n">content</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+            <span class="s2">&quot;response_length&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">content</span><span class="p">),</span>
+            <span class="s2">&quot;has_content&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">content</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;word_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">content</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="p">}</span>
+
+<span class="c1"># Use in workflow</span>
+<span class="n">workflow</span><span class="o">.</span><span class="n">llm</span><span class="p">(</span>
+    <span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span> 
+    <span class="s2">&quot;Analyze: </span><span class="si">{text}</span><span class="s2">&quot;</span><span class="p">,</span> 
+    <span class="n">post_process</span><span class="o">=</span><span class="n">ResponseFormatter</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="post-processors-with-state">Post-Processors with State<a class="headerlink" href="#post-processors-with-state" title="Permanent link">&para;</a></h3>
+<p>Access both response and original state.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">grasp.core.graph.functions.node_processor</span> <span class="kn">import</span> <span class="n">NodePostProcessorWithState</span>
+
+<span class="k">class</span> <span class="nc">QualityAnalyzer</span><span class="p">(</span><span class="n">NodePostProcessorWithState</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="n">GraspMessage</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">GraspState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GraspState</span><span class="p">:</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
+        <span class="n">original_text</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Calculate quality metrics</span>
+        <span class="n">quality_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_quality</span><span class="p">(</span><span class="n">original_text</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="o">**</span><span class="n">state</span><span class="p">,</span>  <span class="c1"># Preserve original state</span>
+            <span class="s2">&quot;processed_response&quot;</span><span class="p">:</span> <span class="n">content</span><span class="p">,</span>
+            <span class="s2">&quot;quality_score&quot;</span><span class="p">:</span> <span class="n">quality_score</span><span class="p">,</span>
+            <span class="s2">&quot;is_high_quality&quot;</span><span class="p">:</span> <span class="n">quality_score</span> <span class="o">&gt;</span> <span class="mf">0.7</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_calculate_quality</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">original</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="c1"># Your quality calculation logic</span>
+        <span class="k">return</span> <span class="mf">0.85</span>
+</code></pre></div>
+<hr />
+<h2 id="data-sources-and-sinks">Data Sources and Sinks<a class="headerlink" href="#data-sources-and-sinks" title="Permanent link">&para;</a></h2>
+<h3 id="source-options">Source Options<a class="headerlink" href="#source-options" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Example</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>File</td>
+<td><code>workflow.source("data.json")</code></td>
+<td>Local files (JSON, JSONL, CSV)</td>
+</tr>
+<tr>
+<td>Memory</td>
+<td><code>workflow.source([{"text": "sample"}])</code></td>
+<td>In-memory data</td>
+</tr>
+<tr>
+<td>HuggingFace</td>
+<td><code>workflow.source({"type": "hf", "repo_id": "dataset/name"})</code></td>
+<td>HF datasets</td>
+</tr>
+</tbody>
+</table>
+<h3 id="advanced-data-sources">Advanced Data Sources<a class="headerlink" href="#advanced-data-sources" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">grasp</span> <span class="kn">import</span> <span class="n">DataSource</span><span class="p">,</span> <span class="n">DataSink</span>
+
+<span class="c1"># Memory data source</span>
+<span class="n">graph</span><span class="o">.</span><span class="n">set_source</span><span class="p">(</span><span class="n">DataSource</span><span class="o">.</span><span class="n">memory</span><span class="p">([</span>
+    <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;Sample text&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;Another sample&quot;</span><span class="p">}</span>
+<span class="p">]))</span>
+
+<span class="c1"># File data sink</span>
+<span class="n">graph</span><span class="o">.</span><span class="n">set_sink</span><span class="p">(</span><span class="n">DataSink</span><span class="o">.</span><span class="n">disk</span><span class="p">(</span><span class="s2">&quot;output/results.jsonl&quot;</span><span class="p">))</span>
+</code></pre></div>
+<hr />
+<h2 id="advanced-features">Advanced Features<a class="headerlink" href="#advanced-features" title="Permanent link">&para;</a></h2>
+<h3 id="quality-control">Quality Control<a class="headerlink" href="#quality-control" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">workflow</span><span class="o">.</span><span class="n">quality_tagging</span><span class="p">(</span>
+    <span class="n">enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">config</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;coherence&quot;</span><span class="p">,</span> <span class="s2">&quot;relevance&quot;</span><span class="p">,</span> <span class="s2">&quot;factuality&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;threshold&quot;</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span>
+        <span class="s2">&quot;judge_model&quot;</span><span class="p">:</span> <span class="s2">&quot;gpt-4o&quot;</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="oasst-conversation-mapping">OASST Conversation Mapping<a class="headerlink" href="#oasst-conversation-mapping" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">workflow</span><span class="o">.</span><span class="n">oasst_mapping</span><span class="p">(</span>
+    <span class="n">enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">config</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;required&quot;</span><span class="p">:</span> <span class="s2">&quot;yes&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;conversation&quot;</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="resumable-execution">Resumable Execution<a class="headerlink" href="#resumable-execution" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">workflow</span><span class="o">.</span><span class="n">resumable</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+    <span class="n">num_records</span><span class="o">=</span><span class="mi">10000</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+    <span class="n">checkpoint_interval</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+    <span class="n">resume</span><span class="o">=</span><span class="kc">True</span>  <span class="c1"># Resume from last checkpoint</span>
+<span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h2>
+<h3 id="content-analysis-pipeline">Content Analysis Pipeline<a class="headerlink" href="#content-analysis-pipeline" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">sentiment_analyzer</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Analyze text sentiment&quot;&quot;&quot;</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="c1"># Your sentiment analysis implementation</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;sentiment&quot;</span><span class="p">:</span> <span class="s2">&quot;positive&quot;</span><span class="p">,</span> <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="mf">0.85</span><span class="p">}</span>
+
+<span class="k">def</span> <span class="nf">topic_extractor</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract topics from text&quot;&quot;&quot;</span>  
+    <span class="c1"># Your topic extraction implementation</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;topics&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;technology&quot;</span><span class="p">,</span> <span class="s2">&quot;AI&quot;</span><span class="p">],</span> <span class="s2">&quot;primary_topic&quot;</span><span class="p">:</span> <span class="s2">&quot;technology&quot;</span><span class="p">}</span>
+
+<span class="c1"># Comprehensive analysis workflow</span>
+<span class="n">workflow</span> <span class="o">=</span> <span class="n">grasp</span><span class="o">.</span><span class="n">Workflow</span><span class="p">(</span><span class="s2">&quot;content_analysis&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">source</span><span class="p">(</span><span class="s2">&quot;articles.json&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">lambda_func</span><span class="p">(</span><span class="n">sentiment_analyzer</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s2">&quot;sentiment_data&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">lambda_func</span><span class="p">(</span><span class="n">topic_extractor</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s2">&quot;topic_data&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">llm</span><span class="p">(</span><span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;system&quot;</span><span class="p">:</span> <span class="s2">&quot;Create a comprehensive summary report&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;user&quot;</span><span class="p">:</span> <span class="s2">&quot;Article: </span><span class="si">{text}</span><span class="se">\n</span><span class="s2">Sentiment: </span><span class="si">{sentiment}</span><span class="se">\n</span><span class="s2">Topics: </span><span class="si">{topics}</span><span class="s2">&quot;</span><span class="p">}</span>
+    <span class="p">])</span> \
+    <span class="o">.</span><span class="n">quality_tagging</span><span class="p">(</span><span class="n">enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="s2">&quot;analysis_results.json&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div>
+<h3 id="research-assistant">Research Assistant<a class="headerlink" href="#research-assistant" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">search_papers</span><span class="p">(</span><span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Search academic papers&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Paper on </span><span class="si">{</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;abstract&quot;</span><span class="p">:</span> <span class="s2">&quot;Research findings...&quot;</span><span class="p">}]</span>
+
+<span class="k">def</span> <span class="nf">fact_check</span><span class="p">(</span><span class="n">claim</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Verify factual claims&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;claim&quot;</span><span class="p">:</span> <span class="n">claim</span><span class="p">,</span> <span class="s2">&quot;verified&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;confidence&quot;</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">}</span>
+
+<span class="c1"># Multi-model research workflow</span>
+<span class="n">workflow</span> <span class="o">=</span> <span class="n">grasp</span><span class="o">.</span><span class="n">Workflow</span><span class="p">(</span><span class="s2">&quot;research_assistant&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">source</span><span class="p">(</span><span class="s2">&quot;research_questions.json&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">agent</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span>
+        <span class="n">tools</span><span class="o">=</span><span class="p">[</span><span class="n">search_papers</span><span class="p">,</span> <span class="n">fact_check</span><span class="p">],</span>
+        <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;Research thoroughly: </span><span class="si">{question}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">chat_history</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span> \
+    <span class="o">.</span><span class="n">multi_llm</span><span class="p">(</span>
+        <span class="n">models</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;summarizer&quot;</span><span class="p">:</span> <span class="s2">&quot;gpt-4o&quot;</span><span class="p">,</span> 
+            <span class="s2">&quot;reviewer&quot;</span><span class="p">:</span> <span class="s2">&quot;claude-3-sonnet&quot;</span>
+        <span class="p">},</span>
+        <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;Synthesize research findings: </span><span class="si">{messages}</span><span class="s2">&quot;</span>
+    <span class="p">)</span> \
+    <span class="o">.</span><span class="n">sink</span><span class="p">(</span><span class="s2">&quot;research_reports.json&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div>
+<hr />
+<h2 id="api-reference_1">API Reference<a class="headerlink" href="#api-reference_1" title="Permanent link">&para;</a></h2>
+<h3 id="return-types">Return Types<a class="headerlink" href="#return-types" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Return Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>workflow.run()</code></td>
+<td><code>List[Dict]</code> or <code>Any</code></td>
+<td>Processed results</td>
+</tr>
+<tr>
+<td><code>graph.build()</code></td>
+<td><code>ExecutableGraph</code></td>
+<td>Built graph object</td>
+</tr>
+<tr>
+<td><code>graph.run()</code></td>
+<td><code>List[Dict]</code> or <code>Any</code></td>
+<td>Execution results</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.top", "toc.follow", "content.code.copy"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.92b07e13.min.js"></script>
+      
+    
+  </body>
+</html>
