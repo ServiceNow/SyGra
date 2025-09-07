@@ -153,7 +153,7 @@ tools:
     config:
       type: "sft" # or dpo
 ```
-For more details, refer to the [OASST Mapper documentation](../../docs/data_mapper/README.md).
+For more details, refer to the [OASST Mapper documentation](../../docs/concepts/data_mapper/README.md).
 
 ### 3. `data_quality`
 Runs a sequence of quality tagging tasks on conversation data. The tasks include:
@@ -179,4 +179,4 @@ tools:
         - name: "llm_based_quality"
 ```
 
-For more details on data quality config, refer to the [Data Quality documentation](../../docs/data_quality/README.md).
+For more details on data quality config, refer to the [Data Quality documentation](../../docs/concepts/data_quality/README.md).
