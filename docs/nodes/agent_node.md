@@ -38,10 +38,28 @@ research_agent:
 
 - `tools`: A list of tools that the agent can use. Tools are provided to the agent through the `create_react_agent` function from LangGraph.
   The following tools are currently supported:
-  - `tasks.examples.agent_tool_simulation.tools_from_module` All valid tools from a module.
-  - `tasks.examples.agent_tool_simulation.tools_from_class` All valid tools from a class.
+  -  `tasks.examples.agent_tool_simulation.tools_from_module.tool_method` Single tool method with annotation @tool
+  -  `tasks.examples.agent_tool_simulation.tools_from_module` All valid tools from a module.
+  -  `tasks.examples.agent_tool_simulation.tools_from_module.MyToolClass` All valid tools from a class.
   
   Make sure all the necessary tools are decorated with `@tool` from `langchain_core.tools`
+  If you want to use lang chain tools, make sure to import the necessary libraries, implemented get_tools() by inheriting LangChainToolsWrapper base class.
+  Below is the PlayWright wrapper class example which can be used in the tools list in agent_node.
+  ```python
+  from langchain_community.agent_toolkits import PlayWrightBrowserToolkit
+    from langchain_community.tools.playwright.utils import (
+        create_async_playwright_browser,  # A synchronous browser is available, though it isn't compatible with jupyter.\n",	  },
+    )
+    import nest_asyncio
+    
+    class PlayWrightBrowserTools(LangChainToolsWrapper):
+        def get_tools(self):
+            nest_asyncio.apply()
+    
+            async_browser = create_async_playwright_browser()
+            toolkit = PlayWrightBrowserToolkit.from_browser(async_browser=async_browser)
+            return toolkit.get_tools()
+  ```
 
 - `inject_system_messages`: Optional dictionary where keys are conversation turn indices and values are additional system messages to inject at those turns. This allows for dynamic guidance of the agent based on conversation length.
 
