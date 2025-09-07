@@ -247,7 +247,7 @@ All node types support these common parameters:
 | `node_type` | string | Type of node ("llm", "multi_llm", "weighted_sampler", "lambda", etc.) | Required  |
 | `node_state`| string | Node state ("active" or "idle") to enable/disable the node | "active" |
 
-**For detailed documentation and configuration options for each node type, see [nodes/](nodes/).**
+**For detailed documentation and configuration options for each node type, see [nodes/](https://github.com/ServiceNow/GraSP/tree/main/docs/concepts/nodes).**
 
 ### Edges
 
@@ -743,7 +743,7 @@ By default, the Data Mapper is **disabled**. To enable it, add the following run
 --oasst True
 ```
 
-You can refer to the data mapper [README](data_mapper/README.md) for more details on how to configure the OASST Mapper.
+You can refer to [Data Mapper](../concepts/data_mapper/README.md) for more details on how to configure the OASST Mapper.
 
 ### `Data Quality` tagging
 
@@ -754,4 +754,4 @@ By default, the Data Quality tagging is **disabled**. To enable it, add the foll
 ```
 --quality True
 ```
-You can refer to the data quality tagging [README](data_quality/README.md) for more details on how to configure the Data Quality tagging.
+You can refer to [Data Quality Tagging](../concepts/data_quality/README.md) for more details on how to configure the Data Quality tagging.

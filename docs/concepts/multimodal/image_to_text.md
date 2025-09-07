@@ -209,10 +209,10 @@ output_config:
     graph_judgement_content: 
       from: "graph_judgement_content"
 ```
----
+
 ## Notes
 
 - **Image generation is not supported** in this module. The `image_url` type is strictly for passing existing image inputs (e.g., loaded from datasets), not for generating new images via model output.
-- For a complete working example, see: [`tasks/image_description`](../../tasks/image_description/graph_config.yaml)
+- For a complete working example, see: [`tasks/image_to_qna`](https://github.com/ServiceNow/GraSP/tree/main/tasks/examples/image_to_qna)
 
 
