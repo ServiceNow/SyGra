@@ -1,0 +1,56 @@
+site_name: GraSP
+site_description: GRAph-oriented Synthetic data generation Pipeline
+site_url: https://servicenow.github.io/grasp/
+repo_url: https://github.com/ServiceNow/grasp
+
+theme:
+  name: material
+  logo: resources/images/grasp_logo.png
+  favicon: resources/images/grasp_logo.png
+  features:
+    - navigation.top
+    - toc.follow
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Getting Started:
+      - Task Executor: getting_started/Task_Executor.md
+      - Graph Config Guide: getting_started/graph_config_guide.md
+      - Adding Edges: getting_started/adding_edges.md
+      - Model Configuration: getting_started/model_configuration.md
+      - Create a Synthetic Datagen Pipeline: getting_started/create_new_pipeline.md
+      - Create a task with UI: getting_started/create_task_ui.md
+  - Concepts:
+      - Data Handler: concepts/data_handler/README.md
+      - Data Mapper: concepts/data_mapper/README.md
+      - Data Quality: concepts/data_quality/README.md
+      - Multimodal:
+          - Audio to Text: concepts/multimodal/audio_to_text.md
+          - Image to Text: concepts/multimodal/image_to_text.md
+      - Nodes:
+          - Agent Node: concepts/nodes/agent_node.md
+          - Lambda Node: concepts/nodes/lambda_node.md
+          - LLM Node: concepts/nodes/llm_node.md
+          - Multi LLM Node: concepts/nodes/multi_llm_node.md
+          - Subgraph Node: concepts/nodes/subgraph_node.md
+          - Weighted Sampler Node: concepts/nodes/weighted_sampler_node.md
+      - Processors:
+          - Output Record Generator: concepts/processors/output_record_generator/README.md
+      - Schema Validator: concepts/schema_validator/README.md
+      - Structured Output: concepts/structured_output/README.md
+  - GraSP Library: grasp_library.md
+plugins:
+  - search
+  - include-markdown
+#  - include-markdown:
+#      rewrite_relative_urls: true
+#      heading_offset: 0

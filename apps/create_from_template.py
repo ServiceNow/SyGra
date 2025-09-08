@@ -21,7 +21,8 @@ import re
 import pandas as pd
 
 st.set_page_config(page_title="GraSP UI", layout="wide")
-TASKS_DIR = Path("grasp/tasks")
+TASKS_DIR = Path("tasks")
+
 TASKS_DIR.mkdir(exist_ok=True)
 if "selected_task1" not in st.session_state:
     st.session_state["selected_task1"] = None

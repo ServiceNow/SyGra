@@ -170,10 +170,15 @@ if __name__ == "__main__":
             os.makedirs(args.output_dir)
         logger.info(f"Output directory set to: {args.output_dir}")
 
-    # check models are available
-    check_model_availability(task_name)
-    # preserve the current task name to use it in future
-    utils.current_task = task_name
+    # check models are available and normalize task name
+    if not task_name.startswith("tasks."):
+        full_task_name = f"tasks.{task_name}"
+        check_model_availability(full_task_name)
+        args.task = full_task_name
+        utils.current_task = full_task_name  # Set current_task to the full task name with prefix
+    else:
+        check_model_availability(task_name)
+        utils.current_task = task_name
 
     specialized_executor_cls = None
     executor_path = f"tasks.{task_name}.task_executor.TaskExecutor"
@@ -187,7 +192,7 @@ if __name__ == "__main__":
 
     task_executor = specialized_executor_cls or DefaultTaskExecutor
 
-    logger.info(f"Running {task_executor} for task {task_name}")
+    logger.info(f"Running {task_executor} for task {args.task}")
     task_executor(args).execute()
 
     logger.info("------------------------------------")
