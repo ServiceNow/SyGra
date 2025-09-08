@@ -1,3 +1,15 @@
+data_config:
+  source:
+    type: "hf"
+    repo_id: "google-research-datasets/mbpp"
+    config_name: "sanitized"
+    split: ["train"]
+    transformations:
+      - transform: grasp.processors.data_transform.RenameFieldsTransform
+        params:
+          mapping:
+            task_id: id
+
 graph_config:
   nodes:
     generate_question:
@@ -29,7 +41,7 @@ graph_config:
           temperature: 0.1
 
     critique_answer:
-      pre_process: tasks.examples.custom_subgraphs.task_executor.critique_answer_node_pre_process
+      pre_process: tasks.examples.custom_subgraphs.task_executor.CritiqueAnswerNodePreProcessor
       node_type: llm
       output_role: user
       prompt:
@@ -57,7 +69,20 @@ graph_config:
     - from: generate_answer
       to: critique_answer
     - from: critique_answer
-      condition: tasks.examples.custom_subgraphs.task_executor.should_continue
+      condition: tasks.examples.custom_subgraphs.task_executor.ShouldContinue
       path_map:
         END: END
         generate_answer: generate_answer
+
+output_config:
+    generator: tasks.examples.custom_subgraphs.task_executor.CustomSubgraphsOutputGenerator
+
+    output_map:
+      id:
+        from: "id"
+      conversation:
+        from: "messages"
+        transform: "build_conversation"
+      metadata:
+        from: "rephrased_text"
+        transform: "build_metadata"
