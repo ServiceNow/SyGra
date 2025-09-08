@@ -135,7 +135,7 @@ class DatasetProcessor:
         # Default to in-memory for safety
         return "in_memory"
 
-    def _get_record(self) -> dict[str, Any] | None:
+    def _get_record(self) -> Optional[dict[str, Any]]:
         """
         Get the next record from the dataset, handling resumable execution by skipping processed records.
 

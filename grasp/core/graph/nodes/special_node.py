@@ -22,8 +22,8 @@ class SpecialNode(BaseNode):
             raise RuntimeError(f"Special node name '{node_name}' is not supported")
 
         super().__init__(node_name, None)
-        self.node_state = NodeState.ACTIVE
-        self.node_type = NodeType.SPECIAL
+        self.node_state = NodeState.ACTIVE.value
+        self.node_type = NodeType.SPECIAL.value
 
     def is_valid(self) -> bool:
         return True

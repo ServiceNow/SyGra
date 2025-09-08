@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from datasets import load_dataset
 from langchain_core.messages import HumanMessage, AIMessage
@@ -65,7 +65,7 @@ class TaskExecutor(BaseTaskExecutor):
             final_dataset.extend(dataset)
         return final_dataset
 
-    def output_record_generator(self, state) -> dict[str, Any] | None:
+    def output_record_generator(self, state) -> Optional[dict[str, Any]]:
         """
         Generates the final data record only if:
           - We have 'messages' in state

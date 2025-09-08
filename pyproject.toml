@@ -7,7 +7,7 @@ name = "grasp"
 version = "0.1.0"
 description = "GRAph-oriented Synthetic data generation Pipeline library"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 authors = [
   {name = "Bidyapati Pradhan", email = "bidyapati.pradhan@servicenow.com"},
   {name = "Surajit Dasgupta", email = "surajit.dasgupta@servicenow.com"},
@@ -93,7 +93,7 @@ homepage = "https://github.com/ServiceNow/GraSP"
 repository = "https://github.com/ServiceNow/GraSP"
 
 [tool.poetry.dependencies]
-python = ">=3.11"
+python = ">=3.9"
 aiohttp = "*"
 datasets = "*"
 httpx = "*"

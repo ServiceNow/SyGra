@@ -318,7 +318,7 @@ class EdgeFactory:
             node = self.nodes.get(sub_node)
         else:
             if node_name in SpecialNode.SPECIAL_NODES:
-                node = get_node(node_name, {"node_type": NodeType.SPECIAL})
+                node = get_node(node_name, {"node_type": NodeType.SPECIAL.value})
             else:
                 raise RuntimeError(
                     f"Node {node_name} not found in graph or as a special node in edge configuration."
