@@ -15,13 +15,13 @@ data_config:
             loop_count: 0
             question_counter: 0
             image: ""
-            ocr_texts: []
 
 graph_config:
   nodes:
     extract_text:
       pre_process: tasks.examples.image_to_qna.task_executor.ImagesPreProcessor
       post_process: tasks.examples.image_to_qna.task_executor.ExtractTextPostProcessor
+      output_keys: ocr_texts
       node_type: llm
       prompt:
         - system:
