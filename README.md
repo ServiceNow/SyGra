@@ -1,5 +1,5 @@
 <div align="center">
-  <img width=30% src="https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/resources/images/grasp_logo.png">
+  <img width=30% src="https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/grasp_logo.png">
 
   <h1>GRASP: GRAph-oriented Synthetic data generation Pipeline</h1>
 
@@ -31,7 +31,7 @@ Edges define the flow between nodes, which can be conditional or non-conditional
 
 At the end, generated data is collected in the graph state for a specific record, processed further to generate the final dictionary to be written to the configured data sink.
 
-![GraspFramework](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/resources/images/grasp_architecture.png)
+![GraspFramework](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/grasp_architecture.png)
 
 ---
 
@@ -46,7 +46,7 @@ You can also define connections (edges) between nodes, which control conditional
 
 As of now, LLM inference is supported for TGI, vLLM, Azure, Azure OpenAI, Ollama and Triton compatible servers. Model deployment is external and configured in `models.yaml`.
 
-![GraspComponents](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/resources/images/grasp_usecase2framework.png)
+![GraspComponents](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/grasp_usecase2framework.png)
 
 ---
 
