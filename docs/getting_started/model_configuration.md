@@ -1,5 +1,5 @@
 
-![ModelConfig](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/resources/images/grasp_model_config.png)
+![ModelConfig](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/grasp_model_config.png)
 
 GraSP requires model configuration as the first step. It supports various clients like HTTP, MistralAzure, AsyncOpenAI, AsyncAzureOpenAI, Ollama to connect to inference servers (Text Generation Inference (TGI), vLLM server, Azure Cloud Service, Ollama, Triton etc.).
 
