@@ -59,6 +59,8 @@ For a **complete reference** of all YAML configuration options, node/edge types,
 
 👉 **[GraSP Library](https://github.com/ServiceNow/GraSP/blob/main/docs/grasp_library.md)**
 
+👉 **[Contribute](https://github.com/ServiceNow/GraSP/blob/main/docs/contributing.md)**
+
 ---
 
 ## License

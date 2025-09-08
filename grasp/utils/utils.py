@@ -157,15 +157,14 @@ def load_jsonl_file(filepath: str) -> Any:
 
 
 def extract_and_load_json(text: str) -> Any:
-    object = None
     try:
-        # extract JSON from surrounded text
-        text = re.findall(r"[\[\n\r\s]*{.+}[\n\r\s\]]*", text, re.DOTALL)[0]
-        # load JSON with ' or " by using ast because it's more robust and doesn't affect values
-        object = ast.literal_eval(text)
-    except Exception as e:
-        pass
-    return object
+        match = re.search(r"{.*}", text, re.DOTALL)
+        if not match:
+            return None
+        json_str = match.group(0)
+        return json.loads(json_str)
+    except Exception:
+        return None
 
 
 def load_json(text) -> Any:
@@ -233,7 +232,6 @@ def delete_file(filepath: str):
         os.remove(filepath)
 
 
-@deprecated("Use get_file_in_task_dir instead")
 def get_file_in_task_dir(task: str, file: str):
     task_dir = "/".join(task.split("."))
     return os.path.join(task_dir, file) or f"{task_dir}/{file}"

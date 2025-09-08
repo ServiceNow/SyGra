@@ -3,7 +3,7 @@ import json
 import aiohttp
 import requests
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from grasp.core.models.client.base_client import BaseClient
 from grasp.logger.logger_config import logger
@@ -26,9 +26,10 @@ class HttpClientConfig(BaseModel):
     ssl_verify: bool = Field(default=True, description="Verify SSL certificate")
     ssl_cert: Optional[str] = Field(default=None, description="Path to SSL certificate file")
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "allow"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="allow",
+    )
 
 
 class HttpClient(BaseClient):

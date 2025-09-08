@@ -14,11 +14,11 @@ class TestClientFactory(unittest.TestCase):
 
     def test_model_type_enum(self):
         """Test ModelType enum values are correct"""
-        self.assertEqual(ModelType.VLLM, "vllm")
-        self.assertEqual(ModelType.OPENAI, "azure_openai")
-        self.assertEqual(ModelType.AZURE, "azure")
-        self.assertEqual(ModelType.MISTRALAI, "mistralai")
-        self.assertEqual(ModelType.TGI, "tgi")
+        self.assertEqual(ModelType.VLLM.value, "vllm")
+        self.assertEqual(ModelType.OPENAI.value, "azure_openai")
+        self.assertEqual(ModelType.AZURE.value, "azure")
+        self.assertEqual(ModelType.MISTRALAI.value, "mistralai")
+        self.assertEqual(ModelType.TGI.value, "tgi")
 
     @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
     def test_create_client_invalid_model_type(self, mock_validate):

@@ -48,6 +48,7 @@ nav:
       - Schema Validator: concepts/schema_validator/README.md
       - Structured Output: concepts/structured_output/README.md
   - GraSP Library: grasp_library.md
+  - Contribute: contributing.md
 plugins:
   - search
   - include-markdown
