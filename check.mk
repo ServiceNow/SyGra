@@ -3,7 +3,7 @@
 ########################################################################################################################
 
 # Define code paths for various operations
-CODE_PATHS = grasp tests tools
+CODE_PATHS = grasp tests tasks
 
 # Define paths for JSON files
 JSON_PATHS = $(shell find grasp -name "*.json")
@@ -32,7 +32,7 @@ lint-flake8: ## Run flake8 in a controlled environment
 .PHONY: lint-pylint-local
 lint-pylint-local: ## Analyze the code with pylint using poetry
 	@echo "Analyzing code with pylint"
-	poetry run pylint --jobs 0 grasp tests tools
+	poetry run pylint --jobs 0 $(CODE_PATHS)
 
 .PHONY: lint-pylint
 lint-pylint: ## Run pylint in a controlled environment
@@ -41,7 +41,7 @@ lint-pylint: ## Run pylint in a controlled environment
 .PHONY: lint-mypy-local
 lint-mypy-local: ## Type-check the code using mypy and poetry
 	@echo "Type-checking code with mypy"
-	poetry run mypy grasp tests
+	poetry run mypy $(CODE_PATHS)
 
 .PHONY: lint-mypy
 lint-mypy: ## Run mypy in a controlled environment
@@ -106,14 +106,6 @@ check-format-isort-local: ## Check isort formatting without modifying files
 .PHONY: check-format-isort
 check-format-isort: ## Run isort check in a controlled environment
 	poetry run make check-format-isort-local
-
-########################################################################################################################
-# INSTALL DEPENDENCIES
-########################################################################################################################
-
-.PHONY: install-dev
-install-dev: ## Install development dependencies
-	poetry add --group dev flake8 pylint mypy black isort
 
 .PHONY: help
 help:

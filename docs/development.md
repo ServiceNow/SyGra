@@ -7,11 +7,7 @@ This guide covers development practices for the GraSP project, including code st
 To set up your development environment:
 
 ```bash
-# Clone the repository
-git clone https://github.com/ServiceNow/GraSP.git
-cd GraSP
-
-# Set up development environment with all tools
+# Set up development environment with all dev tools
 make setup-dev
 ```
 
@@ -101,31 +97,11 @@ make ci
 
 This runs formatting, linting, and tests in sequence.
 
-## Working with Optional Dependencies
-
-GraSP has optional dependency groups that can be installed based on your needs:
-
-- `ui`: Streamlit and related UI dependencies
-- `audio`: Audio processing capabilities
-- `dev`: Development tools including linting and testing
-
-Install all extras:
-
-```bash
-poetry install --all-extras
-```
-
-Or install specific extras:
-
-```bash
-poetry install --extras "ui audio"
-```
-
 ## Release Process
 
 1. Update version numbers in `pyproject.toml`
 2. Update CHANGELOG.md
-3. Run tests and linting: `make ci`
+3. Run tests, formatting and linting: `make ci`
 4. Build the package: `make build`
 5. Push changes and create a new GitHub release
 

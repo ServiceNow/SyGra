@@ -14,12 +14,26 @@ POETRY = poetry
 # DEVELOPMENT ENVIRONMENT
 ########################################################################################################################
 
-.PHONY: install
-install: ## Install the package in development mode
+.PHONY: setup
+setup: ## Install core dependencies
+	@echo "Installing GraSP core dependencies"
+	$(POETRY) install
+
+.PHONY: setup-all
+setup-all: ## Install core and extra dependencies
+	@echo "Installing GraSP core and extra dependencies"
+	$(POETRY) install
 	$(POETRY) install --all-extras
 
+.PHONY: setup-ui
+setup-ui: ## Install development dependencies
+	@echo "Installing GraSP Development dependencies"
+	$(POETRY) install --extras "ui"
+
 .PHONY: setup-dev
-setup-dev: install install-dev ## Set up development environment
+setup-dev: ## Install development dependencies
+	@echo "Installing GraSP Development dependencies"
+	$(POETRY) install --with dev
 
 ########################################################################################################################
 # TESTING
