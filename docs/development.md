@@ -7,8 +7,8 @@ This guide covers development practices for the GraSP project, including code st
 To set up your development environment:
 
 ```bash
-# Set up development environment with all dev tools
-make setup-dev
+  # Set up development environment with all dev tools
+  make setup-dev
 ```
 
 ## Code Style and Linting
@@ -26,15 +26,15 @@ GraSP uses several tools to ensure code quality:
 You can run all linters at once with:
 
 ```bash
-make lint
+  make lint
 ```
 
 Or run individual linters:
 
 ```bash
-make lint-flake8  # Run flake8
-make lint-pylint  # Run pylint
-make lint-mypy    # Run mypy
+  make lint-flake8  # Run flake8
+  make lint-pylint  # Run pylint
+  make lint-mypy    # Run mypy
 ```
 
 ### Code Formatting
@@ -42,14 +42,14 @@ make lint-mypy    # Run mypy
 To format your code according to the project standards:
 
 ```bash
-make format
+  make format
 ```
 
 This will run both black and isort. You can run them individually:
 
 ```bash
-make format-black  # Format code with black
-make format-isort  # Sort imports with isort
+  make format-black  # Format code with black
+  make format-isort  # Sort imports with isort
 ```
 
 ### Checking Format Without Modifying Files
@@ -57,14 +57,14 @@ make format-isort  # Sort imports with isort
 If you want to check your code formatting without changing files:
 
 ```bash
-make check-format
+  make check-format
 ```
 
 Or check specific formatters:
 
 ```bash
-make check-format-black
-make check-format-isort
+  make check-format-black
+  make check-format-isort
 ```
 
 ## Testing
@@ -72,19 +72,19 @@ make check-format-isort
 Run the test suite:
 
 ```bash
-make test
+  make test
 ```
 
 Run tests with verbose output:
 
 ```bash
-make test-verbose
+  make test-verbose
 ```
 
 Run tests with coverage:
 
 ```bash
-make test-coverage
+  make test-coverage
 ```
 
 ## Continuous Integration
@@ -92,7 +92,7 @@ make test-coverage
 Run all CI steps locally:
 
 ```bash
-make ci
+  make ci
 ```
 
 This runs formatting, linting, and tests in sequence.
@@ -101,8 +101,14 @@ This runs formatting, linting, and tests in sequence.
 
 1. Update version numbers in `pyproject.toml`
 2. Update CHANGELOG.md
-3. Run tests, formatting and linting: `make ci`
-4. Build the package: `make build`
+3. Run tests, formatting and linting: 
+    ```bash 
+    make ci
+    ```
+4. Build the package: 
+    ```bash
+    make build
+    ```
 5. Push changes and create a new GitHub release
 
 ## Configuration

@@ -11,11 +11,13 @@ import asyncio
 from pathlib import Path
 import httpx
 from dateutil.relativedelta import relativedelta
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from utils import check_model_status
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from grasp.utils.utils import load_model_config
 
-
+UTC = timezone.utc
 YAML_FILE = Path("../grasp/config/models.yaml")
 USER_TZ = UTC
 st.set_page_config(page_title="GraSP UI", layout="wide")

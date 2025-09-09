@@ -14,14 +14,14 @@
         ```
 2. Clone the repository.
 
-  ```bash
+    ```bash
     git clone git@github.com:ServiceNow/grasp.git
-  ```
+    ```
 
 
 3. Install poetry using the [official guidelines](https://python-poetry.org/docs/#installation).
 4. Run the following command to install all core dependencies.
-   ```bash
+    ```bash
     make setup
     ```
 5. (Optional) In your IDE, set your python interpreter to the poetry virtual environment.
@@ -35,18 +35,18 @@
 
 To run GraSP UI, Use the following command:
 ```bash
-    make setup-ui
+  make setup-ui
 ```
 ---
 ### GraSP All features Setup
 To utilize both GraSP Core and UI features, Use the following command:
 ```bash
-    make setup-all
+  make setup-all
 ```
 ---
 ### GraSP Development Setup
 To set up your development environment, Use the following command:
 ```bash
-    make setup-dev
+  make setup-dev
 ```
 Refer to [Development Guide](development.md) for more details.
