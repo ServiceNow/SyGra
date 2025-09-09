@@ -49,11 +49,11 @@ nav:
       - Structured Output: concepts/structured_output/README.md
   - Tutorials:
       - Agent Simulation: tutorials/agent_simulation_tutorial.md
-      - Agent Tool Simulation: tutorials/agent_tool_simulation_tutorial.md
+      - Agent Simulation with Tools: tutorials/agent_tool_simulation_tutorial.md
       - Audio Classification: tutorials/audio_to_text_tutorial.md
       - Custom Subgraphs: tutorials/custom_subgraphs_tutorial.md
       - Evol Instruct: tutorials/evol_instruct_tutorial.md
-      - Glaive Code Assistant: tutorials/glaive_code_assistant_tutorial.md
+      - Self Improving Code Assistant: tutorials/glaive_code_assistant_tutorial.md
       - Image to QnA: tutorials/image_to_qna_tutorial.md
       - Structured Output: tutorials/structured_output_tutorial.md
       - Structured Output with Multi-LLM: tutorials/structured_output_with_multi_llm_tutorial.md

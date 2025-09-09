@@ -1,4 +1,4 @@
-# Self Improving Code Assistant with GraSP
+# Self Improving Code Assistant
 
 This tutorial shows how to build a self-improving code assistant using the GraSP framework. You’ll implement a feedback loop where an LLM generates code, critiques its own answers, and refines them iteratively.
 
