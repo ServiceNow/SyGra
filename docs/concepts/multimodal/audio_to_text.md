@@ -201,10 +201,10 @@ output_config:
         animal:
           from: "animal"
 ```
----
+
 ## Notes
 
 - **Audio generation is not supported** in this module. The `audio_url` type is strictly for passing existing audio inputs (e.g., loaded from datasets), not for generating new audio via model output.
-- For a complete working example, see: [`tasks/audio_to_text`](../../tasks/examples/audio_to_text/graph_config.yaml)
+- For a complete working example, see: [`tasks/audio_to_text`](https://github.com/ServiceNow/GraSP/tree/main/tasks/examples/audio_to_text)
 
 
