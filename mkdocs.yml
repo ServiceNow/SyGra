@@ -47,6 +47,16 @@ nav:
           - Output Record Generator: concepts/processors/output_record_generator/README.md
       - Schema Validator: concepts/schema_validator/README.md
       - Structured Output: concepts/structured_output/README.md
+  - Tutorials:
+      - Agent Simulation: tutorials/agent_simulation_tutorial.md
+      - Agent Simulation with Tools: tutorials/agent_tool_simulation_tutorial.md
+      - Audio Classification: tutorials/audio_to_text_tutorial.md
+      - Custom Subgraphs: tutorials/custom_subgraphs_tutorial.md
+      - Evolution of Prompts with Evol-Instruct: tutorials/evol_instruct_tutorial.md
+      - Self Improving Code Assistant: tutorials/glaive_code_assistant_tutorial.md
+      - Image to QnA: tutorials/image_to_qna_tutorial.md
+      - Structured Output: tutorials/structured_output_tutorial.md
+      - Structured Output with Multi-LLM: tutorials/structured_output_with_multi_llm_tutorial.md
   - GraSP Library: grasp_library.md
   - Contribute: development.md
 plugins:
