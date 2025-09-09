@@ -66,7 +66,7 @@ This file implements custom logic for the pipeline:
 From your GraSP project root, run:
 
 ```bash
-python main.py --task examples.structured_output_with_multi_llm.dpo_samples --num_records 1
+python main.py --task examples.structured_output_with_multi_llm.dpo_samples
 ```
 
 ---

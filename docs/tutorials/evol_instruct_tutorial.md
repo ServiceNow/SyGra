@@ -90,12 +90,6 @@ From your GraSP project root, run:
 python main.py --task path/to/your/evol_instruct
 ```
 
-Or use the CLI:
-
-```bash
-grasp run path/to/your/evol_instruct
-```
-
 ---
 
 ## Try It Yourself

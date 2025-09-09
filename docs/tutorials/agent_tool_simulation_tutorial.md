@@ -102,12 +102,6 @@ From your GraSP project root, run:
 python main.py --task path/to/your/agent_tool_simulation
 ```
 
-Or use the CLI:
-
-```bash
-grasp run path/to/your/agent_tool_simulation
-```
-
 ---
 
 ## Example Output

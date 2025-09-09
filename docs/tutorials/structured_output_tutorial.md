@@ -69,12 +69,6 @@ From your GraSP project root, run:
 python main.py --task path/to/your/structured_output
 ```
 
-Or use the CLI:
-
-```bash
-grasp run path/to/your/structured_output
-```
-
 ---
 
 ## Example Output

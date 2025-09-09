@@ -63,12 +63,6 @@ From your GraSP project root, run:
 python main.py --task path/to/your/audio_to_text
 ```
 
-Or use the CLI:
-
-```bash
-grasp run path/to/your/audio_to_text
-```
-
 ---
 
 ## Example Output

@@ -71,12 +71,6 @@ From your GraSP project root, run:
 python main.py --task path/to/your/image_to_qna
 ```
 
-Or use the CLI:
-
-```bash
-grasp run path/to/your/image_to_qna
-```
-
 ---
 
 ## Example Output
