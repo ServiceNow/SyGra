@@ -119,7 +119,7 @@ To contact us, join our channel or send us an [email](grasp_team@servicenow.com)
 
 ## License
 
-[Your license here]
+The package is licensed by ServiceNow, Inc. under the Apache 2.0 license. See [LICENSE](LICENSE) for more details.
 
 ---
 
