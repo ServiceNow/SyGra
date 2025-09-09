@@ -1,4 +1,4 @@
-# Audio to Text Tutorial
+# Audio Classification Tutorial
 
 This tutorial demonstrates how to build a multimodal pipeline for processing audio files and generating textual output using the GraSP framework. You’ll learn to integrate audio-capable LLMs for audio classification, speech recognition, or content analysis.
 
@@ -48,6 +48,7 @@ The `graph_config.yaml` file defines the workflow for the audio-to-text task. He
 ### Reference Implementation
 
 See the GraSP repository for the complete example:
+
 - Graph configuration: [audio_to_text/graph_config.yaml](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/audio_to_text/graph_config.yaml)
 
 ## Step 3: Output Collection

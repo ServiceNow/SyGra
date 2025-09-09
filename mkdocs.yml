@@ -50,7 +50,7 @@ nav:
   - Tutorials:
       - Agent Simulation: tutorials/agent_simulation_tutorial.md
       - Agent Tool Simulation: tutorials/agent_tool_simulation_tutorial.md
-      - Audio to Text: tutorials/audio_to_text_tutorial.md
+      - Audio Classification: tutorials/audio_to_text_tutorial.md
       - Custom Subgraphs: tutorials/custom_subgraphs_tutorial.md
       - Evol Instruct: tutorials/evol_instruct_tutorial.md
       - Glaive Code Assistant: tutorials/glaive_code_assistant_tutorial.md

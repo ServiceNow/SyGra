@@ -90,6 +90,7 @@ The `task_executor.py` file implements the post-processing logic for the agent n
 ### Reference Implementation
 
 See the GraSP repository for complete examples:
+
 - Graph configuration: [agent_tool_simulation/graph_config.yaml](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/agent_tool_simulation/graph_config.yaml)
 - Task Executor: [agent_tool_simulation/task_executor.py](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/agent_tool_simulation/task_executor.py)
 
