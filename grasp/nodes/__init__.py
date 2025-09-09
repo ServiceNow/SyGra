@@ -76,6 +76,36 @@ class LLMNodeBuilder(BaseNodeBuilder):
         self._messages.append({role: content})
         return self
 
+    def temperature(self, temp: float) -> "LLMNodeBuilder":
+        """Set temperature parameter for the model."""
+        if "model" not in self._config:
+            self._config["model"] = {}
+        if "parameters" not in self._config["model"]:
+            self._config["model"]["parameters"] = {}
+
+        self._config["model"]["parameters"]["temperature"] = temp
+        return self
+
+    def max_tokens(self, tokens: int) -> "LLMNodeBuilder":
+        """Set max_tokens parameter for the model."""
+        if "model" not in self._config:
+            self._config["model"] = {}
+        if "parameters" not in self._config["model"]:
+            self._config["model"]["parameters"] = {}
+
+        self._config["model"]["parameters"]["max_tokens"] = tokens
+        return self
+
+    def model_parameter(self, param_name: str, value: Any) -> "LLMNodeBuilder":
+        """Set arbitrary model parameter."""
+        if "model" not in self._config:
+            self._config["model"] = {}
+        if "parameters" not in self._config["model"]:
+            self._config["model"]["parameters"] = {}
+
+        self._config["model"]["parameters"][param_name] = value
+        return self
+
     def multimodal_message(
         self, role: str, content: list[dict[str, Any]]
     ) -> "LLMNodeBuilder":
