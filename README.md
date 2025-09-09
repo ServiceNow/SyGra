@@ -63,55 +63,101 @@ For a **complete reference** of all YAML configuration options, node/edge types,
 
 👉 **[GraSP Library](https://github.com/ServiceNow/GraSP/blob/main/docs/grasp_library.md)**
 
----
+[//]: # (---)
 
-### Repo Structure
+[//]: # ()
+[//]: # (### Repo Structure)
 
-```bash
-├── .github
-│   └── GitHub configuration and workflows
-├── apps
-│   └── Application layer and UI components
-├── docs
-│   └── User documentation and guides
-├── grasp  # Core library implementation
-│   ├── config
-│   │   └── Configuration files and settings
-│   ├── configuration
-│   │   └── Configuration loading and management
-│   ├── core
-│   │   └── Core framework components and execution engine
-│   ├── data
-│   │   └── Data handling utilities
-│   ├── data_mapper
-│   │   └── Data transformation and mapping
-│   ├── exceptions
-│   │   └── Custom exception definitions
-│   ├── logger
-│   │   └── Logging system and adapters
-│   ├── models
-│   │   └── Model configuration and factories
-│   ├── nodes
-│   │   └── Node builders for programmatic workflows
-│   ├── processors
-│   │   └── Data processing and output generation
-│   ├── recipes
-│   │   └── Pre-built workflow templates
-│   ├── tasks
-│   │   └── Example task configurations
-│   ├── utils
-│   │   └── Core utilities and helper functions
-│   ├── validators
-│   │   └── Schema validation and type checking
-│   └── workflow
-│       └── High-level workflow builder interface
-├── resources
-│   └── Static resources and assets
-├── tests
-│   └── Unit and integration tests
-└── tools
-    └── Development tools and CLI utilities
-```
+[//]: # ()
+[//]: # (```bash)
+
+[//]: # (├── .github)
+
+[//]: # (│   └── GitHub configuration and workflows)
+
+[//]: # (├── apps)
+
+[//]: # (│   └── Application layer and UI components)
+
+[//]: # (├── docs)
+
+[//]: # (│   └── User documentation and guides)
+
+[//]: # (├── grasp  # Core library implementation)
+
+[//]: # (│   ├── config)
+
+[//]: # (│   │   └── Configuration files and settings)
+
+[//]: # (│   ├── configuration)
+
+[//]: # (│   │   └── Configuration loading and management)
+
+[//]: # (│   ├── core)
+
+[//]: # (│   │   └── Core framework components and execution engine)
+
+[//]: # (│   ├── data)
+
+[//]: # (│   │   └── Data handling utilities)
+
+[//]: # (│   ├── data_mapper)
+
+[//]: # (│   │   └── Data transformation and mapping)
+
+[//]: # (│   ├── exceptions)
+
+[//]: # (│   │   └── Custom exception definitions)
+
+[//]: # (│   ├── logger)
+
+[//]: # (│   │   └── Logging system and adapters)
+
+[//]: # (│   ├── models)
+
+[//]: # (│   │   └── Model configuration and factories)
+
+[//]: # (│   ├── nodes)
+
+[//]: # (│   │   └── Node builders for programmatic workflows)
+
+[//]: # (│   ├── processors)
+
+[//]: # (│   │   └── Data processing and output generation)
+
+[//]: # (│   ├── recipes)
+
+[//]: # (│   │   └── Pre-built workflow templates)
+
+[//]: # (│   ├── tasks)
+
+[//]: # (│   │   └── Example task configurations)
+
+[//]: # (│   ├── utils)
+
+[//]: # (│   │   └── Core utilities and helper functions)
+
+[//]: # (│   ├── validators)
+
+[//]: # (│   │   └── Schema validation and type checking)
+
+[//]: # (│   └── workflow)
+
+[//]: # (│       └── High-level workflow builder interface)
+
+[//]: # (├── resources)
+
+[//]: # (│   └── Static resources and assets)
+
+[//]: # (├── tests)
+
+[//]: # (│   └── Unit and integration tests)
+
+[//]: # (└── tools)
+
+[//]: # (    └── Development tools and CLI utilities)
+
+[//]: # (```)
 
 ## Contact
 
