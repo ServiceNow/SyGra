@@ -164,5 +164,5 @@ Here’s a sample output (your results will vary based on LLM responses):
 
 ## Next Steps
 
-- Learn how to [use tool interventions](agent_tool_simulation.md) for more grounded conversations  
-- Explore [structured output](structured_output.md) to format results  
+- Learn how to [use tool interventions](agent_tool_simulation_tutorial.md) for more grounded conversations  
+- Explore [structured output](structured_output_tutorial.md) to format results  
