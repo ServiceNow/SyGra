@@ -68,10 +68,6 @@ ui = [
 ]
 dev = ["pytest", "pytest-asyncio", "build", "twine", "black", "isort", "flake8", "pylint", "mypy", "mkdocs", "mkdocs-material", "mkdocs-include-markdown-plugin"]
 
-[project.scripts]
-grasp = "grasp.cli:main"
-grasp-tools = "grasp.tools_cli:main"
-
 [project.urls]
 Homepage = "https://github.com/ServiceNow/GraSP"
 Issues = "https://github.com/ServiceNow/GraSP/issues"
