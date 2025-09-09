@@ -645,7 +645,7 @@ def test_invalid_variable_type_in_output(
 
 
 @patch("grasp.core.graph.graph_config.utils.load_yaml_file")
-@patch("grasp.core.graph.graph_config.utils.get_file_in_dir")
+@patch("grasp.core.graph.graph_config.utils.get_file_in_task_dir")
 @patch("grasp.core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
 def test_subgraph_merging(
     mock_get_func,
@@ -726,7 +726,7 @@ def test_subgraph_merging(
 
 
 @patch("grasp.core.graph.graph_config.utils.load_yaml_file")
-@patch("grasp.core.graph.graph_config.utils.get_file_in_dir")
+@patch("grasp.core.graph.graph_config.utils.get_file_in_task_dir")
 @patch("grasp.core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
 def test_subgraph_merging_nested_looping(
     mock_get_func,
@@ -825,7 +825,7 @@ def test_subgraph_merging_nested_looping(
 
 
 @patch("grasp.core.graph.graph_config.utils.load_yaml_file")
-@patch("grasp.core.graph.graph_config.utils.get_file_in_dir")
+@patch("grasp.core.graph.graph_config.utils.get_file_in_task_dir")
 @patch("grasp.core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
 def test_subgraph_merging_with_looping_edge(
     mock_get_func,
@@ -914,7 +914,7 @@ def test_subgraph_merging_with_looping_edge(
 
 
 @patch("grasp.core.graph.graph_config.utils.load_yaml_file")
-@patch("grasp.core.graph.graph_config.utils.get_file_in_dir")
+@patch("grasp.core.graph.graph_config.utils.get_file_in_task_dir")
 @patch("grasp.core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
 def test_multiple_subgraphs_merging(
     mock_get_func,
@@ -971,7 +971,7 @@ def test_multiple_subgraphs_merging(
 
 
 @patch("grasp.core.graph.graph_config.utils.load_yaml_file")
-@patch("grasp.core.graph.graph_config.utils.get_file_in_dir")
+@patch("grasp.core.graph.graph_config.utils.get_file_in_task_dir")
 @patch("grasp.core.graph.nodes.lambda_node.utils.get_func_from_str", return_value=lambda x: x)
 def test_conditional_edge_from_subgraph(
     mock_get_func,
