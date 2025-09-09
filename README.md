@@ -3,8 +3,16 @@
 
   <h1>GRASP: GRAph-oriented Synthetic data generation Pipeline</h1>
 
+<a href="https://servicenow.github.io/GraSP">
+    <img alt="Documentation" src="https://img.shields.io/badge/documentation-blue.svg"/></a>
 <a href="http://arxiv.org/abs/2508.15432">
     <img src="https://img.shields.io/badge/arXiv-2508.15432-blue.svg" alt="arXiv"></a>
+<a href="./LICENSE">
+    <img alt="Licence" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"/></a>
+
+[//]: # (<a href="https://doi.org/10.5281/zenodo.6511558">)
+
+[//]: # (    <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.6511558.svg" alt="DOI"></a>)
 <br>
 </div>
 
