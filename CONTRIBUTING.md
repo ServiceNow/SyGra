@@ -10,15 +10,16 @@ This document should be able to guide contributors in their different types of c
 ## Get your environment setup
 
 GraSP is split in two components.
-Go to our [Installation](https://github.com/ServiceNow/GraSP?tab=readme-ov-file#installation) to get installation.
+Go to our [Installation](docs/installation.md) to get installation.
 
 
 [//]: # (It is encouraged to be familiar with our [development best practices]&#40;https://servicenow.github.io/grasp/development/dev-practices/&#41;.)
 
 
 When everything is set up, you can refer to the
-* [Setting up a new Datagen Pipeline](https://github.com/ServiceNow/GraSP?tab=readme-ov-file#steps-to-create-a-synthetic-data-pipeline)
-* [Graph Configuration Guide](https://github.com/ServiceNow/GraSP/blob/main/docs/graph_config_guide.md)
+
+* [Setting up a new Datagen Pipeline](docs/getting_started/create_new_pipeline.md)
+* [Graph Configuration Guide](docs/getting_started/graph_config_guide.md)
 
 sections to setup a synthetic data generation pipeline.
 

@@ -20,7 +20,7 @@ version: 1.0
 date-released: TBD
 url: "https://servicenow.github.io/grasp"
 repository-code: "https://github.com/ServiceNow/grasp"
-license: TBD
+license: Apache-2.0
 identifiers:
   - type: doi
     value: TBD (can be retrieved after repo is public)

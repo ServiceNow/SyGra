@@ -39,7 +39,7 @@ ServiceNow suggests the following technical support pathways for open-source pro
 
 **Enforcement and reporting**
 
-We encourage community members and users to help each other and to resolve issues amongst themselves as much as possible. If a matter cannot be resolved in good faith within the means available, please reach out to a team member or email grasp-team@servicenow.com.
+We encourage community members and users to help each other and to resolve issues amongst themselves as much as possible. If a matter cannot be resolved in good faith within the means available, please reach out to a team member or email grasp_team@servicenow.com.
 
 **ServiceNow Disclaimer.**
 
