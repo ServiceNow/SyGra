@@ -17,23 +17,25 @@ POETRY = poetry
 .PHONY: setup
 setup: ## Install core dependencies
 	@echo "Installing GraSP core dependencies"
-	$(POETRY) install
+	$(POETRY) install --no-interaction --no-root
 
 .PHONY: setup-all
 setup-all: ## Install core and extra dependencies
-	@echo "Installing GraSP core and extra dependencies"
-	$(POETRY) install
-	$(POETRY) install --all-extras
+	@echo "Installing GraSP Core and extra dependencies"
+	$(POETRY) install --no-interaction --no-root
+	$(POETRY) install --all-extras --no-interaction --no-root
 
 .PHONY: setup-ui
 setup-ui: ## Install development dependencies
-	@echo "Installing GraSP Development dependencies"
-	$(POETRY) install --extras "ui"
+	@echo "Installing GraSP UI dependencies"
+	$(POETRY) install --extras "ui" --no-interaction --no-root
 
 .PHONY: setup-dev
 setup-dev: ## Install development dependencies
-	@echo "Installing GraSP Development dependencies"
-	$(POETRY) install --with dev
+	@echo "Installing GraSP Core, Extra and Development dependencies"
+	$(POETRY) install --no-interaction --no-root
+	$(POETRY) install --all-extras --no-interaction --no-root
+	$(POETRY) install --with dev --no-interaction --no-root
 
 ########################################################################################################################
 # TESTING
