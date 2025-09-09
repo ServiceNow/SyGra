@@ -1,4 +1,4 @@
-# Glaive Code Assistant Tutorial
+# Self Improving Code Assistant with GraSP
 
 This tutorial shows how to build a self-improving code assistant using the GraSP framework. You’ll implement a feedback loop where an LLM generates code, critiques its own answers, and refines them iteratively.
 
@@ -39,7 +39,7 @@ glaive_code_assistant/
 
 The main pipeline is defined in `glaive_code_assistant/graph_config.yaml`:
 
-- **Data Source**: Loads coding problems from the `glaiveai/glaive-code-assistant-v2` HuggingFace dataset, renaming `task_id` to `id`.
+- **Data Source**: We will be using the `glaiveai/glaive-code-assistant-v2` dataset from HuggingFace, which contains a variety of coding problems along with reference solutions. The dataset is loaded and the `task_id` field is renamed to `id` for consistency.
 - **Nodes**:
   - `generate_answer`: An LLM node that generates a code solution based on the question. The prompt instructs the model to respond only with code and revise based on critique.
   - `critique_answer`: An LLM node with custom pre- and post-processors. It acts as a teacher, using the reference solution to critique the generated answer and recommend improvements. If the answer is correct, it responds with 'NO MORE FEEDBACK'.

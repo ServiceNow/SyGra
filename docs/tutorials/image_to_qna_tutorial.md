@@ -1,4 +1,4 @@
-# Image to QnA Tutorial
+# Image to QnA
 
 This tutorial demonstrates how to build a multimodal Question and Answer (QnA) system for images using the GraSP framework. You’ll learn to extract text from images, generate questions, and provide detailed answers using LLMs.
 
@@ -105,5 +105,6 @@ grasp run path/to/your/image_to_qna
 
 ## Next Steps
 
-- Explore [audio to text](audio_to_text_tutorial.md) for multimodal audio processing
+- Explore [audio classification](audio_to_text_tutorial.md) to know how to process audio inputs
 - Learn about [structured output](structured_output_tutorial.md) for standardized results
+- Explore [agent simulation](agent_simulation_tutorial.md) for multi-agent conversations

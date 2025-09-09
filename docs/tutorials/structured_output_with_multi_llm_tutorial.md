@@ -1,4 +1,4 @@
-# Structured Output with Multi-LLM Tutorial
+# Structured Output with Multi-LLM
 
 This tutorial demonstrates how to use multiple LLMs in parallel for response generation and evaluation, with structured output and quality rating, using the GraSP framework. The example is based on the DPO (Direct Preference Optimization) Samples task.
 
@@ -123,5 +123,5 @@ python main.py --task examples.structured_output_with_multi_llm.dpo_samples --nu
 
 ## Next Steps
 
-- Learn about [structured output](structured_output_tutorial.md) for single-model pipelines
 - Explore [agent simulation](agent_simulation_tutorial.md) for multi-agent conversations
+- Explore [self-improving code generation](glaive_code_assistant_tutorial.md) with iterative refinement

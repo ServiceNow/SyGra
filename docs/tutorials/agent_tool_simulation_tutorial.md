@@ -1,4 +1,4 @@
-# Agent Tool Simulation Tutorial
+# Agent Simulation with Tools
 
 This tutorial guides you through integrating external tools with AI agents using the GraSP framework. By the end, you’ll have a system where agents can call mathematical functions implemented as Python modules, classes, or standalone functions.
 

@@ -1,4 +1,4 @@
-# Audio Classification Tutorial
+# Audio Classification
 
 This tutorial demonstrates how to build a multimodal pipeline for processing audio files and generating textual output using the GraSP framework. You’ll learn to integrate audio-capable LLMs for audio classification, speech recognition, or content analysis.
 

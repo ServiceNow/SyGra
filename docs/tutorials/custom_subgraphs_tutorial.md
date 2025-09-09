@@ -1,4 +1,4 @@
-# Custom Subgraphs Tutorial
+# Custom Subgraphs
 
 This tutorial shows how to create and use custom subgraphs in the GraSP framework. You’ll learn to build modular, reusable graph components for complex AI workflows.
 
@@ -122,5 +122,5 @@ grasp run path/to/your/custom_subgraphs
 
 ## Next Steps
 
-- Explore [glaive code assistant](glaive_code_assistant_tutorial.md) for self-improving code generation
+- Explore [self-improving code generation](glaive_code_assistant_tutorial.md) with iterative refinement
 - Learn about [structured output](structured_output_tutorial.md) for standardized results

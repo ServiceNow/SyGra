@@ -1,4 +1,4 @@
-# Structured Output Tutorial
+# Structured Output
 
 This tutorial shows how to implement structured output from LLM responses using the GraSP framework. You’ll learn to extract specific information from LLM outputs in a standardized JSON format.
 

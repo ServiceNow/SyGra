@@ -1,4 +1,4 @@
-# Agent Simulation Tutorial
+# Agent Simulation
 
 This tutorial walks you through creating structured AI agent dialogues with opposing viewpoints using the GraSP framework. By the end, you’ll have built a system that orchestrates realistic, multi-turn conversations between dynamically generated personas on specific topics.
 

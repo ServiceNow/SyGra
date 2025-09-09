@@ -1,6 +1,6 @@
-# Evol-Instruct Tutorial
+# Evolution of Prompts with Evol-Instruct
 
-This tutorial demonstrates how to use the Evol-Instruct recipe in the GraSP framework to automatically evolve prompts into more complex and nuanced instructions.
+This tutorial demonstrates how to use the [Evol-Instruct](https://arxiv.org/pdf/2304.12244) in the GraSP framework to automatically evolve prompts into more complex and nuanced instructions.
 
 > **Key Features You’ll Learn**  
 > `prompt evolution`, `subgraphs`, `automated prompt engineering`, `depth/breadth techniques`, `prompt transformation`
