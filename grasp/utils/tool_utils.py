@@ -1,5 +1,6 @@
 import importlib
 import sys
+from abc import ABC, abstractmethod
 from inspect import isclass, getmembers
 from typing import List, Callable
 
@@ -8,6 +9,14 @@ from langchain_core.tools import BaseTool
 from grasp.logger.logger_config import logger
 from grasp.utils import utils
 
+class LangChainToolsWrapper(ABC):
+    """
+    Inherit this class and implement get_tools()
+    Which returns tools list to be used directly in the react agent
+    """
+    @abstractmethod
+    def get_tools(self) -> list:
+        pass
 
 def load_tools(tool_paths: List[str]) -> List[Callable]:
     """
@@ -59,6 +68,10 @@ def load_tools(tool_paths: List[str]) -> List[Callable]:
                         if isclass(obj):
                             # It's a class, get all tool methods
                             tools.extend(_extract_tools_from_class(obj))
+                            valid = True
+                            continue
+                        elif issubclass(tool_func, LangChainToolsWrapper):
+                            tools.extend(tool_func().get_tools())
                             valid = True
                             continue
                 except (ImportError, AttributeError):
