@@ -43,7 +43,7 @@ class TestHttpClientConfig(unittest.TestCase):
         self.assertEqual(config.ssl_cert, None)
 
 
-class TestHttpClient(unittest.IsolatedAsyncioTestCase):
+class TestHttpClient(unittest.TestCase):
     """Unit tests for the HttpClient class"""
 
     def setUp(self):
