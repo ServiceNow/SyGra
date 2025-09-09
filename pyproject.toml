@@ -66,7 +66,7 @@ ui = [
   "streamlit-flow-component",
   "watchdog"
 ]
-dev = ["pytest", "build", "twine", "black", "isort", "flake8", "pylint", "mypy", "mkdocs", "mkdocs-material", "mkdocs-include-markdown-plugin"]
+dev = ["pytest", "pytest-asyncio", "build", "twine", "black", "isort", "flake8", "pylint", "mypy", "mkdocs", "mkdocs-material", "mkdocs-include-markdown-plugin"]
 
 [project.scripts]
 grasp = "grasp.cli:main"
@@ -129,6 +129,7 @@ ui = ["streamlit", "streamlit-agraph", "streamlit-autorefresh", "streamlit-flow-
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
+pytest-asyncio = "*"
 build = "*"
 twine = "*"
 black = "*"

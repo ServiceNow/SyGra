@@ -3,6 +3,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock, AsyncMock
 
+import pytest
+
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent))
 
@@ -41,7 +43,7 @@ class TestHttpClientConfig(unittest.TestCase):
         self.assertEqual(config.ssl_cert, None)
 
 
-class TestHttpClient(unittest.TestCase):
+class TestHttpClient(unittest.IsolatedAsyncioTestCase):
     """Unit tests for the HttpClient class"""
 
     def setUp(self):
@@ -157,6 +159,7 @@ class TestHttpClient(unittest.TestCase):
         # Verify empty response is returned on exception
         self.assertEqual(response, "")
 
+    @pytest.mark.asyncio
     @patch("aiohttp.ClientSession.post")
     async def test_async_send_request(self, mock_post):
         """Test async_send_request method sends HTTP requests correctly"""
@@ -184,6 +187,7 @@ class TestHttpClient(unittest.TestCase):
         self.assertEqual(response.text, '{"result": "Success"}')
         self.assertEqual(response.status_code, 200)
 
+    @pytest.mark.asyncio
     @patch("aiohttp.ClientSession.post")
     async def test_async_send_request_with_generation_params(self, mock_post):
         """Test async_send_request with generation parameters"""
@@ -209,6 +213,7 @@ class TestHttpClient(unittest.TestCase):
         self.assertEqual(sent_payload["temperature"], 0.8)
         self.assertEqual(sent_payload["max_tokens"], 50)
 
+    @pytest.mark.asyncio
     @patch("aiohttp.ClientSession.post")
     async def test_async_send_request_exception_handling(self, mock_post):
         """Test async_send_request handles exceptions correctly"""

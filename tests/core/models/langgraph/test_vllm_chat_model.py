@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock, AsyncMock
 
+import pytest
 from langchain_core.messages import HumanMessage
 import openai
 
@@ -44,6 +45,7 @@ class TestVLLMChatModel(unittest.TestCase):
         constants.ERROR_PREFIX = self.original_error_prefix
 
     @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
+    @pytest.mark.asyncio
     async def test_generate_response_success(self, mock_logger):
         """Test successful response generation with VLLM model."""
         model = CustomVLLMChatModel(self.base_config)
@@ -90,6 +92,7 @@ class TestVLLMChatModel(unittest.TestCase):
         mock_logger.error.assert_not_called()
 
     @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
+    @pytest.mark.asyncio
     async def test_generate_response_rate_limit_error(self, mock_logger):
         """Test handling of rate limit errors from VLLM server."""
         model = CustomVLLMChatModel(self.base_config)
@@ -138,6 +141,7 @@ class TestVLLMChatModel(unittest.TestCase):
         self.assertIn("VLLM api request exceeded rate limit", warn_message)
 
     @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
+    @pytest.mark.asyncio
     async def test_generate_response_generic_exception(self, mock_logger):
         """Test handling of generic exceptions with VLLM model."""
         model = CustomVLLMChatModel(self.base_config)
@@ -177,6 +181,7 @@ class TestVLLMChatModel(unittest.TestCase):
         self.assertIn("Http request failed", error_message)
 
     @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
+    @pytest.mark.asyncio
     async def test_generate_response_status_not_found(self, mock_logger):
         """Test handling of exceptions where status code cannot be extracted from VLLM response."""
         model = CustomVLLMChatModel(self.base_config)
@@ -215,6 +220,7 @@ class TestVLLMChatModel(unittest.TestCase):
 
     @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
     @patch("grasp.core.models.langgraph.vllm_chat_model.GraspBaseChatModel._set_client")
+    @pytest.mark.asyncio
     async def test_generate_response_with_client_factory(
         self, mock_set_client, mock_logger
     ):
@@ -263,6 +269,7 @@ class TestVLLMChatModel(unittest.TestCase):
         )
 
     @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
+    @pytest.mark.asyncio
     async def test_generate_response_with_additional_kwargs(self, mock_logger):
         """Test synchronous response generation with additional kwargs passed."""
         model = CustomVLLMChatModel(self.base_config)

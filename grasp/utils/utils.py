@@ -158,7 +158,7 @@ def load_jsonl_file(filepath: str) -> Any:
 
 def extract_and_load_json(text: str) -> Any:
     try:
-        match = re.search(r"{.*}", text, re.DOTALL)
+        match = re.search(r"[\[\n\r\s]*{.+}[\n\r\s\]]*", text, re.DOTALL)
         if not match:
             return None
         json_str = match.group(0)

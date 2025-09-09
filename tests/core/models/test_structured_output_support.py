@@ -17,6 +17,8 @@ import sys
 import os
 from typing import Any
 
+import pytest
+
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
@@ -35,7 +37,8 @@ class UserSchema(BaseModel):
 
 
 # Test model that implements abstract method
-class TestCustomModel(BaseCustomModel):
+class CustomModel(BaseCustomModel):
+    @pytest.mark.asyncio
     async def _generate_text(self, input, model_params):
         return "test response", 200
 
@@ -222,7 +225,7 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             ({**self.test_config, "url": "test", "api_key": "test", "api_version": "test", "model": "gpt-4"})
         vllm_model = CustomVLLM({**self.test_config, "url": "test", "auth_token": "test"})
         tgi_model = CustomTGI({**self.test_config, "url": "test", "auth_token": "test"})
-        base_model = TestCustomModel(self.test_config)
+        base_model = CustomModel(self.test_config)
 
         self.assertTrue(openai_model._supports_native_structured_output())
         self.assertTrue(vllm_model._supports_native_structured_output())
@@ -240,7 +243,7 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         mock_parser_instance.parse.return_value = UserSchema(name="Test", age=30, email="test@example.com")
         mock_output_parser.return_value = mock_parser_instance
 
-        model = TestCustomModel(self.test_config)
+        model = CustomModel(self.test_config)
         model._generate_text_with_retry = AsyncMock(return_value=(self.valid_json, 200))
 
         # Execute
@@ -404,7 +407,7 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         """Test _handle_structured_output when disabled"""
         mock_get_model.return_value = None  # No valid schema
 
-        model = TestCustomModel(self.test_config)
+        model = CustomModel(self.test_config)
 
         # Create a simple mock lock
         model._structured_output_lock = Mock()
@@ -426,7 +429,7 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         mock_get_model.return_value = UserSchema
 
         # Create a model that doesn't support native structured output
-        model = TestCustomModel(self.test_config)
+        model = CustomModel(self.test_config)
         model._supports_native_structured_output = lambda: False
         model._generate_fallback_structured_output = AsyncMock(return_value=(self.valid_json, 200))
 
@@ -454,7 +457,7 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         mock_parser_instance.parse.side_effect = Exception("Parse error")
         mock_output_parser.return_value = mock_parser_instance
 
-        model = TestCustomModel(self.test_config)
+        model = CustomModel(self.test_config)
         model._generate_text_with_retry = AsyncMock(return_value=("Invalid JSON", 200))
 
         # Execute
