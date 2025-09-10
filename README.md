@@ -3,10 +3,12 @@
 
   <h1>GRASP: GRAph-oriented Synthetic data generation Pipeline</h1>
 
+<a href="https://github.com/ServiceNow/GraSP/releases">
+    <img alt="Documentation" src="https://img.shields.io/github/v/release/ServiceNow/GraSP?logo=bookstack&logoColor=white"/></a>
 <a href="https://servicenow.github.io/GraSP">
-    <img alt="Documentation" src="https://img.shields.io/badge/documentation-green.svg"/></a>
+    <img alt="Documentation" src="https://img.shields.io/badge/MkDocs-Documentation-green.svg"/></a>
 <a href="http://arxiv.org/abs/2508.15432">
-    <img src="https://img.shields.io/badge/arXiv-2508.15432-blue.svg" alt="arXiv"></a>
+    <img src="https://img.shields.io/badge/arXiv-2508.15432-B31B1B.svg" alt="arXiv"></a>
 <a href="./LICENSE">
     <img alt="Licence" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"/></a>
 
