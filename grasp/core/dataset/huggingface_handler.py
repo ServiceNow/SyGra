@@ -164,7 +164,7 @@ class HuggingFaceHandler(DataHandler):
 
         return media_cols
 
-    def _decode_base64_media(self, val: Any) -> list[dict[str, bytes] | None]:
+    def _decode_base64_media(self, val: Any) -> list[Optional[dict[str, bytes]]]:
         results = []
         if isinstance(val, str) and val.startswith("data:"):
             val = [val]

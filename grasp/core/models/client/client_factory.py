@@ -1,4 +1,4 @@
-from enum import StrEnum
+from enum import Enum
 from typing import Any, Dict
 
 import httpx
@@ -14,7 +14,7 @@ from grasp.logger.logger_config import logger
 from grasp.utils import utils, constants
 
 
-class ModelType(StrEnum):
+class ModelType(Enum):
     """Enum representing the supported model types for client creation."""
 
     VLLM = "vllm"
@@ -27,7 +27,7 @@ class ModelType(StrEnum):
 
 # Define which model types do not require a AUTH_TOKEN
 NO_AUTH_TOKEN_NEEDED_MODEL_TYPES = [
-    ModelType.OLLAMA
+    ModelType.OLLAMA.value
 ]
 
 
@@ -89,7 +89,7 @@ class ClientFactory:
             )
 
         # Create client based on model type
-        if model_type == ModelType.VLLM:
+        if model_type == ModelType.VLLM.value:
             # Initialize the client with default chat_completions_api
             return cls._create_openai_client(
                 model_config,
@@ -98,7 +98,7 @@ class ClientFactory:
                 async_client,
                 not model_config.get("completions_api", False),
             )
-        elif model_type == ModelType.OPENAI:
+        elif model_type == ModelType.OPENAI.value:
             return cls._create_openai_azure_client(
                 model_config,
                 url,
@@ -106,13 +106,13 @@ class ClientFactory:
                 async_client,
                 not model_config.get("completions_api", False),
             )
-        elif model_type == ModelType.AZURE or model_type == ModelType.TGI or model_type == ModelType.TRITON:
+        elif model_type == ModelType.AZURE.value or model_type == ModelType.TGI.value or model_type == ModelType.TRITON.value:
             return cls._create_http_client(model_config, url, auth_token)
-        elif model_type == ModelType.MISTRALAI:
+        elif model_type == ModelType.MISTRALAI.value:
             return cls._create_mistral_client(
                 model_config, url, auth_token, async_client
             )
-        elif model_type == ModelType.OLLAMA:
+        elif model_type == ModelType.OLLAMA.value:
             return cls._create_ollama_client(model_config, url, None, async_client,
                                              not model_config.get("completions_api", False))
         else:

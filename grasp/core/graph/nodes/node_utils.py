@@ -30,16 +30,16 @@ def get_node(node_name: str, node_config: dict[str, Any]) -> BaseNode:
     node_type = node_config["node_type"]
 
     node_mapping = {
-        NodeType.LLM: LLMNode,
-        NodeType.AGENT: AgentNode,
-        NodeType.MULTI_LLM: MultiLLMNode,
-        NodeType.WEIGHTED_SAMPLER: WeightedSamplerNode,
-        NodeType.LAMBDA: LambdaNode,
-        NodeType.SPECIAL: SpecialNode,
-        NodeType.CONNECTOR: ConnectorNode,
+        NodeType.LLM.value: LLMNode,
+        NodeType.AGENT.value: AgentNode,
+        NodeType.MULTI_LLM.value: MultiLLMNode,
+        NodeType.WEIGHTED_SAMPLER.value: WeightedSamplerNode,
+        NodeType.LAMBDA.value: LambdaNode,
+        NodeType.SPECIAL.value: SpecialNode,
+        NodeType.CONNECTOR.value: ConnectorNode,
     }
 
-    if node_type == NodeType.SPECIAL or node_type == NodeType.CONNECTOR:
+    if node_type == NodeType.SPECIAL.value or node_type == NodeType.CONNECTOR.value:
         return node_mapping[node_type](node_name)
 
     if node_type not in node_mapping:

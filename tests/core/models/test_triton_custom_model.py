@@ -4,6 +4,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock, AsyncMock
 
+import pytest
+
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
@@ -219,6 +221,7 @@ class TestCustomTriton(unittest.TestCase):
 
     @patch("grasp.core.models.custom_models.utils")
     @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
+    @pytest.mark.asyncio
     async def test_generate_text_success(self, mock_set_client, mock_utils):
         """Test _generate_text method with successful response"""
         # Setup mock client
@@ -267,6 +270,7 @@ class TestCustomTriton(unittest.TestCase):
     @patch("grasp.core.models.custom_models.logger")
     @patch("grasp.core.models.custom_models.utils")
     @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
+    @pytest.mark.asyncio
     async def test_generate_text_http_error(self, mock_set_client, mock_utils, mock_logger):
         """Test _generate_text method with HTTP error"""
         # Setup mock client
@@ -309,6 +313,7 @@ class TestCustomTriton(unittest.TestCase):
 
     @patch("grasp.core.models.custom_models.logger")
     @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
+    @pytest.mark.asyncio
     async def test_generate_text_exception(self, mock_set_client, mock_logger):
         """Test _generate_text method with exception"""
         # Setup mock client

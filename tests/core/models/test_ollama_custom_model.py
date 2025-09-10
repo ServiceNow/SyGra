@@ -3,6 +3,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock, AsyncMock
 
+import pytest
+
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
@@ -79,6 +81,7 @@ class TestCustomOllama(unittest.TestCase):
         # Verify completions_api flag is set
         self.assertTrue(custom_ollama.model_config.get("completions_api"))
 
+    @pytest.mark.asyncio
     async def test_generate_text_chat_completions(self):
         """Test _generate_text method with chat completions API"""
         # Setup mock client
@@ -112,6 +115,7 @@ class TestCustomOllama(unittest.TestCase):
     @patch('grasp.core.models.custom_models.BaseCustomModel._set_client')
     @patch('grasp.core.models.custom_models.BaseCustomModel._finalize_response')
     @patch('grasp.core.models.custom_models.BaseCustomModel.get_chat_formatted_text')
+    @pytest.mark.asyncio
     async def test_generate_text_completions_api(self, mock_get_formatted, mock_finalize, mock_set_client,
                                                  mock_client_factory):
         """Test _generate_text method with completions API"""
@@ -148,6 +152,7 @@ class TestCustomOllama(unittest.TestCase):
     @patch('grasp.core.models.custom_models.ClientFactory')
     @patch('grasp.core.models.custom_models.BaseCustomModel._set_client')
     @patch('grasp.core.models.custom_models.BaseCustomModel._finalize_response')
+    @pytest.mark.asyncio
     async def test_generate_text_exception(self, mock_finalize, mock_set_client, mock_client_factory):
         """Test _generate_text method with an exception"""
         # Setup mock client to raise an exception
@@ -171,6 +176,7 @@ class TestCustomOllama(unittest.TestCase):
     @patch('grasp.core.models.custom_models.BaseCustomModel._set_client')
     @patch('grasp.core.models.custom_models.BaseCustomModel._finalize_response')
     @patch('grasp.core.models.custom_models.json.loads')
+    @pytest.mark.asyncio
     async def test_generate_native_structured_output(self, mock_json_loads, mock_finalize, mock_set_client,
                                                      mock_client_factory):
         """Test _generate_native_structured_output method"""
@@ -225,6 +231,7 @@ class TestCustomOllama(unittest.TestCase):
     @patch('grasp.core.models.custom_models.ClientFactory')
     @patch('grasp.core.models.custom_models.BaseCustomModel._set_client')
     @patch('grasp.core.models.custom_models.BaseCustomModel._generate_fallback_structured_output')
+    @pytest.mark.asyncio
     async def test_generate_native_structured_output_exception(self, mock_fallback, mock_set_client,
                                                                mock_client_factory):
         """Test _generate_native_structured_output method with an exception that falls back"""
@@ -265,6 +272,7 @@ class TestCustomOllama(unittest.TestCase):
         self.assertEqual(result.content, '{"name": "John", "age": 30}')
 
     @patch('grasp.core.models.custom_models.ClientFactory.create_client')
+    @pytest.mark.asyncio
     async def test_set_client(self, mock_create_client):
         """Test _set_client method"""
         # Setup mock client factory

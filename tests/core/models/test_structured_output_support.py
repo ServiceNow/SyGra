@@ -17,6 +17,8 @@ import sys
 import os
 from typing import Any
 
+import pytest
+
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
@@ -28,14 +30,15 @@ from pydantic import BaseModel, Field, ValidationError
 
 
 # Test schema
-class TestUserSchema(BaseModel):
+class UserSchema(BaseModel):
     name: str = Field(description="User's name")
     age: int = Field(description="User's age")
     email: str = Field(description="User's email")
 
 
 # Test model that implements abstract method
-class TestCustomModel(BaseCustomModel):
+class CustomModel(BaseCustomModel):
+    @pytest.mark.asyncio
     async def _generate_text(self, input, model_params):
         return "test response", 200
 
@@ -81,13 +84,13 @@ class TestSchemaConfigParser(unittest.TestCase):
 
     def test_parse_class_path_valid(self):
         """Test parsing valid class path"""
-        config = {"schema": "tests.core.models.test_structured_output_support.TestUserSchema"}
+        config = {"schema": "tests.core.models.test_structured_output_support.UserSchema"}
 
-        with patch.object(SchemaConfigParser, '_import_class', return_value=TestUserSchema):
+        with patch.object(SchemaConfigParser, '_import_class', return_value=UserSchema):
             parser = SchemaConfigParser(config)
 
             self.assertEqual(parser.schema_type, "class")
-            self.assertEqual(parser.class_path, "tests.core.models.test_structured_output_support.TestUserSchema")
+            self.assertEqual(parser.class_path, "tests.core.models.test_structured_output_support.UserSchema")
             self.assertIsNone(parser.schema_data)
 
     def test_parse_schema_dict_valid(self):
@@ -170,12 +173,12 @@ class TestStructuredOutputConfig(unittest.TestCase):
         mock_parser_instance.schema_data = None
         mock_parser.return_value = mock_parser_instance
 
-        mock_load.return_value = TestUserSchema
+        mock_load.return_value = UserSchema
 
         config = StructuredOutputConfig({"schema": "test.TestSchema"})
         result = config.get_pydantic_model()
 
-        self.assertEqual(result, TestUserSchema)
+        self.assertEqual(result, UserSchema)
         mock_load.assert_called_once_with("test.TestSchema")
 
     @patch('grasp.core.models.structured_output.structured_output_config.SchemaConfigParser')
@@ -222,7 +225,7 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             ({**self.test_config, "url": "test", "api_key": "test", "api_version": "test", "model": "gpt-4"})
         vllm_model = CustomVLLM({**self.test_config, "url": "test", "auth_token": "test"})
         tgi_model = CustomTGI({**self.test_config, "url": "test", "auth_token": "test"})
-        base_model = TestCustomModel(self.test_config)
+        base_model = CustomModel(self.test_config)
 
         self.assertTrue(openai_model._supports_native_structured_output())
         self.assertTrue(vllm_model._supports_native_structured_output())
@@ -237,15 +240,15 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         # Setup mocks
         mock_parser_instance = Mock()
         mock_parser_instance.get_format_instructions.return_value = "Format as JSON"
-        mock_parser_instance.parse.return_value = TestUserSchema(name="Test", age=30, email="test@example.com")
+        mock_parser_instance.parse.return_value = UserSchema(name="Test", age=30, email="test@example.com")
         mock_output_parser.return_value = mock_parser_instance
 
-        model = TestCustomModel(self.test_config)
+        model = CustomModel(self.test_config)
         model._generate_text_with_retry = AsyncMock(return_value=(self.valid_json, 200))
 
         # Execute
         resp_text, resp_status = await model._generate_fallback_structured_output(
-            self.test_input, self.test_params, TestUserSchema
+            self.test_input, self.test_params, UserSchema
         )
 
         # Verify
@@ -263,9 +266,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
 
         # Mock _set_client to prevent it from overwriting our mock client
         with patch.object(model, '_set_client'), \
-                patch('pydantic.BaseModel.model_validate', return_value=TestUserSchema(name="Test", age=30, email="test@example.com")):
+                patch('pydantic.BaseModel.model_validate', return_value=UserSchema(name="Test", age=30, email="test@example.com")):
             resp_text, resp_status = await model._generate_native_structured_output(
-                self.test_input, self.test_params, TestUserSchema
+                self.test_input, self.test_params, UserSchema
             )
 
             self.assertEqual(resp_status, 200)
@@ -283,7 +286,7 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         # Mock _set_client to prevent it from overwriting our mock client
         with patch.object(model, '_set_client'):
             resp_text, resp_status = await model._generate_native_structured_output(
-                self.test_input, self.test_params, TestUserSchema
+                self.test_input, self.test_params, UserSchema
             )
 
             # Should fallback
@@ -299,9 +302,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
 
         # Mock _set_client to prevent it from overwriting our mock client
         with patch.object(model, '_set_client'), \
-                patch('pydantic.BaseModel.model_validate', return_value=TestUserSchema(name="Test", age=30, email="test@example.com")):
+                patch('pydantic.BaseModel.model_validate', return_value=UserSchema(name="Test", age=30, email="test@example.com")):
             resp_text, resp_status = await model._generate_native_structured_output(
-                self.test_input, self.test_params, TestUserSchema
+                self.test_input, self.test_params, UserSchema
             )
 
             self.assertEqual(resp_status, 200)
@@ -316,13 +319,13 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
 
         # Mock validation to raise error
         def mock_validate(*args, **kwargs):
-            raise ValidationError.from_exception_data("TestUserSchema", [{"type": "int_parsing", "loc": ("age",), "msg": "Input should be a valid integer", "input": "invalid"}])
+            raise ValidationError.from_exception_data("UserSchema", [{"type": "int_parsing", "loc": ("age",), "msg": "Input should be a valid integer", "input": "invalid"}])
 
         # Mock _set_client to prevent it from overwriting our mock client
         with patch.object(model, '_set_client'), \
                 patch('pydantic.BaseModel.model_validate', side_effect=mock_validate):
             resp_text, resp_status = await model._generate_native_structured_output(
-                self.test_input, self.test_params, TestUserSchema
+                self.test_input, self.test_params, UserSchema
             )
 
         # Should fallback
@@ -341,9 +344,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
 
         # Mock _set_client to prevent it from overwriting our mock client
         with patch.object(model, '_set_client'), \
-                patch('pydantic.BaseModel.model_validate', return_value=TestUserSchema(name="Test", age=30, email="test@example.com")):
+                patch('pydantic.BaseModel.model_validate', return_value=UserSchema(name="Test", age=30, email="test@example.com")):
             resp_text, resp_status = await model._generate_native_structured_output(
-                self.test_input, self.test_params, TestUserSchema
+                self.test_input, self.test_params, UserSchema
             )
 
             self.assertEqual(resp_status, 200)
@@ -364,7 +367,7 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         # Mock _set_client to prevent it from overwriting our mock client
         with patch.object(model, '_set_client'):
             resp_text, resp_status = await model._generate_native_structured_output(
-                self.test_input, self.test_params, TestUserSchema
+                self.test_input, self.test_params, UserSchema
             )
 
             # Should fallback
@@ -376,7 +379,7 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
     @patch('grasp.core.models.structured_output.structured_output_config.SchemaConfigParser')
     async def test_handle_structured_output_with_native_support(self, mock_parser, mock_get_model, mock_utils):
         """Test _handle_structured_output with native support"""
-        mock_get_model.return_value = TestUserSchema
+        mock_get_model.return_value = UserSchema
 
         model = CustomOpenAI \
             ({**self.test_config, "url": "test", "api_key": "test", "api_version": "test", "model": "gpt-4"})
@@ -404,7 +407,7 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         """Test _handle_structured_output when disabled"""
         mock_get_model.return_value = None  # No valid schema
 
-        model = TestCustomModel(self.test_config)
+        model = CustomModel(self.test_config)
 
         # Create a simple mock lock
         model._structured_output_lock = Mock()
@@ -423,10 +426,10 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
     @patch('grasp.core.models.structured_output.structured_output_config.SchemaConfigParser')
     async def test_handle_structured_output_fallback_mode(self, mock_parser, mock_get_model, mock_utils):
         """Test _handle_structured_output using fallback for unsupported model"""
-        mock_get_model.return_value = TestUserSchema
+        mock_get_model.return_value = UserSchema
 
         # Create a model that doesn't support native structured output
-        model = TestCustomModel(self.test_config)
+        model = CustomModel(self.test_config)
         model._supports_native_structured_output = lambda: False
         model._generate_fallback_structured_output = AsyncMock(return_value=(self.valid_json, 200))
 
@@ -454,12 +457,12 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         mock_parser_instance.parse.side_effect = Exception("Parse error")
         mock_output_parser.return_value = mock_parser_instance
 
-        model = TestCustomModel(self.test_config)
+        model = CustomModel(self.test_config)
         model._generate_text_with_retry = AsyncMock(return_value=("Invalid JSON", 200))
 
         # Execute
         resp_text, resp_status = await model._generate_fallback_structured_output(
-            self.test_input, self.test_params, TestUserSchema
+            self.test_input, self.test_params, UserSchema
         )
 
         # Should return unparsed response when parsing fails
@@ -485,9 +488,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         # Mock _set_client to prevent it from overwriting our mock client
         with patch.object(model, '_set_client'), \
                 patch('pydantic.BaseModel.model_validate',
-                      return_value=TestUserSchema(name="Test", age=30, email="test@example.com")):
+                      return_value=UserSchema(name="Test", age=30, email="test@example.com")):
             resp_text, resp_status = await model._generate_native_structured_output(
-                self.test_input, self.test_params, TestUserSchema
+                self.test_input, self.test_params, UserSchema
             )
 
             # Verify the response tuple
@@ -512,9 +515,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         # Mock _set_client to prevent it from overwriting our mock client
         with patch.object(model, '_set_client'), \
                 patch('pydantic.BaseModel.model_validate',
-                      return_value=TestUserSchema(name="Test", age=30, email="test@example.com")):
+                      return_value=UserSchema(name="Test", age=30, email="test@example.com")):
             resp_text, resp_status = await model._generate_native_structured_output(
-                self.test_input, self.test_params, TestUserSchema
+                self.test_input, self.test_params, UserSchema
             )
 
             # Verify the response tuple

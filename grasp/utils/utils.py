@@ -157,15 +157,14 @@ def load_jsonl_file(filepath: str) -> Any:
 
 
 def extract_and_load_json(text: str) -> Any:
-    object = None
     try:
-        # extract JSON from surrounded text
-        text = re.findall(r"[\[\n\r\s]*{.+}[\n\r\s\]]*", text, re.DOTALL)[0]
-        # load JSON with ' or " by using ast because it's more robust and doesn't affect values
-        object = ast.literal_eval(text)
-    except Exception as e:
-        pass
-    return object
+        match = re.search(r"[\[\n\r\s]*{.+}[\n\r\s\]]*", text, re.DOTALL)
+        if not match:
+            return None
+        json_str = match.group(0)
+        return json.loads(json_str)
+    except Exception:
+        return None
 
 
 def load_json(text) -> Any:
@@ -516,7 +515,7 @@ def get_class_from(cpath: str) -> Any:
     Returns:
         Any: The class object.
     """
-    internal = "internal." + cpath
+    internal = "grasp.internal." + ".".join(cpath.split(".")[1:])
     try:
         class_name = getattr(
             importlib.import_module(".".join(internal.split(".")[:-1])),

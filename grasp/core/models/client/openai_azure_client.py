@@ -4,7 +4,7 @@ import httpx
 from langchain_core.messages import BaseMessage
 from langchain_openai.chat_models.base import _convert_message_to_dict
 from openai import AsyncAzureOpenAI, AzureOpenAI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from grasp.core.models.client.base_client import BaseClient
 from grasp.logger.logger_config import logger
@@ -29,9 +29,10 @@ class AzureClientConfig(BaseModel):
         default=3, description="Maximum number of retries for failed requests"
     )
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "allow"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="allow",
+    )
 
 
 class OpenAIAzureClient(BaseClient):
