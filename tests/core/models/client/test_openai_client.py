@@ -1,6 +1,7 @@
 import sys
 import unittest
 import httpx
+import asyncio
 from pathlib import Path
 from unittest.mock import patch, MagicMock, call
 
@@ -39,7 +40,8 @@ class TestOpenAIClient(unittest.TestCase):
     def tearDown(self):
         """Tear down test fixtures after each test method"""
         # Close the httpx clients to prevent resource warnings
-        self.async_http_client.aclose()
+        # For async client, we need to run the coroutine in an event loop
+        asyncio.run(self.async_http_client.aclose())
         self.sync_http_client.close()
 
     @patch("grasp.core.models.client.openai_client.AsyncOpenAI")
@@ -384,7 +386,7 @@ class TestOpenAIClient(unittest.TestCase):
             self.assertEqual(config_dict["http_client"], sync_http_client)
         finally:
             # Close httpx clients to prevent resource warnings
-            async_http_client.aclose()
+            asyncio.run(async_http_client.aclose())
             sync_http_client.close()
 
     @patch("grasp.core.models.client.openai_client.OpenAI")

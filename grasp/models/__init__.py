@@ -1,5 +1,4 @@
-from typing import Any
-
+from typing import Any, Optional
 
 try:
     from grasp.core.models.model_factory import ModelFactory
@@ -21,7 +20,7 @@ class ModelConfigBuilder:
     """Build model configurations using framework's model system."""
 
     @staticmethod
-    def from_name(model_name: str, **kwargs) -> dict[str, Any] | None:
+    def from_name(model_name: str, **kwargs) -> Optional[dict[str, Any]]:
         """Build model configuration from model name using framework's model configs."""
 
         try:

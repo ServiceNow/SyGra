@@ -157,15 +157,14 @@ def load_jsonl_file(filepath: str) -> Any:
 
 
 def extract_and_load_json(text: str) -> Any:
-    object = None
     try:
-        # extract JSON from surrounded text
-        text = re.findall(r"[\[\n\r\s]*{.+}[\n\r\s\]]*", text, re.DOTALL)[0]
-        # load JSON with ' or " by using ast because it's more robust and doesn't affect values
-        object = ast.literal_eval(text)
-    except Exception as e:
-        pass
-    return object
+        match = re.search(r"[\[\n\r\s]*{.+}[\n\r\s\]]*", text, re.DOTALL)
+        if not match:
+            return None
+        json_str = match.group(0)
+        return json.loads(json_str)
+    except Exception:
+        return None
 
 
 def load_json(text) -> Any:
@@ -232,10 +231,25 @@ def delete_file(filepath: str):
     if os.path.exists(filepath):
         os.remove(filepath)
 
+def _normalize_task_path(task: str) -> str:
+    """
+    Helper function to normalize task paths.
+
+    Handles both module-style paths and filesystem paths correctly:
+    - Module paths: Convert dots to path separators
+    - Filesystem paths: Use as-is
+    """
+    # Check if task is already a filesystem path
+    if os.sep in task or (os.altsep and os.altsep in task) or os.path.isabs(task):
+        # This is a filesystem path - use it directly
+        return task
+    else:
+        # This is a module-style dotted path - convert dots to path separators
+        return task.replace(".", os.sep)
 
 def get_file_in_task_dir(task: str, file: str):
-    task_dir = "/".join(task.split("."))
-    return os.path.join(task_dir, file) or f"{task_dir}/{file}"
+    task_dir = _normalize_task_path(task)
+    return os.path.join(task_dir, file)
 
 
 def get_file_in_dir(dot_walk_path: str, file: str):
@@ -360,7 +374,7 @@ def get_models_used(task: str):
     """
     Get model config which are being used in this task
     """
-    task = "/".join(task.split("."))
+    task = _normalize_task_path(task)
     # Use load_model_config instead of directly loading models.yaml
     all_model_config = load_model_config()
     grasp_yaml = load_yaml_file(os.path.join(task, "graph_config.yaml"))
@@ -402,7 +416,7 @@ def get_graph_properties(task_name: str = None) -> dict:
         logger.error("Current task name is not initialized.")
         return {}
 
-    formatted_task_name = "/".join(task.split("."))
+    formatted_task_name = _normalize_task_path(task)
     path = os.path.join(f"{formatted_task_name}/graph_config.yaml")
     yaml_config = load_yaml_file(path)
     return yaml_config.get("graph_config", {}).get("graph_properties", {})
@@ -501,7 +515,7 @@ def get_class_from(cpath: str) -> Any:
     Returns:
         Any: The class object.
     """
-    internal = "internal." + cpath
+    internal = "grasp.internal." + ".".join(cpath.split(".")[1:])
     try:
         class_name = getattr(
             importlib.import_module(".".join(internal.split(".")[:-1])),

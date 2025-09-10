@@ -1,15 +1,24 @@
-import streamlit as st
+try:
+    import streamlit as st
+except ModuleNotFoundError:
+    raise ModuleNotFoundError(
+        "GraSP UI requires the optional 'ui' dependencies. "
+        "Install them with: pip install 'grasp[ui]'"
+    )
 import yaml
 import os
 import asyncio
 from pathlib import Path
 import httpx
 from dateutil.relativedelta import relativedelta
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from utils import check_model_status
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from grasp.utils.utils import load_model_config
 
-
-YAML_FILE = Path("config/models.yaml")
+UTC = timezone.utc
+YAML_FILE = Path("../grasp/config/models.yaml")
 USER_TZ = UTC
 st.set_page_config(page_title="GraSP UI", layout="wide")
 
@@ -61,7 +70,7 @@ def display_time_since(timestamp):
     )
 
 
-models = load_models()
+models = load_model_config()
 
 
 async def update_model_statuses(models):

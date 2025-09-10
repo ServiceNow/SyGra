@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from typing import (
     Any,
     Tuple,
-    Type,
+    Type, Optional,
 )
 
 import openai
@@ -48,7 +48,7 @@ class BaseCustomModel(ABC):
     def __init__(self, model_config: dict[str, Any]) -> None:
         utils.validate_required_keys(["name", "parameters"], model_config, "model")
         self.model_config = model_config
-        self._structured_output_lock = asyncio.Lock()
+        self._structured_output_lock: Optional[asyncio.Lock] = None
 
         # Initialize structured output configuration
         structured_output_raw = model_config.get("structured_output")
@@ -162,12 +162,17 @@ class BaseCustomModel(ABC):
         resp_text = self._post_process_for_model(resp_text)
         return AIMessage(resp_text)
 
+    async def _get_lock(self) -> asyncio.Lock:
+        if self._structured_output_lock is None:
+            self._structured_output_lock = asyncio.Lock()
+        return self._structured_output_lock
+
     async def _handle_structured_output(self, input: ChatPromptValue, model_params: ModelParams,
                                         **kwargs: Any) -> Tuple[str, int]:
         """Handle structured output generation"""
-
+        lock = await self._get_lock()
         # Re-entry prevention using asyncio locking
-        async with self._structured_output_lock:
+        async with lock:
             pydantic_model = self.structured_output.get_pydantic_model()
             if not pydantic_model:
                 logger.warning(

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator, root_validator, Field
+from pydantic import BaseModel, validator, root_validator, Field, model_validator, field_validator
 from datetime import datetime, timezone
 from typing import Any, Optional
 
@@ -16,7 +16,7 @@ class CustomUserSchema(BaseModel):
     language: list[str]
     tags: list[str]
 
-    @root_validator(pre=True)
+    @model_validator(mode='before')
     def check_non_empty_lists(cls, values):
         if not values.get("id"):
             raise ValueError("id cannot be empty")
@@ -69,7 +69,7 @@ class CoreLLMDataFabricFormat(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     active: bool = True
 
-    @validator("data_characteristics", pre=True, always=True)
+    @field_validator("data_characteristics", mode="before")
     def set_data_characteristics(cls, data_characteristics):
         if data_characteristics is None or (
             isinstance(data_characteristics, dict) and len(data_characteristics) == 0
@@ -77,19 +77,19 @@ class CoreLLMDataFabricFormat(BaseModel):
             return {"__default__": True}
         return data_characteristics
 
-    @validator("quality", pre=True, always=True)
+    @field_validator("quality", mode="before")
     def set_quality(cls, quality):
         if quality is None or (isinstance(quality, dict) and len(quality) == 0):
             return {"__default__": True}
         return quality
 
-    @validator("safety", pre=True, always=True)
+    @field_validator("safety", mode="before")
     def set_safety(cls, safety):
         if safety is None or (isinstance(safety, dict) and len(safety) == 0):
             return {"__default__": True}
         return safety
 
-    @validator("categories", pre=True, always=True)
+    @field_validator("categories", mode="before")
     def set_categories(cls, categories):
         if categories is None:
             return []
@@ -97,7 +97,7 @@ class CoreLLMDataFabricFormat(BaseModel):
             return [categories]
         return categories
 
-    @validator("instruction_tags", pre=True, always=True)
+    @field_validator("instruction_tags", mode="before")
     def set_instruction_tags(cls, instruction_tags):
         if instruction_tags is None:
             return []
@@ -105,7 +105,7 @@ class CoreLLMDataFabricFormat(BaseModel):
             return [instruction_tags]
         return instruction_tags
 
-    @validator("subcategories", pre=True, always=True)
+    @field_validator("subcategories", mode="before")
     def set_subcategories(cls, subcategories):
         if subcategories is None:
             return []
@@ -113,7 +113,7 @@ class CoreLLMDataFabricFormat(BaseModel):
             return [subcategories]
         return subcategories
 
-    @validator("parent_id")
+    @field_validator("parent_id")
     def validate_parent_child(cls, v, values):
         if "message_level" in values:
             if values["message_level"] == 1 and v is not None:

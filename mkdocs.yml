@@ -58,6 +58,7 @@ nav:
       - Structured Output: tutorials/structured_output_tutorial.md
       - Structured Output with Multi-LLM: tutorials/structured_output_with_multi_llm_tutorial.md
   - GraSP Library: grasp_library.md
+  - Contribute: development.md
 plugins:
   - search
   - include-markdown

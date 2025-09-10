@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-from enum import StrEnum
+from enum import Enum
 from typing import Any
 
 from grasp.utils import utils
 
 
-class NodeType(StrEnum):
+class NodeType(Enum):
     """
     Types of Node Supported in GraSP.
 
@@ -21,7 +21,7 @@ class NodeType(StrEnum):
     CONNECTOR = "connector"
 
 
-class NodeState(StrEnum):
+class NodeState(Enum):
     """
     by default node is ACTIVE, but it can be disabled with idle key.
 
@@ -51,16 +51,16 @@ class BaseNode(ABC):
 
         if config is not None:
             # node type
-            self.node_type = config.get("node_type", NodeType.UNKNOWN)
+            self.node_type = config.get("node_type", NodeType.UNKNOWN.value)
             # node state
-            self.node_state = config.get("node_state", NodeState.ACTIVE)
+            self.node_state = config.get("node_state", NodeState.ACTIVE.value)
             # store the node config from graph yaml file for this specific node
             self.node_config = config
             if self.node_config is None:
                 raise ValueError("Node configuration is required.")
         else:
-            self.node_type = NodeType.UNKNOWN
-            self.node_state = NodeState.IDLE
+            self.node_type = NodeType.UNKNOWN.value
+            self.node_state = NodeState.IDLE.value
             self.node_config = None
         # stores node specific state variables, this should be passed to langgraph
         self.state_variables = []
@@ -102,7 +102,7 @@ class BaseNode(ABC):
         Returns:
             bool: True if the node is special type.
         """
-        return self.node_type == NodeType.SPECIAL
+        return self.node_type == NodeType.SPECIAL.value
 
     def get_node_config(self) -> dict[str, Any]:
         """
@@ -141,7 +141,7 @@ class BaseNode(ABC):
         Returns:
              bool: True if the node is active.
         """
-        return self.get_node_state() != NodeState.IDLE
+        return self.get_node_state() != NodeState.IDLE.value
 
     def is_valid(self) -> bool:
         """

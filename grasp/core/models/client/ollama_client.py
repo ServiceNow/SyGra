@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Any
 from langchain_core.messages import BaseMessage
 from langchain_openai.chat_models.base import _convert_message_to_dict
 from ollama import Client, AsyncClient
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from grasp.core.models.client.base_client import BaseClient
 from grasp.logger.logger_config import logger
@@ -16,9 +16,10 @@ class OllamaClientConfig(BaseModel):
     timeout: int = Field(default=constants.DEFAULT_TIMEOUT,
                          description="Request timeout in seconds")
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "allow"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="allow",
+    )
 
 
 class OllamaClient(BaseClient):
