@@ -232,7 +232,6 @@ def delete_file(filepath: str):
     if os.path.exists(filepath):
         os.remove(filepath)
 
-
 def _normalize_task_path(task: str) -> str:
     """
     Helper function to normalize task paths.
@@ -249,8 +248,6 @@ def _normalize_task_path(task: str) -> str:
         # This is a module-style dotted path - convert dots to path separators
         return task.replace(".", os.sep)
 
-
-@deprecated("Use get_file_in_task_dir instead")
 def get_file_in_task_dir(task: str, file: str):
     task_dir = _normalize_task_path(task)
     return os.path.join(task_dir, file)
