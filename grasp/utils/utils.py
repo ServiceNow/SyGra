@@ -233,7 +233,6 @@ def delete_file(filepath: str):
         os.remove(filepath)
 
 
-@deprecated("Use get_file_in_task_dir instead")
 def get_file_in_task_dir(task: str, file: str):
     task_dir = "/".join(task.split("."))
     return os.path.join(task_dir, file) or f"{task_dir}/{file}"
