@@ -2,7 +2,7 @@ import os
 import logging
 from argparse import Namespace
 from grasp.utils import utils
-from grasp.tasks.data_quality.metadata_tagging.filter_tags import (
+from grasp.internal.data_quality.metadata_tagging.filter_tags import (
     PipelineConfig,
     extract_instag_stats,
 )
