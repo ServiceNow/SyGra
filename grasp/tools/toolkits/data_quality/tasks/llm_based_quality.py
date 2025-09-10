@@ -51,7 +51,7 @@ class LLMBasedQualityTask:
             Namespace: A namespace object containing task arguments.
         """
         args = {
-            "task": "data_quality.llm_based",
+            "task": "grasp.internal.data_quality.llm_based",
             "start_index": 0,
             "num_records": self.num_records,
             "run_name": "llm_based_quality",
@@ -101,7 +101,7 @@ class LLMBasedQualityTask:
         """
         graph_config = utils.load_yaml_file(
             filepath=utils.get_file_in_task_dir(
-                "data_quality.llm_based", "graph_config.yaml"
+                "grasp.internal.data_quality.llm_based", "graph_config.yaml"
             )
         )
         transformations = (
