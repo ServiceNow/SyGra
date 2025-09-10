@@ -268,37 +268,41 @@ For complex workflows requiring explicit control flow.
 
 ```python
 # Create graph with callable conditions
+import grasp
+
+
 def quality_gate(state):
     """Route based on quality score"""
     return "approved" if state.get("quality_score", 0) > 0.8 else "needs_review"
 
-graph = grasp.create_graph("advanced_workflow")
+
+graph = grasp.Workflow("advanced_workflow")
 
 # Add and configure nodes
-analyzer = graph.add_llm_node("analyzer", "gpt-4o") \
-    .system_prompt("Analyze the following content") \
-    .user_prompt("Content: {text}") \
+analyzer = graph.add_llm_node("analyzer", "gpt-4o")
+    .system_prompt("Analyze the following content")
+    .user_prompt("Content: {text}")
     .temperature(0.7)
 
-reviewer = graph.add_agent_node("reviewer", "gpt-4o") \
-    .tools([fact_checker, web_search]) \
+reviewer = graph.add_agent_node("reviewer", "gpt-4o")
+    .tools([fact_checker, web_search])
     .system_prompt("Review and verify the analysis")
 
 # Define control flow
-graph.sequence("analyzer", "reviewer") \
+graph.sequence("analyzer", "reviewer")
     .add_conditional_edge(
-        "reviewer",
-        condition=quality_gate,  # Callable condition
-        path_map={
-            "approved": "END", 
-            "needs_review": "analyzer"
-        }
-    )
+    "reviewer",
+    condition=quality_gate,  # Callable condition
+    path_map={
+        "approved": "END",
+        "needs_review": "analyzer"
+    }
+)
 
 # Execute
-result = graph.set_source("documents.json") \
-    .set_sink("analyzed_docs.json") \
-    .enable_quality_tagging() \
+result = graph.set_source("documents.json")
+    .set_sink("analyzed_docs.json")
+    .enable_quality_tagging()
     .run(num_records=100)
 ```
 
