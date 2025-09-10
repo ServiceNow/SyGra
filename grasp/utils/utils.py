@@ -500,7 +500,7 @@ def get_class_from(cpath: str) -> Any:
     Returns:
         Any: The class object.
     """
-    internal = "internal." + cpath
+    internal = "grasp.internal." + ".".join(cpath.split(".")[1:])
     try:
         class_name = getattr(
             importlib.import_module(".".join(internal.split(".")[:-1])),
