@@ -20,6 +20,9 @@
 
 
 3. Install poetry using the [official guidelines](https://python-poetry.org/docs/#installation).
+    ```bash
+    pip install poetry
+    ```
 4. Run the following command to install all core dependencies.
     ```bash
     make setup

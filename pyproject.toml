@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "grasp"
-version = "0.1.0"
+version = "1.0.0"
 description = "GRAph-oriented Synthetic data generation Pipeline library"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -40,7 +40,7 @@ grasp = ["**/*.yaml", "**/*.yml", "**/*.jinja2", "**/*.j2", "**/*.json"]
 # --- Poetry section (explicit, must duplicate dependencies) ---
 [tool.poetry]
 name = "grasp"
-version = "0.1.0"
+version = "1.0.0"
 description = "GRAph-oriented Synthetic data generation Pipeline library"
 authors = ["GraSP Team <grasp_team@servicenow.com>"]
 license = "Apache-2.0"
