@@ -77,7 +77,7 @@ class MockClient:
                 self.text = text
                 self.status_code = status_code
                 self.choices = [Mock()]
-                self.choices[0].dict = lambda: {"message": {"content": text}}
+                self.choices[0].model_dump = lambda: {"message": {"content": text}}
 
             def __getattr__(self, name):
                 if name == "status_code":

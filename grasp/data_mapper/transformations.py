@@ -83,9 +83,9 @@ class ConversationTransform(Transform):
                     "role": msg.get("role", ""),
                     "content": msg.get("content", ""),
                     "created_at": timestamp_fields.get(
-                        "created_at", datetime.datetime.now(datetime.UTC)
+                        "created_at", datetime.datetime.now(datetime.timezone.utc)
                     ),
-                    "updated_at": datetime.datetime.now(datetime.UTC),
+                    "updated_at": datetime.datetime.now(datetime.timezone.utc),
                     "metainfo": metainfo,
                 }
             )
@@ -171,9 +171,9 @@ class DPOConversationTransform(Transform):
                 "role": role,
                 "content": base_content if base_content is not None else "",
                 "created_at": timestamp_fields.get(
-                    "created_at", datetime.datetime.now(datetime.UTC)
+                    "created_at", datetime.datetime.now(datetime.timezone.utc)
                 ),
-                "updated_at": datetime.datetime.now(datetime.UTC),
+                "updated_at": datetime.datetime.now(datetime.timezone.utc),
                 "metainfo": metainfo,
             }
 
