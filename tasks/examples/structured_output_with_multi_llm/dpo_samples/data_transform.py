@@ -1,8 +1,9 @@
 """Module for DPO samples data transformation operations."""
 
 from typing import Any
-from grasp.processors.data_transform import DataTransform
+
 from grasp.logger.logger_config import logger
+from grasp.processors.data_transform import DataTransform
 
 
 class ExtractUserPromptTransform(DataTransform):
@@ -22,9 +23,7 @@ class ExtractUserPromptTransform(DataTransform):
         """
         return "extract_user_prompt"
 
-    def transform(
-        self, data: list[dict[str, Any]], params: dict[str, Any]
-    ) -> list[dict[str, Any]]:
+    def transform(self, data: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
         """Apply the transformation to extract user_prompt from conversation.
 
         Args:
@@ -42,13 +41,9 @@ class ExtractUserPromptTransform(DataTransform):
 
             # Extract user_prompt from conversation if it exists
             if "conversation" in record and isinstance(record["conversation"], list):
-                user_messages = [
-                    msg for msg in record["conversation"] if msg.get("role") == "user"
-                ]
+                user_messages = [msg for msg in record["conversation"] if msg.get("role") == "user"]
                 if user_messages:
-                    transformed_record["user_prompt"] = user_messages[0].get(
-                        "content", ""
-                    )
+                    transformed_record["user_prompt"] = user_messages[0].get("content", "")
                     logger.info(
                         f"Extracted user_prompt: {transformed_record['user_prompt'][:50]}..."
                     )
@@ -85,9 +80,7 @@ class ExtractResponseScaleTransform(DataTransform):
         """
         return "extract_response_scale"
 
-    def transform(
-        self, data: list[dict[str, Any]], params: dict[str, Any]
-    ) -> list[dict[str, Any]]:
+    def transform(self, data: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
         """Apply the transformation to extract response_scale from conversation.
 
         Args:
@@ -106,14 +99,10 @@ class ExtractResponseScaleTransform(DataTransform):
             # Extract response_scale from conversation if it exists
             if "conversation" in record and isinstance(record["conversation"], list):
                 assistant_messages = [
-                    msg
-                    for msg in record["conversation"]
-                    if msg.get("role") == "assistant"
+                    msg for msg in record["conversation"] if msg.get("role") == "assistant"
                 ]
                 if assistant_messages:
-                    transformed_record["response_scale"] = assistant_messages[0].get(
-                        "content", ""
-                    )
+                    transformed_record["response_scale"] = assistant_messages[0].get("content", "")
                     logger.info(
                         f"Extracted response_scale: {transformed_record['response_scale'][:50]}..."
                     )
@@ -150,9 +139,7 @@ class InitializeStateVariablesTransform(DataTransform):
         """
         return "initialize_state_variables"
 
-    def transform(
-        self, data: list[dict[str, Any]], params: dict[str, Any]
-    ) -> list[dict[str, Any]]:
+    def transform(self, data: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
         """Apply the transformation to initialize state variables.
 
         Args:

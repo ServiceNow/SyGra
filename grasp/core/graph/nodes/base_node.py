@@ -164,9 +164,7 @@ class BaseNode(ABC):
         """
         pass
 
-    def validate_config_keys(
-        self, required_keys: list[str], config_name: str, node_config: dict
-    ):
+    def validate_config_keys(self, required_keys: list[str], config_name: str, node_config: dict):
         utils.validate_required_keys(required_keys, node_config, config_name)
 
     @abstractmethod

@@ -6,8 +6,8 @@ from unittest.mock import patch
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
-from grasp.core.models.custom_models import BaseCustomModel, CustomVLLM, CustomOpenAI, CustomOllama
 import grasp.utils.constants as constants
+from grasp.core.models.custom_models import BaseCustomModel, CustomOllama, CustomOpenAI, CustomVLLM
 
 
 class TestValidateCompletionApiSupport(unittest.TestCase):
@@ -49,11 +49,7 @@ class TestValidateCompletionApiSupport(unittest.TestCase):
         }
 
         # Config for CustomOllama
-        self.ollama_config = {
-            **self.base_config,
-            "name": "test_ollama",
-            "model_type": "ollama"
-        }
+        self.ollama_config = {**self.base_config, "name": "test_ollama", "model_type": "ollama"}
 
     def tearDown(self):
         """Clean up after each test method"""
@@ -62,9 +58,7 @@ class TestValidateCompletionApiSupport(unittest.TestCase):
 
     @patch("grasp.core.models.custom_models.ClientFactory")
     @patch("grasp.core.models.custom_models.logger")
-    def test_base_model_completions_api_not_supported(
-        self, mock_logger, mock_client_factory
-    ):
+    def test_base_model_completions_api_not_supported(self, mock_logger, mock_client_factory):
         """Test that BaseCustomModel raises an error when completions_api is set to True"""
 
         # Create a test implementation of BaseCustomModel
@@ -108,9 +102,7 @@ class TestValidateCompletionApiSupport(unittest.TestCase):
 
     @patch("grasp.core.models.custom_models.ClientFactory")
     @patch("grasp.core.models.custom_models.logger")
-    def test_vllm_model_completions_api_supported(
-        self, mock_logger, mock_client_factory
-    ):
+    def test_vllm_model_completions_api_supported(self, mock_logger, mock_client_factory):
         """Test that CustomVLLM supports completion API"""
         # Test with completions_api set to True
         config = {**self.vllm_config, "completions_api": True}
@@ -122,9 +114,7 @@ class TestValidateCompletionApiSupport(unittest.TestCase):
             self.fail("CustomVLLM raised ValueError unexpectedly")
 
         # Verify that logger.info was called with the appropriate message
-        mock_logger.info.assert_called_once_with(
-            f"Model {config['name']} supports completion API."
-        )
+        mock_logger.info.assert_called_once_with(f"Model {config['name']} supports completion API.")
 
     @patch("grasp.core.models.custom_models.ClientFactory")
     @patch("grasp.core.models.custom_models.logger")
@@ -138,9 +128,7 @@ class TestValidateCompletionApiSupport(unittest.TestCase):
 
     @patch("grasp.core.models.custom_models.ClientFactory")
     @patch("grasp.core.models.custom_models.logger")
-    def test_openai_model_completions_api_supported(
-        self, mock_logger, mock_client_factory
-    ):
+    def test_openai_model_completions_api_supported(self, mock_logger, mock_client_factory):
         """Test that CustomOpenAI supports completion API"""
         # Test with completions_api set to True
         config = {**self.openai_config, "completions_api": True}
@@ -152,15 +140,11 @@ class TestValidateCompletionApiSupport(unittest.TestCase):
             self.fail("CustomOpenAI raised ValueError unexpectedly")
 
         # Verify that logger.info was called with the appropriate message
-        mock_logger.info.assert_called_once_with(
-            f"Model {config['name']} supports completion API."
-        )
+        mock_logger.info.assert_called_once_with(f"Model {config['name']} supports completion API.")
 
     @patch("grasp.core.models.custom_models.ClientFactory")
     @patch("grasp.core.models.custom_models.logger")
-    def test_openai_model_completions_api_not_set(
-        self, mock_logger, mock_client_factory
-    ):
+    def test_openai_model_completions_api_not_set(self, mock_logger, mock_client_factory):
         """Test that CustomOpenAI doesn't log anything when completions_api is not set"""
         # Create the model with completions_api not set
         model = CustomOpenAI(self.openai_config)
@@ -168,7 +152,7 @@ class TestValidateCompletionApiSupport(unittest.TestCase):
         # Verify that logger.info was not called
         mock_logger.info.assert_not_called()
 
-    @patch('grasp.core.models.custom_models.logger')
+    @patch("grasp.core.models.custom_models.logger")
     def test_ollama_model_completions_api_supported(self, mock_logger):
         """Test that CustomOllama supports completion API"""
         # Test with completions_api set to True
@@ -183,7 +167,7 @@ class TestValidateCompletionApiSupport(unittest.TestCase):
         # Verify that logger.info was called with the appropriate message
         mock_logger.info.assert_called_once_with(f"Model {config['name']} supports completion API.")
 
-    @patch('grasp.core.models.custom_models.logger')
+    @patch("grasp.core.models.custom_models.logger")
     def test_ollama_model_completions_api_not_set(self, mock_logger):
         """Test that CustomOllama doesn't log anything when completions_api is not set"""
         # Create the model with completions_api not set

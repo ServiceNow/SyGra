@@ -1,9 +1,11 @@
-from pydantic import BaseModel, create_model, ValidationError
-from typing import Optional, Type, Any
-from grasp.validators.yaml_loader import resolve_schema_class, process_custom_fields
-from grasp.validators.custom_validations import *
-from grasp.logger.logger_config import logger
+from typing import Any, Optional, Type
+
+from pydantic import BaseModel, ValidationError, create_model
+
 from grasp.core.graph.graph_config import GraphConfig
+from grasp.logger.logger_config import logger
+from grasp.validators.custom_validations import *
+from grasp.validators.yaml_loader import process_custom_fields, resolve_schema_class
 
 
 class SchemaValidator:
@@ -110,16 +112,12 @@ class SchemaValidator:
 
             # Check additional validation rules dynamically (if any are present)
             if not self.validate_additional_rules(field_name, field, field_value):
-                logger.error(
-                    f"Field '{field_name}' failed additional validation rules."
-                )
+                logger.error(f"Field '{field_name}' failed additional validation rules.")
                 return False
 
         return True  # All checks passed
 
-    def validate_additional_rules(
-        self, field_name: str, field: dict, field_value
-    ) -> bool:
+    def validate_additional_rules(self, field_name: str, field: dict, field_value) -> bool:
         """
         Validate additional rules like `is_greater_than`, `is_not_empty`, etc.
         This method can be extended in subclasses to handle more rules.
@@ -141,9 +139,7 @@ class SchemaValidator:
                         validate_function = globals()[validate_function_name]
 
                         # Call the validation function and pass the field value and rule value
-                        is_valid = validate_function(
-                            field_value, field_name, rule_value
-                        )
+                        is_valid = validate_function(field_value, field_name, rule_value)
                         if not is_valid:
                             return False
                     else:
@@ -153,9 +149,7 @@ class SchemaValidator:
                         return False
             return True
         except Exception as e:
-            logger.error(
-                f"Error during additional validation for field '{field_name}': {e}"
-            )
+            logger.error(f"Error during additional validation for field '{field_name}': {e}")
             return False
 
     def validate(self, data: dict) -> bool:
@@ -171,15 +165,11 @@ class SchemaValidator:
             logger.info("Skipping validation, schema_config not defined.")
             return True
         if not self.schema_class:
-            logger.info(
-                "YAML file based validation triggered. Routing to validateYAML."
-            )
+            logger.info("YAML file based validation triggered. Routing to validateYAML.")
             return self.validateYAML(data)
         try:
             self.schema_class(**data)  # Validate data using the selected schema
             return True
         except ValidationError as e:
-            print(
-                "Validation Error:", e
-            )  # Raise error if output data didn't match chosen schema
+            print("Validation Error:", e)  # Raise error if output data didn't match chosen schema
             return False

@@ -1,13 +1,12 @@
+import os
 import sys
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-import os
 
-from grasp.utils import utils
-from grasp.utils import constants
+from grasp.utils import constants, utils
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 

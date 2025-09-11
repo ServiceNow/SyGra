@@ -5,17 +5,16 @@ import os
 import re
 import threading
 from pathlib import Path
-from typing import Any, Union, Iterator
-from typing import Callable
+from typing import Any, Callable, Iterator, Union
 
 import yaml
 from datasets import IterableDataset
-from langchain_core.messages import HumanMessage, AIMessage, AnyMessage, SystemMessage
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage
 from langchain_core.prompts.chat import (
-    HumanMessagePromptTemplate,
     AIMessagePromptTemplate,
-    SystemMessagePromptTemplate,
     BaseMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
 )
 from typing_extensions import deprecated
 
@@ -82,6 +81,7 @@ def load_model_config() -> Any:
 
     return base_configs
 
+
 def get_updated_model_config(model_config: dict) -> dict:
     """
     Updates a model config dictionary with default values from the grasp config file.
@@ -129,7 +129,12 @@ def get_payload(inference_server: str, key="default") -> Any:
     inference_server_cfg = payload_cfg.get(inference_server)
 
     # return the value, if not found return default for a valid inference server(triton), else return none
-    return inference_server_cfg.get(key, inference_server_cfg.get("default")) if inference_server_cfg else None
+    return (
+        inference_server_cfg.get(key, inference_server_cfg.get("default"))
+        if inference_server_cfg
+        else None
+    )
+
 
 def get_env_name(name):
     """
@@ -231,6 +236,7 @@ def delete_file(filepath: str):
     if os.path.exists(filepath):
         os.remove(filepath)
 
+
 def _normalize_task_path(task: str) -> str:
     """
     Helper function to normalize task paths.
@@ -247,6 +253,7 @@ def _normalize_task_path(task: str) -> str:
         # This is a module-style dotted path - convert dots to path separators
         return task.replace(".", os.sep)
 
+
 def get_file_in_task_dir(task: str, file: str):
     task_dir = _normalize_task_path(task)
     return os.path.join(task_dir, file)
@@ -255,6 +262,7 @@ def get_file_in_task_dir(task: str, file: str):
 def get_file_in_dir(dot_walk_path: str, file: str):
     dir_path = "/".join(dot_walk_path.split("."))
     return f"{constants.ROOT_DIR}/{dir_path}/{file}"
+
 
 def get_dot_walk_path(path: str):
     return ".".join(path.split("/"))
@@ -267,9 +275,7 @@ def validate_required_keys(
 ):
     missing_keys = [key for key in required_keys if key not in config]
     if missing_keys:
-        raise ValueError(
-            f"Required keys {missing_keys} are missing in {config_name} configuration"
-        )
+        raise ValueError(f"Required keys {missing_keys} are missing in {config_name} configuration")
 
 
 def get_func_from_str(func_str: str) -> Callable:
@@ -324,9 +330,7 @@ def convert_messages_from_chat_format_to_langchain(
         elif role == "assistant":
             langchain_messages.append(AIMessagePromptTemplate.from_template(content))
         elif role == "system":
-            langchain_messages.append(
-                SystemMessagePromptTemplate.from_template(content)
-            )
+            langchain_messages.append(SystemMessagePromptTemplate.from_template(content))
     return langchain_messages
 
 

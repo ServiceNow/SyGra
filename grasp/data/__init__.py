@@ -2,20 +2,20 @@
 Data handling API for GraSP workflows with full framework integration.
 """
 
-import os
 import json
+import os
 import tempfile
-from typing import Union, Any, Optional
 from pathlib import Path
+from typing import Any, Optional, Union
 
 try:
     from core.dataset.dataset_config import (
         DataSourceConfig,
-        OutputConfig,
         DataSourceType,
+        OutputConfig,
         OutputType,
-        TransformConfig,
         ShardConfig,
+        TransformConfig,
     )
     from core.dataset.file_handler import FileHandler
     from core.dataset.huggingface_handler import HuggingFaceHandler
@@ -110,9 +110,7 @@ class DataSource:
         self._config["transformations"].append(transform_config)
         return self
 
-    def add_shard(
-        self, regex: str = "*", index: Optional[list[int]] = None
-    ) -> "DataSource":
+    def add_shard(self, regex: str = "*", index: Optional[list[int]] = None) -> "DataSource":
         """Add shard configuration."""
         shard_config = {"regex": regex}
         if index:
@@ -225,7 +223,7 @@ def from_file(
     path: Union[str, Path],
     transformations: Optional[list[dict[str, Any]]] = None,
     shard: Optional[dict[str, Any]] = None,
-    **kwargs
+    **kwargs,
 ) -> dict[str, Any]:
     """Create a data source from a file with optional transformations and sharding."""
     source = DataSource.disk(path, **kwargs)
@@ -244,7 +242,7 @@ def from_huggingface(
     repo_id: str,
     transformations: Optional[list[dict[str, Any]]] = None,
     shard: Optional[dict[str, Any]] = None,
-    **kwargs
+    **kwargs,
 ) -> dict[str, Any]:
     """Create a data source from HuggingFace dataset with optional transformations and sharding."""
     source = DataSource.huggingface(repo_id, **kwargs)

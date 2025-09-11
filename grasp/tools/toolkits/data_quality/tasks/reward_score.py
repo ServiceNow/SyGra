@@ -1,12 +1,13 @@
-import os
 import argparse
+import os
+from typing import Any, Dict, List
+
 import torch
 from tqdm import tqdm
-from typing import List, Dict, Any
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-from grasp.logger.logger_config import logger
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-from grasp.utils import utils, constants, dotenv
+from grasp.logger.logger_config import logger
+from grasp.utils import constants, dotenv, utils
 
 dotenv.load_dotenv()
 
@@ -16,16 +17,12 @@ class RewardScoringTask:
     A task for computing reward scores for conversations in a dataset using a pre-trained reward model.
     """
 
-    def __init__(
-        self, input_file: str, output_dir: str, num_records: int = None, **kwargs: dict
-    ):
+    def __init__(self, input_file: str, output_dir: str, num_records: int = None, **kwargs: dict):
         self.input_file = input_file
         self.output_dir = output_dir
         self.num_records = num_records
         self.batch_size = kwargs.get("batch_size", 2)
-        self.model_name = kwargs.get(
-            "model_name", "Ray2333/GRM-Llama3.2-3B-rewardmodel-ft"
-        )
+        self.model_name = kwargs.get("model_name", "Ray2333/GRM-Llama3.2-3B-rewardmodel-ft")
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.max_length = kwargs.get("max_length", 8192)
 
@@ -56,22 +53,17 @@ class RewardScoringTask:
         """Compute the maximum token length for the dataset."""
         max_tokens = 0
         messages = [
-            tokenizer.apply_chat_template(sample["conversation"], tokenize=False)
-            for sample in data
+            tokenizer.apply_chat_template(sample["conversation"], tokenize=False) for sample in data
         ]
 
         for i in range(0, len(messages), self.batch_size):
             batch = messages[i : i + self.batch_size]
-            tokens = tokenizer(
-                batch, padding=True, truncation=False, return_tensors="pt"
-            )
+            tokens = tokenizer(batch, padding=True, truncation=False, return_tensors="pt")
             max_tokens = max(max_tokens, tokens["input_ids"].shape[1])
 
         return min(int(max_tokens * 1.1), tokenizer.model_max_length)
 
-    def _compute_rewards_batch(
-        self, data: List[Dict[str, Any]], model, tokenizer
-    ) -> None:
+    def _compute_rewards_batch(self, data: List[Dict[str, Any]], model, tokenizer) -> None:
         """Compute reward scores for each sample in the dataset."""
         current_batch_size = self.batch_size
         total_samples = len(data)
@@ -83,9 +75,7 @@ class RewardScoringTask:
             try:
                 batch = data[i : i + current_batch_size]
                 messages = [
-                    tokenizer.apply_chat_template(
-                        sample["conversation"], tokenize=False
-                    )
+                    tokenizer.apply_chat_template(sample["conversation"], tokenize=False)
                     for sample in batch
                 ]
 
@@ -124,9 +114,7 @@ class RewardScoringTask:
 
                 # Save checkpoint periodically
                 if i % 1000 == 0 or i >= total_samples:
-                    checkpoint_path = os.path.join(
-                        self.output_dir, f"reward_score_chkpt_{i}.jsonl"
-                    )
+                    checkpoint_path = os.path.join(self.output_dir, f"reward_score_chkpt_{i}.jsonl")
                     utils.save_jsonl_file(checkpoint_path, data[:i])
                     logger.info(f"Saved checkpoint: {checkpoint_path}")
 

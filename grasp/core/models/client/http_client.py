@@ -1,9 +1,9 @@
-from typing import Dict, Any, List, Optional, Tuple
 import json
+from typing import Any, Dict, List, Optional, Tuple
+
 import aiohttp
 import requests
-
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from grasp.core.models.client.base_client import BaseClient
 from grasp.logger.logger_config import logger
@@ -20,9 +20,7 @@ class HttpClientConfig(BaseModel):
     timeout: int = Field(
         default=constants.DEFAULT_TIMEOUT, description="Request timeout in seconds"
     )
-    max_retries: int = Field(
-        default=3, description="Maximum number of retries for failed requests"
-    )
+    max_retries: int = Field(default=3, description="Maximum number of retries for failed requests")
     ssl_verify: bool = Field(default=True, description="Verify SSL certificate")
     ssl_cert: Optional[str] = Field(default=None, description="Path to SSL certificate file")
 
@@ -117,7 +115,7 @@ class HttpClient(BaseClient):
                 data=json_data,
                 timeout=self.timeout,
                 verify=self.verify_ssl,
-                cert=self.verify_cert
+                cert=self.verify_cert,
             )
 
         except Exception as e:

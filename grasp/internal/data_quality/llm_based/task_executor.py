@@ -1,16 +1,16 @@
 import json
 from typing import Any
 
-import yaml
 import regex
-from grasp.logger.logger_config import logger
-from grasp.core.graph.grasp_message import GraspMessage
-from grasp.core.graph.grasp_state import GraspState
+import yaml
+
 from grasp.core.graph.functions.edge_condition import EdgeCondition
 from grasp.core.graph.functions.node_processor import (
     NodePostProcessorWithState,
 )
-
+from grasp.core.graph.grasp_message import GraspMessage
+from grasp.core.graph.grasp_state import GraspState
+from grasp.logger.logger_config import logger
 from grasp.processors.data_transform import DataTransform
 from grasp.processors.output_record_generator import BaseOutputGenerator
 from grasp.utils import utils
@@ -39,9 +39,7 @@ def load_prompt_config(prompt_config_file: str) -> dict:
         config = yaml.safe_load(file)
     category_prompt_map = config.get("Mapping")
     # small case and remove spaces with underscore
-    category_prompt_map = {
-        k.lower().replace(" ", "_"): v for k, v in category_prompt_map.items()
-    }
+    category_prompt_map = {k.lower().replace(" ", "_"): v for k, v in category_prompt_map.items()}
     return category_prompt_map
 
 
@@ -68,9 +66,7 @@ class ConvertToQuestionAnswerTransform(DataTransform):
         """
         return "convert_to_question_answer"
 
-    def transform(
-        self, data: list[dict[str, Any]], params: dict[str, Any]
-    ) -> list[dict[str, Any]]:
+    def transform(self, data: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
         """Convert each record's conversation into question-answer pairs.
 
         Args:
@@ -140,9 +136,7 @@ class DataQualityQuestionQualityPostProcessor(NodePostProcessorWithState):
         response_json = parse_response_as_json(response_str) or {}
         score_json = {
             "question_quality_score": response_json.get("QUALITY_SCORE", ""),
-            "explanation_question_quality": response_json.get(
-                "QUALITY_EXPLANATION", ""
-            ),
+            "explanation_question_quality": response_json.get("QUALITY_EXPLANATION", ""),
         }
         state.setdefault("scores", {}).update(score_json)
         return state
@@ -179,8 +173,6 @@ class DataQualityOutputGenerator(BaseOutputGenerator):
             dict[str, Any]: The updated metadata.
         """
         if "scores" in state:
-            metadata_llm_based = {
-                "quality_characteristics": {"LLM_based": state["scores"]}
-            }
+            metadata_llm_based = {"quality_characteristics": {"LLM_based": state["scores"]}}
             utils.deep_update(metadata, metadata_llm_based)
         return metadata

@@ -1,11 +1,13 @@
+import json
 import os
-from grasp.logger.logger_config import logger
 from argparse import Namespace
+
 import pandas as pd
-from grasp.utils import constants, utils
 from tqdm import tqdm
 from transformers import AutoTokenizer, PreTrainedTokenizerBase
-import json
+
+from grasp.logger.logger_config import logger
+from grasp.utils import constants, utils
 
 
 class ConversationPreTokenizationTask:
@@ -58,9 +60,7 @@ class ConversationPreTokenizationTask:
             record["targets_pretokenized"] = targets_pretokenized
             pretokenized_records.append(record)
 
-        output_file = os.path.join(
-            args.output_dir, "conversation_pretokenized_output.jsonl"
-        )
+        output_file = os.path.join(args.output_dir, "conversation_pretokenized_output.jsonl")
         with open(output_file, "w") as f:
             for record in pretokenized_records:
                 f.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -83,9 +83,7 @@ class ConversationPreTokenizationTask:
             messages, tokenize=False, add_generation_prompt=False
         )
 
-        targets_pretokenized = conversation_pretokenized.replace(
-            inputs_pretokenized, ""
-        )
+        targets_pretokenized = conversation_pretokenized.replace(inputs_pretokenized, "")
 
         return inputs_pretokenized, targets_pretokenized, conversation_pretokenized
 

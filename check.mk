@@ -8,6 +8,9 @@ CODE_PATHS = grasp tests tasks
 # Define paths for JSON files
 JSON_PATHS = $(shell find grasp -name "*.json")
 
+# Minimum acceptable pylint score (0.0 - 10.0). CI will fail if below this.
+PYLINT_FAIL_UNDER ?= 9.0
+
 ########################################################################################################################
 # LINT
 ########################################################################################################################
@@ -32,7 +35,7 @@ lint-flake8: ## Run flake8 in a controlled environment
 .PHONY: lint-pylint-local
 lint-pylint-local: ## Analyze the code with pylint using poetry
 	@echo "Analyzing code with pylint"
-	poetry run pylint --jobs 0 $(CODE_PATHS)
+	poetry run pylint --jobs 0 --fail-under=$(PYLINT_FAIL_UNDER) $(CODE_PATHS)
 
 .PHONY: lint-pylint
 lint-pylint: ## Run pylint in a controlled environment
