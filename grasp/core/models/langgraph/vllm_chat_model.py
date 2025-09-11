@@ -3,9 +3,9 @@ from typing import Any
 import openai
 from langchain_core.messages import AnyMessage
 
-from grasp.logger.logger_config import logger
 from grasp.core.models.custom_models import ModelParams
 from grasp.core.models.langgraph.grasp_base_chat_model import GraspBaseChatModel
+from grasp.logger.logger_config import logger
 from grasp.utils import constants
 
 
@@ -59,9 +59,7 @@ class CustomVLLMChatModel(GraspBaseChatModel):
         None
         """
         super().__init__(model_config)
-        self._model_serving_name = model_config.get(
-            "model_serving_name", self._get_name()
-        )
+        self._model_serving_name = model_config.get("model_serving_name", self._get_name())
 
     @property
     def _llm_type(self) -> str:

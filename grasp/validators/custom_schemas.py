@@ -1,6 +1,7 @@
-from pydantic import BaseModel, validator, root_validator, Field, model_validator, field_validator
 from datetime import datetime, timezone
 from typing import Any, Optional
+
+from pydantic import BaseModel, Field, field_validator, model_validator, root_validator, validator
 
 
 class CustomUserSchema(BaseModel):
@@ -16,7 +17,7 @@ class CustomUserSchema(BaseModel):
     language: list[str]
     tags: list[str]
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     def check_non_empty_lists(cls, values):
         if not values.get("id"):
             raise ValueError("id cannot be empty")

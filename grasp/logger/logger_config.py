@@ -1,6 +1,7 @@
 import logging
 import os
-from typing import Protocol, Optional
+from typing import Optional, Protocol
+
 from grasp.utils.constants import ROOT_DIR
 
 

@@ -27,9 +27,7 @@ def createDeepenPrompt(instruction):
 
 
 def createConcretizingPrompt(instruction):
-    prompt = base_instruction.format(
-        "Please replace general concepts with more specific concepts."
-    )
+    prompt = base_instruction.format("Please replace general concepts with more specific concepts.")
     prompt += "#The Given Prompt#: \r\n {} \r\n".format(instruction)
     prompt += "#Rewritten Prompt#:\r\n"
     return prompt

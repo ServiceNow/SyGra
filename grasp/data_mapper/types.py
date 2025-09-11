@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Protocol, Any, Optional
+from typing import Any, Optional, Protocol
 
 
 @dataclass
@@ -16,8 +16,6 @@ class Transform(Protocol):
 
     meta: TransformMeta
 
-    def transform(
-        self, value: Any, context: dict[str, Any]
-    ) -> Optional[list[dict[str, Any]]]:
+    def transform(self, value: Any, context: dict[str, Any]) -> Optional[list[dict[str, Any]]]:
         """Transform a value using context, optionally returning rows"""
         pass

@@ -1,10 +1,10 @@
-from typing import List, Optional, Dict, Any, Union
+from typing import Any, Dict, List, Optional, Union
 
 import httpx
 from langchain_core.messages import BaseMessage
 from langchain_openai.chat_models.base import _convert_message_to_dict
 from openai import AsyncOpenAI, OpenAI
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from grasp.core.models.client.base_client import BaseClient
 from grasp.logger.logger_config import logger
@@ -22,9 +22,7 @@ class OpenAIClientConfig(BaseModel):
     timeout: int = Field(
         default=constants.DEFAULT_TIMEOUT, description="Request timeout in seconds"
     )
-    max_retries: int = Field(
-        default=3, description="Maximum number of retries for failed requests"
-    )
+    max_retries: int = Field(default=3, description="Maximum number of retries for failed requests")
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

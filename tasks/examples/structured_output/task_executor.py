@@ -9,7 +9,7 @@ from grasp.logger.logger_config import logger
 
 
 def parse_response_as_json(s):
-    JSON_REGEX_PATTERN = regex.compile(r'\{(?:[^{}]|(?R))*\}')
+    JSON_REGEX_PATTERN = regex.compile(r"\{(?:[^{}]|(?R))*\}")
     try:
         return json.loads(s)
     except json.decoder.JSONDecodeError as e:
@@ -31,14 +31,11 @@ class GenerateTaxonomyPostProcessor(NodePostProcessorWithState):
         if json_data:
             output_dict = {
                 "category": json_data.get("category", ""),
-                "sub_category": json_data.get("sub_category", "")
+                "sub_category": json_data.get("sub_category", ""),
             }
             state.update(output_dict)
             return state
 
         else:
-            state.update({
-                "category": "",
-                "sub_category": ""
-            })
+            state.update({"category": "", "sub_category": ""})
             return state

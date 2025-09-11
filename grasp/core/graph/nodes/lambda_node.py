@@ -31,9 +31,7 @@ class LambdaNode(BaseNode):
         Returns:
              Any: platform specific runnable object like Runnable in LangGraph.
         """
-        return utils.backend_factory.create_lambda_runnable(
-            self.func_to_execute, self.node_config
-        )
+        return utils.backend_factory.create_lambda_runnable(self.func_to_execute, self.node_config)
 
     def validate_node(self):
         """

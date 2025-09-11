@@ -5,6 +5,7 @@ This file configures pytest to handle asyncio properly.
 """
 
 import asyncio
+
 import pytest
 
 
@@ -12,7 +13,7 @@ import pytest
 def event_loop():
     """
     Create an instance of the default event loop for each test session.
-    
+
     This ensures that there is always an event loop available for asyncio operations
     even when tests aren't explicitly async.
     """
@@ -27,8 +28,8 @@ def event_loop():
 def setup_asyncio_event_loop():
     """
     Ensure that all tests have access to an event loop.
-    
-    This fixture is automatically applied to all tests and ensures that 
+
+    This fixture is automatically applied to all tests and ensures that
     an event loop is available in the MainThread, which fixes the
     "RuntimeError: There is no current event loop in thread 'MainThread'" error.
     """

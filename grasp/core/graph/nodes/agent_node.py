@@ -1,4 +1,4 @@
-from inspect import signature, isclass
+from inspect import isclass, signature
 from typing import Any
 
 from langchain_core.messages import AIMessage, SystemMessage
@@ -6,9 +6,8 @@ from langgraph.prebuilt import create_react_agent
 
 from grasp.core.graph.grasp_message import GraspMessage
 from grasp.core.graph.nodes.llm_node import LLMNode
-from grasp.utils import utils, constants
-
 from grasp.logger.logger_config import logger
+from grasp.utils import constants, utils
 
 
 class AgentNode(LLMNode):
@@ -42,9 +41,7 @@ class AgentNode(LLMNode):
 
         from grasp.core.models.model_factory import ModelFactory
 
-        self.model = ModelFactory.create_model(
-            self.node_config["model"], constants.BACKEND
-        )
+        self.model = ModelFactory.create_model(self.node_config["model"], constants.BACKEND)
 
     async def _exec_wrapper(self, state: dict[str, Any]) -> dict[str, Any]:
         graph_factory = utils.get_graph_factory(constants.BACKEND)
@@ -117,9 +114,7 @@ class AgentNode(LLMNode):
                 {
                     constants.KEY_NAME: self.name,
                     constants.KEY_REQUEST: request_msgs,
-                    constants.KEY_RESPONSE: graph_factory.get_message_content(
-                        responseMsg
-                    ),
+                    constants.KEY_RESPONSE: graph_factory.get_message_content(responseMsg),
                 }
             )
 

@@ -1,7 +1,7 @@
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -9,6 +9,7 @@ import pytest
 sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent))
 
 import json
+
 from grasp.core.models.client.http_client import HttpClient, HttpClientConfig
 
 
@@ -56,7 +57,7 @@ class TestHttpClient(unittest.TestCase):
             timeout=30,
             max_retries=2,
             verify_ssl=True,
-            verify_cert=None
+            verify_cert=None,
         )
 
     def test_initialization(self):
@@ -82,9 +83,7 @@ class TestHttpClient(unittest.TestCase):
         self.assertEqual(result, {"prompt": "Hello, world!"})
 
         # Test with additional kwargs
-        result = self.client.build_request(
-            base_payload, temperature=0.7, max_tokens=100
-        )
+        result = self.client.build_request(base_payload, temperature=0.7, max_tokens=100)
         expected = {"prompt": "Hello, world!", "temperature": 0.7, "max_tokens": 100}
         self.assertEqual(result, expected)
 
@@ -120,7 +119,7 @@ class TestHttpClient(unittest.TestCase):
             data=json.dumps(payload).encode(),
             timeout=30,
             verify=True,
-            cert=None
+            cert=None,
         )
         self.assertEqual(response, mock_response)
 
@@ -143,7 +142,7 @@ class TestHttpClient(unittest.TestCase):
             data=json.dumps(expected_payload).encode(),
             timeout=30,
             verify=True,
-            cert=None
+            cert=None,
         )
 
     @patch("requests.request")
