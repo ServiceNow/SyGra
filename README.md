@@ -9,12 +9,9 @@
     <img alt="Documentation" src="https://img.shields.io/badge/MkDocs-Documentation-green.svg"/></a>
 <a href="http://arxiv.org/abs/2508.15432">
     <img src="https://img.shields.io/badge/arXiv-2508.15432-B31B1B.svg" alt="arXiv"></a>
-<a href="./LICENSE">
+<a href="LICENSE">
     <img alt="Licence" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"/></a>
 
-[//]: # (<a href="https://doi.org/10.5281/zenodo.6511558">)
-
-[//]: # (    <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.6511558.svg" alt="DOI"></a>)
 <br>
 </div>
 
@@ -61,7 +58,7 @@ As of now, LLM inference is supported for TGI, vLLM, Azure, Azure OpenAI, Ollama
 
 ## Contact
 
-To contact us, join our channel or send us an [email](grasp_team@servicenow.com)!
+To contact us, join our channel or send us an [email](mailto:grasp_team@servicenow.com)!
 
 ## License
 
