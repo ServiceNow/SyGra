@@ -81,7 +81,6 @@ except ImportError:
 # Utility modules
 try:
     from . import utils
-    from .utils import utils
     from .utils import constants
     from .logger.logger_config import (
         logger,
