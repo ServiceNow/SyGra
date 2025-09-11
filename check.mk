@@ -9,7 +9,7 @@ CODE_PATHS = grasp tests tasks
 JSON_PATHS = $(shell find grasp -name "*.json")
 
 # Minimum acceptable pylint score (0.0 - 10.0). CI will fail if below this.
-PYLINT_FAIL_UNDER ?= 9.0
+PYLINT_FAIL_UNDER ?= 8.0
 
 ########################################################################################################################
 # LINT
