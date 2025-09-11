@@ -849,9 +849,9 @@ class CustomVLLM(BaseCustomModel):
 
             # Extract response text based on API type
             if self.model_config.get("completions_api", False):
-                resp_text = completion.choices[0].dict()["text"].strip()
+                resp_text = completion.choices[0].model_dump()["text"].strip()
             else:
-                resp_text = completion.choices[0].dict()["message"]["content"].strip()
+                resp_text = completion.choices[0].model_dump()["message"]["content"].strip()
 
             logger.info(f"[{self.name()}][{model_url}] RESPONSE: Native support call successful")
             logger.debug(f"[{self.name()}] Native structured output response: {resp_text}")
@@ -899,9 +899,9 @@ class CustomVLLM(BaseCustomModel):
                 payload, self.model_serving_name, self.generation_params
             )
             if self.model_config.get("completions_api", False):
-                resp_text = completion.choices[0].dict()["text"].strip()
+                resp_text = completion.choices[0].model_dump()["text"].strip()
             else:
-                resp_text = completion.choices[0].dict()["message"]["content"].strip()
+                resp_text = completion.choices[0].model_dump()["message"]["content"].strip()
             # TODO: Test rate limit handling for vllm
         except openai.RateLimitError as e:
             logger.warn(f"vLLM api request exceeded rate limit: {e}")
@@ -979,9 +979,9 @@ class CustomOpenAI(BaseCustomModel):
 
             # Extract response text based on API type
             if self.model_config.get("completions_api", False):
-                resp_text = completion.choices[0].dict()["text"].strip()
+                resp_text = completion.choices[0].model_dump()["text"].strip()
             else:
-                resp_text = completion.choices[0].dict()["message"]["content"].strip()
+                resp_text = completion.choices[0].model_dump()["message"]["content"].strip()
 
             logger.info(f"[{self.name()}][{model_url}] RESPONSE: Native support call successful")
             logger.debug(f"[{self.name()}] Native structured output response: {resp_text}")
@@ -1028,9 +1028,9 @@ class CustomOpenAI(BaseCustomModel):
                 payload, self.model_config.get("model"), self.generation_params
             )
             if self.model_config.get("completions_api", False):
-                resp_text = completion.choices[0].dict()["text"].strip()
+                resp_text = completion.choices[0].model_dump()["text"].strip()
             else:
-                resp_text = completion.choices[0].dict()["message"]["content"].strip()
+                resp_text = completion.choices[0].model_dump()["message"]["content"].strip()
         except openai.RateLimitError as e:
             logger.warn(f"AzureOpenAI api request exceeded rate limit: {e}")
             resp_text = f"{constants.ERROR_PREFIX} Http request failed {e}"
