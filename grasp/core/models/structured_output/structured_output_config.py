@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib
 import inspect
-from typing import Any, Optional, Type
+from typing import Any, Optional, Type, Dict, Tuple
 
 from pydantic import BaseModel, create_model
 
@@ -52,8 +52,8 @@ class SchemaConfigParser:
         except Exception as e:
             raise ValueError(f"Failed to import class '{class_path}': {str(e)}")
 
-        self.schema_type = "class"
-        self.class_path = class_path
+        self.schema_type : str = "class"
+        self.class_path : str = class_path
         self.schema_data = None
 
     def _handle_schema_dict(self, schema_dict: dict):
@@ -62,8 +62,8 @@ class SchemaConfigParser:
         if not self._is_valid_schema_dict(schema_dict):
             raise ValueError("Invalid schema dictionary structure")
 
-        self.schema_type = "schema"
-        self.schema_data = schema_dict
+        self.schema_type : str = "schema"
+        self.schema_data : dict[Any, Any] = schema_dict
         self.class_path = None
 
     def _is_valid_class_path(self, class_path: str) -> bool:
@@ -170,7 +170,7 @@ class StructuredOutputConfig:
         try:
             module_path, class_name = class_path.rsplit(".", 1)
             module = importlib.import_module(module_path)
-            pydantic_class = getattr(module, class_name)
+            pydantic_class : Type[BaseModel] = getattr(module, class_name)
 
             if not issubclass(pydantic_class, BaseModel):
                 raise ValueError(f"Class {class_name} is not a Pydantic BaseModel")
@@ -181,15 +181,14 @@ class StructuredOutputConfig:
             raise
 
     def _create_pydantic_from_yaml(
-        self, schema_dict: dict[str, Any]
+            self, schema_dict: dict[str, Any]
     ) -> Type[BaseModel]:
         """Create pydantic model from YAML schema definition"""
         try:
-            fields = {}
+            fields: Dict[str, Tuple[Any, Any]] = {}
             for field_name, field_config in schema_dict.get("fields", {}).items():
                 field_type = self._get_python_type(field_config.get("type", "str"))
                 field_default = field_config.get("default", ...)
-                field_config.get("description", "")
 
                 if field_default != ...:
                     fields[field_name] = (field_type, field_default)
@@ -197,7 +196,7 @@ class StructuredOutputConfig:
                     fields[field_name] = (field_type, ...)
 
             model_name = schema_dict.get("name", "DynamicModel")
-            return create_model(model_name, **fields)
+            return create_model(model_name, **fields)  # type: ignore[arg-type]
         except Exception as e:
             logger.error(f"Failed to create pydantic model from YAML schema: {e}")
             raise

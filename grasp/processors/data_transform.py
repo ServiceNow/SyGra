@@ -7,8 +7,7 @@ Transformations can be applied to lists of dictionaries, allowing for data manip
 import os
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Union
-
+from typing import Any, Union, Optional
 
 from grasp.logger.logger_config import logger
 from grasp.utils.audio_utils import get_audio_fields, get_audio_url, load_audio
@@ -126,7 +125,7 @@ class SkipRecords(DataTransform):
                 ranges[start] = end
 
             # build a set of skip indices
-            skip_indices = set()
+            skip_indices: set[int] = set()
             for s, e in ranges.items():
                 skip_indices.update(range(s, e))
             # build new dataset by skipping the data
@@ -419,7 +418,7 @@ class CreateAudioUrlTransform(DataTransform):
     def transform(
         self,
         data: list[dict[str, Any]],
-        params: dict[str, Any] = None,
+        params: Optional[dict[str, Any]] = None,
     ) -> list[dict[str, Any]]:
         if not data:
             logger.warning("No data provided to CreateAudioUrlTransform")

@@ -1,4 +1,5 @@
-from typing import Any, Set, Tuple, Type
+import types
+from typing import Any, Union
 
 
 class TypeParseError(Exception):
@@ -6,6 +7,8 @@ class TypeParseError(Exception):
 
     pass
 
+
+ParsedType = Union[type, types.GenericAlias, Any]
 
 class TypeParser:
     # Map of string names to actual type objects
@@ -27,7 +30,7 @@ class TypeParser:
         self.pos = 0
         self.input = ""
 
-    def parse(self, type_str: str) -> Type:
+    def parse(self, type_str: str) -> ParsedType:
         """Main parsing function that processes the type string and returns actual type"""
         try:
             # Reset state
@@ -49,7 +52,7 @@ class TypeParser:
         except IndexError:
             raise TypeParseError("Unexpected end of input - missing closing bracket?")
 
-    def _parse_type(self) -> Type:
+    def _parse_type(self) -> ParsedType:
         """Parse a single type, which may be nested"""
         # Get the base type
         base_type = ""
@@ -63,7 +66,7 @@ class TypeParser:
         if base_type not in self.VALID_TYPES:
             raise TypeParseError(f"Invalid type '{base_type}'")
 
-        type_obj = self.VALID_TYPES[base_type]
+        type_obj: ParsedType = self.VALID_TYPES[base_type]
 
         # Handle nested types
         if self.pos < len(self.input) and self.input[self.pos] == "[":

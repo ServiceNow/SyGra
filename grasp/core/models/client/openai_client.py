@@ -65,8 +65,12 @@ class OpenAIClient(BaseClient):
         self.stop = stop
 
     def build_request(
-        self, messages: List[BaseMessage] = None, formatted_prompt: str = None, **kwargs
-    ):
+        self,
+        messages: List[BaseMessage],
+        formatted_prompt: str,
+        stop: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> Any:
         """
         Build a request payload for the model.
 
@@ -86,8 +90,10 @@ class OpenAIClient(BaseClient):
         Raises:
             ValueError: If the messages or formatted prompt are invalid.
         """
-        if self.stop is not None:
-            kwargs["stop"] = self.stop
+        # Prefer explicit stop passed to this call; otherwise use client default
+        effective_stop = stop if stop is not None else self.stop
+        if effective_stop is not None:
+            kwargs["stop"] = effective_stop
         payload = {**kwargs}
         if self.chat_completions_api:
             if messages is not None and len(messages) > 0:
@@ -102,7 +108,7 @@ class OpenAIClient(BaseClient):
                     "messages passed is None or empty. Please provide valid messages to build request with chat completions API."
                 )
         else:
-            if formatted_prompt is not None:
+            if formatted_prompt is not None and len(formatted_prompt) > 0:
                 payload["prompt"] = formatted_prompt
                 return payload
             else:
@@ -112,8 +118,6 @@ class OpenAIClient(BaseClient):
                 raise ValueError(
                     "formatted_prompt passed is None. Please provide a valid formatted prompt to build request with completion API."
                 )
-
-        return None
 
     def send_request(
         self,

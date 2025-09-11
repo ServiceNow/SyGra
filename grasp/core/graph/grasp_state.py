@@ -1,7 +1,7 @@
 from typing import TypedDict
 
 
-class GraspState(TypedDict):
+class GraspState(TypedDict, total=False):
     """
     This class defines predefined state variables/schema.
 

@@ -7,14 +7,14 @@ including support for sharded datasets and dataset card management.
 import base64
 import io
 import os
-from typing import Any, Iterator, Optional, Union
+from typing import Any, Iterator, Optional, Union, cast
 
-import datasets
-import pandas as pd
-from datasets import Dataset, concatenate_datasets
+import datasets # type: ignore[import-untyped]
+import pandas as pd # type: ignore[import-untyped]
+from datasets import Dataset, IterableDataset, concatenate_datasets
 from datasets import config as ds_config
 from datasets import load_dataset
-from datasets.utils.metadata import MetadataConfigs
+from datasets.utils.metadata import MetadataConfigs # type: ignore[import-untyped]
 from huggingface_hub import (
     CommitOperationAdd,
     DatasetCard,
@@ -51,8 +51,8 @@ class HuggingFaceHandler(DataHandler):
         source_config: Optional[DataSourceConfig],
         output_config: Optional[OutputConfig] = None,
     ):
-        self.source_config: DataSourceConfig = source_config
-        self.output_config: OutputConfig = output_config
+        self.source_config: Optional[DataSourceConfig] = source_config
+        self.output_config: Optional[OutputConfig] = output_config
         self.fs = HfFileSystem(token=source_config.token)
 
     def read(
@@ -78,7 +78,7 @@ class HuggingFaceHandler(DataHandler):
             logger.error(f"Failed to read from HuggingFace: {str(e)}")
             raise RuntimeError(f"Failed to read from HuggingFace: {str(e)}") from e
 
-    def write(self, data: list[dict[str, Any]], path: str = None) -> None:
+    def write(self, data: list[dict[str, Any]], path: Optional[str] = None) -> None:
         """
         Write data to a HuggingFace dataset.
 
@@ -141,8 +141,8 @@ class HuggingFaceHandler(DataHandler):
             exist_ok=True,
         )
 
-    def _detect_media_columns(self, df: pd.DataFrame) -> dict:
-        media_cols = {
+    def _detect_media_columns(self, df: pd.DataFrame) -> dict[str, list[str]]:
+        media_cols: dict[str, list[str]] = {
             "image_str": [],
             "image_seq": [],
             "audio_str": [],
@@ -170,7 +170,7 @@ class HuggingFaceHandler(DataHandler):
         return media_cols
 
     def _decode_base64_media(self, val: Any) -> list[Optional[dict[str, bytes]]]:
-        results = []
+        results: list[Optional[dict[str, bytes]]] = []
         if isinstance(val, str) and val.startswith("data:"):
             val = [val]
         if isinstance(val, list):
@@ -239,11 +239,11 @@ class HuggingFaceHandler(DataHandler):
         """Read a single shard file."""
         with self.fs.open(path) as f:
             df = pd.read_parquet(io.BytesIO(f.read()))
-        return df.to_dict(orient="records")
+        return cast(list[dict[str, Any]], df.to_dict(orient="records"))
 
     def _load_dataset_by_split(
         self, split
-    ) -> Union[list[dict[str, Any]], Iterator[dict[str, Any]]]:
+    ) -> Union[Dataset, IterableDataset]:
         """Load dataset for a specific split."""
         ds = load_dataset(
             path=self.source_config.repo_id,
@@ -252,28 +252,29 @@ class HuggingFaceHandler(DataHandler):
             streaming=self.source_config.streaming,
             token=self.source_config.token,
         )
-        return ds
+        return cast(Union[Dataset, IterableDataset], ds)
 
     def _read_dataset(self) -> Union[list[dict[str, Any]], Iterator[dict[str, Any]]]:
         """Read complete dataset, handling multiple splits if specified."""
         try:
             if isinstance(self.source_config.split, list):
-                datasets = [
+                datasets_list = [
                     self._load_dataset_by_split(split)
                     for split in self.source_config.splits
                 ]
 
-                if len(datasets) == 1:
-                    ds = datasets[0]
+                if len(datasets_list) == 1:
+                    ds = datasets_list[0]
                 else:
-                    ds = concatenate_datasets(datasets)
+                    ds = concatenate_datasets(datasets_list)  # type: ignore[arg-type]
             else:
                 ds = self._load_dataset_by_split(self.source_config.split)
 
             if self.source_config.streaming:
-                return ds
+                return cast(Iterator[dict[str, Any]], ds)
             else:
-                return ds.to_pandas().to_dict(orient="records")
+                ds_concrete = cast(Dataset, ds)
+                return cast(list[dict[str, Any]], ds_concrete.to_pandas().to_dict(orient="records"))
 
         except Exception as e:
             logger.error(f"Failed to read dataset: {str(e)}")

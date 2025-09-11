@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 try:
-    from core.dataset.dataset_config import (
+    from grasp.core.dataset.dataset_config import (
         DataSourceConfig, # noqa: F401
         DataSourceType, # noqa: F401
         OutputConfig, # noqa: F401
@@ -17,8 +17,8 @@ try:
         ShardConfig, # noqa: F401
         TransformConfig, # noqa: F401
     )
-    from core.dataset.file_handler import FileHandler # noqa: F401
-    from core.dataset.huggingface_handler import HuggingFaceHandler # noqa: F401
+    from grasp.core.dataset.file_handler import FileHandler # noqa: F401
+    from grasp.core.dataset.huggingface_handler import HuggingFaceHandler # noqa: F401
 
     CORE_DATA_AVAILABLE = True
 except ImportError:

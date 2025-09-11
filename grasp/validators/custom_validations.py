@@ -1,7 +1,8 @@
+from typing import Any
 from grasp.logger.logger_config import logger
 
 
-def validate_is_greater_than(self, field_name: str, other: any) -> bool:
+def validate_is_greater_than(self, field_name: str, other: Any) -> bool:
     """Custom validation for 'is_greater_than' rule"""
     try:
         if self <= other:
@@ -19,7 +20,7 @@ def validate_is_greater_than(self, field_name: str, other: any) -> bool:
         return False
 
 
-def validate_is_equal_to(self, field_name: str, other: any) -> bool:
+def validate_is_equal_to(self, field_name: str, other: Any) -> bool:
     """Custom validation for 'is_equal_to' rule"""
     try:
         if self != other:
@@ -37,7 +38,7 @@ def validate_is_equal_to(self, field_name: str, other: any) -> bool:
         return False
 
 
-def validate_is_less_than(self, field_name: str, other: any) -> bool:
+def validate_is_less_than(self, field_name: str, other: Any) -> bool:
     """Custom validation for 'is_less_than' rule"""
     try:
         if self >= other:

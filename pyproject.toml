@@ -141,7 +141,7 @@ no_implicit_optional = true
 strict_optional = true
 
 [[tool.mypy.overrides]]
-module = ["tests.*"]
+module = ["tests.*", "grasp.recipes.*"]
 disallow_untyped_defs = false
 check_untyped_defs = false
 

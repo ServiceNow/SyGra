@@ -20,20 +20,6 @@ graph_config:
       prompt:
         - user: "{user_prompt}"
       models:
-        gpt4:
-          name: gpt4
-          parameters:
-            temperature: 0.7
-            max_tokens: 2000
-          structured_output:
-            schema:
-              fields:
-                message:
-                  type: str
-                  description: "Response message"
-                success:
-                  type: bool
-                  description: "Operation success status"
         gpt-4o:
           name: gpt-4o
           parameters:
@@ -73,7 +59,7 @@ graph_config:
             
             {assistant_responses}
       model:
-        name: gpt4
+        name: gpt-4o
         parameters:
           max_tokens: 1000
           temperature: 0.1

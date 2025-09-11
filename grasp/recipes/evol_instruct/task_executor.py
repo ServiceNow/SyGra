@@ -6,8 +6,9 @@ from grasp.recipes.evol_instruct.instruct_mgr import get_instruction
 
 # input is `text` and output is `evol_instruct_final_prompt`
 class EvolInstructPromptGenerator(LambdaFunction):
+    @staticmethod
     def apply(lambda_node_dict: dict, state: GraspState):
-        text = state["text"]
+        text = state.get("text")
         algorithm = state.get("algorithm")
         algorithm = "random" if algorithm is None else algorithm
         final_prompt = get_instruction(text, algorithm)
