@@ -98,4 +98,6 @@ class DataCharacteristicsTask:
 
     @staticmethod
     def _set_tokenizer(model_path) -> PreTrainedTokenizer:
-        return AutoTokenizer.from_pretrained(model_path, token=os.environ.get(constants.HF_TOKEN))
+        return AutoTokenizer.from_pretrained(
+            model_path, token=os.environ.get(constants.HF_TOKEN)
+        )

@@ -113,7 +113,9 @@ class FileHandler(DataHandler):
             elif output_path.suffix == ".jsonl":
                 with open(output_path, "a", encoding=self.output_config.encoding) as f:
                     for item in data:
-                        f.write(json.dumps(item, ensure_ascii=False, cls=JSONEncoder) + "\n")
+                        f.write(
+                            json.dumps(item, ensure_ascii=False, cls=JSONEncoder) + "\n"
+                        )
             else:
                 with open(output_path, "w", encoding=self.output_config.encoding) as f:
                     json.dump(data, f, indent=2, ensure_ascii=False, cls=JSONEncoder)

@@ -9,7 +9,9 @@ class CustomSchemaValidator(SchemaValidator):
         Initializes the CustomSchemaValidator with the given YAML file.
         The YAML file should define the schema_config and fields.
         """
-        super().__init__(graph_config)  # Call parent constructor to initialize schema and fields
+        super().__init__(
+            graph_config
+        )  # Call parent constructor to initialize schema and fields
 
         # You can load other necessary resources here, like custom validations if required
         self.custom_validations = (

@@ -2,13 +2,13 @@ from typing import Any, Optional
 
 try:
     from grasp.core.models.custom_models import (
-        CustomAzure,
-        CustomMistralAPI,
-        CustomOpenAI,
-        CustomTGI,
-        CustomVLLM,
+        CustomAzure, # noqa: F401
+        CustomMistralAPI, # noqa: F401
+        CustomOpenAI, # noqa: F401
+        CustomTGI, # noqa: F401
+        CustomVLLM, # noqa: F401
     )
-    from grasp.core.models.model_factory import ModelFactory
+    from grasp.core.models.model_factory import ModelFactory # noqa: F401
     from grasp.utils import utils
 
     MODELS_AVAILABLE = True

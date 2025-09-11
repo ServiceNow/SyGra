@@ -46,7 +46,7 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
             # Initialize an LLM node
             node_config = {"model": {"name": "test_model"}, "prompt": "test prompt"}
 
-            node = LLMNode("test_llm_node", node_config)
+            LLMNode("test_llm_node", node_config)
 
             # Verify get_model was called
             mock_get_model.assert_called_once_with({"name": "test_model"})
@@ -79,10 +79,12 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
                 # Initialize an Agent node
                 node_config = {"model": {"name": "test_model"}, "prompt": "test prompt"}
 
-                node = AgentNode("test_agent_node", node_config)
+                AgentNode("test_agent_node", node_config)
 
                 # Verify get_model was called with the langgraph backend
-                mock_get_model.assert_called_once_with({"name": "test_model"}, "langgraph")
+                mock_get_model.assert_called_once_with(
+                    {"name": "test_model"}, "langgraph"
+                )
 
     @patch("grasp.utils.utils.load_model_config")
     def test_model_factory_backend_selection(self, mock_load_model_config):
@@ -97,7 +99,9 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
             mock_default.assert_called_once()
 
         # Test langgraph backend uses chat models
-        with patch.object(CustomVLLMChatModel, "__init__", return_value=None) as mock_langgraph:
+        with patch.object(
+            CustomVLLMChatModel, "__init__", return_value=None
+        ) as mock_langgraph:
             model_config = {"name": "test_model", "model_type": "vllm"}
             ModelFactory.create_model(model_config, "langgraph")
             mock_langgraph.assert_called_once()
@@ -146,7 +150,9 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
 
                 # Verify the model in the node is our mock with BaseChatModel interface
                 self.assertIsInstance(node.model, MagicMock)
-                self.assertTrue(issubclass(node.model.__class__.__bases__[0], BaseChatModel))
+                self.assertTrue(
+                    issubclass(node.model.__class__.__bases__[0], BaseChatModel)
+                )
 
     @patch("grasp.utils.utils.load_model_config")
     def test_incompatible_model_for_agent_node(self, mock_load_model_config):

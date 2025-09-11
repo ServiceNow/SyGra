@@ -4,19 +4,20 @@ This module provides abstract and concrete classes for transforming data records
 Transformations can be applied to lists of dictionaries, allowing for data manipulation operations.
 """
 
-import base64
-import io
 import os
 import re
 from abc import ABC, abstractmethod
 from typing import Any, Union
 
-import requests
-from PIL import Image
 
 from grasp.logger.logger_config import logger
 from grasp.utils.audio_utils import get_audio_fields, get_audio_url, load_audio
-from grasp.utils.image_utils import get_image_fields, get_image_url, is_data_url, load_image
+from grasp.utils.image_utils import (
+    get_image_fields,
+    get_image_url,
+    is_data_url,
+    load_image,
+)
 
 
 class DataTransform(ABC):
@@ -41,7 +42,9 @@ class DataTransform(ABC):
         pass
 
     @abstractmethod
-    def transform(self, data: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
+    def transform(
+        self, data: list[dict[str, Any]], params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Apply the transformation to a list of records.
 
         Args:
@@ -76,7 +79,9 @@ class SkipRecords(DataTransform):
         """
         return "skip_records"
 
-    def transform(self, data: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
+    def transform(
+        self, data: list[dict[str, Any]], params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Skip records based on params.
 
         Args:
@@ -125,7 +130,9 @@ class SkipRecords(DataTransform):
             for s, e in ranges.items():
                 skip_indices.update(range(s, e))
             # build new dataset by skipping the data
-            new_dataset = [record for i, record in enumerate(dataset) if i not in skip_indices]
+            new_dataset = [
+                record for i, record in enumerate(dataset) if i not in skip_indices
+            ]
         else:
             raise Exception(f"Unknown skip type '{skip_type}'")
 
@@ -175,10 +182,14 @@ class CombineRecords(DataTransform):
         for i in range(var_count):
             # note: replace variable index starts from 1
             record_index = i + 1
-            replace_string = replace_string.replace(f"${record_index}", str(records[i][col]))
+            replace_string = replace_string.replace(
+                f"${record_index}", str(records[i][col])
+            )
         return replace_string
 
-    def transform(self, data: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
+    def transform(
+        self, data: list[dict[str, Any]], params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Combine records based on params.
 
         Args:
@@ -243,7 +254,9 @@ class RenameFieldsTransform(DataTransform):
         """
         return "rename_fields"
 
-    def transform(self, data: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
+    def transform(
+        self, data: list[dict[str, Any]], params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Rename fields in each record according to the provided mapping.
 
         Args:
@@ -258,7 +271,9 @@ class RenameFieldsTransform(DataTransform):
         return [self._rename_fields(record, params) for record in data]
 
     @staticmethod
-    def _rename_fields(record: dict[str, Any], params: dict[str, Any]) -> dict[str, Any]:
+    def _rename_fields(
+        record: dict[str, Any], params: dict[str, Any]
+    ) -> dict[str, Any]:
         """Rename fields in a single record.
 
         Args:
@@ -296,7 +311,9 @@ class AddNewFieldTransform(DataTransform):
         """
         return "add_new_field"
 
-    def transform(self, data: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
+    def transform(
+        self, data: list[dict[str, Any]], params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Add new fields to each record according to the provided mapping.
 
         Args:
@@ -309,7 +326,9 @@ class AddNewFieldTransform(DataTransform):
         """
         return [self._add_new_fields(record, params) for record in data]
 
-    def _add_new_fields(self, record: dict[str, Any], params: dict[str, Any]) -> dict[str, Any]:
+    def _add_new_fields(
+        self, record: dict[str, Any], params: dict[str, Any]
+    ) -> dict[str, Any]:
         """Add new fields to a single record.
 
         Args:
@@ -337,7 +356,9 @@ class CreateImageUrlTransform(DataTransform):
         """
         return "create_image_url"
 
-    def transform(self, data: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
+    def transform(
+        self, data: list[dict[str, Any]], params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Transform image fields in each record to base64-encoded data URLs.
         Args:
             data (list[dict[str, Any]]): List of dictionary records to transform.
@@ -405,7 +426,9 @@ class CreateAudioUrlTransform(DataTransform):
             return data
 
         params = params or {}
-        output_field_map = params.get("output_fields", {})  # e.g., { "audio": "audio_base64" }
+        output_field_map = params.get(
+            "output_fields", {}
+        )  # e.g., { "audio": "audio_base64" }
         audio_fields = get_audio_fields(data[0])
 
         for record in data:
@@ -421,14 +444,18 @@ class CreateAudioUrlTransform(DataTransform):
                     out_field = output_field_map.get(field, field)
                     record[out_field] = processed
                 else:
-                    logger.warning(f"Record {record_id}: Failed to process audio field '{field}'")
+                    logger.warning(
+                        f"Record {record_id}: Failed to process audio field '{field}'"
+                    )
 
         return data
 
     def _process_field(self, value: Any, field: str) -> Any:
         """Handle list or single-item audio values."""
         if isinstance(value, list):
-            return [self._process_single(item, field) for item in value if item is not None]
+            return [
+                self._process_single(item, field) for item in value if item is not None
+            ]
         return self._process_single(value, field)
 
     def _process_single(self, item: Any, field: str) -> Union[str, None]:

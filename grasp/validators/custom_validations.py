@@ -13,7 +13,9 @@ def validate_is_greater_than(self, field_name: str, other: any) -> bool:
             logger.info(f"is_greater_than validation passed for field '{field_name}'.")
         return True
     except Exception as e:
-        logger.error(f"Error during 'is_greater_than' validation for field '{field_name}': {e}")
+        logger.error(
+            f"Error during 'is_greater_than' validation for field '{field_name}': {e}"
+        )
         return False
 
 
@@ -29,7 +31,9 @@ def validate_is_equal_to(self, field_name: str, other: any) -> bool:
             logger.info(f"is_equal_to validation passed for field '{field_name}'.")
         return True
     except Exception as e:
-        logger.error(f"Error during 'is_equal_to' validation for field '{field_name}': {e}")
+        logger.error(
+            f"Error during 'is_equal_to' validation for field '{field_name}': {e}"
+        )
         return False
 
 
@@ -45,5 +49,7 @@ def validate_is_less_than(self, field_name: str, other: any) -> bool:
             logger.info(f"is_less_than validation passed for field '{field_name}'.")
         return True
     except Exception as e:
-        logger.error(f"Error during 'is_less_than' validation for field '{field_name}': {e}")
+        logger.error(
+            f"Error during 'is_less_than' validation for field '{field_name}': {e}"
+        )
         return False

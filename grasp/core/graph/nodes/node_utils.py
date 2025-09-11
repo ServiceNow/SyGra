@@ -24,9 +24,9 @@ def get_node(node_name: str, node_config: dict[str, Any]) -> BaseNode:
     Raises:
         NotImplementedError: If the node type is not recognized.
     """
-    assert (
-        "node_type" in node_config
-    ), f"node_type is required in node configuration for {node_name}"
+    assert "node_type" in node_config, (
+        f"node_type is required in node configuration for {node_name}"
+    )
 
     node_type = node_config["node_type"]
 

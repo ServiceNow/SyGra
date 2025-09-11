@@ -25,7 +25,9 @@ class AzureClientConfig(BaseModel):
     timeout: int = Field(
         default=constants.DEFAULT_TIMEOUT, description="Request timeout in seconds"
     )
-    max_retries: int = Field(default=3, description="Maximum number of retries for failed requests")
+    max_retries: int = Field(
+        default=3, description="Maximum number of retries for failed requests"
+    )
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -140,12 +142,16 @@ class OpenAIAzureClient(BaseClient):
         """
         generation_params = generation_params or {}
         pydantic_model = generation_params.get("pydantic_model")
-        final_params = {k: v for k, v in generation_params.items() if (k != "pydantic_model")}
+        final_params = {
+            k: v for k, v in generation_params.items() if (k != "pydantic_model")
+        }
         if pydantic_model:
             return self.client.beta.chat.completions.parse(
                 model=model_name,
                 messages=(
-                    payload["messages"] if self.chat_completions_api else [payload["prompt"]]
+                    payload["messages"]
+                    if self.chat_completions_api
+                    else [payload["prompt"]]
                 ),
                 response_format=pydantic_model,
                 **final_params,
@@ -155,4 +161,6 @@ class OpenAIAzureClient(BaseClient):
                 **payload, model=model_name, **generation_params
             )
         else:
-            return self.client.completions.create(**payload, model=model_name, **generation_params)
+            return self.client.completions.create(
+                **payload, model=model_name, **generation_params
+            )

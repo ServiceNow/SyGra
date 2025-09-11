@@ -58,7 +58,9 @@ class WeightedSamplerNode(BaseNode):
             else:
                 # else if static value list
                 weights = attr_config.get("weights", [1] * len(attr_values))
-                sampled_values[attr] = random.choices(population=attr_values, weights=weights)[0]
+                sampled_values[attr] = random.choices(
+                    population=attr_values, weights=weights
+                )[0]
         return sampled_values
 
     def _process_weighted_sampler(self, node_config: dict) -> None:

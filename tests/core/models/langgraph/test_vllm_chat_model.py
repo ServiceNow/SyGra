@@ -116,7 +116,9 @@ class TestVLLMChatModel(unittest.TestCase):
         rate_limit_error = openai.RateLimitError(
             message="Rate limit exceeded",
             response=mock_response,
-            body={"error": {"message": "Rate limit exceeded", "type": "rate_limit_error"}},
+            body={
+                "error": {"message": "Rate limit exceeded", "type": "rate_limit_error"}
+            },
         )
         mock_client.send_request = AsyncMock(side_effect=rate_limit_error)
 
@@ -219,7 +221,9 @@ class TestVLLMChatModel(unittest.TestCase):
     @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
     @patch("grasp.core.models.langgraph.vllm_chat_model.GraspBaseChatModel._set_client")
     @pytest.mark.asyncio
-    async def test_generate_response_with_client_factory(self, mock_set_client, mock_logger):
+    async def test_generate_response_with_client_factory(
+        self, mock_set_client, mock_logger
+    ):
         """
         Test response generation with proper _set_client integration for VLLM.
 
@@ -305,7 +309,9 @@ class TestVLLMChatModel(unittest.TestCase):
         # Patch _set_client to avoid actual client creation through ClientFactory
         with patch.object(model, "_set_client"):
             # Call the method with additional kwargs
-            response, status_code = await model._generate_response(messages, **additional_kwargs)
+            response, status_code = await model._generate_response(
+                messages, **additional_kwargs
+            )
 
         # Verify the response
         self.assertEqual(status_code, 200)
@@ -355,7 +361,9 @@ class TestVLLMChatModel(unittest.TestCase):
         with patch.object(model, "_set_client"):
             # Call the method
             model_params = ModelParams(url="http://test-url", auth_token="test-token")
-            response, status_code = model._sync_generate_response(messages, model_params)
+            response, status_code = model._sync_generate_response(
+                messages, model_params
+            )
 
         # Verify the response
         self.assertEqual(status_code, 200)
@@ -399,7 +407,9 @@ class TestVLLMChatModel(unittest.TestCase):
         rate_limit_error = openai.RateLimitError(
             message="Rate limit exceeded",
             response=mock_response,
-            body={"error": {"message": "Rate limit exceeded", "type": "rate_limit_error"}},
+            body={
+                "error": {"message": "Rate limit exceeded", "type": "rate_limit_error"}
+            },
         )
         mock_client.send_request = MagicMock(side_effect=rate_limit_error)
 
@@ -410,7 +420,9 @@ class TestVLLMChatModel(unittest.TestCase):
         with patch.object(model, "_set_client"):
             # Call the method
             model_params = ModelParams(url="http://test-url", auth_token="test-token")
-            response, status_code = model._sync_generate_response(messages, model_params)
+            response, status_code = model._sync_generate_response(
+                messages, model_params
+            )
 
         # Verify the response
         self.assertEqual(status_code, 429)
@@ -450,7 +462,9 @@ class TestVLLMChatModel(unittest.TestCase):
         with patch.object(model, "_set_client"):
             # Call the method
             model_params = ModelParams(url="http://test-url", auth_token="test-token")
-            response, status_code = model._sync_generate_response(messages, model_params)
+            response, status_code = model._sync_generate_response(
+                messages, model_params
+            )
 
         # Verify the response
         self.assertEqual(status_code, 500)
@@ -490,7 +504,9 @@ class TestVLLMChatModel(unittest.TestCase):
         with patch.object(model, "_set_client"):
             # Call the method
             model_params = ModelParams(url="http://test-url", auth_token="test-token")
-            response, status_code = model._sync_generate_response(messages, model_params)
+            response, status_code = model._sync_generate_response(
+                messages, model_params
+            )
 
         # Verify the response - should use default status code 999
         self.assertEqual(status_code, 999)
@@ -568,7 +584,9 @@ class TestVLLMChatModel(unittest.TestCase):
 
     @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
     @patch("grasp.core.models.langgraph.vllm_chat_model.GraspBaseChatModel._set_client")
-    def test_sync_generate_response_with_client_factory(self, mock_set_client, mock_logger):
+    def test_sync_generate_response_with_client_factory(
+        self, mock_set_client, mock_logger
+    ):
         """
         Test sync response generation with proper _set_client integration for VLLM.
 
@@ -595,7 +613,9 @@ class TestVLLMChatModel(unittest.TestCase):
         model_params = ModelParams(url=model_url, auth_token=model_auth_token)
 
         # Have _set_client correctly set the client
-        def mock_set_client_implementation(model_url, model_auth_token, async_client=True):
+        def mock_set_client_implementation(
+            model_url, model_auth_token, async_client=True
+        ):
             model._client = mock_client
 
         mock_set_client.side_effect = mock_set_client_implementation
@@ -610,7 +630,9 @@ class TestVLLMChatModel(unittest.TestCase):
         )
 
         # Verify _set_client was called with async_client=False
-        mock_set_client.assert_called_once_with(model_url, model_auth_token, async_client=False)
+        mock_set_client.assert_called_once_with(
+            model_url, model_auth_token, async_client=False
+        )
 
         # Verify the response
         self.assertEqual(status_code, 200)

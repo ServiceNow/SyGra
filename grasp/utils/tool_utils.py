@@ -88,7 +88,9 @@ def load_tools(tool_paths: List[str]) -> List[Callable]:
                 except (ImportError, AttributeError):
                     pass
             else:
-                logger.warn(f"Tool path '{path}' is not a valid import path. Skipping...")
+                logger.warn(
+                    f"Tool path '{path}' is not a valid import path. Skipping..."
+                )
                 continue
 
             if not valid:

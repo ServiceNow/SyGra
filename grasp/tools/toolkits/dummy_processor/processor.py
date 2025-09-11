@@ -19,7 +19,9 @@ class DummyProcessor(BaseTool):
         self.message = config.get("message", "processed by dummy tool")
         self.field_name = config.get("field_name", "dummy_processed")
 
-    def process(self, input_path: Optional[str] = None, output_path: Optional[str] = None) -> str:
+    def process(
+        self, input_path: Optional[str] = None, output_path: Optional[str] = None
+    ) -> str:
         if not input_path:
             raise ValueError("Input path is required")
 
@@ -33,7 +35,9 @@ class DummyProcessor(BaseTool):
         data: list[dict[str, Any]] = []
         with open(input_path, "r", encoding="utf-8") as f:
             if input_path.endswith(".json"):
-                data = json.load(f) if isinstance(json.load(f), list) else [json.load(f)]
+                data = (
+                    json.load(f) if isinstance(json.load(f), list) else [json.load(f)]
+                )
             else:
                 data = [json.loads(line) for line in f if line.strip()]
 

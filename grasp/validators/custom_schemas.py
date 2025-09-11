@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator, root_validator, validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class CustomUserSchema(BaseModel):

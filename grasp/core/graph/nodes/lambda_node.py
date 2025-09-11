@@ -1,7 +1,6 @@
 from inspect import isclass
 from typing import Any
 
-from grasp.core.graph.functions.lambda_function import LambdaFunction
 from grasp.core.graph.nodes.base_node import BaseNode
 from grasp.utils import utils
 
@@ -31,7 +30,9 @@ class LambdaNode(BaseNode):
         Returns:
              Any: platform specific runnable object like Runnable in LangGraph.
         """
-        return utils.backend_factory.create_lambda_runnable(self.func_to_execute, self.node_config)
+        return utils.backend_factory.create_lambda_runnable(
+            self.func_to_execute, self.node_config
+        )
 
     def validate_node(self):
         """

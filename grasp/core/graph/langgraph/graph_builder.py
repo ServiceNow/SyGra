@@ -85,7 +85,7 @@ class LangGraphBuilder:
             if node.is_active():
                 # add the node runnable(lang graph object) into workflow
                 workflow.add_node(node_name, node.to_backend())
-        logger.info(f"Completed adding nodes into the workflow graph.")
+        logger.info("Completed adding nodes into the workflow graph.")
 
     def convert_to_graph(self, node: BaseNode):
         """
@@ -98,7 +98,9 @@ class LangGraphBuilder:
             BaseNode|START|END: Returns START or END object if they are Start or End. Else returns node name.
         """
         return (
-            self.SPECIAL_NODES_MAP[node.get_name()] if node.is_special_type() else node.get_name()
+            self.SPECIAL_NODES_MAP[node.get_name()]
+            if node.is_special_type()
+            else node.get_name()
         )
 
     def add_edges(self, workflow: StateGraph):
@@ -141,17 +143,22 @@ class LangGraphBuilder:
 
                 # START/END string mapping to START/END langgraph object in path_map
                 path_map = {
-                    self.get_node(key): self.get_node(value) for key, value in path_map.items()
+                    self.get_node(key): self.get_node(value)
+                    for key, value in path_map.items()
                 }
 
-                workflow.add_conditional_edges(self.convert_to_graph(source), condition, path_map)
+                workflow.add_conditional_edges(
+                    self.convert_to_graph(source), condition, path_map
+                )
                 logger.info(
                     f"Completed adding conditional edge into the workflow graph. Source node: {self.convert_to_graph(source)}"
                 )
             elif target:
-                workflow.add_edge(self.convert_to_graph(source), self.convert_to_graph(target))
+                workflow.add_edge(
+                    self.convert_to_graph(source), self.convert_to_graph(target)
+                )
                 logger.info(
-                    f"Completed adding simple edge into the workflow graph. "
+                    "Completed adding simple edge into the workflow graph. "
                     + f"Source node: {self.convert_to_graph(source)}, Destination node: {self.convert_to_graph(target)}"
                 )
             else:
@@ -180,5 +187,7 @@ class LangGraphBuilder:
             CompiledStateGraph: compiled graph object
         """
         if self.workflow is None:
-            raise RuntimeError("The build() method must be called before compiling the graph.")
+            raise RuntimeError(
+                "The build() method must be called before compiling the graph."
+            )
         return self.workflow.compile()

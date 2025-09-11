@@ -25,7 +25,9 @@ class SchemaConfigParser:
         schema = self.config.get("schema")
 
         if schema is None:
-            raise ValueError("Schema field is required in structured_output configuration")
+            raise ValueError(
+                "Schema field is required in structured_output configuration"
+            )
 
         if isinstance(schema, str):
             # It's a class path
@@ -93,7 +95,9 @@ class SchemaConfigParser:
         except ImportError as e:
             raise ImportError(f"Cannot import module '{module_path}': {str(e)}")
         except AttributeError:
-            raise AttributeError(f"Class '{class_name}' not found in module '{module_path}'")
+            raise AttributeError(
+                f"Class '{class_name}' not found in module '{module_path}'"
+            )
 
     def _is_valid_schema_dict(self, schema_dict: dict) -> bool:
         """Validate schema dictionary structure."""
@@ -111,7 +115,9 @@ class SchemaConfigParser:
         # Validate each field
         for field_name, field_config in fields.items():
             if not isinstance(field_config, dict):
-                raise ValueError(f"Field '{field_name}' configuration must be a dictionary")
+                raise ValueError(
+                    f"Field '{field_name}' configuration must be a dictionary"
+                )
 
             if "type" not in field_config:
                 raise ValueError(f"Field '{field_name}' must have a 'type' specified")
@@ -132,7 +138,9 @@ class StructuredOutputConfig:
     """Configuration class for structured output"""
 
     def __init__(self, config: dict[str, Any], key_present: bool = True):
-        self.enabled = config.get("enabled", key_present)  # True if key present, False if absent
+        self.enabled = config.get(
+            "enabled", key_present
+        )  # True if key present, False if absent
         if self.enabled:
             # Use the unified parser
             self.parser = SchemaConfigParser(config)
@@ -172,14 +180,16 @@ class StructuredOutputConfig:
             logger.error(f"Failed to load class from path {class_path}: {e}")
             raise
 
-    def _create_pydantic_from_yaml(self, schema_dict: dict[str, Any]) -> Type[BaseModel]:
+    def _create_pydantic_from_yaml(
+        self, schema_dict: dict[str, Any]
+    ) -> Type[BaseModel]:
         """Create pydantic model from YAML schema definition"""
         try:
             fields = {}
             for field_name, field_config in schema_dict.get("fields", {}).items():
                 field_type = self._get_python_type(field_config.get("type", "str"))
                 field_default = field_config.get("default", ...)
-                field_description = field_config.get("description", "")
+                field_config.get("description", "")
 
                 if field_default != ...:
                     fields[field_name] = (field_type, field_default)

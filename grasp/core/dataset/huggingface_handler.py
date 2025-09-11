@@ -15,7 +15,13 @@ from datasets import Dataset, concatenate_datasets
 from datasets import config as ds_config
 from datasets import load_dataset
 from datasets.utils.metadata import MetadataConfigs
-from huggingface_hub import CommitOperationAdd, DatasetCard, DatasetCardData, HfApi, HfFileSystem
+from huggingface_hub import (
+    CommitOperationAdd,
+    DatasetCard,
+    DatasetCardData,
+    HfApi,
+    HfFileSystem,
+)
 
 from grasp.core.dataset.data_handler_base import DataHandler
 from grasp.core.dataset.dataset_config import DataSourceConfig, OutputConfig
@@ -99,7 +105,9 @@ class HuggingFaceHandler(DataHandler):
 
             for col in media_columns["image_str"] + media_columns["audio_str"]:
                 df[col] = df[col].apply(
-                    lambda x: self._decode_base64_media(x)[0] if isinstance(x, str) else None
+                    lambda x: self._decode_base64_media(x)[0]
+                    if isinstance(x, str)
+                    else None
                 )
 
             ds = Dataset.from_pandas(df)
@@ -145,9 +153,13 @@ class HuggingFaceHandler(DataHandler):
             sample = df[col].dropna().iloc[0] if not df[col].dropna().empty else None
 
             if isinstance(sample, list):
-                if all(isinstance(x, str) and x.startswith("data:image/") for x in sample):
+                if all(
+                    isinstance(x, str) and x.startswith("data:image/") for x in sample
+                ):
                     media_cols["image_seq"].append(col)
-                elif all(isinstance(x, str) and x.startswith("data:audio/") for x in sample):
+                elif all(
+                    isinstance(x, str) and x.startswith("data:audio/") for x in sample
+                ):
                     media_cols["audio_seq"].append(col)
             elif isinstance(sample, str):
                 if sample.startswith("data:image/"):
@@ -203,16 +215,16 @@ class HuggingFaceHandler(DataHandler):
                 pattern = f"datasets/{self.source_config.repo_id}/{self.source_config.config_name}/{self.source_config.split}"
                 pattern = f"{pattern}{self.source_config.shard.regex}"
             else:
-                pattern = (
-                    f"datasets/{self.source_config.repo_id}/{self.source_config.config_name}/*"
-                )
+                pattern = f"datasets/{self.source_config.repo_id}/{self.source_config.config_name}/*"
 
             all_files = self.fs.glob(pattern)
             logger.info(f"Found {len(all_files)} total files")
 
             if self.source_config.shard and self.source_config.shard.index:
                 filtered_files = [
-                    f for i, f in enumerate(all_files) if i in self.source_config.shard.index
+                    f
+                    for i, f in enumerate(all_files)
+                    if i in self.source_config.shard.index
                 ]
                 logger.info(f"Filtered to {len(filtered_files)} files based on index")
                 return filtered_files
@@ -247,7 +259,8 @@ class HuggingFaceHandler(DataHandler):
         try:
             if isinstance(self.source_config.split, list):
                 datasets = [
-                    self._load_dataset_by_split(split) for split in self.source_config.splits
+                    self._load_dataset_by_split(split)
+                    for split in self.source_config.splits
                 ]
 
                 if len(datasets) == 1:
@@ -269,7 +282,9 @@ class HuggingFaceHandler(DataHandler):
     def _update_readme_config(self) -> None:
         """Update dataset card (README) with configuration details."""
         if not (
-            self.output_config and self.output_config.repo_id and self.output_config.config_name
+            self.output_config
+            and self.output_config.repo_id
+            and self.output_config.config_name
         ):
             return
 
@@ -362,9 +377,7 @@ class HuggingFaceHandler(DataHandler):
                 path_or_fileobj=new_card_str.encode("utf-8"),
             )
         ]
-        commit_msg = (
-            f"Add or update config='{config_name}', split='{split}' => pattern='{new_pattern}'"
-        )
+        commit_msg = f"Add or update config='{config_name}', split='{split}' => pattern='{new_pattern}'"
         api.create_commit(
             repo_id=self.output_config.repo_id,
             repo_type="dataset",

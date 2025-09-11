@@ -15,21 +15,21 @@ try:
 
     from grasp.core.base_task_executor import DefaultTaskExecutor
     from grasp.core.dataset.dataset_config import (
-        DataSourceConfig,
-        DataSourceType,
-        OutputConfig,
-        OutputType,
+        DataSourceConfig, # noqa: F401
+        DataSourceType, # noqa: F401
+        OutputConfig, # noqa: F401
+        OutputType, # noqa: F401
     )
     from grasp.core.graph.functions.node_processor import (
         NodePostProcessor,
         NodePostProcessorWithState,
         NodePreProcessor,
     )
-    from grasp.core.graph.grasp_message import GraspMessage
-    from grasp.core.graph.grasp_state import GraspState
+    from grasp.core.graph.grasp_message import GraspMessage # noqa: F401
+    from grasp.core.graph.grasp_state import GraspState # noqa: F401
     from grasp.core.judge_task_executor import JudgeQualityTaskExecutor
     from grasp.logger.logger_config import logger
-    from grasp.utils import constants
+    from grasp.utils import constants # noqa: F401
     from grasp.utils import utils as utils
 
     CORE_AVAILABLE = True
@@ -190,7 +190,9 @@ class Workflow:
         prompt: Union[str, list[dict[str, str]]],
         output: str = "messages",
         pre_process: Union[str, Callable, NodePreProcessor] = None,
-        post_process: Union[str, Callable, NodePostProcessor, NodePostProcessorWithState] = None,
+        post_process: Union[
+            str, Callable, NodePostProcessor, NodePostProcessorWithState
+        ] = None,
         **kwargs,
     ) -> "Workflow":
         """Add LLM node with full feature support including custom processors."""
@@ -220,9 +222,13 @@ class Workflow:
 
         # Handle pre-processors
         if pre_process:
-            if isinstance(pre_process, type) and issubclass(pre_process, NodePreProcessor):
+            if isinstance(pre_process, type) and issubclass(
+                pre_process, NodePreProcessor
+            ):
                 # Class reference - convert to string path
-                node_config["pre_process"] = f"{pre_process.__module__}.{pre_process.__name__}"
+                node_config["pre_process"] = (
+                    f"{pre_process.__module__}.{pre_process.__name__}"
+                )
             elif callable(pre_process):
                 node_config["pre_process"] = self._callable_to_string_path(pre_process)
             else:
@@ -235,9 +241,13 @@ class Workflow:
                 or issubclass(post_process, NodePostProcessorWithState)
             ):
                 # Class reference - convert to string path
-                node_config["post_process"] = f"{post_process.__module__}.{post_process.__name__}"
+                node_config["post_process"] = (
+                    f"{post_process.__module__}.{post_process.__name__}"
+                )
             elif callable(post_process):
-                node_config["post_process"] = self._callable_to_string_path(post_process)
+                node_config["post_process"] = self._callable_to_string_path(
+                    post_process
+                )
             else:
                 node_config["post_process"] = post_process
 
@@ -338,7 +348,9 @@ class Workflow:
         self._add_node_with_edge(node_name, node_config)
         return self
 
-    def weighted_sampler(self, attributes: dict[str, dict[str, Any]], **kwargs) -> "Workflow":
+    def weighted_sampler(
+        self, attributes: dict[str, dict[str, Any]], **kwargs
+    ) -> "Workflow":
         """Add weighted sampler node."""
         node_name = self._generate_node_name("weighted_sampler")
 
@@ -366,7 +378,9 @@ class Workflow:
         self._config["graph_config"]["nodes"][name] = node_config
         return self
 
-    def add_llm_node(self, name: str, model: Union[str, dict[str, Any]]) -> "LLMNodeBuilder":
+    def add_llm_node(
+        self, name: str, model: Union[str, dict[str, Any]]
+    ) -> "LLMNodeBuilder":
         """Add LLM node and return builder for chaining."""
         if not NODE_BUILDERS_AVAILABLE:
             raise GraSPError("Node builders not available.")
@@ -375,7 +389,9 @@ class Workflow:
         self._node_builders[name] = builder
         return builder
 
-    def add_agent_node(self, name: str, model: Union[str, dict[str, Any]]) -> "AgentNodeBuilder":
+    def add_agent_node(
+        self, name: str, model: Union[str, dict[str, Any]]
+    ) -> "AgentNodeBuilder":
         """Add agent node and return builder for chaining."""
         if not NODE_BUILDERS_AVAILABLE:
             raise GraSPError("Node builders not available.")
@@ -393,7 +409,9 @@ class Workflow:
         self._node_builders[name] = builder
         return builder
 
-    def add_lambda_node(self, name: str, func: Union[str, Callable]) -> "LambdaNodeBuilder":
+    def add_lambda_node(
+        self, name: str, func: Union[str, Callable]
+    ) -> "LambdaNodeBuilder":
         """Add lambda node and return builder for chaining."""
         if not NODE_BUILDERS_AVAILABLE:
             raise GraSPError("Node builders not available.")
@@ -553,7 +571,9 @@ class Workflow:
         self._config["graph_config"]["graph_properties"].update(properties)
         return self
 
-    def chat_conversation(self, conv_type: str = "multiturn", window_size: int = 5) -> "Workflow":
+    def chat_conversation(
+        self, conv_type: str = "multiturn", window_size: int = 5
+    ) -> "Workflow":
         """Configure chat conversation settings."""
         return self.graph_properties(
             {"chat_conversation": conv_type, "chat_history_window_size": window_size}
@@ -611,17 +631,23 @@ class Workflow:
         self._overrides[path] = value
         return self
 
-    def override_model(self, node_name: str, model_name: str = None, **params) -> "Workflow":
+    def override_model(
+        self, node_name: str, model_name: str = None, **params
+    ) -> "Workflow":
         """Convenient method for model overrides."""
         if model_name:
             self.override(f"graph_config.nodes.{node_name}.model.name", model_name)
 
         for param, value in params.items():
-            self.override(f"graph_config.nodes.{node_name}.model.parameters.{param}", value)
+            self.override(
+                f"graph_config.nodes.{node_name}.model.parameters.{param}", value
+            )
 
         return self
 
-    def output_generator(self, generator: Union[str, type, BaseOutputGenerator]) -> "Workflow":
+    def output_generator(
+        self, generator: Union[str, type, BaseOutputGenerator]
+    ) -> "Workflow":
         """Set output record generator cleanly."""
         if "output_config" not in self._config:
             self._config["output_config"] = {}
@@ -629,9 +655,9 @@ class Workflow:
         if isinstance(generator, str):
             self._config["output_config"]["generator"] = generator
         elif isinstance(generator, type):
-            self._config["output_config"][
-                "generator"
-            ] = f"{generator.__module__}.{generator.__name__}"
+            self._config["output_config"]["generator"] = (
+                f"{generator.__module__}.{generator.__name__}"
+            )
 
         return self
 
@@ -718,9 +744,13 @@ class Workflow:
                 num_records, start_index, output_dir, **kwargs
             )
         elif not has_source and not has_nodes:
-            return self._execute_existing_task(num_records, start_index, output_dir, **kwargs)
+            return self._execute_existing_task(
+                num_records, start_index, output_dir, **kwargs
+            )
         else:
-            raise ConfigurationError("Incomplete workflow. Add both source and processing nodes.")
+            raise ConfigurationError(
+                "Incomplete workflow. Add both source and processing nodes."
+            )
 
     def save_config(self, path: Union[str, Path]) -> None:
         """Save workflow configuration as YAML file."""
@@ -905,7 +935,9 @@ class Workflow:
                 if not isinstance(current, list):
                     # Build the current path for better error reporting
                     current_path = ".".join(keys[: i + 1])
-                    raise ValueError(f"Expected list at path {current_path}, got {type(current)}")
+                    raise ValueError(
+                        f"Expected list at path {current_path}, got {type(current)}"
+                    )
                 # Extend list if needed
                 while key >= len(current):
                     current.append({})

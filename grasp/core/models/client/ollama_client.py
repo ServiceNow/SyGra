@@ -11,7 +11,9 @@ from grasp.utils import constants
 
 
 class OllamaClientConfig(BaseModel):
-    host: str = Field(default="http://localhost:11434", description="Base URL for the Ollama API")
+    host: str = Field(
+        default="http://localhost:11434", description="Base URL for the Ollama API"
+    )
     timeout: int = Field(
         default=constants.DEFAULT_TIMEOUT, description="Request timeout in seconds"
     )
@@ -107,7 +109,10 @@ class OllamaClient(BaseClient):
                 )
 
     def send_request(
-        self, payload, model_name: str, generation_params: Optional[Dict[str, Any]] = None
+        self,
+        payload,
+        model_name: str,
+        generation_params: Optional[Dict[str, Any]] = None,
     ):
         """
         Send a request to the Ollama API.
@@ -135,5 +140,8 @@ class OllamaClient(BaseClient):
             )
         else:
             return self.client.generate(
-                model=model_name, prompt=payload["prompt"], options=generation_params, format=format
+                model=model_name,
+                prompt=payload["prompt"],
+                options=generation_params,
+                format=format,
             )

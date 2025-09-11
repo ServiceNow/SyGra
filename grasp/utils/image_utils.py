@@ -157,7 +157,9 @@ def get_image_url(image: Image.Image) -> str:
         return ""
 
 
-def expand_image_item(item: dict[str, Any], state: dict[str, Any]) -> list[dict[str, Any]]:
+def expand_image_item(
+    item: dict[str, Any], state: dict[str, Any]
+) -> list[dict[str, Any]]:
     """
     Expand an image item with a variable URL into multiple items if necessary.
 

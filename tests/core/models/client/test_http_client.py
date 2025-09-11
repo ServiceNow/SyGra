@@ -83,7 +83,9 @@ class TestHttpClient(unittest.TestCase):
         self.assertEqual(result, {"prompt": "Hello, world!"})
 
         # Test with additional kwargs
-        result = self.client.build_request(base_payload, temperature=0.7, max_tokens=100)
+        result = self.client.build_request(
+            base_payload, temperature=0.7, max_tokens=100
+        )
         expected = {"prompt": "Hello, world!", "temperature": 0.7, "max_tokens": 100}
         self.assertEqual(result, expected)
 

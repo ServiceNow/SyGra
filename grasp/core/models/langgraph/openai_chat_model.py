@@ -1,7 +1,7 @@
 from typing import Any
 
 import openai
-from langchain_core.messages import AnyMessage, BaseMessage
+from langchain_core.messages import AnyMessage
 
 from grasp.core.models.custom_models import ModelParams
 from grasp.core.models.langgraph.grasp_base_chat_model import GraspBaseChatModel

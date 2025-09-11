@@ -112,7 +112,9 @@ class ClientFactory:
         ):
             return cls._create_http_client(model_config, url, auth_token)
         elif model_type == ModelType.MISTRALAI.value:
-            return cls._create_mistral_client(model_config, url, auth_token, async_client)
+            return cls._create_mistral_client(
+                model_config, url, auth_token, async_client
+            )
         elif model_type == ModelType.OLLAMA.value:
             return cls._create_ollama_client(
                 model_config,
@@ -123,8 +125,12 @@ class ClientFactory:
             )
         else:
             # This should never be reached due to the validation above, but included for completeness
-            logger.error(f"No client implementation available for model type: {model_type}")
-            raise NotImplementedError(f"Client for model type {model_type} is not implemented")
+            logger.error(
+                f"No client implementation available for model type: {model_type}"
+            )
+            raise NotImplementedError(
+                f"Client for model type {model_type} is not implemented"
+            )
 
     @staticmethod
     def _create_openai_client(
@@ -239,14 +245,18 @@ class ClientFactory:
                 http1=True,
                 verify=ssl_verify,
                 cert=ssl_cert,
-                timeout=Timeout(timeout=model_config.get("timeout", constants.DEFAULT_TIMEOUT)),
+                timeout=Timeout(
+                    timeout=model_config.get("timeout", constants.DEFAULT_TIMEOUT)
+                ),
             )
             if async_client
             else httpx.Client(
                 http1=True,
                 verify=ssl_verify,
                 cert=ssl_cert,
-                timeout=Timeout(timeout=model_config.get("timeout", constants.DEFAULT_TIMEOUT)),
+                timeout=Timeout(
+                    timeout=model_config.get("timeout", constants.DEFAULT_TIMEOUT)
+                ),
             )
         )
         # Configure retry settings
@@ -275,7 +285,9 @@ class ClientFactory:
         return client
 
     @staticmethod
-    def _create_http_client(model_config: Dict[str, Any], url: str, auth_token: str) -> HttpClient:
+    def _create_http_client(
+        model_config: Dict[str, Any], url: str, auth_token: str
+    ) -> HttpClient:
         """
         Create an HTTP client.
 

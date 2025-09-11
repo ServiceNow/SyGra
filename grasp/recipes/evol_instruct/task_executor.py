@@ -1,7 +1,6 @@
 from grasp.core.graph.functions.lambda_function import LambdaFunction
 from grasp.core.graph.grasp_state import GraspState
 from grasp.logger.logger_config import logger
-from grasp.processors.output_record_generator import BaseOutputGenerator
 from grasp.recipes.evol_instruct.instruct_mgr import get_instruction
 
 

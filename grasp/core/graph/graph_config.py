@@ -105,13 +105,17 @@ class GraphConfig:
         if transform_args.get("oasst", False) and "oasst_mapper" not in config.get(
             "output_config", {}
         ):
-            config["output_config"]["oasst_mapper"] = post_generation_tasks["oasst_mapper"]
+            config["output_config"]["oasst_mapper"] = post_generation_tasks[
+                "oasst_mapper"
+            ]
 
         # Check and update for data_quality
         if transform_args.get("quality", False) and "data_quality" not in config.get(
             "output_config", {}
         ):
-            config["output_config"]["data_quality"] = post_generation_tasks["data_quality"]
+            config["output_config"]["data_quality"] = post_generation_tasks[
+                "data_quality"
+            ]
 
         return config
 
@@ -135,7 +139,9 @@ class GraphConfig:
                     )
                 self.graph_config["nodes"][node_name] = merged_config
 
-    def _recur_merge_dicts(self, base: dict[str, Any], updates: dict[str, Any]) -> dict[str, Any]:
+    def _recur_merge_dicts(
+        self, base: dict[str, Any], updates: dict[str, Any]
+    ) -> dict[str, Any]:
         """
         Recursively merges two dictionaries to preserve nested configurations.
 
@@ -189,7 +195,9 @@ class GraphConfig:
         """
         updated_nodes = {}
 
-        for node_name, node_config in deepcopy(self.graph_config.get("nodes", {})).items():
+        for node_name, node_config in deepcopy(
+            self.graph_config.get("nodes", {})
+        ).items():
             if node_config.get("node_type") == "subgraph":
                 # Extract the override configuration from node_config_map (if any)
                 override_config = node_config.get("node_config_map", {})
@@ -198,7 +206,9 @@ class GraphConfig:
                 subgraph_path = utils.get_file_in_task_dir(
                     node_config.get("subgraph"), "graph_config.yaml"
                 )
-                full_prefix = f"{self.parent_node}.{node_name}" if self.parent_node else node_name
+                full_prefix = (
+                    f"{self.parent_node}.{node_name}" if self.parent_node else node_name
+                )
                 self.sub_graphs[full_prefix] = GraphConfig(
                     config=subgraph_path,
                     dataset=[],
@@ -229,19 +239,25 @@ class GraphConfig:
         for edge in deepcopy(self.graph_config.get("edges", [])):
             # Prefix the "from" field if it's not "START"
             edge["from"] = (
-                f"{self.parent_node}.{edge['from']}" if edge["from"] != "START" else "START"
+                f"{self.parent_node}.{edge['from']}"
+                if edge["from"] != "START"
+                else "START"
             )
 
             # Prefix the "to" field if present and not "END"
             if "to" in edge:
-                edge["to"] = f"{self.parent_node}.{edge['to']}" if edge["to"] != "END" else "END"
+                edge["to"] = (
+                    f"{self.parent_node}.{edge['to']}" if edge["to"] != "END" else "END"
+                )
             else:
                 edge["to"] = None
 
             # Update the path_map values (only update values that are not START/END)
             if "path_map" in edge:
                 edge["path_map"] = {
-                    key: value if value in ["START", "END"] else f"{self.parent_node}.{value}"
+                    key: value
+                    if value in ["START", "END"]
+                    else f"{self.parent_node}.{value}"
                     for key, value in edge["path_map"].items()
                 }
             updated_edges.append(edge)
@@ -254,13 +270,17 @@ class GraphConfig:
         If no edge with "to" == "END" exists, or if there are multiple "to" == "END" edges, create a connector node.
         """
         end_nodes = [
-            edge["from"] for edge in self.graph_config.get("edges", []) if edge["to"] == "END"
+            edge["from"]
+            for edge in self.graph_config.get("edges", [])
+            if edge["to"] == "END"
         ]
         if len(end_nodes) == 1:
             return
 
         connector_name = (
-            f"{self.parent_node}.connector_node" if self.parent_node else "connector_node"
+            f"{self.parent_node}.connector_node"
+            if self.parent_node
+            else "connector_node"
         )
         self.graph_config["nodes"][connector_name] = {"node_type": "connector"}
 
@@ -324,7 +344,9 @@ class GraphConfig:
                     logger.warning(f"Duplicate output variable: {variable}")
                     continue
                 self.state_variables.add(variable)
-            elif isinstance(variable, list) and all(isinstance(var, str) for var in variable):
+            elif isinstance(variable, list) and all(
+                isinstance(var, str) for var in variable
+            ):
                 if any(var in self.state_variables for var in variable):
                     raise ValueError(f"Duplicate output variable in list: {variable}")
                 self.state_variables.update(variable)
@@ -345,13 +367,17 @@ class GraphConfig:
             for content in prompt.values():
                 if isinstance(content, str):
                     self.state_variables.update(
-                        utils.extract_pattern(content, self.pattern_to_extract_variables)
+                        utils.extract_pattern(
+                            content, self.pattern_to_extract_variables
+                        )
                     )
                 elif isinstance(content, list):
                     for c in content:
                         if isinstance(c, str):
                             self.state_variables.update(
-                                utils.extract_pattern(c, self.pattern_to_extract_variables)
+                                utils.extract_pattern(
+                                    c, self.pattern_to_extract_variables
+                                )
                             )
                         elif isinstance(c, dict):
                             for sub_content in c.values():
@@ -363,11 +389,15 @@ class GraphConfig:
                                         )
                                     )
                                 else:
-                                    raise ValueError(f"Invalid prompt content: {sub_content}")
+                                    raise ValueError(
+                                        f"Invalid prompt content: {sub_content}"
+                                    )
                 else:
                     raise ValueError(f"Invalid prompt content: {content}")
 
-    def _extract_input_data_keys(self, data: Union[list[dict], Dataset, IterableDataset]) -> None:
+    def _extract_input_data_keys(
+        self, data: Union[list[dict], Dataset, IterableDataset]
+    ) -> None:
         """
         Extracts keys from the dataset to be used as state variables.
 

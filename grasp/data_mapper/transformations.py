@@ -8,7 +8,9 @@ from grasp.data_mapper.types import Transform, TransformMeta
 
 
 class TaxonomyTransform(Transform):
-    meta = TransformMeta(name="taxonomy", requires=[], provides=["categories", "subcategories"])
+    meta = TransformMeta(
+        name="taxonomy", requires=[], provides=["categories", "subcategories"]
+    )
 
     def transform(self, value: Any, context: dict[str, Any]) -> None:
         """Transform the value to extract categories and subcategories into the context."""
@@ -61,7 +63,9 @@ class ConversationTransform(Transform):
         context["conversation_id"] = conversation_id
 
         messages = []
-        message_ids = [f"msg_{idx}_{uuid.uuid4().hex[:8]}" for idx, _ in enumerate(value, 1)]
+        message_ids = [
+            f"msg_{idx}_{uuid.uuid4().hex[:8]}" for idx, _ in enumerate(value, 1)
+        ]
 
         # Set the first message as the root message
         root_message_id = message_ids[0]
@@ -126,7 +130,9 @@ class DPOConversationTransform(Transform):
 
         messages: list[dict[str, Any]] = []
 
-        message_ids = [f"msg_{idx}_{uuid.uuid4().hex[:8]}" for idx, _ in enumerate(value, 1)]
+        message_ids = [
+            f"msg_{idx}_{uuid.uuid4().hex[:8]}" for idx, _ in enumerate(value, 1)
+        ]
 
         # Set the first message as the root message
         root_message_id = message_ids[0]
@@ -190,7 +196,9 @@ class DPOConversationTransform(Transform):
             if rejected_arr:
                 rejected_content = "\n".join(rejected_arr)
                 rejected_msg_data = dict(base_msg_data)
-                rejected_msg_data["message_id"] = f"msg_{idx + 1}_{uuid.uuid4().hex[:8]}"
+                rejected_msg_data["message_id"] = (
+                    f"msg_{idx + 1}_{uuid.uuid4().hex[:8]}"
+                )
                 rejected_msg_data["content"] = rejected_content
                 if rejected_scores:
                     rejected_msg_data["quality"] = rejected_scores

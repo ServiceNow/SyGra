@@ -81,7 +81,9 @@ class LLMBasedQualityTask:
                     {
                         "transform": "grasp.processors.data_transform.AddNewFieldTransform",
                         "params": {
-                            "mapping": {"category": self.task_params.get("category", "Generic")}
+                            "mapping": {
+                                "category": self.task_params.get("category", "Generic")
+                            }
                         },
                     }
                 ],
@@ -104,7 +106,9 @@ class LLMBasedQualityTask:
             )
         )
         transformations = (
-            graph_config.get("data_config", {}).get("source", {}).get("transformations", [])
+            graph_config.get("data_config", {})
+            .get("source", {})
+            .get("transformations", [])
         )
         graph_config.update({"data_config": data_config})
         graph_config["data_config"]["source"]["transformations"].extend(transformations)

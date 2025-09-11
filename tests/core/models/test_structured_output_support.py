@@ -9,11 +9,9 @@ Key test scenarios:
 """
 
 import json
-import os
 import sys
 import unittest
 from pathlib import Path
-from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -84,7 +82,9 @@ class MockClient:
             def __getattr__(self, name):
                 if name == "status_code":
                     return self.status_code
-                raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+                raise AttributeError(
+                    f"'{type(self).__name__}' object has no attribute '{name}'"
+                )
 
         return MockResponse(self.response_text, self.status_code)
 
@@ -94,14 +94,17 @@ class TestSchemaConfigParser(unittest.TestCase):
 
     def test_parse_class_path_valid(self):
         """Test parsing valid class path"""
-        config = {"schema": "tests.core.models.test_structured_output_support.UserSchema"}
+        config = {
+            "schema": "tests.core.models.test_structured_output_support.UserSchema"
+        }
 
         with patch.object(SchemaConfigParser, "_import_class", return_value=UserSchema):
             parser = SchemaConfigParser(config)
 
             self.assertEqual(parser.schema_type, "class")
             self.assertEqual(
-                parser.class_path, "tests.core.models.test_structured_output_support.UserSchema"
+                parser.class_path,
+                "tests.core.models.test_structured_output_support.UserSchema",
             )
             self.assertIsNone(parser.schema_data)
 
@@ -154,7 +157,9 @@ class TestSchemaConfigParser(unittest.TestCase):
 class TestStructuredOutputConfig(unittest.TestCase):
     """Test StructuredOutputConfig initialization and methods"""
 
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
     def test_config_enabled_by_default(self, mock_parser):
         """Test config is enabled by default when key present"""
         config = StructuredOutputConfig({})
@@ -162,20 +167,26 @@ class TestStructuredOutputConfig(unittest.TestCase):
         self.assertEqual(config.fallback_strategy, "instruction")
         self.assertEqual(config.max_parse_retries, 2)
 
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
     def test_config_disabled_explicitly(self, mock_parser):
         """Test config can be disabled explicitly"""
         config = StructuredOutputConfig({"enabled": False})
         self.assertFalse(config.enabled)
 
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
     def test_custom_fallback_strategy(self, mock_parser):
         """Test custom fallback strategy"""
         config = StructuredOutputConfig({"fallback_strategy": "post_process"})
         self.assertEqual(config.fallback_strategy, "post_process")
 
     @patch.object(StructuredOutputConfig, "_load_class_from_path")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
     def test_get_pydantic_model_class_path(self, mock_parser, mock_load):
         """Test getting pydantic model from class path"""
         # Setup mock parser
@@ -193,14 +204,18 @@ class TestStructuredOutputConfig(unittest.TestCase):
         self.assertEqual(result, UserSchema)
         mock_load.assert_called_once_with("test.TestSchema")
 
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
     def test_get_pydantic_model_disabled(self, mock_parser):
         """Test get_pydantic_model returns None when disabled"""
         config = StructuredOutputConfig({"enabled": False})
         result = config.get_pydantic_model()
         self.assertIsNone(result)
 
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
     def test_python_type_mapping(self, mock_parser):
         """Test type string to Python type conversion"""
         config = StructuredOutputConfig({})
@@ -231,12 +246,20 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             "parameters": {"temperature": 0.7},
             "structured_output": {"enabled": True, "schema": "test.TestSchema"},
         }
-        self.test_input = ChatPromptValue(messages=[AIMessage(content="Generate user info")])
-        self.test_params = ModelParams(url="https://test-url.com", auth_token="test-token")
-        self.valid_json = '{"name": "Test User", "age": 30, "email": "test@example.com"}'
+        self.test_input = ChatPromptValue(
+            messages=[AIMessage(content="Generate user info")]
+        )
+        self.test_params = ModelParams(
+            url="https://test-url.com", auth_token="test-token"
+        )
+        self.valid_json = (
+            '{"name": "Test User", "age": 30, "email": "test@example.com"}'
+        )
 
     @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
     async def test_supports_native_structured_output(self, mock_parser, mock_utils):
         """Test native structured output support detection"""
         openai_model = CustomOpenAI(
@@ -248,7 +271,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
                 "model": "gpt-4",
             }
         )
-        vllm_model = CustomVLLM({**self.test_config, "url": "test", "auth_token": "test"})
+        vllm_model = CustomVLLM(
+            {**self.test_config, "url": "test", "auth_token": "test"}
+        )
         tgi_model = CustomTGI({**self.test_config, "url": "test", "auth_token": "test"})
         base_model = CustomModel(self.test_config)
 
@@ -261,8 +286,12 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
 
     @patch("grasp.utils.utils.validate_required_keys")
     @patch("grasp.core.models.custom_models.PydanticOutputParser")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
-    async def test_fallback_structured_output(self, mock_parser, mock_output_parser, mock_utils):
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
+    async def test_fallback_structured_output(
+        self, mock_parser, mock_output_parser, mock_utils
+    ):
         """Test fallback structured output generation"""
         # Setup mocks
         mock_parser_instance = Mock()
@@ -286,8 +315,12 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(parsed_data["name"], "Test")
 
     @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
-    async def test_openai_native_structured_output_success(self, mock_parser, mock_utils):
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
+    async def test_openai_native_structured_output_success(
+        self, mock_parser, mock_utils
+    ):
         """Test OpenAI native structured output success"""
         model = CustomOpenAI(
             {
@@ -316,8 +349,12 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             self.assertIn("Test", resp_text)
 
     @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
-    async def test_openai_native_structured_output_http_error(self, mock_parser, mock_utils):
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
+    async def test_openai_native_structured_output_http_error(
+        self, mock_parser, mock_utils
+    ):
         """Test OpenAI native structured output with HTTP error"""
         model = CustomOpenAI(
             {
@@ -329,7 +366,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             }
         )
         model._client = MockClient(response_text="Error", status_code=500)
-        model._generate_fallback_structured_output = AsyncMock(return_value=(self.valid_json, 200))
+        model._generate_fallback_structured_output = AsyncMock(
+            return_value=(self.valid_json, 200)
+        )
 
         # Mock _set_client to prevent it from overwriting our mock client
         with patch.object(model, "_set_client"):
@@ -342,7 +381,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(resp_status, 200)
 
     @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
     async def test_vllm_native_structured_output_success(self, mock_parser, mock_utils):
         """Test VLLM native structured output success"""
         model = CustomVLLM({**self.test_config, "url": "test", "auth_token": "test"})
@@ -363,14 +404,20 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(resp_status, 200)
 
     @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
-    async def test_vllm_native_structured_output_validation_error(self, mock_parser, mock_utils):
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
+    async def test_vllm_native_structured_output_validation_error(
+        self, mock_parser, mock_utils
+    ):
         """Test VLLM native structured output with validation error"""
         model = CustomVLLM({**self.test_config, "url": "test", "auth_token": "test"})
         model._client = MockClient(
             response_text='{"name": "Test", "age": "invalid"}', status_code=200
         )
-        model._generate_fallback_structured_output = AsyncMock(return_value=(self.valid_json, 200))
+        model._generate_fallback_structured_output = AsyncMock(
+            return_value=(self.valid_json, 200)
+        )
 
         # Mock validation to raise error
         def mock_validate(*args, **kwargs):
@@ -399,7 +446,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         model._generate_fallback_structured_output.assert_called_once()
 
     @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
     async def test_tgi_native_structured_output_success(self, mock_parser, mock_utils):
         """Test TGI native structured output success"""
         model = CustomTGI({**self.test_config, "url": "test", "auth_token": "test"})
@@ -426,12 +475,18 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(resp_text, self.valid_json)
 
     @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
-    async def test_tgi_native_structured_output_http_error(self, mock_parser, mock_utils):
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
+    async def test_tgi_native_structured_output_http_error(
+        self, mock_parser, mock_utils
+    ):
         """Test TGI native structured output with HTTP error"""
         model = CustomTGI({**self.test_config, "url": "test", "auth_token": "test"})
         model._client = MockClient(response_text="Server Error", status_code=500)
-        model._generate_fallback_structured_output = AsyncMock(return_value=(self.valid_json, 200))
+        model._generate_fallback_structured_output = AsyncMock(
+            return_value=(self.valid_json, 200)
+        )
 
         # Mock missing tokenizer attribute
         model.tokenizer = Mock()
@@ -450,7 +505,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
     @patch(
         "grasp.core.models.structured_output.structured_output_config.StructuredOutputConfig.get_pydantic_model"
     )
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
     async def test_handle_structured_output_with_native_support(
         self, mock_parser, mock_get_model, mock_utils
     ):
@@ -466,7 +523,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
                 "model": "gpt-4",
             }
         )
-        model._generate_native_structured_output = AsyncMock(return_value=(self.valid_json, 200))
+        model._generate_native_structured_output = AsyncMock(
+            return_value=(self.valid_json, 200)
+        )
 
         # Create a simple mock lock
         async def mock_lock():
@@ -487,8 +546,12 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
     @patch(
         "grasp.core.models.structured_output.structured_output_config.StructuredOutputConfig.get_pydantic_model"
     )
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
-    async def test_handle_structured_output_disabled(self, mock_parser, mock_get_model, mock_utils):
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
+    async def test_handle_structured_output_disabled(
+        self, mock_parser, mock_get_model, mock_utils
+    ):
         """Test _handle_structured_output when disabled"""
         mock_get_model.return_value = None  # No valid schema
 
@@ -510,7 +573,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
     @patch(
         "grasp.core.models.structured_output.structured_output_config.StructuredOutputConfig.get_pydantic_model"
     )
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
     async def test_handle_structured_output_fallback_mode(
         self, mock_parser, mock_get_model, mock_utils
     ):
@@ -520,7 +585,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         # Create a model that doesn't support native structured output
         model = CustomModel(self.test_config)
         model._supports_native_structured_output = lambda: False
-        model._generate_fallback_structured_output = AsyncMock(return_value=(self.valid_json, 200))
+        model._generate_fallback_structured_output = AsyncMock(
+            return_value=(self.valid_json, 200)
+        )
 
         # Create a simple mock lock
         model._structured_output_lock = Mock()
@@ -537,7 +604,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
 
     @patch("grasp.utils.utils.validate_required_keys")
     @patch("grasp.core.models.custom_models.PydanticOutputParser")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
     async def test_fallback_structured_output_parse_error(
         self, mock_parser, mock_output_parser, mock_utils
     ):
@@ -561,8 +630,12 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(resp_status, 200)
 
     @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
-    async def test_ollama_completions_api_response_extraction(self, mock_parser, mock_utils):
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
+    async def test_ollama_completions_api_response_extraction(
+        self, mock_parser, mock_utils
+    ):
         """Test Ollama response extraction for completions API"""
         # Test completions API response handling
         completions_config = {
@@ -598,7 +671,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(resp_status, 200)
 
     @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
     async def test_ollama_chat_api_response_extraction(self, mock_parser, mock_utils):
         """Test Ollama response extraction for chat API"""
         # Test chat API response handling (default)
@@ -629,7 +704,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(resp_status, 200)
 
     @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
     async def test_ollama_generate_text_success(self, mock_parser, mock_utils):
         """Test Ollama regular text generation success"""
         model = CustomOllama({**self.test_config, "url": "test", "auth_token": "test"})
@@ -641,20 +718,30 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
 
         # Mock _set_client to prevent it from overwriting our mock client
         with patch.object(model, "_set_client"):
-            resp_text, resp_status = await model._generate_text(self.test_input, self.test_params)
+            resp_text, resp_status = await model._generate_text(
+                self.test_input, self.test_params
+            )
 
             self.assertEqual(resp_text, "Generated text response")
             self.assertEqual(resp_status, 200)
 
     @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
-    async def test_ollama_generate_text_exception_handling(self, mock_parser, mock_utils):
+    @patch(
+        "grasp.core.models.structured_output.structured_output_config.SchemaConfigParser"
+    )
+    async def test_ollama_generate_text_exception_handling(
+        self, mock_parser, mock_utils
+    ):
         """Test Ollama regular text generation exception handling"""
         model = CustomOllama({**self.test_config, "url": "test", "auth_token": "test"})
 
         # Mock _set_client to raise an exception
-        with patch.object(model, "_set_client", side_effect=Exception("Connection failed")):
-            resp_text, resp_status = await model._generate_text(self.test_input, self.test_params)
+        with patch.object(
+            model, "_set_client", side_effect=Exception("Connection failed")
+        ):
+            resp_text, resp_status = await model._generate_text(
+                self.test_input, self.test_params
+            )
 
             self.assertIn("ERROR", resp_text)
             self.assertIn("Connection failed", resp_text)

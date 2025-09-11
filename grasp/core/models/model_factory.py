@@ -33,11 +33,16 @@ class ModelFactory:
             "ollama": CustomOllama,
             "triton": CustomTriton,
         },
-        "langgraph": {"vllm": CustomVLLMChatModel, "azure_openai": CustomOpenAIChatModel},
+        "langgraph": {
+            "vllm": CustomVLLMChatModel,
+            "azure_openai": CustomOpenAIChatModel,
+        },
     }
 
     @classmethod
-    def create_model(cls, model_config: Dict[str, Any], backend: str = "default") -> Any:
+    def create_model(
+        cls, model_config: Dict[str, Any], backend: str = "default"
+    ) -> Any:
         """
         Create and return an appropriate model instance based on the provided configuration.
 
@@ -70,7 +75,9 @@ class ModelFactory:
                 f"No specialized model implementation for {model_type} found for backend {backend}."
             )
             # If we get here, the model type is not supported
-            raise NotImplementedError(f"Model type {model_type} for {backend} is not implemented")
+            raise NotImplementedError(
+                f"Model type {model_type} for {backend} is not implemented"
+            )
 
     @staticmethod
     def _update_model_config(model_config: Dict[str, Any]) -> Dict[str, Any]:

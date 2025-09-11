@@ -38,7 +38,10 @@ class TestCustomOllama(unittest.TestCase):
                 "enabled": True,
                 "schema": {
                     "type": "object",
-                    "properties": {"name": {"type": "string"}, "age": {"type": "integer"}},
+                    "properties": {
+                        "name": {"type": "string"},
+                        "age": {"type": "integer"},
+                    },
                     "required": ["name", "age"],
                 },
             },
@@ -58,7 +61,9 @@ class TestCustomOllama(unittest.TestCase):
 
         # Verify model was properly initialized
         self.assertEqual(custom_ollama.model_config, self.base_config)
-        self.assertEqual(custom_ollama.generation_params, self.base_config["parameters"])
+        self.assertEqual(
+            custom_ollama.generation_params, self.base_config["parameters"]
+        )
         self.assertEqual(custom_ollama.name(), "qwen3:1.7b")
 
     @patch("grasp.core.models.custom_models.logger")
@@ -80,7 +85,9 @@ class TestCustomOllama(unittest.TestCase):
         mock_client.build_request.return_value = {
             "messages": [{"role": "user", "content": "Hello"}]
         }
-        mock_client.send_request = AsyncMock(return_value={"message": {"content": "Hello there!"}})
+        mock_client.send_request = AsyncMock(
+            return_value={"message": {"content": "Hello there!"}}
+        )
 
         # Setup custom model with mock client
         custom_ollama = CustomOllama(self.base_config)
@@ -88,7 +95,9 @@ class TestCustomOllama(unittest.TestCase):
 
         # Call _generate_text
         model_params = ModelParams(url="http://localhost:11434")
-        resp_text, resp_status = await custom_ollama._generate_text(self.chat_input, model_params)
+        resp_text, resp_status = await custom_ollama._generate_text(
+            self.chat_input, model_params
+        )
 
         # Verify results
         self.assertEqual(resp_text, "Hello there!")
@@ -127,16 +136,22 @@ class TestCustomOllama(unittest.TestCase):
 
         # Call _generate_text
         model_params = ModelParams(url="http://localhost:11434")
-        resp_text, resp_status = await custom_ollama._generate_text(self.chat_input, model_params)
+        resp_text, resp_status = await custom_ollama._generate_text(
+            self.chat_input, model_params
+        )
 
         # Verify results
         self.assertEqual(resp_text, "I'm doing well, thank you!")
         self.assertEqual(resp_status, 200)
 
         # Verify client calls
-        mock_client.build_request.assert_called_once_with(formatted_prompt="Hello, how are you?")
+        mock_client.build_request.assert_called_once_with(
+            formatted_prompt="Hello, how are you?"
+        )
         mock_client.send_request.assert_awaited_once_with(
-            {"prompt": "Hello, how are you?"}, "qwen3:1.7b", self.completions_config["parameters"]
+            {"prompt": "Hello, how are you?"},
+            "qwen3:1.7b",
+            self.completions_config["parameters"],
         )
 
     @patch("grasp.core.models.custom_models.ClientFactory")
@@ -160,10 +175,14 @@ class TestCustomOllama(unittest.TestCase):
 
         # Call _generate_text
         model_params = ModelParams(url="http://localhost:11434")
-        resp_text, resp_status = await custom_ollama._generate_text(self.chat_input, model_params)
+        resp_text, resp_status = await custom_ollama._generate_text(
+            self.chat_input, model_params
+        )
 
         # Verify error handling
-        self.assertTrue(resp_text.startswith(f"{constants.ERROR_PREFIX} Ollama request failed"))
+        self.assertTrue(
+            resp_text.startswith(f"{constants.ERROR_PREFIX} Ollama request failed")
+        )
         self.assertEqual(resp_status, 999)
 
     @patch("grasp.core.models.custom_models.ClientFactory")
@@ -211,16 +230,23 @@ class TestCustomOllama(unittest.TestCase):
 
         # Verify client calls with format parameter
         expected_schema = TestPerson.model_json_schema()
-        extra_params = {**self.structured_config["parameters"], "format": expected_schema}
+        extra_params = {
+            **self.structured_config["parameters"],
+            "format": expected_schema,
+        }
 
         mock_client.build_request.assert_called_once_with(messages=self.messages)
         mock_client.send_request.assert_awaited_once_with(
-            {"messages": [{"role": "user", "content": "Hello"}]}, "qwen3:1.7b", extra_params
+            {"messages": [{"role": "user", "content": "Hello"}]},
+            "qwen3:1.7b",
+            extra_params,
         )
 
     @patch("grasp.core.models.custom_models.ClientFactory")
     @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
-    @patch("grasp.core.models.custom_models.BaseCustomModel._generate_fallback_structured_output")
+    @patch(
+        "grasp.core.models.custom_models.BaseCustomModel._generate_fallback_structured_output"
+    )
     @pytest.mark.asyncio
     async def test_generate_native_structured_output_exception(
         self, mock_fallback, mock_set_client, mock_client_factory
@@ -253,7 +279,9 @@ class TestCustomOllama(unittest.TestCase):
         )
 
         # Verify fallback method was called
-        mock_fallback.assert_awaited_once_with(self.chat_input, model_params, TestPerson)
+        mock_fallback.assert_awaited_once_with(
+            self.chat_input, model_params, TestPerson
+        )
 
         # Verify result is the fallback result
         self.assertEqual(result.content, '{"name": "John", "age": 30}')

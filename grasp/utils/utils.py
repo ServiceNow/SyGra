@@ -1,4 +1,3 @@
-import ast
 import importlib
 import json
 import os
@@ -16,7 +15,6 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from typing_extensions import deprecated
 
 from grasp.core.dataset.dataset_config import DataSourceConfig
 from grasp.core.dataset.file_handler import FileHandler
@@ -176,7 +174,7 @@ def load_json(text) -> Any:
     object = None
     try:
         object = json.loads(text)
-    except Exception as e:
+    except Exception:
         pass
     return object
 
@@ -275,7 +273,9 @@ def validate_required_keys(
 ):
     missing_keys = [key for key in required_keys if key not in config]
     if missing_keys:
-        raise ValueError(f"Required keys {missing_keys} are missing in {config_name} configuration")
+        raise ValueError(
+            f"Required keys {missing_keys} are missing in {config_name} configuration"
+        )
 
 
 def get_func_from_str(func_str: str) -> Callable:
@@ -330,7 +330,9 @@ def convert_messages_from_chat_format_to_langchain(
         elif role == "assistant":
             langchain_messages.append(AIMessagePromptTemplate.from_template(content))
         elif role == "system":
-            langchain_messages.append(SystemMessagePromptTemplate.from_template(content))
+            langchain_messages.append(
+                SystemMessagePromptTemplate.from_template(content)
+            )
     return langchain_messages
 
 

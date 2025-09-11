@@ -60,7 +60,9 @@ class TestClientFactory(unittest.TestCase):
         }
         with self.assertRaises(ValueError) as context:
             ClientFactory.create_client(model_config, model_url)
-        self.assertIn("Auth token/API key is required for client creation", str(context.exception))
+        self.assertIn(
+            "Auth token/API key is required for client creation", str(context.exception)
+        )
 
     @patch("grasp.core.models.client.client_factory.OpenAIClient")
     @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
@@ -79,10 +81,14 @@ class TestClientFactory(unittest.TestCase):
             "max_retries": 5,
         }
 
-        client = ClientFactory._create_openai_client(model_config, model_url, auth_token)
+        client = ClientFactory._create_openai_client(
+            model_config, model_url, auth_token
+        )
 
         # Verify the client was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
+        mock_validate.assert_called_once_with(
+            ["url", "auth_token"], model_config, "model"
+        )
         self.assertIsNotNone(client)
         mock_openai_client.assert_called_once()
 
@@ -113,10 +119,14 @@ class TestClientFactory(unittest.TestCase):
             "max_retries": 5,
         }
 
-        client = ClientFactory._create_openai_client(model_config, model_url1, auth_token1)
+        client = ClientFactory._create_openai_client(
+            model_config, model_url1, auth_token1
+        )
 
         # Verify the client was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
+        mock_validate.assert_called_once_with(
+            ["url", "auth_token"], model_config, "model"
+        )
         self.assertIsNotNone(client)
         mock_openai_client.assert_called_once()
 
@@ -148,10 +158,14 @@ class TestClientFactory(unittest.TestCase):
             "max_retries": 5,
         }
 
-        client = ClientFactory._create_openai_client(model_config, model_url1, auth_token)
+        client = ClientFactory._create_openai_client(
+            model_config, model_url1, auth_token
+        )
 
         # Verify the client was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
+        mock_validate.assert_called_once_with(
+            ["url", "auth_token"], model_config, "model"
+        )
         self.assertIsNotNone(client)
         mock_openai_client.assert_called_once()
 
@@ -164,7 +178,9 @@ class TestClientFactory(unittest.TestCase):
 
     @patch("grasp.core.models.client.client_factory.OpenAIClient")
     @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
-    def test_create_openai_client_with_completions_api(self, mock_validate, mock_openai_client):
+    def test_create_openai_client_with_completions_api(
+        self, mock_validate, mock_openai_client
+    ):
         """Test _create_openai_client method with completion API flag"""
         # Setup mock
         mock_openai_client.return_value = MagicMock()
@@ -187,8 +203,12 @@ class TestClientFactory(unittest.TestCase):
         )
 
         # Verify the client was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
-        mock_openai_client.assert_called_once_with(True, False, **mock_openai_client.call_args[1])
+        mock_validate.assert_called_once_with(
+            ["url", "auth_token"], model_config, "model"
+        )
+        mock_openai_client.assert_called_once_with(
+            True, False, **mock_openai_client.call_args[1]
+        )
 
     @patch("grasp.core.models.client.client_factory.OpenAIAzureClient")
     @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
@@ -211,7 +231,9 @@ class TestClientFactory(unittest.TestCase):
             "max_retries": 2,
         }
 
-        client = ClientFactory._create_openai_azure_client(model_config, model_url, auth_token)
+        client = ClientFactory._create_openai_azure_client(
+            model_config, model_url, auth_token
+        )
 
         # Verify the client was created with the right parameters
         mock_validate.assert_called_once_with(
@@ -231,46 +253,9 @@ class TestClientFactory(unittest.TestCase):
 
     @patch("grasp.core.models.client.client_factory.OpenAIAzureClient")
     @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
-    def test_create_openai_azure_client(self, mock_validate, mock_openai_client):
-        """Test _create_openai_client method"""
-        # Setup mock
-        mock_openai_client.return_value = MagicMock()
-
-        model_url = "http://openai-test1.com"
-        auth_token = "test-key1"
-
-        # Test with valid config
-        model_config = {
-            "model_type": "azure_openai",
-            "url": model_url,
-            "api_key": auth_token,
-            "api_version": "2023-05-15",
-            "model": "gpt-4",
-            "timeout": 90,
-            "max_retries": 2,
-        }
-
-        client = ClientFactory._create_openai_azure_client(model_config, model_url, auth_token)
-
-        # Verify the client was created with the right parameters
-        mock_validate.assert_called_once_with(
-            ["url", "api_key", "api_version", "model"], model_config, "model"
-        )
-        self.assertIsNotNone(client)
-        mock_openai_client.assert_called_once()
-
-        # Check if parameters were passed correctly
-        args, kwargs = mock_openai_client.call_args
-        self.assertEqual(kwargs["azure_endpoint"], model_url)
-        self.assertEqual(kwargs["api_key"], auth_token)
-        self.assertEqual(kwargs["api_version"], "2023-05-15")
-        self.assertEqual(kwargs["azure_deployment"], "gpt-4")
-        self.assertEqual(kwargs["timeout"], 90)
-        self.assertEqual(kwargs["max_retries"], 2)
-
-    @patch("grasp.core.models.client.client_factory.OpenAIAzureClient")
-    @patch("grasp.core.models.client.client_factory.utils.validate_required_keys")
-    def test_create_openai_azure_client_multi_url(self, mock_validate, mock_openai_client):
+    def test_create_openai_azure_client_multi_url(
+        self, mock_validate, mock_openai_client
+    ):
         """Test _create_openai_client method"""
         # Setup mock
         mock_openai_client.return_value = MagicMock()
@@ -291,7 +276,9 @@ class TestClientFactory(unittest.TestCase):
             "max_retries": 2,
         }
 
-        client = ClientFactory._create_openai_azure_client(model_config, model_url1, auth_token1)
+        client = ClientFactory._create_openai_azure_client(
+            model_config, model_url1, auth_token1
+        )
 
         # Verify the client was created with the right parameters
         mock_validate.assert_called_once_with(
@@ -333,7 +320,9 @@ class TestClientFactory(unittest.TestCase):
             "max_retries": 2,
         }
 
-        client = ClientFactory._create_openai_azure_client(model_config, model_url1, auth_token)
+        client = ClientFactory._create_openai_azure_client(
+            model_config, model_url1, auth_token
+        )
 
         # Verify the client was created with the right parameters
         mock_validate.assert_called_once_with(
@@ -364,10 +353,14 @@ class TestClientFactory(unittest.TestCase):
             "timeout": 75,
         }
 
-        http_client = ClientFactory._create_http_client(model_config, model_url, model_auth_token)
+        http_client = ClientFactory._create_http_client(
+            model_config, model_url, model_auth_token
+        )
 
         # Verify the client config was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
+        mock_validate.assert_called_once_with(
+            ["url", "auth_token"], model_config, "model"
+        )
         self.assertIsNotNone(http_client)
         self.assertEqual(http_client.headers["Authorization"], "Bearer test-token")
         self.assertEqual(http_client.headers["Content-Type"], "application/json")
@@ -386,7 +379,9 @@ class TestClientFactory(unittest.TestCase):
             "timeout": 75,
         }
 
-        http_client = ClientFactory._create_http_client(model_config, model_url, model_auth_token)
+        http_client = ClientFactory._create_http_client(
+            model_config, model_url, model_auth_token
+        )
 
         # Verify the client config was created with the right parameters
         self.assertEqual(http_client.headers["Authorization"], "Bearer test-token")
@@ -406,7 +401,9 @@ class TestClientFactory(unittest.TestCase):
             "timeout": 75,
         }
 
-        http_client = ClientFactory._create_http_client(model_config, model_url1, model_auth_token1)
+        http_client = ClientFactory._create_http_client(
+            model_config, model_url1, model_auth_token1
+        )
 
         # Verify the client config was created with the right parameters
         self.assertEqual(http_client.headers["Authorization"], model_auth_token1)
@@ -425,7 +422,9 @@ class TestClientFactory(unittest.TestCase):
             "timeout": 75,
         }
 
-        http_client = ClientFactory._create_http_client(model_config, model_url1, model_auth_token)
+        http_client = ClientFactory._create_http_client(
+            model_config, model_url1, model_auth_token
+        )
 
         # Verify the client config was created with the right parameters
         self.assertEqual(http_client.headers["Authorization"], model_auth_token)
@@ -443,7 +442,9 @@ class TestClientFactory(unittest.TestCase):
             "timeout": 75,
         }
 
-        http_client = ClientFactory._create_http_client(model_config, model_url, model_auth_token)
+        http_client = ClientFactory._create_http_client(
+            model_config, model_url, model_auth_token
+        )
 
         # Verify the client config was created with the right parameters
         self.assertEqual(http_client.headers["Authorization"], "Bearer test-token")
@@ -470,7 +471,9 @@ class TestClientFactory(unittest.TestCase):
         )
 
         # Verify the client was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
+        mock_validate.assert_called_once_with(
+            ["url", "auth_token"], model_config, "model"
+        )
         self.assertIsNotNone(client)
         mock_mistral_client.assert_called_once()
 
@@ -503,7 +506,9 @@ class TestClientFactory(unittest.TestCase):
         )
 
         # Verify the client was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
+        mock_validate.assert_called_once_with(
+            ["url", "auth_token"], model_config, "model"
+        )
         self.assertIsNotNone(client)
         mock_mistral_client.assert_called_once()
 
@@ -537,7 +542,9 @@ class TestClientFactory(unittest.TestCase):
         )
 
         # Verify the client was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
+        mock_validate.assert_called_once_with(
+            ["url", "auth_token"], model_config, "model"
+        )
         self.assertIsNotNone(client)
         mock_mistral_client.assert_called_once()
 
@@ -569,7 +576,9 @@ class TestClientFactory(unittest.TestCase):
         )
 
         # Verify the client was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
+        mock_validate.assert_called_once_with(
+            ["url", "auth_token"], model_config, "model"
+        )
         self.assertIsNotNone(client)
         mock_mistral_client.assert_called_once()
 
@@ -591,10 +600,14 @@ class TestClientFactory(unittest.TestCase):
             "timeout": 180,
         }
 
-        http_client = ClientFactory._create_http_client(model_config, model_url, auth_token)
+        http_client = ClientFactory._create_http_client(
+            model_config, model_url, auth_token
+        )
 
         # Verify the client config was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
+        mock_validate.assert_called_once_with(
+            ["url", "auth_token"], model_config, "model"
+        )
         self.assertIsNotNone(http_client)
         self.assertEqual(http_client.headers["Authorization"], auth_token)
         self.assertEqual(http_client.headers["Content-Type"], "application/json")
@@ -615,10 +628,14 @@ class TestClientFactory(unittest.TestCase):
             "timeout": 180,
         }
 
-        http_client = ClientFactory._create_http_client(model_config, model_url1, auth_token1)
+        http_client = ClientFactory._create_http_client(
+            model_config, model_url1, auth_token1
+        )
 
         # Verify the client config was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
+        mock_validate.assert_called_once_with(
+            ["url", "auth_token"], model_config, "model"
+        )
         self.assertIsNotNone(http_client)
         self.assertEqual(http_client.headers["Authorization"], auth_token1)
         self.assertEqual(http_client.headers["Content-Type"], "application/json")
@@ -638,10 +655,14 @@ class TestClientFactory(unittest.TestCase):
             "timeout": 180,
         }
 
-        http_client = ClientFactory._create_http_client(model_config, model_url1, auth_token)
+        http_client = ClientFactory._create_http_client(
+            model_config, model_url1, auth_token
+        )
 
         # Verify the client config was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
+        mock_validate.assert_called_once_with(
+            ["url", "auth_token"], model_config, "model"
+        )
         self.assertIsNotNone(http_client)
         self.assertEqual(http_client.headers["Authorization"], auth_token)
         self.assertEqual(http_client.headers["Content-Type"], "application/json")
@@ -660,12 +681,16 @@ class TestClientFactory(unittest.TestCase):
             "timeout": 180,
         }
 
-        http_client = ClientFactory._create_http_client(model_config, model_url, model_auth_token)
+        http_client = ClientFactory._create_http_client(
+            model_config, model_url, model_auth_token
+        )
 
         # Verify the client config was created with the right parameters
         self.assertEqual(http_client.headers["Authorization"], model_auth_token)
 
-    @patch("grasp.core.models.client.client_factory.ClientFactory._create_openai_client")
+    @patch(
+        "grasp.core.models.client.client_factory.ClientFactory._create_openai_client"
+    )
     def test_create_client_openai(self, mock_create_vllm):
         """Test create_client with VLLM model type"""
         mock_create_vllm.return_value = MagicMock()
@@ -677,13 +702,17 @@ class TestClientFactory(unittest.TestCase):
             "url": model_url,
             "auth_token": model_auth_token,
         }
-        ClientFactory.create_client(model_config, model_url, model_auth_token, async_client=True)
+        ClientFactory.create_client(
+            model_config, model_url, model_auth_token, async_client=True
+        )
 
         mock_create_vllm.assert_called_once_with(
             model_config, model_url, model_auth_token, True, True
         )
 
-    @patch("grasp.core.models.client.client_factory.ClientFactory._create_openai_azure_client")
+    @patch(
+        "grasp.core.models.client.client_factory.ClientFactory._create_openai_azure_client"
+    )
     def test_create_client_openai_azure(self, mock_create_openai):
         """Test create_client with OpenAI model type"""
         mock_create_openai.return_value = MagicMock()
@@ -695,7 +724,9 @@ class TestClientFactory(unittest.TestCase):
             "url": model_url,
             "auth_token": model_auth_token,
         }
-        ClientFactory.create_client(model_config, model_url, model_auth_token, async_client=True)
+        ClientFactory.create_client(
+            model_config, model_url, model_auth_token, async_client=True
+        )
 
         mock_create_openai.assert_called_once_with(
             model_config, model_url, model_auth_token, True, True
@@ -715,7 +746,9 @@ class TestClientFactory(unittest.TestCase):
         }
         result = ClientFactory.create_client(model_config, model_url, model_auth_token)
 
-        mock_create_http.assert_called_once_with(model_config, model_url, model_auth_token)
+        mock_create_http.assert_called_once_with(
+            model_config, model_url, model_auth_token
+        )
         self.assertEqual(result, {"headers": {}, "timeout": 120})
 
     @patch("grasp.core.models.client.client_factory.ClientFactory._create_http_client")
@@ -732,10 +765,14 @@ class TestClientFactory(unittest.TestCase):
         }
         result = ClientFactory.create_client(model_config, model_url, model_auth_token)
 
-        mock_create_http.assert_called_once_with(model_config, model_url, model_auth_token)
+        mock_create_http.assert_called_once_with(
+            model_config, model_url, model_auth_token
+        )
         self.assertEqual(result, {"headers": {}, "timeout": 120})
 
-    @patch("grasp.core.models.client.client_factory.ClientFactory._create_mistral_client")
+    @patch(
+        "grasp.core.models.client.client_factory.ClientFactory._create_mistral_client"
+    )
     def test_create_client_mistralai(self, mock_create_mistral):
         """Test create_client with MistralAI model type"""
         mock_create_mistral.return_value = MagicMock()
@@ -747,9 +784,13 @@ class TestClientFactory(unittest.TestCase):
             "url": model_url,
             "auth_token": model_auth_token,
         }
-        ClientFactory.create_client(model_config, model_url, model_auth_token, async_client=True)
+        ClientFactory.create_client(
+            model_config, model_url, model_auth_token, async_client=True
+        )
 
-        mock_create_mistral.assert_called_once_with(model_config, model_url, model_auth_token, True)
+        mock_create_mistral.assert_called_once_with(
+            model_config, model_url, model_auth_token, True
+        )
 
     @patch("grasp.core.models.client.client_factory.ClientFactory._create_http_client")
     def test_create_client_tgi(self, mock_create_http):
@@ -765,10 +806,14 @@ class TestClientFactory(unittest.TestCase):
         }
         result = ClientFactory.create_client(model_config, model_url, model_auth_token)
 
-        mock_create_http.assert_called_once_with(model_config, model_url, model_auth_token)
+        mock_create_http.assert_called_once_with(
+            model_config, model_url, model_auth_token
+        )
         self.assertEqual(result, {"headers": {}, "timeout": 120})
 
-    @patch("grasp.core.models.client.client_factory.ClientFactory._create_openai_client")
+    @patch(
+        "grasp.core.models.client.client_factory.ClientFactory._create_openai_client"
+    )
     def test_create_client_completions_api(self, mock_create_openai):
         """Test create_client with completions_api flag"""
         mock_create_openai.return_value = MagicMock()
@@ -782,7 +827,9 @@ class TestClientFactory(unittest.TestCase):
             "auth_token": model_auth_token,
             "completions_api": True,
         }
-        ClientFactory.create_client(model_config, model_url, model_auth_token, async_client=True)
+        ClientFactory.create_client(
+            model_config, model_url, model_auth_token, async_client=True
+        )
 
         mock_create_openai.assert_called_once_with(
             model_config, model_url, model_auth_token, True, False

@@ -150,22 +150,26 @@ class GraspBaseChatModel(BaseChatModel):
 
         return_url = None
         return_auth_token = None
-        if type(url) == str:
+        if isinstance(url,str):
             return_url = url
             return_auth_token = auth_token
-        elif type(url) == list:
+        elif isinstance(url, list):
             load_balancing = self._config.get("load_balancing", "least_requests")
             if load_balancing == "round_robin":
                 idx = self._call_count % len(url)
                 return_url = url[idx]
-                return_auth_token = auth_token[idx] if isinstance(auth_token, list) else auth_token
+                return_auth_token = (
+                    auth_token[idx] if isinstance(auth_token, list) else auth_token
+                )
             elif load_balancing == "least_requests":
                 # initialize the count for each url if it is not already done
                 if not self._url_reqs_count:
                     self._url_reqs_count = {u: 0 for u in url}
                 # find the url with least requests
                 min_value = min(self._url_reqs_count.values())
-                min_keys = [k for k, v in self._url_reqs_count.items() if v == min_value]
+                min_keys = [
+                    k for k, v in self._url_reqs_count.items() if v == min_value
+                ]
                 # get random url if all have same number of requests
                 return_url = random.choice(min_keys)
                 return_auth_token = (
@@ -264,7 +268,9 @@ class GraspBaseChatModel(BaseChatModel):
                 oldest_timestamp = self._model_failed_response_timestamp[
                     total_in_queue - constants.MAX_FAILED_ERROR
                 ]
-                newest_timestamp = self._model_failed_response_timestamp[total_in_queue - 1]
+                newest_timestamp = self._model_failed_response_timestamp[
+                    total_in_queue - 1
+                ]
                 time_gap_in_sec = newest_timestamp - oldest_timestamp
                 logger.warning(
                     f"Server failure count: {constants.MAX_FAILED_ERROR} in {time_gap_in_sec} seconds."
@@ -352,7 +358,7 @@ class GraspBaseChatModel(BaseChatModel):
                 return int(code)
             else:
                 return int(status_code)
-        except:
+        except Exception:
             return None
 
     def _get_chat_formatted_text(self, messages: list[AnyMessage]) -> str:
@@ -414,7 +420,9 @@ class GraspBaseChatModel(BaseChatModel):
                     attempt.retry_state.set_result(result)
 
         except RetryError:
-            logger.error(f"{self._get_name()} Request failed after {self._retry_attempts} attempts")
+            logger.error(
+                f"{self._get_name()} Request failed after {self._retry_attempts} attempts"
+            )
 
         return result
 
@@ -455,7 +463,9 @@ class GraspBaseChatModel(BaseChatModel):
                     attempt.retry_state.set_result(result)
 
         except RetryError:
-            logger.error(f"{self._get_name()} Request failed after {self._retry_attempts} attempts")
+            logger.error(
+                f"{self._get_name()} Request failed after {self._retry_attempts} attempts"
+            )
 
         return result
 
@@ -541,7 +551,9 @@ class GraspBaseChatModel(BaseChatModel):
         self._handle_server_down(response_code)
         # reduce the count of requests for the url to handle least_requests load balancing
         self._url_reqs_count[model_url] -= 1
-        return await run_in_executor(None, self._create_chat_result, response, generation_info)
+        return await run_in_executor(
+            None, self._create_chat_result, response, generation_info
+        )
 
     def _generate(
         self,
@@ -578,19 +590,25 @@ class GraspBaseChatModel(BaseChatModel):
         self._url_reqs_count[model_url] -= 1
         return self._create_chat_result(response, generation_info)
 
-    def _invoke_post_process(self, response: Union[dict, BaseModel]) -> Union[dict, BaseModel]:
+    def _invoke_post_process(
+        self, response: Union[dict, BaseModel]
+    ) -> Union[dict, BaseModel]:
         post_proc = self._get_post_processor()
         # if post_process is defined at models.yaml, process the output text
         if post_proc is None:
             return response
-        response.choices[0].message.content = post_proc().apply(response.choices[0].message.content)
+        response.choices[0].message.content = post_proc().apply(
+            response.choices[0].message.content
+        )
         return response
 
     def bind_tools(
         self,
         tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
         *,
-        tool_choice: Optional[Union[dict[str, str], Literal["any", "auto"], str]] = None,
+        tool_choice: Optional[
+            Union[dict[str, str], Literal["any", "auto"], str]
+        ] = None,
         parallel_tool_calls: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
@@ -605,13 +623,16 @@ class GraspBaseChatModel(BaseChatModel):
             kwargs["tool_choice"] = {"type": "tool", "name": tool_choice}
         else:
             raise ValueError(
-                f"Unrecognized 'tool_choice' type {tool_choice=}. Expected dict, " f"str, or None."
+                f"Unrecognized 'tool_choice' type {tool_choice=}. Expected dict, "
+                f"str, or None."
             )
 
         if parallel_tool_calls is not None:
             disable_parallel_tool_use = not parallel_tool_calls
             if "tool_choice" in kwargs:
-                kwargs["tool_choice"]["disable_parallel_tool_use"] = disable_parallel_tool_use
+                kwargs["tool_choice"]["disable_parallel_tool_use"] = (
+                    disable_parallel_tool_use
+                )
             else:
                 kwargs["tool_choice"] = {
                     "type": "auto",
@@ -632,8 +653,12 @@ class GraspBaseChatModel(BaseChatModel):
         Returns:
             None
         """
-        if self._client is None or (async_client and not hasattr(self._client, "acreate")):
-            self._client = ClientFactory.create_client(self._config, url, auth_token, async_client)
+        if self._client is None or (
+            async_client and not hasattr(self._client, "acreate")
+        ):
+            self._client = ClientFactory.create_client(
+                self._config, url, auth_token, async_client
+            )
 
     def _create_chat_result(
         self,
@@ -653,7 +678,9 @@ class GraspBaseChatModel(BaseChatModel):
         """
         generations = []
 
-        response_dict = response if isinstance(response, dict) else response.model_dump()
+        response_dict = (
+            response if isinstance(response, dict) else response.model_dump()
+        )
         # Sometimes the AI Model calling will get error, we should raise it.
         # Otherwise, the next code 'choices.extend(response["choices"])'
         # will throw a "TypeError: 'NoneType' object is not iterable" error

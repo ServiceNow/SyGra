@@ -41,7 +41,9 @@ class AgentNode(LLMNode):
 
         from grasp.core.models.model_factory import ModelFactory
 
-        self.model = ModelFactory.create_model(self.node_config["model"], constants.BACKEND)
+        self.model = ModelFactory.create_model(
+            self.node_config["model"], constants.BACKEND
+        )
 
     async def _exec_wrapper(self, state: dict[str, Any]) -> dict[str, Any]:
         graph_factory = utils.get_graph_factory(constants.BACKEND)
@@ -114,7 +116,9 @@ class AgentNode(LLMNode):
                 {
                     constants.KEY_NAME: self.name,
                     constants.KEY_REQUEST: request_msgs,
-                    constants.KEY_RESPONSE: graph_factory.get_message_content(responseMsg),
+                    constants.KEY_RESPONSE: graph_factory.get_message_content(
+                        responseMsg
+                    ),
                 }
             )
 

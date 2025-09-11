@@ -177,7 +177,9 @@ class EdgeFactory:
             if tgt_node_name:
                 logger.info(f"Edge created from {src_node_name} to {tgt_node_name}")
             elif path_map:
-                logger.info(f"Edge created from {src_node_name} with path_map: {path_map}")
+                logger.info(
+                    f"Edge created from {src_node_name} with path_map: {path_map}"
+                )
 
         # Process internal subgraph edges.
         # Instead of scanning the raw configuration, we assume subgraphs have already computed their edges.
@@ -194,7 +196,12 @@ class EdgeFactory:
             logger.info(f"Subgraph {sg_name} edges inlined.")
 
     def update_edge_config(
-        self, edge_cfg: dict, src_node: BaseNode, tgt_node: BaseNode, condition: str, path_map: dict
+        self,
+        edge_cfg: dict,
+        src_node: BaseNode,
+        tgt_node: BaseNode,
+        condition: str,
+        path_map: dict,
     ):
         """
         Updates the edge configuration dictionary with resolved source and target nodes.
@@ -333,5 +340,7 @@ class EdgeFactory:
                     f"Node {node_name} not found in graph or as a special node in edge configuration."
                 )
         if not node.is_valid():
-            raise RuntimeError(f"Node {node_name} is idle, can't be used for edge creation.")
+            raise RuntimeError(
+                f"Node {node_name} is idle, can't be used for edge creation."
+            )
         return node

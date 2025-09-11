@@ -10,15 +10,15 @@ from typing import Any, Optional, Union
 
 try:
     from core.dataset.dataset_config import (
-        DataSourceConfig,
-        DataSourceType,
-        OutputConfig,
-        OutputType,
-        ShardConfig,
-        TransformConfig,
+        DataSourceConfig, # noqa: F401
+        DataSourceType, # noqa: F401
+        OutputConfig, # noqa: F401
+        OutputType, # noqa: F401
+        ShardConfig, # noqa: F401
+        TransformConfig, # noqa: F401
     )
-    from core.dataset.file_handler import FileHandler
-    from core.dataset.huggingface_handler import HuggingFaceHandler
+    from core.dataset.file_handler import FileHandler # noqa: F401
+    from core.dataset.huggingface_handler import HuggingFaceHandler # noqa: F401
 
     CORE_DATA_AVAILABLE = True
 except ImportError:
@@ -110,7 +110,9 @@ class DataSource:
         self._config["transformations"].append(transform_config)
         return self
 
-    def add_shard(self, regex: str = "*", index: Optional[list[int]] = None) -> "DataSource":
+    def add_shard(
+        self, regex: str = "*", index: Optional[list[int]] = None
+    ) -> "DataSource":
         """Add shard configuration."""
         shard_config = {"regex": regex}
         if index:

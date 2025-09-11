@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import aiohttp
 import requests
@@ -20,9 +20,13 @@ class HttpClientConfig(BaseModel):
     timeout: int = Field(
         default=constants.DEFAULT_TIMEOUT, description="Request timeout in seconds"
     )
-    max_retries: int = Field(default=3, description="Maximum number of retries for failed requests")
+    max_retries: int = Field(
+        default=3, description="Maximum number of retries for failed requests"
+    )
     ssl_verify: bool = Field(default=True, description="Verify SSL certificate")
-    ssl_cert: Optional[str] = Field(default=None, description="Path to SSL certificate file")
+    ssl_cert: Optional[str] = Field(
+        default=None, description="Path to SSL certificate file"
+    )
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

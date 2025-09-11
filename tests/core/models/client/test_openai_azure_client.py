@@ -1,9 +1,8 @@
 import json
-import os
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent))
@@ -12,7 +11,10 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 from pydantic import BaseModel
 
-from grasp.core.models.client.openai_azure_client import AzureClientConfig, OpenAIAzureClient
+from grasp.core.models.client.openai_azure_client import (
+    AzureClientConfig,
+    OpenAIAzureClient,
+)
 
 
 class SampleStructuredOutput(BaseModel):
@@ -51,7 +53,9 @@ class TestOpenaiAzureClient(unittest.TestCase):
         # Check that the config was validated and passed correctly
         args, kwargs = mock_async_openai.call_args
         self.assertEqual(kwargs["azure_deployment"], "gpt-4")
-        self.assertEqual(kwargs["azure_endpoint"], "https://test-endpoint.openai.azure.com")
+        self.assertEqual(
+            kwargs["azure_endpoint"], "https://test-endpoint.openai.azure.com"
+        )
         self.assertEqual(kwargs["api_version"], "2023-05-15")
         self.assertEqual(kwargs["api_key"], "test-api-key")
         self.assertEqual(kwargs["timeout"], 90)
@@ -73,7 +77,9 @@ class TestOpenaiAzureClient(unittest.TestCase):
         # Check that the config was validated and passed correctly
         args, kwargs = mock_openai.call_args
         self.assertEqual(kwargs["azure_deployment"], "gpt-4")
-        self.assertEqual(kwargs["azure_endpoint"], "https://test-endpoint.openai.azure.com")
+        self.assertEqual(
+            kwargs["azure_endpoint"], "https://test-endpoint.openai.azure.com"
+        )
 
     @patch("grasp.core.models.client.openai_azure_client.AzureOpenAI")
     def test_init_with_stop_sequence(self, mock_openai):
@@ -81,7 +87,9 @@ class TestOpenaiAzureClient(unittest.TestCase):
         mock_openai.return_value = MagicMock()
 
         stop_sequence = ["END", "STOP"]
-        client = OpenAIAzureClient(async_client=False, stop=stop_sequence, **self.valid_config)
+        client = OpenAIAzureClient(
+            async_client=False, stop=stop_sequence, **self.valid_config
+        )
 
         # Verify stop sequence was set
         self.assertEqual(client.stop, stop_sequence)
@@ -100,7 +108,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
 
     def test_convert_input_with_prompt_value(self):
         """Test _convert_input with a PromptValue"""
-        client = MagicMock(spec=OpenAIAzureClient)
+        MagicMock(spec=OpenAIAzureClient)
 
         # Call the static method directly
         prompt_value = StringPromptValue(text="Test prompt")
@@ -111,7 +119,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
 
     def test_convert_input_with_string(self):
         """Test _convert_input with a string"""
-        client = MagicMock(spec=OpenAIAzureClient)
+        MagicMock(spec=OpenAIAzureClient)
 
         # Call the static method directly
         result = OpenAIAzureClient._convert_input("Test prompt")
@@ -122,7 +130,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
 
     def test_convert_input_with_messages(self):
         """Test _convert_input with a list of messages"""
-        client = MagicMock(spec=OpenAIAzureClient)
+        MagicMock(spec=OpenAIAzureClient)
 
         # Create a list of messages
         messages = [
@@ -143,7 +151,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
 
     def test_convert_input_with_invalid_type(self):
         """Test _convert_input with an invalid input type"""
-        client = MagicMock(spec=OpenAIAzureClient)
+        MagicMock(spec=OpenAIAzureClient)
 
         # Call the static method with an invalid type
         with self.assertRaises(ValueError) as context:
@@ -170,13 +178,17 @@ class TestOpenaiAzureClient(unittest.TestCase):
         ]
 
         # Build the request
-        payload = client.build_request(messages=messages, temperature=0.7, max_tokens=100)
+        payload = client.build_request(
+            messages=messages, temperature=0.7, max_tokens=100
+        )
 
         # Verify the payload
         self.assertIn("messages", payload)
         self.assertEqual(len(payload["messages"]), 2)
         self.assertEqual(payload["messages"][0]["role"], "system")
-        self.assertEqual(payload["messages"][0]["content"], "You are a helpful assistant")
+        self.assertEqual(
+            payload["messages"][0]["content"], "You are a helpful assistant"
+        )
         self.assertEqual(payload["messages"][1]["role"], "user")
         self.assertEqual(payload["messages"][1]["content"], "Hello, how are you?")
         self.assertEqual(payload["temperature"], 0.7)
@@ -188,7 +200,9 @@ class TestOpenaiAzureClient(unittest.TestCase):
         mock_openai.return_value = MagicMock()
 
         stop_sequence = ["END", "STOP"]
-        client = OpenAIAzureClient(async_client=False, stop=stop_sequence, **self.valid_config)
+        client = OpenAIAzureClient(
+            async_client=False, stop=stop_sequence, **self.valid_config
+        )
 
         # Create a list of messages
         messages = [HumanMessage(content="Hello, how are you?")]
@@ -231,7 +245,9 @@ class TestOpenaiAzureClient(unittest.TestCase):
         )
 
         # Build the request with a formatted prompt
-        payload = client.build_request(formatted_prompt="Hello, how are you?", temperature=0.5)
+        payload = client.build_request(
+            formatted_prompt="Hello, how are you?", temperature=0.5
+        )
 
         # Verify the payload
         self.assertIn("prompt", payload)
@@ -326,7 +342,9 @@ class TestOpenaiAzureClient(unittest.TestCase):
         client.send_request(payload, "gpt-4")
 
         # Verify the request was sent correctly
-        mock_chat_completions.assert_called_once_with(messages=payload["messages"], model="gpt-4")
+        mock_chat_completions.assert_called_once_with(
+            messages=payload["messages"], model="gpt-4"
+        )
 
     def test_azure_client_config_validation(self):
         """Test AzureClientConfig validation"""
@@ -361,7 +379,9 @@ class TestOpenaiAzureClient(unittest.TestCase):
         # Verify model_dump works correctly
         config_dict = config.model_dump()
         self.assertEqual(config_dict["azure_deployment"], "gpt-4")
-        self.assertEqual(config_dict["azure_endpoint"], "https://test-endpoint.openai.azure.com")
+        self.assertEqual(
+            config_dict["azure_endpoint"], "https://test-endpoint.openai.azure.com"
+        )
         self.assertEqual(config_dict["api_version"], "2023-05-15")
         self.assertEqual(config_dict["api_key"], "test-api-key")
         self.assertEqual(config_dict["timeout"], 60)
@@ -449,7 +469,9 @@ class TestOpenaiAzureClient(unittest.TestCase):
         mock_azure_openai.return_value = mock_client
 
         # Set up mock beta.chat.completions.parse to raise JSONDecodeError
-        mock_parse = MagicMock(side_effect=json.JSONDecodeError("Expecting property name", "", 0))
+        mock_parse = MagicMock(
+            side_effect=json.JSONDecodeError("Expecting property name", "", 0)
+        )
         mock_client.beta.chat.completions.parse = mock_parse
 
         # Create client instance

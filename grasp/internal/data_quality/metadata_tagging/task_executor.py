@@ -66,7 +66,9 @@ class MetadataTaggingDataTransform(DataTransform):
         """
         return "metadata_tagging_transform"
 
-    def transform(self, data: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
+    def transform(
+        self, data: list[dict[str, Any]], params: dict[str, Any]
+    ) -> list[dict[str, Any]]:
         """Apply the transformation to a list of records.
 
         Args:
@@ -105,7 +107,9 @@ class MetadataTaggingDataTransform(DataTransform):
                 return question.strip(), answer.strip()
 
             data_df[["question", "response"]] = data_df["conversation"].apply(
-                lambda msgs: pd.Series(extract_question_answer(msgs) if msgs else ("", ""))
+                lambda msgs: pd.Series(
+                    extract_question_answer(msgs) if msgs else ("", "")
+                )
             )
 
         # Handle transformation for "generic" type
@@ -113,7 +117,9 @@ class MetadataTaggingDataTransform(DataTransform):
             question_field = params.get("question_field", "")
             response_field = params.get("response_field", "")
             if not question_field and not response_field:
-                raise ValueError("Question and Response fields are missing for generic type")
+                raise ValueError(
+                    "Question and Response fields are missing for generic type"
+                )
             data_df["question"] = data_df[question_field]
             data_df["response"] = data_df[response_field]
 

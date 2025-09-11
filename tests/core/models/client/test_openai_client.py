@@ -2,7 +2,7 @@ import asyncio
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import httpx
 
@@ -91,7 +91,9 @@ class TestOpenAIClient(unittest.TestCase):
         mock_openai.return_value = MagicMock()
 
         stop_sequence = ["END", "STOP"]
-        client = OpenAIClient(async_client=False, stop=stop_sequence, **self.sync_config)
+        client = OpenAIClient(
+            async_client=False, stop=stop_sequence, **self.sync_config
+        )
 
         # Verify stop sequence was set
         self.assertEqual(client.stop, stop_sequence)
@@ -101,7 +103,9 @@ class TestOpenAIClient(unittest.TestCase):
         """Test initialization with completion API flag"""
         mock_openai.return_value = MagicMock()
 
-        client = OpenAIClient(async_client=False, chat_completions_api=False, **self.sync_config)
+        client = OpenAIClient(
+            async_client=False, chat_completions_api=False, **self.sync_config
+        )
 
         # Verify chat_completions_api flag was set
         self.assertFalse(client.chat_completions_api)
@@ -170,13 +174,17 @@ class TestOpenAIClient(unittest.TestCase):
         ]
 
         # Build the request
-        payload = client.build_request(messages=messages, temperature=0.7, max_tokens=100)
+        payload = client.build_request(
+            messages=messages, temperature=0.7, max_tokens=100
+        )
 
         # Verify the payload
         self.assertIn("messages", payload)
         self.assertEqual(len(payload["messages"]), 2)
         self.assertEqual(payload["messages"][0]["role"], "system")
-        self.assertEqual(payload["messages"][0]["content"], "You are a helpful assistant")
+        self.assertEqual(
+            payload["messages"][0]["content"], "You are a helpful assistant"
+        )
         self.assertEqual(payload["messages"][1]["role"], "user")
         self.assertEqual(payload["messages"][1]["content"], "Hello, how are you?")
         self.assertEqual(payload["temperature"], 0.7)
@@ -188,7 +196,9 @@ class TestOpenAIClient(unittest.TestCase):
         mock_openai.return_value = MagicMock()
 
         stop_sequence = ["END", "STOP"]
-        client = OpenAIClient(async_client=False, stop=stop_sequence, **self.sync_config)
+        client = OpenAIClient(
+            async_client=False, stop=stop_sequence, **self.sync_config
+        )
 
         # Create a list of messages
         messages = [HumanMessage(content="Hello, how are you?")]
@@ -226,10 +236,14 @@ class TestOpenAIClient(unittest.TestCase):
         """Test build_request with completions API"""
         mock_openai.return_value = MagicMock()
 
-        client = OpenAIClient(async_client=False, chat_completions_api=False, **self.sync_config)
+        client = OpenAIClient(
+            async_client=False, chat_completions_api=False, **self.sync_config
+        )
 
         # Build the request with a formatted prompt
-        payload = client.build_request(formatted_prompt="Hello, how are you?", temperature=0.5)
+        payload = client.build_request(
+            formatted_prompt="Hello, how are you?", temperature=0.5
+        )
 
         # Verify the payload
         self.assertIn("prompt", payload)
@@ -241,7 +255,9 @@ class TestOpenAIClient(unittest.TestCase):
         """Test build_request with completions API and invalid prompt"""
         mock_openai.return_value = MagicMock()
 
-        client = OpenAIClient(async_client=False, chat_completions_api=False, **self.sync_config)
+        client = OpenAIClient(
+            async_client=False, chat_completions_api=False, **self.sync_config
+        )
 
         # Try to build request with None prompt
         with self.assertRaises(ValueError) as context:
@@ -288,7 +304,9 @@ class TestOpenAIClient(unittest.TestCase):
         mock_openai.return_value = MagicMock()
         mock_openai.return_value.completions.create = mock_completions
 
-        client = OpenAIClient(async_client=False, chat_completions_api=False, **self.sync_config)
+        client = OpenAIClient(
+            async_client=False, chat_completions_api=False, **self.sync_config
+        )
 
         # Prepare payload
         payload = {"prompt": "Hello, how are you?", "temperature": 0.5}

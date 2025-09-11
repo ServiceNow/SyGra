@@ -84,16 +84,18 @@ class TypeParser:
                 # Parse value type
                 value_type = self._parse_type()
 
-                type_obj = dict[key_type, value_type]
+                # Build a parameterized dict type at runtime without confusing static type checkers
+                type_obj = dict.__class_getitem__((key_type, value_type))
             else:
                 # Parse inner type for list, set, tuple
                 inner_type = self._parse_type()
                 if base_type == "list":
-                    type_obj = list[inner_type]
+                    type_obj = list.__class_getitem__(inner_type)
                 elif base_type == "set":
-                    type_obj = Set[inner_type]
+                    # Use built-in set's __class_getitem__ to avoid mypy complaints
+                    type_obj = set.__class_getitem__(inner_type)
                 elif base_type == "tuple":
-                    type_obj = Tuple[inner_type, ...]
+                    type_obj = tuple.__class_getitem__((inner_type, ...))
 
             # Expect closing bracket
             if self.pos >= len(self.input) or self.input[self.pos] != "]":

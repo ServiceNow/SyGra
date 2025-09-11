@@ -22,7 +22,9 @@ class OpenAIClientConfig(BaseModel):
     timeout: int = Field(
         default=constants.DEFAULT_TIMEOUT, description="Request timeout in seconds"
     )
-    max_retries: int = Field(default=3, description="Maximum number of retries for failed requests")
+    max_retries: int = Field(
+        default=3, description="Maximum number of retries for failed requests"
+    )
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

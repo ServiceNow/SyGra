@@ -45,7 +45,9 @@ def process_custom_fields(config: dict[str, dict[str, str]]) -> dict[str, Any]:
             fields.append(field_info)
 
         except KeyError as e:
-            raise KeyError(f"KeyError: Missing expected key {e} in field definition: {field}")
+            raise KeyError(
+                f"KeyError: Missing expected key {e} in field definition: {field}"
+            )
         except TypeError as e:
             raise TypeError[
                 f"TypeError: Invalid data type encountered while processing field: {field}. Error: {e}"

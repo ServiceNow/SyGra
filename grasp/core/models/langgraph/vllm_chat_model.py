@@ -59,7 +59,9 @@ class CustomVLLMChatModel(GraspBaseChatModel):
         None
         """
         super().__init__(model_config)
-        self._model_serving_name = model_config.get("model_serving_name", self._get_name())
+        self._model_serving_name = model_config.get(
+            "model_serving_name", self._get_name()
+        )
 
     @property
     def _llm_type(self) -> str:
