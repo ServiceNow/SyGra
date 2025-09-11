@@ -1,9 +1,9 @@
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from langchain_core.messages import BaseMessage
 from langchain_openai.chat_models.base import _convert_message_to_dict
-from ollama import Client, AsyncClient
-from pydantic import BaseModel, Field, ConfigDict
+from ollama import AsyncClient, Client
+from pydantic import BaseModel, ConfigDict, Field
 
 from grasp.core.models.client.base_client import BaseClient
 from grasp.logger.logger_config import logger
@@ -11,10 +11,10 @@ from grasp.utils import constants
 
 
 class OllamaClientConfig(BaseModel):
-    host: str = Field(default="http://localhost:11434",
-                      description="Base URL for the Ollama API")
-    timeout: int = Field(default=constants.DEFAULT_TIMEOUT,
-                         description="Request timeout in seconds")
+    host: str = Field(default="http://localhost:11434", description="Base URL for the Ollama API")
+    timeout: int = Field(
+        default=constants.DEFAULT_TIMEOUT, description="Request timeout in seconds"
+    )
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -23,8 +23,13 @@ class OllamaClientConfig(BaseModel):
 
 
 class OllamaClient(BaseClient):
-    def __init__(self, async_client=False, chat_completions_api=True,
-                 stop: Optional[List[str]] = None, **client_kwargs):
+    def __init__(
+        self,
+        async_client=False,
+        chat_completions_api=True,
+        stop: Optional[List[str]] = None,
+        **client_kwargs,
+    ):
         """
         Initialize an Ollama client.
 
@@ -40,13 +45,22 @@ class OllamaClient(BaseClient):
         validated_config = OllamaClientConfig(**client_kwargs)
         validated_client_kwargs = validated_config.model_dump()
 
-        self.client = AsyncClient(**validated_client_kwargs) if async_client else Client(**validated_client_kwargs)
+        self.client = (
+            AsyncClient(**validated_client_kwargs)
+            if async_client
+            else Client(**validated_client_kwargs)
+        )
         self.async_client = async_client
         self.chat_completions_api = chat_completions_api
         self.tools = None
 
-    def build_request(self, messages: List[BaseMessage] = None, formatted_prompt: str = None,
-                      stop: Optional[List[str]] = None, **kwargs):
+    def build_request(
+        self,
+        messages: List[BaseMessage] = None,
+        formatted_prompt: str = None,
+        stop: Optional[List[str]] = None,
+        **kwargs,
+    ):
         """
         Build a request payload for the Ollama model.
 
@@ -75,20 +89,26 @@ class OllamaClient(BaseClient):
                 return payload
             else:
                 logger.error(
-                    "messages passed is None or empty. Please provide valid messages to build request with chat completions API.")
+                    "messages passed is None or empty. Please provide valid messages to build request with chat completions API."
+                )
                 raise ValueError(
-                    "messages passed is None or empty. Please provide valid messages to build request with chat completions API.")
+                    "messages passed is None or empty. Please provide valid messages to build request with chat completions API."
+                )
         else:
             if formatted_prompt is not None:
                 payload["prompt"] = formatted_prompt
                 return payload
             else:
                 logger.error(
-                    "Formatted prompt passed is None. Please provide a valid formatted prompt for completion API.")
+                    "Formatted prompt passed is None. Please provide a valid formatted prompt for completion API."
+                )
                 raise ValueError(
-                    "Formatted prompt passed is None. Please provide a valid formatted prompt for completion API.")
+                    "Formatted prompt passed is None. Please provide a valid formatted prompt for completion API."
+                )
 
-    def send_request(self, payload, model_name: str, generation_params: Optional[Dict[str, Any]] = None):
+    def send_request(
+        self, payload, model_name: str, generation_params: Optional[Dict[str, Any]] = None
+    ):
         """
         Send a request to the Ollama API.
 
@@ -111,12 +131,9 @@ class OllamaClient(BaseClient):
                 messages=payload["messages"],
                 options=generation_params,
                 tools=self.tools,
-                format=format
+                format=format,
             )
         else:
             return self.client.generate(
-                model=model_name,
-                prompt=payload["prompt"],
-                options=generation_params,
-                format=format
+                model=model_name, prompt=payload["prompt"], options=generation_params, format=format
             )

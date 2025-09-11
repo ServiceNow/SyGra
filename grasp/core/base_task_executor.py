@@ -1,22 +1,22 @@
+import ast
 import copy
 import hashlib
 import json
-import ast
+import os
 import types
 from abc import ABC
 from datetime import datetime
-from typing import Any, Union, Optional
+from typing import Any, Optional, Union
+
 import datasets
 import numpy as np
-from PIL import Image
-import os
 from langgraph.graph import StateGraph
+from PIL import Image
 
-from grasp.tools.toolkits.data_quality.processor import DataQuality
 from grasp.core.dataset.dataset_config import (
     DataSourceConfig,
-    OutputConfig,
     DataSourceType,
+    OutputConfig,
     OutputType,
 )
 from grasp.core.dataset.dataset_processor import DatasetProcessor
@@ -27,7 +27,8 @@ from grasp.core.graph.grasp_state import GraspState
 from grasp.core.graph.langgraph.graph_builder import LangGraphBuilder
 from grasp.logger.logger_config import logger
 from grasp.processors.output_record_generator import BaseOutputGenerator
-from grasp.utils import utils, constants
+from grasp.tools.toolkits.data_quality.processor import DataQuality
+from grasp.utils import constants, utils
 
 
 class BaseTaskExecutor(ABC):
@@ -39,12 +40,8 @@ class BaseTaskExecutor(ABC):
         self.source_config: Optional[DataSourceConfig] = None
         self.output_config: Optional[OutputConfig] = None
 
-        config_file_path = utils.get_file_in_task_dir(
-            self.task_name, "graph_config.yaml"
-        )
-        self.config = graph_config_dict or utils.load_yaml_file(
-            filepath=config_file_path
-        )
+        config_file_path = utils.get_file_in_task_dir(self.task_name, "graph_config.yaml")
+        self.config = graph_config_dict or utils.load_yaml_file(filepath=config_file_path)
 
         data_config = self.config.get("data_config", {})
         config_resumable = data_config.get("resumable", False)
@@ -59,9 +56,7 @@ class BaseTaskExecutor(ABC):
             self.dataset,
             output_transform_args,
         )
-        self.output_generator: Optional[BaseOutputGenerator] = (
-            self._init_output_generator()
-        )
+        self.output_generator: Optional[BaseOutputGenerator] = self._init_output_generator()
 
     @staticmethod
     def _configure_resume_behavior(args: Any, config_resumable: bool) -> bool:
@@ -77,9 +72,7 @@ class BaseTaskExecutor(ABC):
         """
         if hasattr(args, "resume") and args.resume is not None:
             resumable = (
-                args.resume
-                if isinstance(args.resume, bool)
-                else ast.literal_eval(str(args.resume))
+                args.resume if isinstance(args.resume, bool) else ast.literal_eval(str(args.resume))
             )
             logger.info(
                 f"Resumable execution {'enabled' if resumable else 'disabled'} by command-line argument"
@@ -176,9 +169,7 @@ class BaseTaskExecutor(ABC):
             logger.info(f"Initialized output generator: {gen_class_str}")
             return output_generator
         except Exception as e:
-            logger.error(
-                f"Could not initialize output generator '{gen_class_str}': {e}"
-            )
+            logger.error(f"Could not initialize output generator '{gen_class_str}': {e}")
             return None
 
     # Initialize and return the langgraph StateGraph object for the task
@@ -205,9 +196,7 @@ class BaseTaskExecutor(ABC):
         else:
             return self.assign_ids(data)
 
-    def _get_or_infer_features(
-        self, dataset: datasets.IterableDataset
-    ) -> datasets.Features:
+    def _get_or_infer_features(self, dataset: datasets.IterableDataset) -> datasets.Features:
         """Get existing features or infer them if missing/unknown."""
         features = dataset.features or datasets.Features()
 
@@ -221,9 +210,7 @@ class BaseTaskExecutor(ABC):
 
         return features
 
-    def _infer_features_from_sample(
-        self, dataset: datasets.IterableDataset
-    ) -> datasets.Features:
+    def _infer_features_from_sample(self, dataset: datasets.IterableDataset) -> datasets.Features:
         """Infer dataset features by sampling the first record - only called when needed."""
         features = datasets.Features()
 
@@ -236,9 +223,7 @@ class BaseTaskExecutor(ABC):
 
         return features
 
-    def _infer_field_type(
-        self, field_name: str, field_value: Any
-    ) -> datasets.Features.type:
+    def _infer_field_type(self, field_name: str, field_value: Any) -> datasets.Features.type:
         """Infer the appropriate datasets feature type for a field value."""
         if isinstance(field_value, str):
             return datasets.Value("string")
@@ -262,11 +247,7 @@ class BaseTaskExecutor(ABC):
                 and "bytes" in field_value
                 and ("audio" in field_name.lower() or "image" in field_name.lower())
             ):
-                return (
-                    datasets.Audio()
-                    if "audio" in field_name.lower()
-                    else datasets.Image()
-                )
+                return datasets.Audio() if "audio" in field_name.lower() else datasets.Image()
             elif field_value:
                 return datasets.Features(
                     {
@@ -285,9 +266,7 @@ class BaseTaskExecutor(ABC):
                     return datasets.Sequence(
                         datasets.Features(
                             {
-                                key: self._infer_field_type(
-                                    f"{field_name}[].{key}", value
-                                )
+                                key: self._infer_field_type(f"{field_name}[].{key}", value)
                                 for key, value in first_item.items()
                             }
                         )
@@ -311,9 +290,7 @@ class BaseTaskExecutor(ABC):
                         )
                 else:
                     # List of primitives
-                    return datasets.Sequence(
-                        self._infer_field_type(f"{field_name}[]", first_item)
-                    )
+                    return datasets.Sequence(self._infer_field_type(f"{field_name}[]", first_item))
             else:
                 # Empty list - default to sequence of strings
                 return datasets.Sequence(datasets.Value("string"))
@@ -375,9 +352,7 @@ class BaseTaskExecutor(ABC):
         else:
             raise ValueError(f"Unsupported data source type: {self.source_config.type}")
 
-    def _read_data(
-        self, reader
-    ) -> Union[list[dict], datasets.Dataset, datasets.IterableDataset]:
+    def _read_data(self, reader) -> Union[list[dict], datasets.Dataset, datasets.IterableDataset]:
         """Read data from the configured source using the provided reader"""
         try:
             if self.source_config.shard is None:
@@ -406,9 +381,7 @@ class BaseTaskExecutor(ABC):
         """
         config = utils.load_yaml_file(constants.GRASP_CONFIG)
         default_cfgs = (config or {}).get("default_transformations", [])
-        custom_cfgs = [
-            cfg.model_dump() for cfg in (source_config.transformations or [])
-        ]
+        custom_cfgs = [cfg.model_dump() for cfg in (source_config.transformations or [])]
         all_transforms = default_cfgs + custom_cfgs
 
         if not all_transforms:
@@ -436,9 +409,7 @@ class BaseTaskExecutor(ABC):
         instances = []
         for cfg in transform_cfgs:
             if "transform" not in cfg:
-                raise ValueError(
-                    f"Missing 'transform' key in transformation config: {cfg}"
-                )
+                raise ValueError(f"Missing 'transform' key in transformation config: {cfg}")
             transform_fn = utils.get_func_from_str(cfg["transform"])()
             params = cfg.get("params", {})
             instances.append((transform_fn, params))
@@ -467,9 +438,7 @@ class BaseTaskExecutor(ABC):
 
         def _apply_transform_record(record: dict[str, Any]) -> dict[str, Any]:
             for instance, params in transform_instances:
-                record = instance.transform([record], params)[
-                    0
-                ]  # Apply transform to single record
+                record = instance.transform([record], params)[0]  # Apply transform to single record
             return record
 
         return data.map(_apply_transform_record)
@@ -525,9 +494,7 @@ class BaseTaskExecutor(ABC):
                     if isinstance(record[j], dict):
                         record[j] = self.add_id(record[j])
             else:
-                raise ValueError(
-                    f"Unsupported data format: {type(record)}. Expected dict or list."
-                )
+                raise ValueError(f"Unsupported data format: {type(record)}. Expected dict or list.")
 
         return full_data
 
@@ -584,11 +551,7 @@ class BaseTaskExecutor(ABC):
             except Exception as e:
                 logger.warning(f"Error reading metadata file: {e}")
 
-        if (
-            self.resumable
-            and existing_output_file
-            and os.path.exists(existing_output_file)
-        ):
+        if self.resumable and existing_output_file and os.path.exists(existing_output_file):
             out_file = existing_output_file
             out_file_type = os.path.splitext(existing_output_file)[1].lstrip(".")
             logger.info(f"Resuming with existing output file: {out_file}")
@@ -600,19 +563,14 @@ class BaseTaskExecutor(ABC):
             if self.output_dir:
                 if not os.path.exists(self.output_dir):
                     os.makedirs(self.output_dir)
-                out_file = (
-                    self.output_dir
-                    + f"/{run_name_prefix}output{ts_suffix}.{out_file_type}"
-                )
+                out_file = self.output_dir + f"/{run_name_prefix}output{ts_suffix}.{out_file_type}"
             else:
                 out_file = utils.get_file_in_task_dir(
                     self.args.task,
                     f"{run_name_prefix}output{ts_suffix}.{out_file_type}",
                 )
         if not self.resumable and os.path.exists(out_file):
-            logger.info(
-                f"Deleting existing output file since resumable=False: {out_file}"
-            )
+            logger.info(f"Deleting existing output file since resumable=False: {out_file}")
             utils.delete_file(out_file)
 
             if os.path.exists(metadata_path):

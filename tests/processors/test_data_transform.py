@@ -1,22 +1,25 @@
+import base64
 import io
+import os
 import sys
 import tempfile
+from io import BytesIO
 from pathlib import Path
-
-import pytest
-import soundfile as sf
 from unittest.mock import patch
+
 import matplotlib.pyplot as plt
 import numpy as np
-from io import BytesIO
-import base64
-import os
+import pytest
+import soundfile as sf
 from PIL import Image
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from grasp.processors.data_transform import SkipRecords
-from grasp.processors.data_transform import CreateImageUrlTransform, CreateAudioUrlTransform
+from grasp.processors.data_transform import (
+    CreateAudioUrlTransform,
+    CreateImageUrlTransform,
+    SkipRecords,
+)
 
 # -----------------------------
 # Fixtures
@@ -48,11 +51,7 @@ def test_skip_records_range1():
     new_dataset = obj.transform(skip_dataset, params)
     # old dataset should be 100 records and new dataset should have 80 datasets
     # and first record is 10, skipping 0-9 and 91-99
-    assert (
-        len(skip_dataset) == 100
-        and len(new_dataset) == 80
-        and new_dataset[0]["id"] == 10
-    )
+    assert len(skip_dataset) == 100 and len(new_dataset) == 80 and new_dataset[0]["id"] == 10
 
 
 def test_skip_records_range2():
@@ -75,11 +74,7 @@ def test_skip_records_count():
     new_dataset = obj.transform(skip_dataset, params)
     # old dataset should be 100 records and new dataset should have 80 datasets
     # and first record is 10, skipping 0-9 and 91-99
-    assert (
-        len(skip_dataset) == 100
-        and len(new_dataset) == 80
-        and new_dataset[0]["id"] == 10
-    )
+    assert len(skip_dataset) == 100 and len(new_dataset) == 80 and new_dataset[0]["id"] == 10
 
 
 # =============================================================================
@@ -91,9 +86,7 @@ def test_skip_records_count():
 
 @patch("grasp.utils.image_utils.get_image_fields", return_value=["img"])
 @patch("grasp.utils.image_utils.is_data_url", return_value=False)
-def test_image_transform_with_generated_chart(
-    mock_is_data_url, mock_get_fields, image_transform
-):
+def test_image_transform_with_generated_chart(mock_is_data_url, mock_get_fields, image_transform):
     # Generate random data and create a chart
     x = np.linspace(0, 10, 100)
     y = np.sin(x) + np.random.normal(0, 0.1, size=100)
@@ -130,9 +123,7 @@ def test_image_transform_with_generated_chart(
 
 @patch("grasp.utils.image_utils.get_image_fields", return_value=["img"])
 @patch("grasp.utils.image_utils.is_data_url", return_value=False)
-def test_image_transform_with_dict_bytes(
-    mock_is_data_url, mock_get_fields, image_transform
-):
+def test_image_transform_with_dict_bytes(mock_is_data_url, mock_get_fields, image_transform):
     img = Image.new("RGB", (10, 10), color="red")
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -146,9 +137,7 @@ def test_image_transform_with_dict_bytes(
 
 @patch("grasp.utils.image_utils.get_image_fields", return_value=["img"])
 @patch("grasp.utils.image_utils.is_data_url", return_value=False)
-def test_image_transform_with_raw_bytes(
-    mock_is_data_url, mock_get_fields, image_transform
-):
+def test_image_transform_with_raw_bytes(mock_is_data_url, mock_get_fields, image_transform):
     img = Image.new("RGB", (5, 5), color="blue")
     buf = io.BytesIO()
     img.save(buf, format="JPEG")
@@ -196,16 +185,14 @@ def test_image_transform_with_invalid_list_items(
 
 # --- Already Base64 in List ---
 
-import matplotlib.pyplot as plt
-import numpy as np
-from io import BytesIO
 import base64
 import os
-from PIL import Image
+from io import BytesIO
 from unittest.mock import patch
 
-from unittest.mock import patch
-import os
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image
 
 
 @patch("grasp.utils.image_utils.get_image_fields", return_value=["img"])
@@ -248,9 +235,7 @@ def test_image_transform_with_empty_string(mock_get_fields, image_transform):
 
 @patch("grasp.utils.audio_utils.get_audio_fields", return_value=["audio"])
 @patch("grasp.utils.audio_utils.is_data_url", return_value=False)
-@patch(
-    "grasp.utils.audio_utils.get_audio_url", return_value="data:audio/wav;base64,dummybase64"
-)
+@patch("grasp.utils.audio_utils.get_audio_url", return_value="data:audio/wav;base64,dummybase64")
 @patch("grasp.utils.audio_utils.load_audio")
 def test_audio_transform_with_temp_audio_file(
     mock_load_audio,
@@ -289,9 +274,7 @@ def test_audio_transform_with_temp_audio_file(
 
 @patch("grasp.utils.audio_utils.get_audio_fields", return_value=["audio"])
 @patch("grasp.utils.audio_utils.is_data_url", return_value=False)
-def test_audio_transform_with_hf_dict(
-    mock_is_data_url, mock_get_fields, audio_transform
-):
+def test_audio_transform_with_hf_dict(mock_is_data_url, mock_get_fields, audio_transform):
     audio_dict = {"array": np.zeros(44100), "sampling_rate": 44100}
     data = [{"audio": audio_dict}]
     result = audio_transform.transform(data)
@@ -303,9 +286,7 @@ def test_audio_transform_with_hf_dict(
 
 @patch("grasp.utils.audio_utils.get_audio_fields", return_value=["audio"])
 @patch("grasp.utils.audio_utils.is_data_url", return_value=False)
-@patch(
-    "grasp.utils.audio_utils.get_audio_url", return_value="data:audio/wav;base64,dummybase64"
-)
+@patch("grasp.utils.audio_utils.get_audio_url", return_value="data:audio/wav;base64,dummybase64")
 @patch("grasp.utils.audio_utils.load_audio")
 def test_audio_transform_with_output_field_map(
     mock_load_audio,
@@ -330,9 +311,7 @@ def test_audio_transform_with_output_field_map(
 
     # Input data with field remapping
     data = [{"audio": audio_path}]
-    result = audio_transform.transform(
-        data, {"output_fields": {"audio": "audio_base64"}}
-    )
+    result = audio_transform.transform(data, {"output_fields": {"audio": "audio_base64"}})
 
     # Assertion: check remapped field exists
     assert "audio_base64" in result[0]

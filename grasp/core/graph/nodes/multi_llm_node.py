@@ -3,7 +3,7 @@ from typing import Any
 
 from grasp.core.graph.nodes.base_node import BaseNode
 from grasp.core.graph.nodes.llm_node import LLMNode
-from grasp.utils import utils, constants
+from grasp.utils import constants, utils
 
 
 class MultiLLMNode(BaseNode):
@@ -38,9 +38,7 @@ class MultiLLMNode(BaseNode):
             if isclass(self.multi_llm_post_process):
                 self.multi_llm_post_process = self.multi_llm_post_process().apply
 
-    def _default_multi_llm_post_process(
-        self, model_outputs: dict[str, Any]
-    ) -> dict[str, Any]:
+    def _default_multi_llm_post_process(self, model_outputs: dict[str, Any]) -> dict[str, Any]:
         updated_model_outputs = {}
         for model, messages in model_outputs.items():
             updated_model_outputs[model] = messages[self.output_key]

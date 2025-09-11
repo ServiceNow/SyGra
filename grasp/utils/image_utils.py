@@ -128,11 +128,10 @@ def is_image_like(val: Any) -> bool:
         return is_valid_image_bytes(val)
     elif isinstance(val, str):
         return (
-            (
-                val.startswith("http") and val.lower().endswith(COMMON_IMAGE_EXTENSIONS)
-            )  # URL check
-            or val.lower().endswith(COMMON_IMAGE_EXTENSIONS)  # Local file check
-        )
+            val.startswith("http") and val.lower().endswith(COMMON_IMAGE_EXTENSIONS)
+        ) or val.lower().endswith(  # URL check
+            COMMON_IMAGE_EXTENSIONS
+        )  # Local file check
     return False
 
 
@@ -158,9 +157,7 @@ def get_image_url(image: Image.Image) -> str:
         return ""
 
 
-def expand_image_item(
-    item: dict[str, Any], state: dict[str, Any]
-) -> list[dict[str, Any]]:
+def expand_image_item(item: dict[str, Any], state: dict[str, Any]) -> list[dict[str, Any]]:
     """
     Expand an image item with a variable URL into multiple items if necessary.
 

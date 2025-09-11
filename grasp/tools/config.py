@@ -1,4 +1,5 @@
 from typing import Any, Optional
+
 from pydantic import BaseModel, RootModel, field_validator
 
 from grasp.core.dataset.dataset_config import DataSourceConfig, OutputConfig

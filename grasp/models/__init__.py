@@ -1,14 +1,14 @@
 from typing import Any, Optional
 
 try:
-    from grasp.core.models.model_factory import ModelFactory
     from grasp.core.models.custom_models import (
-        CustomVLLM,
-        CustomOpenAI,
-        CustomTGI,
         CustomAzure,
         CustomMistralAPI,
+        CustomOpenAI,
+        CustomTGI,
+        CustomVLLM,
     )
+    from grasp.core.models.model_factory import ModelFactory
     from grasp.utils import utils
 
     MODELS_AVAILABLE = True

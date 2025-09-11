@@ -1,14 +1,14 @@
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompt_values import ChatPromptValue
 from pydantic import BaseModel
 
@@ -24,18 +24,12 @@ class TestCustomOllama(unittest.TestCase):
         # Base model configuration
         self.base_config = {
             "name": "qwen3:1.7b",
-            "parameters": {
-                "temperature": 0.7,
-                "max_tokens": 100
-            },
+            "parameters": {"temperature": 0.7, "max_tokens": 100},
             "url": "http://localhost:11434",
         }
 
         # Configuration with completions API enabled
-        self.completions_config = {
-            **self.base_config,
-            "completions_api": True
-        }
+        self.completions_config = {**self.base_config, "completions_api": True}
 
         # Configuration with structured output
         self.structured_config = {
@@ -44,19 +38,16 @@ class TestCustomOllama(unittest.TestCase):
                 "enabled": True,
                 "schema": {
                     "type": "object",
-                    "properties": {
-                        "name": {"type": "string"},
-                        "age": {"type": "integer"}
-                    },
-                    "required": ["name", "age"]
-                }
-            }
+                    "properties": {"name": {"type": "string"}, "age": {"type": "integer"}},
+                    "required": ["name", "age"],
+                },
+            },
         }
 
         # Mock messages
         self.messages = [
             SystemMessage(content="You are a helpful assistant"),
-            HumanMessage(content="Hello, how are you?")
+            HumanMessage(content="Hello, how are you?"),
         ]
         self.chat_input = ChatPromptValue(messages=self.messages)
 
@@ -70,7 +61,7 @@ class TestCustomOllama(unittest.TestCase):
         self.assertEqual(custom_ollama.generation_params, self.base_config["parameters"])
         self.assertEqual(custom_ollama.name(), "qwen3:1.7b")
 
-    @patch('grasp.core.models.custom_models.logger')
+    @patch("grasp.core.models.custom_models.logger")
     def test_validate_completions_api_support(self, mock_logger):
         """Test _validate_completions_api_support method which should allow completions API"""
         custom_ollama = CustomOllama(self.completions_config)
@@ -86,10 +77,10 @@ class TestCustomOllama(unittest.TestCase):
         """Test _generate_text method with chat completions API"""
         # Setup mock client
         mock_client = MagicMock()
-        mock_client.build_request.return_value = {"messages": [{"role": "user", "content": "Hello"}]}
-        mock_client.send_request = AsyncMock(return_value={
-            "message": {"content": "Hello there!"}
-        })
+        mock_client.build_request.return_value = {
+            "messages": [{"role": "user", "content": "Hello"}]
+        }
+        mock_client.send_request = AsyncMock(return_value={"message": {"content": "Hello there!"}})
 
         # Setup custom model with mock client
         custom_ollama = CustomOllama(self.base_config)
@@ -108,23 +99,24 @@ class TestCustomOllama(unittest.TestCase):
         mock_client.send_request.assert_awaited_once_with(
             {"messages": [{"role": "user", "content": "Hello"}]},
             "qwen3:1.7b",
-            self.base_config["parameters"]
+            self.base_config["parameters"],
         )
 
-    @patch('grasp.core.models.custom_models.ClientFactory')
-    @patch('grasp.core.models.custom_models.BaseCustomModel._set_client')
-    @patch('grasp.core.models.custom_models.BaseCustomModel._finalize_response')
-    @patch('grasp.core.models.custom_models.BaseCustomModel.get_chat_formatted_text')
+    @patch("grasp.core.models.custom_models.ClientFactory")
+    @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
+    @patch("grasp.core.models.custom_models.BaseCustomModel._finalize_response")
+    @patch("grasp.core.models.custom_models.BaseCustomModel.get_chat_formatted_text")
     @pytest.mark.asyncio
-    async def test_generate_text_completions_api(self, mock_get_formatted, mock_finalize, mock_set_client,
-                                                 mock_client_factory):
+    async def test_generate_text_completions_api(
+        self, mock_get_formatted, mock_finalize, mock_set_client, mock_client_factory
+    ):
         """Test _generate_text method with completions API"""
         # Setup mock client
         mock_client = MagicMock()
         mock_client.build_request.return_value = {"prompt": "Hello, how are you?"}
-        mock_client.send_request = AsyncMock(return_value={
-            "response": "I'm doing well, thank you!"
-        })
+        mock_client.send_request = AsyncMock(
+            return_value={"response": "I'm doing well, thank you!"}
+        )
 
         # Setup custom model with mock client
         custom_ollama = CustomOllama(self.completions_config)
@@ -144,20 +136,22 @@ class TestCustomOllama(unittest.TestCase):
         # Verify client calls
         mock_client.build_request.assert_called_once_with(formatted_prompt="Hello, how are you?")
         mock_client.send_request.assert_awaited_once_with(
-            {"prompt": "Hello, how are you?"},
-            "qwen3:1.7b",
-            self.completions_config["parameters"]
+            {"prompt": "Hello, how are you?"}, "qwen3:1.7b", self.completions_config["parameters"]
         )
 
-    @patch('grasp.core.models.custom_models.ClientFactory')
-    @patch('grasp.core.models.custom_models.BaseCustomModel._set_client')
-    @patch('grasp.core.models.custom_models.BaseCustomModel._finalize_response')
+    @patch("grasp.core.models.custom_models.ClientFactory")
+    @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
+    @patch("grasp.core.models.custom_models.BaseCustomModel._finalize_response")
     @pytest.mark.asyncio
-    async def test_generate_text_exception(self, mock_finalize, mock_set_client, mock_client_factory):
+    async def test_generate_text_exception(
+        self, mock_finalize, mock_set_client, mock_client_factory
+    ):
         """Test _generate_text method with an exception"""
         # Setup mock client to raise an exception
         mock_client = MagicMock()
-        mock_client.build_request.return_value = {"messages": [{"role": "user", "content": "Hello"}]}
+        mock_client.build_request.return_value = {
+            "messages": [{"role": "user", "content": "Hello"}]
+        }
         mock_client.send_request = AsyncMock(side_effect=Exception("Test error"))
 
         # Setup custom model with mock client
@@ -172,13 +166,14 @@ class TestCustomOllama(unittest.TestCase):
         self.assertTrue(resp_text.startswith(f"{constants.ERROR_PREFIX} Ollama request failed"))
         self.assertEqual(resp_status, 999)
 
-    @patch('grasp.core.models.custom_models.ClientFactory')
-    @patch('grasp.core.models.custom_models.BaseCustomModel._set_client')
-    @patch('grasp.core.models.custom_models.BaseCustomModel._finalize_response')
-    @patch('grasp.core.models.custom_models.json.loads')
+    @patch("grasp.core.models.custom_models.ClientFactory")
+    @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
+    @patch("grasp.core.models.custom_models.BaseCustomModel._finalize_response")
+    @patch("grasp.core.models.custom_models.json.loads")
     @pytest.mark.asyncio
-    async def test_generate_native_structured_output(self, mock_json_loads, mock_finalize, mock_set_client,
-                                                     mock_client_factory):
+    async def test_generate_native_structured_output(
+        self, mock_json_loads, mock_finalize, mock_set_client, mock_client_factory
+    ):
         """Test _generate_native_structured_output method"""
 
         # Define a simple Pydantic model for testing
@@ -188,10 +183,12 @@ class TestCustomOllama(unittest.TestCase):
 
         # Setup mock client
         mock_client = MagicMock()
-        mock_client.build_request.return_value = {"messages": [{"role": "user", "content": "Hello"}]}
-        mock_client.send_request = AsyncMock(return_value={
-            "message": {"content": '{"name": "John", "age": 30}'}
-        })
+        mock_client.build_request.return_value = {
+            "messages": [{"role": "user", "content": "Hello"}]
+        }
+        mock_client.send_request = AsyncMock(
+            return_value={"message": {"content": '{"name": "John", "age": 30}'}}
+        )
 
         # Setup finalize response mock to return AIMessage with json content
         mock_finalize.return_value = AIMessage(content='{"name": "John", "age": 30}')
@@ -206,9 +203,7 @@ class TestCustomOllama(unittest.TestCase):
         # Call _generate_native_structured_output
         model_params = ModelParams(url="http://localhost:11434")
         result = await custom_ollama._generate_native_structured_output(
-            self.chat_input,
-            model_params,
-            TestPerson
+            self.chat_input, model_params, TestPerson
         )
 
         # Verify result is an AIMessage
@@ -216,24 +211,20 @@ class TestCustomOllama(unittest.TestCase):
 
         # Verify client calls with format parameter
         expected_schema = TestPerson.model_json_schema()
-        extra_params = {
-            **self.structured_config["parameters"],
-            "format": expected_schema
-        }
+        extra_params = {**self.structured_config["parameters"], "format": expected_schema}
 
         mock_client.build_request.assert_called_once_with(messages=self.messages)
         mock_client.send_request.assert_awaited_once_with(
-            {"messages": [{"role": "user", "content": "Hello"}]},
-            "qwen3:1.7b",
-            extra_params
+            {"messages": [{"role": "user", "content": "Hello"}]}, "qwen3:1.7b", extra_params
         )
 
-    @patch('grasp.core.models.custom_models.ClientFactory')
-    @patch('grasp.core.models.custom_models.BaseCustomModel._set_client')
-    @patch('grasp.core.models.custom_models.BaseCustomModel._generate_fallback_structured_output')
+    @patch("grasp.core.models.custom_models.ClientFactory")
+    @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
+    @patch("grasp.core.models.custom_models.BaseCustomModel._generate_fallback_structured_output")
     @pytest.mark.asyncio
-    async def test_generate_native_structured_output_exception(self, mock_fallback, mock_set_client,
-                                                               mock_client_factory):
+    async def test_generate_native_structured_output_exception(
+        self, mock_fallback, mock_set_client, mock_client_factory
+    ):
         """Test _generate_native_structured_output method with an exception that falls back"""
 
         # Define a simple Pydantic model for testing
@@ -243,7 +234,9 @@ class TestCustomOllama(unittest.TestCase):
 
         # Setup mock client to raise an exception
         mock_client = MagicMock()
-        mock_client.build_request.return_value = {"messages": [{"role": "user", "content": "Hello"}]}
+        mock_client.build_request.return_value = {
+            "messages": [{"role": "user", "content": "Hello"}]
+        }
         mock_client.send_request = AsyncMock(side_effect=Exception("Test error"))
 
         # Setup fallback mock
@@ -256,22 +249,16 @@ class TestCustomOllama(unittest.TestCase):
         # Call _generate_native_structured_output
         model_params = ModelParams(url="http://localhost:11434")
         result = await custom_ollama._generate_native_structured_output(
-            self.chat_input,
-            model_params,
-            TestPerson
+            self.chat_input, model_params, TestPerson
         )
 
         # Verify fallback method was called
-        mock_fallback.assert_awaited_once_with(
-            self.chat_input,
-            model_params,
-            TestPerson
-        )
+        mock_fallback.assert_awaited_once_with(self.chat_input, model_params, TestPerson)
 
         # Verify result is the fallback result
         self.assertEqual(result.content, '{"name": "John", "age": 30}')
 
-    @patch('grasp.core.models.custom_models.ClientFactory.create_client')
+    @patch("grasp.core.models.custom_models.ClientFactory.create_client")
     @pytest.mark.asyncio
     async def test_set_client(self, mock_create_client):
         """Test _set_client method"""
@@ -283,17 +270,11 @@ class TestCustomOllama(unittest.TestCase):
         custom_ollama = CustomOllama(self.base_config)
 
         # Call _set_client
-        custom_ollama._set_client(
-            url="http://localhost:11434",
-            async_client=True
-        )
+        custom_ollama._set_client(url="http://localhost:11434", async_client=True)
 
         # Verify client was created with the right parameters
         mock_create_client.assert_called_once_with(
-            self.base_config,
-            "http://localhost:11434",
-            "test-auth-token",
-            True
+            self.base_config, "http://localhost:11434", "test-auth-token", True
         )
 
         # Verify client was set

@@ -1,16 +1,16 @@
-from inspect import signature, isclass
-from typing import Any
 import re
+from inspect import isclass, signature
+from typing import Any
 
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from grasp.core.graph.grasp_message import GraspMessage
-from grasp.logger.logger_config import logger
 from grasp.core.graph.nodes.base_node import BaseNode
-from grasp.utils import utils, constants
-from grasp.utils.image_utils import expand_image_item
+from grasp.logger.logger_config import logger
+from grasp.utils import constants, utils
 from grasp.utils.audio_utils import expand_audio_item
+from grasp.utils.image_utils import expand_image_item
 
 
 class LLMNode(BaseNode):
@@ -34,14 +34,14 @@ class LLMNode(BaseNode):
         self.input_key = self.node_config.get("input_key", "messages")
         self.output_keys = self.node_config.get(constants.GRAPH_OUTPUT_KEY, "messages")
         self.output_role = self.node_config.get("output_role", "assistant")
-        assert self.node_config.get("output_vars") is None, (
-            f"output_vars is not supported, use {constants.GRAPH_OUTPUT_KEY}."
-        )
+        assert (
+            self.node_config.get("output_vars") is None
+        ), f"output_vars is not supported, use {constants.GRAPH_OUTPUT_KEY}."
 
         if self.output_keys and isinstance(self.output_keys, list):
-            assert "post_process" in self.node_config, (
-                "Post processor is needed for multiple output keys."
-            )
+            assert (
+                "post_process" in self.node_config
+            ), "Post processor is needed for multiple output keys."
 
         self.role_cls_map = {
             "user": HumanMessage,
@@ -55,9 +55,7 @@ class LLMNode(BaseNode):
 
         self.post_process = self._default_llm_post_process
         if "post_process" in self.node_config:
-            self.post_process = utils.get_func_from_str(
-                self.node_config["post_process"]
-            )
+            self.post_process = utils.get_func_from_str(self.node_config["post_process"])
 
         self._initialize_model()
 
@@ -87,9 +85,7 @@ class LLMNode(BaseNode):
         if self.output_keys == "messages":
             output_dict = {
                 self.output_keys: [
-                    self.role_cls_map[self.output_role](
-                        response.content, name=self.name
-                    )
+                    self.role_cls_map[self.output_role](response.content, name=self.name)
                 ]
             }
         else:
@@ -97,14 +93,10 @@ class LLMNode(BaseNode):
         return output_dict
 
     def _generate_prompt(self, state: dict[str, Any]):
-        messages = utils.convert_messages_from_config_to_chat_format(
-            self.node_config["prompt"]
-        )
+        messages = utils.convert_messages_from_config_to_chat_format(self.node_config["prompt"])
         return self._generate_prompt_tmpl_from_msg(state, messages)
 
-    def _inject_history_multiturn(
-        self, state: dict[str, Any], msg_list, window_size: int = 5
-    ):
+    def _inject_history_multiturn(self, state: dict[str, Any], msg_list, window_size: int = 5):
         updated_msg_list = []
         chat_history = state.get(constants.VAR_CHAT_HISTORY, [])
 
@@ -124,16 +116,12 @@ class LLMNode(BaseNode):
         updated_msg_list.extend(msg_list)
         return updated_msg_list
 
-    def _inject_history_singleturn(
-        self, state: dict[str, Any], msg_list, window_size: int = 5
-    ):
+    def _inject_history_singleturn(self, state: dict[str, Any], msg_list, window_size: int = 5):
         prompt_lines = constants.PREFIX_SINGLETURN_CONV.copy()
         updated_msg_list = []
         chat_history = state[constants.VAR_CHAT_HISTORY]
         ## Adding chat_history[0] with window sized history because organizer instruction is at chat_history[0]
-        recent_history = (
-            [chat_history[0]] + chat_history[-window_size:] if chat_history else []
-        )
+        recent_history = [chat_history[0]] + chat_history[-window_size:] if chat_history else []
         for i, record in enumerate(recent_history):
             agent_name = record["name"]
             if i == 0:
@@ -153,9 +141,7 @@ class LLMNode(BaseNode):
         msg_list = prompt.to_messages()
         updated_msg_list = msg_list
         chat_conversation = self.graph_properties.get("chat_conversation", None)
-        chat_history_window_size = self.graph_properties.get(
-            "chat_history_window_size", 5
-        )
+        chat_history_window_size = self.graph_properties.get("chat_history_window_size", 5)
         chat_history_enabled = self.node_config.get("chat_history", False)
         # Inject Chat history into msg_list
         if chat_conversation == constants.CHAT_CONVERSATION_MULTITURN:
@@ -198,9 +184,7 @@ class LLMNode(BaseNode):
 
             message["content"] = expanded_contents
 
-        messages = utils.convert_messages_from_chat_format_to_langchain(
-            chat_frmt_messages
-        )
+        messages = utils.convert_messages_from_chat_format_to_langchain(chat_frmt_messages)
         prompt = ChatPromptTemplate.from_messages(
             [*messages, MessagesPlaceholder(variable_name=self.input_key)],
         )
@@ -265,9 +249,7 @@ class LLMNode(BaseNode):
                 {
                     constants.KEY_NAME: self.name,
                     constants.KEY_REQUEST: request_msgs,
-                    constants.KEY_RESPONSE: graph_factory.get_message_content(
-                        responseMsg
-                    ),
+                    constants.KEY_RESPONSE: graph_factory.get_message_content(responseMsg),
                 }
             )
 

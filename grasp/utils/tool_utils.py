@@ -1,7 +1,7 @@
 import importlib
 from abc import ABC, abstractmethod
-from inspect import isclass, getmembers
-from typing import List, Callable
+from inspect import getmembers, isclass
+from typing import Callable, List
 
 from langchain_core.tools import BaseTool
 
@@ -88,9 +88,7 @@ def load_tools(tool_paths: List[str]) -> List[Callable]:
                 except (ImportError, AttributeError):
                     pass
             else:
-                logger.warn(
-                    f"Tool path '{path}' is not a valid import path. Skipping..."
-                )
+                logger.warn(f"Tool path '{path}' is not a valid import path. Skipping...")
                 continue
 
             if not valid:

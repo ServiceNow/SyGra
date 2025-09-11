@@ -13,9 +13,7 @@ class SFTPipelineBuilder:
             PipelineStep(name="copy", old_key="category", new_key="categories"),
             PipelineStep(name="copy", old_key="subcategory", new_key="subcategories"),
             PipelineStep(name="taxonomy", old_key="taxonomy", new_key="taxonomy"),
-            PipelineStep(
-                name="conversation", old_key="conversation", new_key="conversation"
-            ),
+            PipelineStep(name="conversation", old_key="conversation", new_key="conversation"),
             PipelineStep(name="length", old_key="length", new_key="length"),
         ]
         return pipeline_steps

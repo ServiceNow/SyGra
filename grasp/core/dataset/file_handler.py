@@ -7,7 +7,7 @@ in various formats including JSON, JSONL, and Parquet.
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Any
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -113,9 +113,7 @@ class FileHandler(DataHandler):
             elif output_path.suffix == ".jsonl":
                 with open(output_path, "a", encoding=self.output_config.encoding) as f:
                     for item in data:
-                        f.write(
-                            json.dumps(item, ensure_ascii=False, cls=JSONEncoder) + "\n"
-                        )
+                        f.write(json.dumps(item, ensure_ascii=False, cls=JSONEncoder) + "\n")
             else:
                 with open(output_path, "w", encoding=self.output_config.encoding) as f:
                     json.dump(data, f, indent=2, ensure_ascii=False, cls=JSONEncoder)

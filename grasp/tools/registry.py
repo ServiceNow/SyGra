@@ -1,8 +1,8 @@
 import importlib
-from typing import Type, Optional
+from typing import Optional, Type
 
-from grasp.tools.base_tool import BaseTool
 from grasp.logger.logger_config import logger
+from grasp.tools.base_tool import BaseTool
 
 
 class ToolRegistry:
