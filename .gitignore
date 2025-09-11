@@ -9,3 +9,4 @@ logs/*
 .env
 poetry.lock
 **/grasp.egg-info/*
+site/
