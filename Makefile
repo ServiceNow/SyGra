@@ -56,7 +56,7 @@ test-coverage: ## Run tests with coverage
 
 .PHONY: docs
 docs: ## Generate documentation
-	$(POETRY) run mkdocs build
+	$(POETRY) run mkdocs build --strict
 
 .PHONY: docs-serve
 docs-serve: ## Serve documentation locally

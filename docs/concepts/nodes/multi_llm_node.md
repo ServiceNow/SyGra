@@ -72,7 +72,7 @@ The output from a multi-llm node will contain a mapping of model names to their 
 
 ### Reference Example: DPO Samples Task
 
-For a full workflow demonstrating the use of the multi-llm node—including advanced structured output, post-processing, and integration with judge models—see the [DPO Samples Task example](#dpo-samples-task-using-multi-llm-node) in this documentation.
+For a full workflow demonstrating the use of the multi-llm node—including advanced structured output, post-processing, and integration with judge models—see the [DPO Samples Task example](#example-configuration) in this documentation.
 
 ### Notes
 
