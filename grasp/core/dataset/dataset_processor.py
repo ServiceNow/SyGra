@@ -34,9 +34,9 @@ class DatasetProcessor:
         resumable: bool = False,
         task_name: str = None,
     ):
-        assert checkpoint_interval % batch_size == 0, (
-            "Checkpoint Interval should be a multiple of Batch Size"
-        )
+        assert (
+            checkpoint_interval % batch_size == 0
+        ), "Checkpoint Interval should be a multiple of Batch Size"
 
         # capture the input parameters
         self.original_dataset = input_dataset
@@ -115,13 +115,9 @@ class DatasetProcessor:
         if self.resume_manager.load_state(dataset_type):
             processed_count = len(self.resume_manager.processed_records)
             self.num_records_processed = processed_count
-            logger.info(
-                f"Resuming execution: {processed_count} records already processed"
-            )
+            logger.info(f"Resuming execution: {processed_count} records already processed")
         else:
-            logger.info(
-                "No previous state found or resumable execution disabled. Starting fresh."
-            )
+            logger.info("No previous state found or resumable execution disabled. Starting fresh.")
             self.resume_manager.position_tracker.mark_position(self.dataset_indx)
 
     @staticmethod
@@ -146,9 +142,7 @@ class DatasetProcessor:
         Raises:
             StopIteration: When no more unprocessed records are available
         """
-        while (
-            True
-        ):  # Keep trying until we get an unprocessed record or exhaust the dataset
+        while True:  # Keep trying until we get an unprocessed record or exhaust the dataset
             # Get next record from dataset
             record = next(self.input_dataset)
 
@@ -193,9 +187,7 @@ class DatasetProcessor:
                 return True
         return False
 
-    async def _add_graph_result(
-        self, output: dict[str, Any], record: dict[str, Any]
-    ) -> None:
+    async def _add_graph_result(self, output: dict[str, Any], record: dict[str, Any]) -> None:
         """
         Add a result from graph execution to the results list and handle resumable state.
 
@@ -249,9 +241,7 @@ class DatasetProcessor:
         total_records_with_error = self.num_records_processed + self.failed_records
 
         if total_records_with_error >= self.num_records_total:
-            logger.info(
-                f"Reached target of {self.num_records_total} records. Stopping."
-            )
+            logger.info(f"Reached target of {self.num_records_total} records. Stopping.")
 
         # For resumable execution, mark record as fully processed
         if self.resumable and self.resume_manager:
@@ -384,9 +374,7 @@ class DatasetProcessor:
                         task = asyncio.create_task(self._process_record(record))
                         pending_tasks.add(task)
                         task.add_done_callback(
-                            lambda t: pending_tasks.discard(t)
-                            if t in pending_tasks
-                            else None
+                            lambda t: pending_tasks.discard(t) if t in pending_tasks else None
                         )
                         # Increment count of records we've started processing
                         records_started += 1

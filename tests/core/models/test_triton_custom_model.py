@@ -59,9 +59,7 @@ class TestCustomTriton(unittest.TestCase):
 
         # Verify model was properly initialized
         self.assertEqual(custom_triton.model_config, self.base_config)
-        self.assertEqual(
-            custom_triton.generation_params, self.base_config["parameters"]
-        )
+        self.assertEqual(custom_triton.generation_params, self.base_config["parameters"])
         self.assertEqual(custom_triton.auth_token, "test_token")
         self.assertEqual(custom_triton.name(), "triton_model")
 
@@ -76,9 +74,7 @@ class TestCustomTriton(unittest.TestCase):
         )
 
         self.assertEqual(result, self.mock_payload_config)
-        mock_get_payload.assert_called_once_with(
-            constants.INFERENCE_SERVER_TRITON, "default"
-        )
+        mock_get_payload.assert_called_once_with(constants.INFERENCE_SERVER_TRITON, "default")
 
     @patch("grasp.core.models.custom_models.utils.get_payload")
     def test_get_payload_config_template_no_key(self, mock_get_payload):
@@ -86,9 +82,7 @@ class TestCustomTriton(unittest.TestCase):
         mock_get_payload.return_value = self.mock_payload_config
 
         custom_triton = CustomTriton(self.base_config)
-        result = custom_triton._get_payload_config_template(
-            constants.INFERENCE_SERVER_TRITON, None
-        )
+        result = custom_triton._get_payload_config_template(constants.INFERENCE_SERVER_TRITON, None)
 
         self.assertEqual(result, self.mock_payload_config)
         mock_get_payload.assert_called_once_with(constants.INFERENCE_SERVER_TRITON)
@@ -101,13 +95,9 @@ class TestCustomTriton(unittest.TestCase):
         custom_triton = CustomTriton(self.base_config)
 
         with self.assertRaises(Exception) as context:
-            custom_triton._get_payload_config_template(
-                constants.INFERENCE_SERVER_TRITON, "default"
-            )
+            custom_triton._get_payload_config_template(constants.INFERENCE_SERVER_TRITON, "default")
 
-        self.assertTrue(
-            "Failed to get payload config: Test error" in str(context.exception)
-        )
+        self.assertTrue("Failed to get payload config: Test error" in str(context.exception))
 
     def test_get_payload_json_template(self):
         """Test _get_payload_json_template method"""
@@ -123,9 +113,7 @@ class TestCustomTriton(unittest.TestCase):
         with self.assertRaises(AssertionError) as context:
             custom_triton._get_payload_json_template({})
 
-        self.assertTrue(
-            "Payload JSON must be defined for Triton server" in str(context.exception)
-        )
+        self.assertTrue("Payload JSON must be defined for Triton server" in str(context.exception))
 
     def test_create_triton_request(self):
         """Test _create_triton_request method"""
@@ -141,9 +129,7 @@ class TestCustomTriton(unittest.TestCase):
         # Verify the request payload was constructed correctly
         self.assertEqual(len(result["inputs"]), 2)
         self.assertEqual(result["inputs"][0]["name"], "request")
-        self.assertEqual(
-            result["inputs"][0]["data"], [json.dumps(messages, ensure_ascii=False)]
-        )
+        self.assertEqual(result["inputs"][0]["data"], [json.dumps(messages, ensure_ascii=False)])
         self.assertEqual(result["inputs"][1]["name"], "options")
         self.assertEqual(
             result["inputs"][1]["data"],
@@ -158,9 +144,7 @@ class TestCustomTriton(unittest.TestCase):
             {"outputs": [{"data": [json.dumps({"response": "Hello there!"})]}]}
         )
 
-        result = custom_triton._get_response_text(
-            mock_response, self.mock_payload_config
-        )
+        result = custom_triton._get_response_text(mock_response, self.mock_payload_config)
 
         self.assertEqual(result, "Hello there!")
 
@@ -168,13 +152,9 @@ class TestCustomTriton(unittest.TestCase):
         """Test _get_response_text method with dict response"""
         custom_triton = CustomTriton(self.base_config)
 
-        mock_response = json.dumps(
-            {"outputs": [{"data": [{"response": "Hello there!"}]}]}
-        )
+        mock_response = json.dumps({"outputs": [{"data": [{"response": "Hello there!"}]}]})
 
-        result = custom_triton._get_response_text(
-            mock_response, self.mock_payload_config
-        )
+        result = custom_triton._get_response_text(mock_response, self.mock_payload_config)
 
         self.assertEqual(result, "Hello there!")
 
@@ -199,9 +179,7 @@ class TestCustomTriton(unittest.TestCase):
             }
         )
 
-        result = custom_triton._get_response_text(
-            mock_response, self.mock_payload_config
-        )
+        result = custom_triton._get_response_text(mock_response, self.mock_payload_config)
 
         self.assertEqual(result, "Raw model output here")
         mock_logger.error.assert_any_call("Invalid JSON returned, JSON mode specified")
@@ -226,14 +204,10 @@ class TestCustomTriton(unittest.TestCase):
             }
         )
 
-        result = custom_triton._get_response_text(
-            mock_response, self.mock_payload_config
-        )
+        result = custom_triton._get_response_text(mock_response, self.mock_payload_config)
 
         self.assertEqual(result, "")
-        mock_logger.error.assert_any_call(
-            "Not a JSON error. Error message: Some other error"
-        )
+        mock_logger.error.assert_any_call("Not a JSON error. Error message: Some other error")
 
     @patch("grasp.core.models.custom_models.logger")
     def test_get_response_text_parse_exception(self, mock_logger):
@@ -243,9 +217,7 @@ class TestCustomTriton(unittest.TestCase):
         # Invalid JSON
         mock_response = "This is not JSON"
 
-        result = custom_triton._get_response_text(
-            mock_response, self.mock_payload_config
-        )
+        result = custom_triton._get_response_text(mock_response, self.mock_payload_config)
 
         self.assertEqual(result, "")
         mock_logger.error.assert_any_call(
@@ -284,20 +256,12 @@ class TestCustomTriton(unittest.TestCase):
         custom_triton._get_payload_config_template = MagicMock(
             return_value=self.mock_payload_config
         )
-        custom_triton._get_payload_json_template = MagicMock(
-            return_value=self.mock_payload_json
-        )
-        custom_triton._create_triton_request = MagicMock(
-            return_value=self.mock_payload_json
-        )
+        custom_triton._get_payload_json_template = MagicMock(return_value=self.mock_payload_json)
+        custom_triton._create_triton_request = MagicMock(return_value=self.mock_payload_json)
 
         # Call _generate_text
-        model_params = ModelParams(
-            url="http://triton-test.com", auth_token="test_token"
-        )
-        resp_text, resp_status = await custom_triton._generate_text(
-            self.chat_input, model_params
-        )
+        model_params = ModelParams(url="http://triton-test.com", auth_token="test_token")
+        resp_text, resp_status = await custom_triton._generate_text(self.chat_input, model_params)
 
         # Verify results
         self.assertEqual(resp_text, "Hello there!")
@@ -308,9 +272,7 @@ class TestCustomTriton(unittest.TestCase):
         custom_triton._get_payload_config_template.assert_called_once_with(
             constants.INFERENCE_SERVER_TRITON, "default"
         )
-        custom_triton._get_payload_json_template.assert_called_once_with(
-            self.mock_payload_config
-        )
+        custom_triton._get_payload_json_template.assert_called_once_with(self.mock_payload_config)
         mock_client.build_request.assert_called_once()
         mock_client.async_send_request.assert_awaited_once()
 
@@ -318,9 +280,7 @@ class TestCustomTriton(unittest.TestCase):
     @patch("grasp.core.models.custom_models.utils")
     @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
     @pytest.mark.asyncio
-    async def test_generate_text_http_error(
-        self, mock_set_client, mock_utils, mock_logger
-    ):
+    async def test_generate_text_http_error(self, mock_set_client, mock_utils, mock_logger):
         """Test _generate_text method with HTTP error"""
         # Setup mock client
         mock_client = MagicMock()
@@ -348,20 +308,12 @@ class TestCustomTriton(unittest.TestCase):
         custom_triton._get_payload_config_template = MagicMock(
             return_value=self.mock_payload_config
         )
-        custom_triton._get_payload_json_template = MagicMock(
-            return_value=self.mock_payload_json
-        )
-        custom_triton._create_triton_request = MagicMock(
-            return_value=self.mock_payload_json
-        )
+        custom_triton._get_payload_json_template = MagicMock(return_value=self.mock_payload_json)
+        custom_triton._create_triton_request = MagicMock(return_value=self.mock_payload_json)
 
         # Call _generate_text
-        model_params = ModelParams(
-            url="http://triton-test.com", auth_token="test_token"
-        )
-        resp_text, resp_status = await custom_triton._generate_text(
-            self.chat_input, model_params
-        )
+        model_params = ModelParams(url="http://triton-test.com", auth_token="test_token")
+        resp_text, resp_status = await custom_triton._generate_text(self.chat_input, model_params)
 
         # Verify results
         self.assertEqual(resp_text, "")
@@ -387,12 +339,8 @@ class TestCustomTriton(unittest.TestCase):
         custom_triton._get_status_from_body = MagicMock(return_value=None)
 
         # Call _generate_text
-        model_params = ModelParams(
-            url="http://triton-test.com", auth_token="test_token"
-        )
-        resp_text, resp_status = await custom_triton._generate_text(
-            self.chat_input, model_params
-        )
+        model_params = ModelParams(url="http://triton-test.com", auth_token="test_token")
+        resp_text, resp_status = await custom_triton._generate_text(self.chat_input, model_params)
 
         # Verify results
         self.assertEqual(resp_text, "Http request failed Test error")

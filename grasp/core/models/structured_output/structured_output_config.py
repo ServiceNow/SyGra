@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import importlib
 import inspect
-from typing import Any, Optional, Type, Dict, Tuple, cast
+from typing import Any, Dict, Optional, Tuple, Type, cast
 
-from pydantic import BaseModel, create_model, Field
+from pydantic import BaseModel, Field, create_model
 
 from grasp.logger.logger_config import logger
 
@@ -14,9 +14,9 @@ class SchemaConfigParser:
 
     def __init__(self, config: dict[str, Any]):
         self.config = config
-        self.schema_type : Optional[str] = None  # Will be 'class' or 'schema'
-        self.schema_data : Optional[dict[Any, Any]] = None
-        self.class_path : Optional[str] = None
+        self.schema_type: Optional[str] = None  # Will be 'class' or 'schema'
+        self.schema_data: Optional[dict[Any, Any]] = None
+        self.class_path: Optional[str] = None
 
         self._parse_schema()
 
@@ -25,9 +25,7 @@ class SchemaConfigParser:
         schema = self.config.get("schema")
 
         if schema is None:
-            raise ValueError(
-                "Schema field is required in structured_output configuration"
-            )
+            raise ValueError("Schema field is required in structured_output configuration")
 
         if isinstance(schema, str):
             # It's a class path
@@ -95,9 +93,7 @@ class SchemaConfigParser:
         except ImportError as e:
             raise ImportError(f"Cannot import module '{module_path}': {str(e)}")
         except AttributeError:
-            raise AttributeError(
-                f"Class '{class_name}' not found in module '{module_path}'"
-            )
+            raise AttributeError(f"Class '{class_name}' not found in module '{module_path}'")
 
     def _is_valid_schema_dict(self, schema_dict: dict) -> bool:
         """Validate schema dictionary structure."""
@@ -115,9 +111,7 @@ class SchemaConfigParser:
         # Validate each field
         for field_name, field_config in fields.items():
             if not isinstance(field_config, dict):
-                raise ValueError(
-                    f"Field '{field_name}' configuration must be a dictionary"
-                )
+                raise ValueError(f"Field '{field_name}' configuration must be a dictionary")
 
             if "type" not in field_config:
                 raise ValueError(f"Field '{field_name}' must have a 'type' specified")
@@ -138,9 +132,7 @@ class StructuredOutputConfig:
     """Configuration class for structured output"""
 
     def __init__(self, config: dict[str, Any], key_present: bool = True):
-        self.enabled = config.get(
-            "enabled", key_present
-        )  # True if key present, False if absent
+        self.enabled = config.get("enabled", key_present)  # True if key present, False if absent
         if self.enabled:
             # Use the unified parser
             self.parser = SchemaConfigParser(config)
@@ -170,7 +162,7 @@ class StructuredOutputConfig:
         try:
             module_path, class_name = class_path.rsplit(".", 1)
             module = importlib.import_module(module_path)
-            pydantic_class : Type[BaseModel] = getattr(module, class_name)
+            pydantic_class: Type[BaseModel] = getattr(module, class_name)
 
             if not issubclass(pydantic_class, BaseModel):
                 raise ValueError(f"Class {class_name} is not a Pydantic BaseModel")
@@ -180,9 +172,7 @@ class StructuredOutputConfig:
             logger.error(f"Failed to load class from path {class_path}: {e}")
             raise
 
-    def _create_pydantic_from_yaml(
-            self, schema_dict: dict[str, Any]
-    ) -> Type[BaseModel]:
+    def _create_pydantic_from_yaml(self, schema_dict: dict[str, Any]) -> Type[BaseModel]:
         """Create pydantic model from YAML schema definition"""
         try:
             field_definitions: Dict[str, Any] = {}
@@ -191,7 +181,10 @@ class StructuredOutputConfig:
                 default = field_config.get("default", ...)
                 description = field_config.get("description", "")
                 # Use Field to attach metadata
-                field_definitions[field_name] = (field_type, Field(default=default, description=description))
+                field_definitions[field_name] = (
+                    field_type,
+                    Field(default=default, description=description),
+                )
 
             model_name = schema_dict.get("name", "DynamicModel")
             model: Type[BaseModel] = create_model(model_name, **field_definitions)

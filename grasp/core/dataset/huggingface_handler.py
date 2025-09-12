@@ -9,12 +9,12 @@ import io
 import os
 from typing import Any, Iterator, Optional, Union, cast
 
-import datasets # type: ignore[import-untyped]
-import pandas as pd # type: ignore[import-untyped]
+import datasets  # type: ignore[import-untyped]
+import pandas as pd  # type: ignore[import-untyped]
 from datasets import Dataset, IterableDataset, concatenate_datasets
 from datasets import config as ds_config
 from datasets import load_dataset
-from datasets.utils.metadata import MetadataConfigs # type: ignore[import-untyped]
+from datasets.utils.metadata import MetadataConfigs  # type: ignore[import-untyped]
 from huggingface_hub import (
     CommitOperationAdd,
     DatasetCard,
@@ -109,9 +109,7 @@ class HuggingFaceHandler(DataHandler):
 
             for col in media_columns["image_str"] + media_columns["audio_str"]:
                 df[col] = df[col].apply(
-                    lambda x: self._decode_base64_media(x)[0]
-                    if isinstance(x, str)
-                    else None
+                    lambda x: self._decode_base64_media(x)[0] if isinstance(x, str) else None
                 )
 
             ds = Dataset.from_pandas(df)
@@ -164,13 +162,9 @@ class HuggingFaceHandler(DataHandler):
             sample = df[col].dropna().iloc[0] if not df[col].dropna().empty else None
 
             if isinstance(sample, list):
-                if all(
-                    isinstance(x, str) and x.startswith("data:image/") for x in sample
-                ):
+                if all(isinstance(x, str) and x.startswith("data:image/") for x in sample):
                     media_cols["image_seq"].append(col)
-                elif all(
-                    isinstance(x, str) and x.startswith("data:audio/") for x in sample
-                ):
+                elif all(isinstance(x, str) and x.startswith("data:audio/") for x in sample):
                     media_cols["audio_seq"].append(col)
             elif isinstance(sample, str):
                 if sample.startswith("data:image/"):
@@ -235,11 +229,7 @@ class HuggingFaceHandler(DataHandler):
             logger.info(f"Found {len(all_files)} total files")
 
             if sc.shard and sc.shard.index:
-                filtered_files = [
-                    f
-                    for i, f in enumerate(all_files)
-                    if i in sc.shard.index
-                ]
+                filtered_files = [f for i, f in enumerate(all_files) if i in sc.shard.index]
                 logger.info(f"Filtered to {len(filtered_files)} files based on index")
                 return filtered_files
 
@@ -255,9 +245,7 @@ class HuggingFaceHandler(DataHandler):
             df = pd.read_parquet(io.BytesIO(f.read()))
         return cast(list[dict[str, Any]], df.to_dict(orient="records"))
 
-    def _load_dataset_by_split(
-        self, split
-    ) -> Union[Dataset, IterableDataset]:
+    def _load_dataset_by_split(self, split) -> Union[Dataset, IterableDataset]:
         """Load dataset for a specific split."""
         if not self.source_config:
             raise ValueError("Source configuration is required to load dataset")
@@ -278,10 +266,7 @@ class HuggingFaceHandler(DataHandler):
                 raise ValueError("Source configuration is required to read dataset")
             sc = self.source_config
             if isinstance(sc.split, list):
-                datasets_list = [
-                    self._load_dataset_by_split(split)
-                    for split in sc.splits
-                ]
+                datasets_list = [self._load_dataset_by_split(split) for split in sc.splits]
 
                 if len(datasets_list) == 1:
                     ds = datasets_list[0]
@@ -303,9 +288,7 @@ class HuggingFaceHandler(DataHandler):
     def _update_readme_config(self) -> None:
         """Update dataset card (README) with configuration details."""
         if not (
-            self.output_config
-            and self.output_config.repo_id
-            and self.output_config.config_name
+            self.output_config and self.output_config.repo_id and self.output_config.config_name
         ):
             return
 
@@ -398,7 +381,9 @@ class HuggingFaceHandler(DataHandler):
                 path_or_fileobj=new_card_str.encode("utf-8"),
             )
         ]
-        commit_msg = f"Add or update config='{config_name}', split='{split}' => pattern='{new_pattern}'"
+        commit_msg = (
+            f"Add or update config='{config_name}', split='{split}' => pattern='{new_pattern}'"
+        )
         api.create_commit(
             repo_id=self.output_config.repo_id,
             repo_type="dataset",

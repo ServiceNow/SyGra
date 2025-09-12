@@ -102,9 +102,7 @@ class MetadataTaggingTask:
             )
         )
         transformations = (
-            graph_config.get("data_config", {})
-            .get("source", {})
-            .get("transformations", [])
+            graph_config.get("data_config", {}).get("source", {}).get("transformations", [])
         )
         graph_config.update({"data_config": data_config})
         graph_config["data_config"]["source"]["transformations"] = transformations
@@ -123,9 +121,7 @@ class MetadataTaggingTask:
             with open(input_file, "r", encoding="utf-8") as f:
                 try:
                     data = json.load(f)
-                    logger.info(
-                        f"Loaded {len(data)} records from {input_file} for tag filtering"
-                    )
+                    logger.info(f"Loaded {len(data)} records from {input_file} for tag filtering")
                 except json.JSONDecodeError:
                     f.seek(0)
                     data = [json.loads(line) for line in f if line.strip()]

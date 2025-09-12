@@ -1,7 +1,7 @@
-from typing import Any
+from typing import Any, List
 
 import openai
-from langchain_core.messages import AnyMessage
+from langchain_core.messages import AnyMessage, BaseMessage
 
 from grasp.core.models.custom_models import ModelParams
 from grasp.core.models.langgraph.grasp_base_chat_model import GraspBaseChatModel
@@ -59,9 +59,7 @@ class CustomVLLMChatModel(GraspBaseChatModel):
         None
         """
         super().__init__(model_config)
-        self._model_serving_name = model_config.get(
-            "model_serving_name", self._get_name()
-        )
+        self._model_serving_name = model_config.get("model_serving_name", self._get_name())
 
     @property
     def _llm_type(self) -> str:
@@ -69,7 +67,7 @@ class CustomVLLMChatModel(GraspBaseChatModel):
 
     async def _generate_response(
         self,
-        messages: list[AnyMessage],
+        messages: List[BaseMessage],
         model_params: ModelParams,
         async_client: bool = True,
         **kwargs: Any,
@@ -108,13 +106,13 @@ class CustomVLLMChatModel(GraspBaseChatModel):
         except Exception as x:
             response = f"{constants.ERROR_PREFIX} Http request failed {x}"
             logger.error(response)
-            response_code = self._get_status_from_body(x)
-            response_code = response_code if response_code else 999
+            rcode = self._get_status_from_body(x)
+            response_code = rcode if rcode is not None else 999
         return response, response_code
 
     def _sync_generate_response(
         self,
-        messages: list[AnyMessage],
+        messages: list[BaseMessage],
         model_params: ModelParams,
         async_client: bool = True,
         **kwargs: Any,
@@ -153,6 +151,6 @@ class CustomVLLMChatModel(GraspBaseChatModel):
         except Exception as x:
             response = f"{constants.ERROR_PREFIX} Http request failed {x}"
             logger.error(response)
-            response_code = self._get_status_from_body(x)
-            response_code = response_code if response_code else 999
+            rcode = self._get_status_from_body(x)
+            response_code = rcode if rcode is not None else 999
         return response, response_code

@@ -36,7 +36,7 @@ def load_tools(tool_paths: List[str]) -> List[BaseTool]:
     Returns:
         List of loaded tools from all sources
     """
-    tools : List[BaseTool] = []
+    tools: List[BaseTool] = []
 
     for path in tool_paths:
         # First, check if it's an individual tool function using dot notation
@@ -72,7 +72,9 @@ def load_tools(tool_paths: List[str]) -> List[BaseTool]:
                             tools.extend(_extract_tools_from_class(obj))
                             valid = True
                             continue
-                        elif isinstance(tool_func, type) and issubclass(tool_func, LangChainToolsWrapper):
+                        elif isinstance(tool_func, type) and issubclass(
+                            tool_func, LangChainToolsWrapper
+                        ):
                             tools.extend(tool_func().get_tools())
                             valid = True
                             continue
@@ -88,9 +90,7 @@ def load_tools(tool_paths: List[str]) -> List[BaseTool]:
                 except (ImportError, AttributeError):
                     pass
             else:
-                logger.warn(
-                    f"Tool path '{path}' is not a valid import path. Skipping..."
-                )
+                logger.warn(f"Tool path '{path}' is not a valid import path. Skipping...")
                 continue
 
             if not valid:
@@ -115,7 +115,7 @@ def _extract_tools_from_module(module) -> List[BaseTool]:
     Returns:
         List of tool functions found in the module
     """
-    tools : List[BaseTool] = []
+    tools: List[BaseTool] = []
 
     # Find all functions in the module that have been decorated with @tool
     for _, obj in getmembers(module):
@@ -135,7 +135,7 @@ def _extract_tools_from_class(cls) -> List[BaseTool]:
     Returns:
         List of tool methods found in the class
     """
-    tools : List[BaseTool] = []
+    tools: List[BaseTool] = []
 
     # Find all methods in the class that have been decorated with @tool
     for _, obj in getmembers(cls):

@@ -19,13 +19,13 @@ class DataMapper:
             graph_config (GraphConfig): The configuration for the graph transformation.
         """
         self.config = config
-        self.transform_registry = (
-            transform_registry  # Registry for managing transformations
-        )
+        self.transform_registry = transform_registry  # Registry for managing transformations
         # Normalize and validate transformation type (expects 'sft' or 'dpo')
         self.transform_type: str = str(config.get("type", ""))
         if not self.transform_type:
-            raise ValueError("Transform type must be provided in config['type'] (e.g., 'sft' or 'dpo').")
+            raise ValueError(
+                "Transform type must be provided in config['type'] (e.g., 'sft' or 'dpo')."
+            )
 
         # Create the pipeline using PipelineFactory based on the transform type
         pipeline_factory = PipelineFactory(self.transform_type)
@@ -62,16 +62,12 @@ class DataMapper:
             for transform in ordered_transforms:
                 try:
                     # Get the current pipeline step
-                    step = next(
-                        s for s in self.pipeline if s.name == transform.meta.name
-                    )
+                    step = next(s for s in self.pipeline if s.name == transform.meta.name)
                     logger.info(f"Processing step: {step}")
 
                     # Validate that all required context fields are available for the current transform
                     self.transform_registry.validate_requirements(transform, context)
-                    logger.info(
-                        f"Validated requirements for transform '{transform.meta.name}'"
-                    )
+                    logger.info(f"Validated requirements for transform '{transform.meta.name}'")
 
                     # Set the current step in context for logging and tracking
                     context["__current_step__"] = {
@@ -107,15 +103,11 @@ class DataMapper:
                     continue  # Skip to the next transform if something unexpected happens
 
             # After all transforms are applied, build the rows from the final context
-            logger.info(
-                "Finished all transforms, moving to building rows using context"
-            )
+            logger.info("Finished all transforms, moving to building rows using context")
             # Build rows at the end of the process
             result = self.build_rows_and_validate(context)
             logger.debug(f"Finished building rows : {result}")
-            logger.info(
-                "Rows built and validated against CoreLLMDataFabricFormat successfully"
-            )
+            logger.info("Rows built and validated against CoreLLMDataFabricFormat successfully")
             return result
 
         except Exception as e:

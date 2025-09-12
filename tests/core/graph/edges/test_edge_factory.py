@@ -2,9 +2,7 @@ import os
 import sys
 
 # Add project root to sys.path for relative imports to work
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
-)
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
 
 from types import SimpleNamespace
 
@@ -130,9 +128,7 @@ def test_edge_factory_with_subgraph_resolution(dummy_nodes, dummy_subgraph):
     dummy_nodes["subgraph.exit"] = DummyNode("subgraph.exit")
 
     edges_config = [{"from": "node_a", "to": "subgraph"}]
-    factory = EdgeFactory(
-        edges_config, dummy_nodes, subgraphs={"subgraph": dummy_subgraph}
-    )
+    factory = EdgeFactory(edges_config, dummy_nodes, subgraphs={"subgraph": dummy_subgraph})
     edges = factory.get_edges()
 
     assert len(edges) == 1
@@ -167,9 +163,7 @@ def test_edge_factory_path_map_resolution(dummy_nodes, dummy_subgraph):
         }
     ]
 
-    factory = EdgeFactory(
-        edges_config, dummy_nodes, subgraphs={"subgraph": dummy_subgraph}
-    )
+    factory = EdgeFactory(edges_config, dummy_nodes, subgraphs={"subgraph": dummy_subgraph})
     edge = factory.get_edges()[0]
 
     assert edge.get_condition() == "some.condition.check"

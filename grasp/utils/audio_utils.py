@@ -193,9 +193,7 @@ def get_audio_fields(sample_record: dict[str, Any]) -> list[str]:
     return fields
 
 
-def expand_audio_item(
-    item: dict[str, Any], state: dict[str, Any]
-) -> list[dict[str, Any]]:
+def expand_audio_item(item: dict[str, Any], state: dict[str, Any]) -> list[dict[str, Any]]:
     """
     Expand an audio item with a variable URL into multiple items if necessary.
 

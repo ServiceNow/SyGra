@@ -4,11 +4,11 @@ import os
 import re
 import threading
 from pathlib import Path
-from typing import Any, Callable, Iterator, Union, cast, Optional, Sequence
+from typing import Any, Callable, Iterator, Optional, Sequence, Union, cast
 
-import yaml # type: ignore[import-untyped]
-from datasets import IterableDataset # type: ignore[import-untyped]
-from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage, BaseMessage
+import yaml  # type: ignore[import-untyped]
+from datasets import IterableDataset  # type: ignore[import-untyped]
+from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
@@ -273,9 +273,7 @@ def validate_required_keys(
 ):
     missing_keys = [key for key in required_keys if key not in config]
     if missing_keys:
-        raise ValueError(
-            f"Required keys {missing_keys} are missing in {config_name} configuration"
-        )
+        raise ValueError(f"Required keys {missing_keys} are missing in {config_name} configuration")
 
 
 def get_func_from_str(func_str: str) -> Callable[..., Any]:
@@ -332,9 +330,7 @@ def convert_messages_from_chat_format_to_langchain(
         elif role == "assistant":
             langchain_messages.append(AIMessagePromptTemplate.from_template(content))
         elif role == "system":
-            langchain_messages.append(
-                SystemMessagePromptTemplate.from_template(content)
-            )
+            langchain_messages.append(SystemMessagePromptTemplate.from_template(content))
     return langchain_messages
 
 

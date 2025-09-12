@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Type
 
 from grasp.core.models.custom_models import (
     CustomAzure,
@@ -23,7 +23,7 @@ class ModelFactory:
     """
 
     # Mapping of model types to their respective implementation classes
-    MODEL_TYPE_MAP = {
+    MODEL_TYPE_MAP: Dict[str, Dict[str, Type[Any]]] = {
         "default": {
             "vllm": CustomVLLM,
             "mistralai": CustomMistralAPI,
@@ -40,9 +40,7 @@ class ModelFactory:
     }
 
     @classmethod
-    def create_model(
-        cls, model_config: Dict[str, Any], backend: str = "default"
-    ) -> Any:
+    def create_model(cls, model_config: Dict[str, Any], backend: str = "default") -> Any:
         """
         Create and return an appropriate model instance based on the provided configuration.
 
@@ -75,9 +73,7 @@ class ModelFactory:
                 f"No specialized model implementation for {model_type} found for backend {backend}."
             )
             # If we get here, the model type is not supported
-            raise NotImplementedError(
-                f"Model type {model_type} for {backend} is not implemented"
-            )
+            raise NotImplementedError(f"Model type {model_type} for {backend} is not implemented")
 
     @staticmethod
     def _update_model_config(model_config: Dict[str, Any]) -> Dict[str, Any]:
@@ -91,7 +87,7 @@ class ModelFactory:
             Updated model configuration dictionary
         """
         global_model_configs = utils.load_model_config()
-        global_model_config = global_model_configs.get(model_config["name"], {})
+        global_model_config: dict[str, Any] = global_model_configs.get(model_config["name"], {})
 
         for param, value in model_config.items():
             if not isinstance(value, dict):

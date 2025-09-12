@@ -137,9 +137,7 @@ def dummy_instance(mock_args, mock_grasp_config, mock_model_config):
 
         # Mock init_graph and compiled graph return
         mock_compiled_graph = MagicMock()
-        mock_compiled_graph.get_graph.return_value.draw_ascii.return_value = (
-            "ascii_graph"
-        )
+        mock_compiled_graph.get_graph.return_value.draw_ascii.return_value = "ascii_graph"
         instance.init_graph = MagicMock()
         instance.init_graph.return_value.compile.return_value = mock_compiled_graph
 
@@ -268,9 +266,7 @@ def test_add_id_from_column_missing():
     record = {"text": "hello"}
     result = executor.add_id(record.copy())
 
-    expected_hash = hashlib.sha256(
-        json.dumps(record, sort_keys=True).encode()
-    ).hexdigest()
+    expected_hash = hashlib.sha256(json.dumps(record, sort_keys=True).encode()).hexdigest()
     assert result["id"] == expected_hash
 
 
@@ -343,9 +339,7 @@ def test_output_record_generator_with_output_gen():
     "grasp.core.base_task_executor.utils.get_file_in_task_dir",
     return_value="/tmp/fake_input.json",
 )
-@patch(
-    "grasp.core.base_task_executor.os.path.join", return_value="/tmp/test/metadata.json"
-)
+@patch("grasp.core.base_task_executor.os.path.join", return_value="/tmp/test/metadata.json")
 @patch("grasp.core.base_task_executor.os.makedirs")
 @patch("grasp.core.base_task_executor.os.path.exists", return_value=False)
 @patch(
@@ -374,9 +368,7 @@ def test_execute_basic_flow(
     dummy_processor = MagicMock()
     dummy_instance.graph_config.config = {"output_config": {}}
 
-    with patch(
-        "grasp.core.base_task_executor.DatasetProcessor", return_value=dummy_processor
-    ):
+    with patch("grasp.core.base_task_executor.DatasetProcessor", return_value=dummy_processor):
         dummy_instance.execute()
 
     dummy_instance.init_graph.assert_called_once()
@@ -384,9 +376,7 @@ def test_execute_basic_flow(
 
 
 @patch("grasp.core.base_task_executor.logger.info")
-@patch(
-    "grasp.core.base_task_executor.os.path.splitext", return_value=("existing", ".json")
-)
+@patch("grasp.core.base_task_executor.os.path.splitext", return_value=("existing", ".json"))
 @patch(
     "grasp.core.base_task_executor.json.load",
     return_value={"task_name": "test_task", "output_file": "existing.json"},

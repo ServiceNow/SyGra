@@ -65,9 +65,14 @@ class FileHandler(DataHandler):
                 file_path = Path(path)
 
             if file_path.suffix == ".parquet":
-                return cast(list[dict[str, Any]], pd.read_parquet(file_path).to_dict(orient="records"))
+                return cast(
+                    list[dict[str, Any]], pd.read_parquet(file_path).to_dict(orient="records")
+                )
             elif file_path.suffix == ".csv":
-                df = pd.read_csv(file_path, encoding=self.source_config.encoding if self.source_config else "utf-8")
+                df = pd.read_csv(
+                    file_path,
+                    encoding=self.source_config.encoding if self.source_config else "utf-8",
+                )
                 return cast(list[dict[str, Any]], df.to_dict(orient="records"))
             elif file_path.suffix == ".jsonl":
                 enc = self.source_config.encoding if self.source_config else "utf-8"
@@ -123,9 +128,7 @@ class FileHandler(DataHandler):
                 enc = self.output_config.encoding if self.output_config else "utf-8"
                 with open(output_path, "a", encoding=enc) as f:
                     for item in data:
-                        f.write(
-                            json.dumps(item, ensure_ascii=False, cls=JSONEncoder) + "\n"
-                        )
+                        f.write(json.dumps(item, ensure_ascii=False, cls=JSONEncoder) + "\n")
             else:
                 enc = self.output_config.encoding if self.output_config else "utf-8"
                 with open(output_path, "w", encoding=enc) as f:

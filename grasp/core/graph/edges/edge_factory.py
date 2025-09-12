@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any
+from typing import Any, Optional
 
 from grasp.core.graph.nodes.base_node import BaseNode, NodeType
 from grasp.core.graph.nodes.node_utils import get_node
@@ -28,11 +28,11 @@ class BaseEdge(ABC):
         self.source = source
         self.target = target
         # Condition string or method for conditional edges
-        self.condition = None
+        self.condition: Optional[str] = None
         # Mapping from condition outcome to node name
-        self.path_map = {}
+        self.path_map: dict = {}
         # Original edge configuration dictionary
-        self.edge_config = {}
+        self.edge_config: dict = {}
 
     def get_source(self) -> BaseNode:
         """
@@ -52,7 +52,7 @@ class BaseEdge(ABC):
         """
         return self.target
 
-    def set_condition(self, condition):
+    def set_condition(self, condition: Optional[str]):
         """
         Set condition string which represent a class(new) or a method(old).
 
@@ -66,7 +66,7 @@ class BaseEdge(ABC):
         """
         self.condition = condition
 
-    def get_condition(self) -> str:
+    def get_condition(self) -> Optional[str]:
         """
         Get condition string which represents full class path(new) or a method(old).
 
@@ -150,10 +150,10 @@ class EdgeFactory:
 
         # Process top-level (parent) edges
         for edge_cfg in edges_config:
-            src_node_name = edge_cfg.get("from")
-            tgt_node_name = edge_cfg.get("to")
-            condition = edge_cfg.get("condition")
-            path_map = edge_cfg.get("path_map")
+            src_node_name: str = edge_cfg.get("from")
+            tgt_node_name: str = edge_cfg.get("to")
+            condition: Optional[str] = edge_cfg.get("condition")
+            path_map: Optional[dict[Any, Any]] = edge_cfg.get("path_map")
 
             # Resolve source and target nodes.
             # For subgraph references, use the subgraph's exit for source and entry for target.
@@ -177,9 +177,7 @@ class EdgeFactory:
             if tgt_node_name:
                 logger.info(f"Edge created from {src_node_name} to {tgt_node_name}")
             elif path_map:
-                logger.info(
-                    f"Edge created from {src_node_name} with path_map: {path_map}"
-                )
+                logger.info(f"Edge created from {src_node_name} with path_map: {path_map}")
 
         # Process internal subgraph edges.
         # Instead of scanning the raw configuration, we assume subgraphs have already computed their edges.
@@ -200,8 +198,8 @@ class EdgeFactory:
         edge_cfg: dict,
         src_node: BaseNode,
         tgt_node: BaseNode,
-        condition: str,
-        path_map: dict,
+        condition: Optional[str],
+        path_map: Optional[dict],
     ):
         """
         Updates the edge configuration dictionary with resolved source and target nodes.
@@ -312,7 +310,7 @@ class EdgeFactory:
             return f"{entry_node}"
         return value
 
-    def _get_node(self, node_name: str, sub_node: str = None) -> BaseNode:
+    def _get_node(self, node_name: str, sub_node: Optional[str] = None) -> BaseNode:
         """
         Retrieves the BaseNode instance for a given node name.
         If the node is a subgraph placeholder (stored as a dictionary),
@@ -328,11 +326,10 @@ class EdgeFactory:
         if node_name is None:
             return None
         # First, try to retrieve the node by its name.
-        if self.nodes.get(node_name):
-            node = self.nodes.get(node_name)
-        elif self.nodes.get(sub_node):
+        node = self.nodes.get(node_name)
+        if node is None and sub_node is not None:
             node = self.nodes.get(sub_node)
-        else:
+        if node is None:
             if node_name in SpecialNode.SPECIAL_NODES:
                 node = get_node(node_name, {"node_type": NodeType.SPECIAL.value})
             else:
@@ -340,7 +337,5 @@ class EdgeFactory:
                     f"Node {node_name} not found in graph or as a special node in edge configuration."
                 )
         if not node.is_valid():
-            raise RuntimeError(
-                f"Node {node_name} is idle, can't be used for edge creation."
-            )
+            raise RuntimeError(f"Node {node_name} is idle, can't be used for edge creation.")
         return node

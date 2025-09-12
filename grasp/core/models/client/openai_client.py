@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union, cast, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 import httpx
 from langchain_core.messages import BaseMessage
@@ -22,9 +22,7 @@ class OpenAIClientConfig(BaseModel):
     timeout: int = Field(
         default=constants.DEFAULT_TIMEOUT, description="Request timeout in seconds"
     )
-    max_retries: int = Field(
-        default=3, description="Maximum number of retries for failed requests"
-    )
+    max_retries: int = Field(default=3, description="Maximum number of retries for failed requests")
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -166,9 +164,7 @@ class OpenAIClient(BaseClient):
                     **payload, model=model_name, **generation_params
                 )
             else:
-                return client.completions.create(
-                    **payload, model=model_name, **generation_params
-                )
+                return client.completions.create(**payload, model=model_name, **generation_params)
         else:
             logger.info(f"Detected vLLM-specific parameters: {additional_params}")
             # Use extra_body to pass vLLM-specific parameters

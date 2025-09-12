@@ -31,9 +31,7 @@ class TestToolUtils(unittest.TestCase):
             ("another_non_tool", lambda: None),
         ]
 
-        with patch(
-            "grasp.utils.tool_utils.getmembers", return_value=mock_module_members
-        ):
+        with patch("grasp.utils.tool_utils.getmembers", return_value=mock_module_members):
             tools = _extract_tools_from_module(mock_module)
 
         self.assertEqual(len(tools), 2)
@@ -44,12 +42,8 @@ class TestToolUtils(unittest.TestCase):
         """Test extracting tools from a class"""
         # Create a mock class with tool instances
         mock_class = MagicMock()
-        mock_tool1 = Tool(
-            name="class_tool1", func=lambda x: x, description="Class Tool 1"
-        )
-        mock_tool2 = Tool(
-            name="class_tool2", func=lambda x: x, description="Class Tool 2"
-        )
+        mock_tool1 = Tool(name="class_tool1", func=lambda x: x, description="Class Tool 1")
+        mock_tool2 = Tool(name="class_tool2", func=lambda x: x, description="Class Tool 2")
 
         # Set up mock class with members including tools and non-tools
         mock_class_members = [
@@ -59,9 +53,7 @@ class TestToolUtils(unittest.TestCase):
             ("method", lambda self: None),
         ]
 
-        with patch(
-            "grasp.utils.tool_utils.getmembers", return_value=mock_class_members
-        ):
+        with patch("grasp.utils.tool_utils.getmembers", return_value=mock_class_members):
             tools = _extract_tools_from_class(mock_class)
 
         self.assertEqual(len(tools), 2)
@@ -74,9 +66,7 @@ class TestToolUtils(unittest.TestCase):
         mock_tool = MagicMock(spec=BaseTool)
 
         # Use context managers for patching to ensure proper control flow
-        with patch.object(
-            utils, "get_func_from_str", return_value=mock_tool
-        ) as mock_get_func:
+        with patch.object(utils, "get_func_from_str", return_value=mock_tool) as mock_get_func:
             # The isinstance check in the code needs to pass for our mock_tool
             with patch("grasp.utils.tool_utils.isinstance", return_value=True):
                 tools = load_tools(["module.submodule.tool_func"])
@@ -98,9 +88,7 @@ class TestToolUtils(unittest.TestCase):
     @patch("grasp.utils.tool_utils.utils.get_func_from_str")
     @patch("grasp.utils.tool_utils.importlib.import_module")
     @patch("grasp.utils.tool_utils.logger")
-    def test_load_tools_with_import_error(
-        self, mock_logger, mock_import_module, mock_get_func
-    ):
+    def test_load_tools_with_import_error(self, mock_logger, mock_import_module, mock_get_func):
         """Test handling of ImportError when loading tools"""
         mock_get_func.side_effect = ImportError("Module not found")
         mock_import_module.side_effect = ImportError("Module not found")

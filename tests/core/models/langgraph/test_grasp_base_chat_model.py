@@ -39,9 +39,7 @@ class TestBaseChatModel(unittest.TestCase):
             else []
         )
         self.original_handle_server_down = (
-            constants.HANDLE_SERVER_DOWN
-            if hasattr(constants, "HANDLE_SERVER_DOWN")
-            else True
+            constants.HANDLE_SERVER_DOWN if hasattr(constants, "HANDLE_SERVER_DOWN") else True
         )
         self.original_max_failed_error = (
             constants.MAX_FAILED_ERROR if hasattr(constants, "MAX_FAILED_ERROR") else 10
@@ -62,9 +60,7 @@ class TestBaseChatModel(unittest.TestCase):
                     function_call=None,
                     tool_calls=None,
                 )
-                choice = Choice(
-                    finish_reason="stop", index=0, message=message, logprobs=None
-                )
+                choice = Choice(finish_reason="stop", index=0, message=message, logprobs=None)
                 completion = ChatCompletion(
                     id="test-id",
                     choices=[choice],
@@ -174,9 +170,7 @@ class TestBaseChatModel(unittest.TestCase):
         try:
             self.TestChatModel(config)
         except ValueError as e:
-            self.fail(
-                f"_validate_completions_api_support raised ValueError unexpectedly: {e}"
-            )
+            self.fail(f"_validate_completions_api_support raised ValueError unexpectedly: {e}")
 
     @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_get_model_params_single_url(self, mock_client_factory):
@@ -231,9 +225,7 @@ class TestBaseChatModel(unittest.TestCase):
 
     @patch("grasp.core.models.langgraph.grasp_base_chat_model.random.choice")
     @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
-    def test_get_model_params_least_requests(
-        self, mock_client_factory, mock_random_choice
-    ):
+    def test_get_model_params_least_requests(self, mock_client_factory, mock_random_choice):
         """Test _get_model_params with multiple URLs and least_requests load balancing"""
         config = {
             **self.base_config,
@@ -310,9 +302,7 @@ class TestBaseChatModel(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             model._get_model_params()
 
-        self.assertIn(
-            "Model URL should be a string or a list of strings", str(context.exception)
-        )
+        self.assertIn("Model URL should be a string or a list of strings", str(context.exception))
 
     @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
     def test_set_chat_template_mixtral(self, mock_client_factory):
@@ -369,9 +359,7 @@ class TestBaseChatModel(unittest.TestCase):
             function_call=None,
             tool_calls=None,
         )
-        error_choice = Choice(
-            finish_reason="stop", index=0, message=error_message, logprobs=None
-        )
+        error_choice = Choice(finish_reason="stop", index=0, message=error_message, logprobs=None)
         error_response = ChatCompletion(
             id="test-error-id",
             choices=[error_choice],
@@ -439,9 +427,7 @@ class TestBaseChatModel(unittest.TestCase):
             function_call=None,
             tool_calls=None,
         )
-        error_choice = Choice(
-            finish_reason="length", index=0, message=error_message, logprobs=None
-        )
+        error_choice = Choice(finish_reason="length", index=0, message=error_message, logprobs=None)
         error_response = ChatCompletion(
             id="test-error-id",
             choices=[error_choice],
@@ -461,9 +447,7 @@ class TestBaseChatModel(unittest.TestCase):
     @patch("grasp.core.models.langgraph.grasp_base_chat_model.sys.exit")
     @patch("grasp.core.models.langgraph.grasp_base_chat_model.logger")
     @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
-    def test_handle_server_down_disabled(
-        self, mock_client_factory, mock_logger, mock_exit
-    ):
+    def test_handle_server_down_disabled(self, mock_client_factory, mock_logger, mock_exit):
         """Test _handle_server_down when server down handling is disabled"""
         # Set HANDLE_SERVER_DOWN to False for this test
         constants.HANDLE_SERVER_DOWN = False
@@ -483,9 +467,7 @@ class TestBaseChatModel(unittest.TestCase):
     @patch("grasp.core.models.langgraph.grasp_base_chat_model.sys.exit")
     @patch("grasp.core.models.langgraph.grasp_base_chat_model.logger")
     @patch("grasp.core.models.langgraph.grasp_base_chat_model.ClientFactory")
-    def test_handle_server_down_normal_operation(
-        self, mock_client_factory, mock_logger, mock_exit
-    ):
+    def test_handle_server_down_normal_operation(self, mock_client_factory, mock_logger, mock_exit):
         """Test _handle_server_down with normal operation"""
         constants.HANDLE_SERVER_DOWN = True
         constants.SERVER_DOWN_ERROR_CODE = [404, 500, 501, 502, 503]
@@ -542,9 +524,7 @@ class TestBaseChatModel(unittest.TestCase):
 
         # Verify warning message was logged
         warning_message = mock_logger.warning.call_args[0][0]
-        self.assertIn(
-            f"Server failure count: {constants.MAX_FAILED_ERROR}", warning_message
-        )
+        self.assertIn(f"Server failure count: {constants.MAX_FAILED_ERROR}", warning_message)
 
     @patch("grasp.core.models.langgraph.grasp_base_chat_model.time")
     @patch("grasp.core.models.langgraph.grasp_base_chat_model.sys.exit")
@@ -578,9 +558,7 @@ class TestBaseChatModel(unittest.TestCase):
             model._handle_server_down(500)
 
         # Verify that timestamps were recorded
-        self.assertEqual(
-            len(model._model_failed_response_timestamp), constants.MAX_FAILED_ERROR
-        )
+        self.assertEqual(len(model._model_failed_response_timestamp), constants.MAX_FAILED_ERROR)
 
         # Verify that exit was NOT called since errors are spread out over time
         mock_exit.assert_not_called()
@@ -603,9 +581,7 @@ class TestBaseChatModel(unittest.TestCase):
         # Set up mock time to return increasing timestamps
         # Generate MAX_FAILED_ERROR + 3 timestamps with enough spread
         start_time = 1000.0
-        timestamps = [
-            start_time + i * 10 for i in range(constants.MAX_FAILED_ERROR + 3)
-        ]
+        timestamps = [start_time + i * 10 for i in range(constants.MAX_FAILED_ERROR + 3)]
         mock_time.time.side_effect = timestamps
 
         # Trigger more than MAX_FAILED_ERROR server down errors
@@ -613,9 +589,7 @@ class TestBaseChatModel(unittest.TestCase):
             model._handle_server_down(500)
 
         # Verify that only MAX_FAILED_ERROR timestamps are kept
-        self.assertEqual(
-            len(model._model_failed_response_timestamp), constants.MAX_FAILED_ERROR
-        )
+        self.assertEqual(len(model._model_failed_response_timestamp), constants.MAX_FAILED_ERROR)
 
         # The queue should have the most recent timestamps
         self.assertEqual(model._model_failed_response_timestamp[0], timestamps[3])
@@ -669,9 +643,7 @@ class TestBaseChatModel(unittest.TestCase):
         self.assertFalse(model._is_retryable_error("not a tuple"))
 
         # Test with tuple of wrong length
-        self.assertFalse(
-            model._is_retryable_error(("error message",))
-        )  # tuple with 1 element
+        self.assertFalse(model._is_retryable_error(("error message",)))  # tuple with 1 element
         self.assertFalse(
             model._is_retryable_error(("error message", 429, "extra"))
         )  # tuple with 3 elements
@@ -820,9 +792,7 @@ class TestBaseChatModel(unittest.TestCase):
         import asyncio
 
         model_params = ModelParams(url="http://test-url", auth_token="test-token")
-        result = asyncio.run(
-            model._generate_response_with_retry(messages, model_params)
-        )
+        result = asyncio.run(model._generate_response_with_retry(messages, model_params))
 
         # Verify result is None when RetryError occurs
         self.assertIsNone(result)
@@ -834,9 +804,7 @@ class TestBaseChatModel(unittest.TestCase):
         # Verify logger error was called
         mock_logger.error.assert_called_once()
         error_message = mock_logger.error.call_args[0][0]
-        self.assertIn(
-            f"Request failed after {model._retry_attempts} attempts", error_message
-        )
+        self.assertIn(f"Request failed after {model._retry_attempts} attempts", error_message)
 
     @patch("grasp.core.models.langgraph.grasp_base_chat_model.Retrying")
     @patch("grasp.core.models.langgraph.grasp_base_chat_model.wait_random_exponential")
@@ -942,6 +910,4 @@ class TestBaseChatModel(unittest.TestCase):
         # Verify logger error was called
         mock_logger.error.assert_called_once()
         error_message = mock_logger.error.call_args[0][0]
-        self.assertIn(
-            f"Request failed after {model._retry_attempts} attempts", error_message
-        )
+        self.assertIn(f"Request failed after {model._retry_attempts} attempts", error_message)

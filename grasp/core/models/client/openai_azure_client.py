@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union, cast, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 import httpx
 from langchain_core.messages import BaseMessage
@@ -25,9 +25,7 @@ class AzureClientConfig(BaseModel):
     timeout: int = Field(
         default=constants.DEFAULT_TIMEOUT, description="Request timeout in seconds"
     )
-    max_retries: int = Field(
-        default=3, description="Maximum number of retries for failed requests"
-    )
+    max_retries: int = Field(default=3, description="Maximum number of retries for failed requests")
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -123,7 +121,6 @@ class OpenAIAzureClient(BaseClient):
                     "formatted_prompt passed is None. Please provide a valid formatted prompt to build request with completion API."
                 )
 
-
     def send_request(
         self,
         payload: Any,
@@ -148,26 +145,18 @@ class OpenAIAzureClient(BaseClient):
         """
         generation_params = generation_params or {}
         pydantic_model = generation_params.get("pydantic_model")
-        final_params = {
-            k: v for k, v in generation_params.items() if (k != "pydantic_model")
-        }
+        final_params = {k: v for k, v in generation_params.items() if (k != "pydantic_model")}
         client = cast(Any, self.client)
         if pydantic_model:
             return client.beta.chat.completions.parse(
                 model=model_name,
                 messages=(
-                    payload["messages"]
-                    if self.chat_completions_api
-                    else [payload["prompt"]]
+                    payload["messages"] if self.chat_completions_api else [payload["prompt"]]
                 ),
                 response_format=pydantic_model,
                 **final_params,
             )
         if self.chat_completions_api:
-            return client.chat.completions.create(
-                **payload, model=model_name, **generation_params
-            )
+            return client.chat.completions.create(**payload, model=model_name, **generation_params)
         else:
-            return client.completions.create(
-                **payload, model=model_name, **generation_params
-            )
+            return client.completions.create(**payload, model=model_name, **generation_params)

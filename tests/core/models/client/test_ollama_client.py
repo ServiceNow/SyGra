@@ -76,9 +76,7 @@ class TestOllamaClient(unittest.TestCase):
         """Test initialization with completions API flag"""
         mock_client.return_value = MagicMock()
 
-        client = OllamaClient(
-            async_client=False, chat_completions_api=False, **self.base_config
-        )
+        client = OllamaClient(async_client=False, chat_completions_api=False, **self.base_config)
 
         # Verify chat_completions_api flag was set
         self.assertFalse(client.chat_completions_api)
@@ -96,9 +94,7 @@ class TestOllamaClient(unittest.TestCase):
         OllamaClient(async_client=False, **custom_config)
 
         # Verify client was created with custom configuration
-        mock_client.assert_called_once_with(
-            host="http://custom-host:11434", timeout=120
-        )
+        mock_client.assert_called_once_with(host="http://custom-host:11434", timeout=120)
 
     @patch("grasp.core.models.client.ollama_client.Client")
     def test_build_request_chat_completions(self, mock_client):
@@ -120,9 +116,7 @@ class TestOllamaClient(unittest.TestCase):
         self.assertIn("messages", payload)
         self.assertEqual(len(payload["messages"]), 2)
         self.assertEqual(payload["messages"][0]["role"], "system")
-        self.assertEqual(
-            payload["messages"][0]["content"], "You are a helpful assistant"
-        )
+        self.assertEqual(payload["messages"][0]["content"], "You are a helpful assistant")
         self.assertEqual(payload["messages"][1]["role"], "user")
         self.assertEqual(payload["messages"][1]["content"], "Hello, how are you?")
 
@@ -190,9 +184,7 @@ class TestOllamaClient(unittest.TestCase):
         """Test build_request with completions API"""
         mock_client.return_value = MagicMock()
 
-        client = OllamaClient(
-            async_client=False, chat_completions_api=False, **self.base_config
-        )
+        client = OllamaClient(async_client=False, chat_completions_api=False, **self.base_config)
 
         # Build the request with a formatted prompt
         prompt = "Tell me a story about a robot"
@@ -207,9 +199,7 @@ class TestOllamaClient(unittest.TestCase):
         """Test build_request with completions API and invalid prompt"""
         mock_client.return_value = MagicMock()
 
-        client = OllamaClient(
-            async_client=False, chat_completions_api=False, **self.base_config
-        )
+        client = OllamaClient(async_client=False, chat_completions_api=False, **self.base_config)
 
         # Try to build a request with None prompt
         with self.assertRaises(ValueError) as context:
@@ -295,9 +285,7 @@ class TestOllamaClient(unittest.TestCase):
         client_instance = MagicMock()
         mock_client.return_value = client_instance
 
-        client = OllamaClient(
-            async_client=False, chat_completions_api=False, **self.base_config
-        )
+        client = OllamaClient(async_client=False, chat_completions_api=False, **self.base_config)
 
         # Create a mock response
         mock_response = {"id": "test-id", "choices": [{"text": "Once upon a time..."}]}

@@ -5,9 +5,9 @@ import os
 import signal
 import time
 from collections import deque
-from typing import Any, Optional, Set, Deque, Dict
+from typing import Any, Deque, Dict, Optional, Set
 
-import datasets # type: ignore[import-untyped]
+import datasets  # type: ignore[import-untyped]
 
 from grasp.logger.logger_config import logger
 from grasp.utils import constants, utils
@@ -55,9 +55,7 @@ class InMemoryPositionTracker(DatasetPositionTracker):
             iterator = iterator.skip(position)
             return iterator
         else:
-            raise ValueError(
-                f"Unsupported dataset type for in-memory tracking: {type(dataset)}"
-            )
+            raise ValueError(f"Unsupported dataset type for in-memory tracking: {type(dataset)}")
 
     def get_current_position(self) -> int:
         return self.current_position
@@ -156,9 +154,7 @@ class ResumableExecutionManager:
 
                 setattr(self, f"_original_handler_{sig}", original_handler)
 
-                signal.signal(
-                    sig, lambda s, f: self._signal_handler(s, f, original_handler)
-                )
+                signal.signal(sig, lambda s, f: self._signal_handler(s, f, original_handler))
             except (ValueError, OSError):
                 pass
 
@@ -188,9 +184,7 @@ class ResumableExecutionManager:
                 with open(self.metadata_file, "r") as f:
                     metadata = json.load(f)
                     if metadata.get("completed", False):
-                        logger.info(
-                            "Execution already marked as complete, skipping final save"
-                        )
+                        logger.info("Execution already marked as complete, skipping final save")
                         return
             except Exception:
                 pass
@@ -212,18 +206,14 @@ class ResumableExecutionManager:
     def load_state(self, dataset_type: str = "auto") -> bool:
         """Load the execution state if it exists and is valid."""
         if not os.path.exists(self.metadata_file):
-            logger.info(
-                f"No metadata file found at {self.metadata_file}, starting fresh"
-            )
+            logger.info(f"No metadata file found at {self.metadata_file}, starting fresh")
             return False
 
         try:
             with open(self.metadata_file, "r") as f:
                 metadata = json.load(f)
         except json.JSONDecodeError:
-            logger.warning(
-                f"Metadata file {self.metadata_file} is corrupted, starting fresh"
-            )
+            logger.warning(f"Metadata file {self.metadata_file} is corrupted, starting fresh")
             return False
 
         # load the sampler pointers during resume of the process
@@ -260,9 +250,7 @@ class ResumableExecutionManager:
                 )
                 return False
 
-            logger.info(
-                f"Found alternative output file {found_file} instead of {prev_output_file}"
-            )
+            logger.info(f"Found alternative output file {found_file} instead of {prev_output_file}")
             prev_output_file = found_file
 
             metadata[constants.META_OUTPUT_FILE] = prev_output_file
@@ -270,9 +258,7 @@ class ResumableExecutionManager:
                 json.dump(metadata, f, indent=2)
 
         if prev_output_file != self.output_file:
-            logger.info(
-                f"Output file has changed from {prev_output_file} to {self.output_file}"
-            )
+            logger.info(f"Output file has changed from {prev_output_file} to {self.output_file}")
             metadata[constants.META_OUTPUT_FILE] = self.output_file
             with open(self.metadata_file, "w") as f:
                 json.dump(metadata, f, indent=2)
@@ -344,9 +330,7 @@ class ResumableExecutionManager:
                 with open(self.metadata_file, "r") as f:
                     verified_metadata = json.load(f)
                     if not verified_metadata.get("completed", False):
-                        logger.warning(
-                            "Failed to verify completed status in metadata file"
-                        )
+                        logger.warning("Failed to verify completed status in metadata file")
                     else:
                         logger.info("Execution marked as complete and verified")
             except Exception as e:
@@ -362,9 +346,7 @@ class ResumableExecutionManager:
             highest_position = 0
         else:
             position = self.position_tracker.get_current_position()
-            highest_position = getattr(
-                self.position_tracker, "highest_seen_position", position
-            )
+            highest_position = getattr(self.position_tracker, "highest_seen_position", position)
 
         # Create record positions mapping
         record_positions = {}
@@ -378,9 +360,7 @@ class ResumableExecutionManager:
             constants.META_LAST_POSITION: position,
             constants.META_HIGHEST_POSITION: highest_position,
             constants.META_DATASET_TYPE: (
-                self.position_tracker.dataset_type
-                if self.position_tracker
-                else "in_memory"
+                self.position_tracker.dataset_type if self.position_tracker else "in_memory"
             ),
             constants.META_TOTAL_PROCESSED: len(self.processed_records),
             constants.META_COMPLETED: False,  # Default to false, will be set to true in _mark_as_complete
@@ -450,9 +430,7 @@ class ResumableExecutionManager:
                     with open(self.metadata_file, "r") as f:
                         check_metadata = json.load(f)
                         if not check_metadata.get(constants.META_COMPLETED, False):
-                            logger.error(
-                                "Failed to set completed flag in metadata file!"
-                            )
+                            logger.error("Failed to set completed flag in metadata file!")
                         else:
                             logger.info("Execution marked as complete and verified")
                 except Exception as check_e:
@@ -473,9 +451,7 @@ class ResumableExecutionManager:
             return
 
         position = self.position_tracker.get_current_position()
-        highest_position = getattr(
-            self.position_tracker, "highest_seen_position", position
-        )
+        highest_position = getattr(self.position_tracker, "highest_seen_position", position)
 
         record_positions = {}
         if isinstance(self.position_tracker, StreamingPositionTracker):
@@ -573,9 +549,7 @@ class ResumableExecutionManager:
             # Pass the record_id to the tracker to maintain position-to-record mapping
             self.position_tracker.mark_position(position, record_id)
 
-    def mark_record_processed(
-        self, record: dict[str, Any], position: Optional[int] = None
-    ) -> None:
+    def mark_record_processed(self, record: dict[str, Any], position: Optional[int] = None) -> None:
         """Mark a record as processed and optionally update position."""
         record_id = self.get_record_id(record)
         self.processed_records.add(record_id)

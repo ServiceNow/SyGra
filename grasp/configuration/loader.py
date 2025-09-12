@@ -5,8 +5,8 @@ from typing import Any, Union
 import yaml
 
 try:
-    from grasp.core.dataset.dataset_config import DataSourceConfig, OutputConfig # noqa: F401
-    from grasp.core.graph.graph_config import GraphConfig # noqa: F401
+    from grasp.core.dataset.dataset_config import DataSourceConfig, OutputConfig  # noqa: F401
+    from grasp.core.graph.graph_config import GraphConfig  # noqa: F401
     from grasp.utils import utils
 
     UTILS_AVAILABLE = True
@@ -25,15 +25,11 @@ class ConfigLoader:
         config_path = Path(config_path)
         if not config_path.exists():
             if UTILS_AVAILABLE:
-                task_config_path = utils.get_file_in_task_dir(
-                    config_path.stem, "graph_config.yaml"
-                )
+                task_config_path = utils.get_file_in_task_dir(config_path.stem, "graph_config.yaml")
                 if os.path.exists(task_config_path):
                     config_path = Path(task_config_path)
                 else:
-                    raise FileNotFoundError(
-                        f"Configuration file not found: {config_path}"
-                    )
+                    raise FileNotFoundError(f"Configuration file not found: {config_path}")
             else:
                 raise FileNotFoundError(f"Configuration file not found: {config_path}")
 

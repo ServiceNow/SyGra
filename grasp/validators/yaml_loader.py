@@ -31,9 +31,7 @@ def process_custom_fields(config: dict[str, Any]) -> list[dict[str, Any]]:
     result_fields: list[dict[str, Any]] = []
     raw_fields = config.get("fields", [])
     if not isinstance(raw_fields, list):
-        raise TypeError(
-            f"Expected 'fields' to be a list of dicts, got {type(raw_fields).__name__}"
-        )
+        raise TypeError(f"Expected 'fields' to be a list of dicts, got {type(raw_fields).__name__}")
     for field in raw_fields:
         if not isinstance(field, dict):
             raise TypeError(
@@ -54,9 +52,7 @@ def process_custom_fields(config: dict[str, Any]) -> list[dict[str, Any]]:
             result_fields.append(field_info)
 
         except KeyError as e:
-            raise KeyError(
-                f"KeyError: Missing expected key {e} in field definition: {field}"
-            )
+            raise KeyError(f"KeyError: Missing expected key {e} in field definition: {field}")
         except TypeError as e:
             raise TypeError(
                 f"TypeError: Invalid data type encountered while processing field: {field}. Error: {e}"

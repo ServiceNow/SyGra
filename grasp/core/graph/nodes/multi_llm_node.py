@@ -38,9 +38,7 @@ class MultiLLMNode(BaseNode):
             if isclass(self.multi_llm_post_process):
                 self.multi_llm_post_process = self.multi_llm_post_process().apply
 
-    def _default_multi_llm_post_process(
-        self, model_outputs: dict[str, Any]
-    ) -> dict[str, Any]:
+    def _default_multi_llm_post_process(self, model_outputs: dict[str, Any]) -> dict[str, Any]:
         updated_model_outputs = {}
         for model, messages in model_outputs.items():
             updated_model_outputs[model] = messages[self.output_key]

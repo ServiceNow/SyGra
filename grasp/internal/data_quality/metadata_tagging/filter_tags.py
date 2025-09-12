@@ -33,15 +33,15 @@ import re
 import sys
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, cast, Union
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Union, cast
 
-import pandas as pd # type: ignore[import-untyped]
+import pandas as pd  # type: ignore[import-untyped]
 import torch
-from mlxtend.frequent_patterns import association_rules, fpgrowth # type: ignore[import-untyped]
-from mlxtend.preprocessing import TransactionEncoder # type: ignore[import-untyped]
-from nltk.stem import PorterStemmer # type: ignore[import-untyped]
+from mlxtend.frequent_patterns import association_rules, fpgrowth  # type: ignore[import-untyped]
+from mlxtend.preprocessing import TransactionEncoder  # type: ignore[import-untyped]
+from nltk.stem import PorterStemmer  # type: ignore[import-untyped]
 from sentence_transformers import SentenceTransformer
-from sklearn.cluster import DBSCAN # type: ignore[import-untyped]
+from sklearn.cluster import DBSCAN  # type: ignore[import-untyped]
 
 # ----------------------------
 # Logging
@@ -173,14 +173,10 @@ class SemanticClusterer:
             import cupy as cp  # type: ignore[import-not-found]
             from cuml.cluster import DBSCAN as CuDBSCAN  # type: ignore[import-not-found]
         except Exception as e:
-            logger.warning(
-                "cuML not available; falling back to scikit-learn DBSCAN: %s", e
-            )
+            logger.warning("cuML not available; falling back to scikit-learn DBSCAN: %s", e)
             return self._cluster_sklearn(X)
 
-        db = CuDBSCAN(
-            eps=self.cfg.eps, min_samples=self.cfg.min_samples, metric="cosine"
-        )
+        db = CuDBSCAN(eps=self.cfg.eps, min_samples=self.cfg.min_samples, metric="cosine")
         labels = db.fit_predict(cp.asarray(X))
         return cast(List[int], cp.asnumpy(labels).astype(int).tolist())
 
@@ -252,9 +248,7 @@ class AssociationMerger:
         if freq.empty:
             return AssocResult(groups={}, tag_to_group={})
 
-        rules = association_rules(
-            freq, metric="confidence", min_threshold=self.cfg.min_confidence
-        )
+        rules = association_rules(freq, metric="confidence", min_threshold=self.cfg.min_confidence)
         if rules.empty:
             return AssocResult(groups={}, tag_to_group={})
 
@@ -462,12 +456,8 @@ class InstaGPipeline:
             final_lists = normalized_lists
 
         # Update metadata
-        changed_flags = [
-            set(orig) != set(proc) for orig, proc in zip(tag_lists, final_lists)
-        ]
-        self._update_metadata(
-            output_data, final_lists, changed_flags, update_original=True
-        )
+        changed_flags = [set(orig) != set(proc) for orig, proc in zip(tag_lists, final_lists)]
+        self._update_metadata(output_data, final_lists, changed_flags, update_original=True)
 
         # Stats
         num_unique_after, unique_after = unique_tags_and_count(final_lists)
@@ -507,7 +497,9 @@ def extract_instag_stats(
 # ----------------------------
 
 
-def _read_input(path: Union[int, Union[str, bytes, os.PathLike[str], os.PathLike[bytes]]]) -> List[Dict[str, Any]]:
+def _read_input(
+    path: Union[int, Union[str, bytes, os.PathLike[str], os.PathLike[bytes]]],
+) -> List[Dict[str, Any]]:
     if path in (None, "-"):
         raw = sys.stdin.read()
     else:
@@ -561,9 +553,7 @@ def _parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         default=ClusterConfig.min_samples,
         help="DBSCAN min_samples",
     )
-    p.add_argument(
-        "--gpu", action="store_true", help="Use GPU (cuML DBSCAN if available)"
-    )
+    p.add_argument("--gpu", action="store_true", help="Use GPU (cuML DBSCAN if available)")
 
     p.add_argument(
         "--min-support",

@@ -60,9 +60,7 @@ class ConversationPreTokenizationTask:
             record["targets_pretokenized"] = targets_pretokenized
             pretokenized_records.append(record)
 
-        output_file = os.path.join(
-            args.output_dir, "conversation_pretokenized_output.jsonl"
-        )
+        output_file = os.path.join(args.output_dir, "conversation_pretokenized_output.jsonl")
         with open(output_file, "w") as f:
             for record in pretokenized_records:
                 f.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -85,9 +83,7 @@ class ConversationPreTokenizationTask:
             messages, tokenize=False, add_generation_prompt=False
         )
 
-        targets_pretokenized = conversation_pretokenized.replace(
-            inputs_pretokenized, ""
-        )
+        targets_pretokenized = conversation_pretokenized.replace(inputs_pretokenized, "")
 
         return inputs_pretokenized, targets_pretokenized, conversation_pretokenized
 

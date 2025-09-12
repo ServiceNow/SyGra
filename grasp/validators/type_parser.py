@@ -10,6 +10,7 @@ class TypeParseError(Exception):
 
 ParsedType = Union[type, types.GenericAlias, Any]
 
+
 class TypeParser:
     # Map of string names to actual type objects
     VALID_TYPES = {

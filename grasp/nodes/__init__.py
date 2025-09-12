@@ -105,9 +105,7 @@ class LLMNodeBuilder(BaseNodeBuilder):
         self._config["model"]["parameters"][param_name] = value
         return self
 
-    def multimodal_message(
-        self, role: str, content: list[dict[str, Any]]
-    ) -> "LLMNodeBuilder":
+    def multimodal_message(self, role: str, content: list[dict[str, Any]]) -> "LLMNodeBuilder":
         """Add multimodal message with complex content."""
         self._messages.append({role: content})
         return self
@@ -148,9 +146,7 @@ class LLMNodeBuilder(BaseNodeBuilder):
             self._config["post_process"] = processor
         return self
 
-    def structured_output(
-        self, schema: Union[str, dict[str, Any]], **kwargs
-    ) -> "LLMNodeBuilder":
+    def structured_output(self, schema: Union[str, dict[str, Any]], **kwargs) -> "LLMNodeBuilder":
         """Configure structured output."""
         structured_config = {
             "enabled": True,
@@ -244,9 +240,7 @@ class MultiLLMNodeBuilder(BaseNodeBuilder):
         super().__init__(name, "multi_llm")
         self._config["models"] = {}
 
-    def add_model(
-        self, label: str, model: Union[str, dict[str, Any]]
-    ) -> "MultiLLMNodeBuilder":
+    def add_model(self, label: str, model: Union[str, dict[str, Any]]) -> "MultiLLMNodeBuilder":
         """Add a model to the multi-LLM configuration."""
         if isinstance(model, str):
             self._config["models"][label] = ModelConfigBuilder.from_name(model)
@@ -285,14 +279,10 @@ class MultiLLMNodeBuilder(BaseNodeBuilder):
         self._config["output_keys"] = output
         return self
 
-    def multi_llm_post_process(
-        self, processor: Union[str, Callable]
-    ) -> "MultiLLMNodeBuilder":
+    def multi_llm_post_process(self, processor: Union[str, Callable]) -> "MultiLLMNodeBuilder":
         """Set multi-LLM post-processor."""
         if callable(processor):
-            self._config["multi_llm_post_process"] = self._callable_to_string_path(
-                processor
-            )
+            self._config["multi_llm_post_process"] = self._callable_to_string_path(processor)
         else:
             self._config["multi_llm_post_process"] = processor
         return self

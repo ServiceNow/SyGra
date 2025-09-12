@@ -66,7 +66,7 @@ class BaseNode(ABC):
             # Ensure node_config is always a dict to simplify downstream typing
             self.node_config = {}
         # stores node specific state variables, this should be passed to langgraph
-        self.state_variables : List[str] = []
+        self.state_variables: List[str] = []
 
         # throws ValueError
         self.validate_node()
@@ -167,9 +167,7 @@ class BaseNode(ABC):
         """
         pass
 
-    def validate_config_keys(
-        self, required_keys: list[str], config_name: str, node_config: dict
-    ):
+    def validate_config_keys(self, required_keys: list[str], config_name: str, node_config: dict):
         utils.validate_required_keys(required_keys, node_config, config_name)
 
     @abstractmethod

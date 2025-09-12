@@ -161,9 +161,7 @@ class DataSourceConfig(BaseModel):
             DataSourceConfig: Validated configuration object
         """
         if "transformations" in config:
-            config["transformations"] = [
-                TransformConfig(**t) for t in config["transformations"]
-            ]
+            config["transformations"] = [TransformConfig(**t) for t in config["transformations"]]
 
         return cls(**config)
 

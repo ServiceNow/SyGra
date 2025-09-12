@@ -34,11 +34,7 @@ class LogProbModel:
         # Support for multiple endpoints
         if isinstance(self.url, list):
             self.urls = self.url
-            self.auths = (
-                self.auth
-                if isinstance(self.auth, list)
-                else [self.auth] * len(self.urls)
-            )
+            self.auths = self.auth if isinstance(self.auth, list) else [self.auth] * len(self.urls)
             self.url = self.urls[0]  # Default to first one
             self.auth = self.auths[0]
         else:
@@ -97,9 +93,7 @@ class LogProbModel:
                         "prompt_logprobs": 0,
                     }
 
-                resp = await self.session.post(
-                    endpoint, json=body, timeout=self.timeout
-                )
+                resp = await self.session.post(endpoint, json=body, timeout=self.timeout)
 
                 # Handle error status codes
                 if resp.status == 429:
@@ -115,9 +109,7 @@ class LogProbModel:
                             current_url = self.urls[endpoint_idx]
                             current_auth = self.auths[endpoint_idx]
                             if self.session and current_auth:
-                                self.session._default_headers["Authorization"] = (
-                                    current_auth
-                                )
+                                self.session._default_headers["Authorization"] = current_auth
                         await asyncio.sleep(0.5)
                         continue
 
@@ -142,9 +134,7 @@ class PPLInferenceTask:
     Compute PPL & IFD by streaming JSONL → HTTP → JSONL, one record at a time.
     """
 
-    def __init__(
-        self, input_file: str, output_dir: str, num_records: int = 0, **kwargs: dict
-    ):
+    def __init__(self, input_file: str, output_dir: str, num_records: int = 0, **kwargs: dict):
         self.input_file = input_file
         self.output_dir = output_dir
         self.model_cfg = kwargs["model_config"]
@@ -221,21 +211,9 @@ class PPLInferenceTask:
                                 if e is not None and not math.isinf(self.get_logprob(e))
                             ]
 
-                            ppl = (
-                                float(np.exp(-np.mean(conv_logits)))
-                                if conv_logits
-                                else None
-                            )
-                            ans_ppl = (
-                                float(np.exp(-np.mean(tgt_logits)))
-                                if tgt_logits
-                                else None
-                            )
-                            ifd = (
-                                (ppl / ans_ppl)
-                                if (ppl is not None and ans_ppl)
-                                else None
-                            )
+                            ppl = float(np.exp(-np.mean(conv_logits))) if conv_logits else None
+                            ans_ppl = float(np.exp(-np.mean(tgt_logits))) if tgt_logits else None
+                            ifd = (ppl / ans_ppl) if (ppl is not None and ans_ppl) else None
                         except Exception as e:
                             print(f"Error processing record: {e}")
                             ifd = None
@@ -245,9 +223,7 @@ class PPLInferenceTask:
                             "quality_characteristics": {
                                 "heuristic_based": {
                                     "ifd": {
-                                        "ifd_model": self.model_cfg[
-                                            "model_serving_name"
-                                        ],
+                                        "ifd_model": self.model_cfg["model_serving_name"],
                                         "ifd_score": ifd,
                                     }
                                 }

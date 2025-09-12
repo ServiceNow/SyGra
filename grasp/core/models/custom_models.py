@@ -11,9 +11,15 @@ import time
 from abc import ABC, abstractmethod
 from typing import (
     Any,
+    DefaultDict,
+    Dict,
     Optional,
+    Protocol,
+    Sequence,
     Tuple,
-    Type, Dict, DefaultDict, cast, Sequence, Protocol, Union,
+    Type,
+    Union,
+    cast,
 )
 
 import openai
@@ -41,16 +47,18 @@ from grasp.core.models.client.openai_client import OpenAIClient
 
 # Note: We interact with a subset of client methods; define a Protocol to satisfy mypy
 class _PayloadClient(Protocol):
-    def build_request_with_payload(self, payload: Dict[str, Any], **kwargs: Any) -> Dict[str, Any]:
-        ...
+    def build_request_with_payload(
+        self, payload: Dict[str, Any], **kwargs: Any
+    ) -> Dict[str, Any]: ...
 
     async def async_send_request(
         self,
         payload: Dict[str, Any],
         model_name: Optional[str] = None,
         generation_params: Optional[Dict[str, Any]] = None,
-    ) -> Any:
-        ...
+    ) -> Any: ...
+
+
 from grasp.core.models.client.client_factory import ClientFactory
 from grasp.core.models.structured_output.structured_output_config import (
     StructuredOutputConfig,
@@ -74,21 +82,19 @@ class BaseCustomModel(ABC):
         # Initialize structured output configuration
         structured_output_raw = model_config.get("structured_output")
         if structured_output_raw is None:
-            self.structured_output_config : Dict[str, Any] = {}
+            self.structured_output_config: Dict[str, Any] = {}
             key_present = False
         else:
             self.structured_output_config = structured_output_raw or {}
             key_present = True
 
-        self.structured_output = StructuredOutputConfig(
-            self.structured_output_config, key_present
-        )
+        self.structured_output = StructuredOutputConfig(self.structured_output_config, key_present)
 
         # sleep before every call - in ms
         self.delay = model_config.get("delay", 100)
         # max_wait for 8 attempts = 2^(8-1) = 128 secs
         self.retry_attempts = model_config.get("retry_attempts", 8)
-        self.generation_params : dict[Any, Any] = model_config.get("parameters") or {}
+        self.generation_params: dict[Any, Any] = model_config.get("parameters") or {}
         self.hf_chat_template_model_id = model_config.get("hf_chat_template_model_id")
         if self.hf_chat_template_model_id:
             self.tokenizer = AutoTokenizer.from_pretrained(
@@ -96,23 +102,19 @@ class BaseCustomModel(ABC):
             )
             if model_config.get("modify_tokenizer", False):
                 self._set_chat_template()
-        self.model_stats : Dict[str, Any] = {"resp_code_dist": {}, "errors": {}}
+        self.model_stats: Dict[str, Any] = {"resp_code_dist": {}, "errors": {}}
         # track total count for round_robin load balancing; see "_get_model_url"
         self.call_count = 0
         # track the number of requests per url for least_requests load balancing; see "_get_model_url"
-        self.url_reqs_count : DefaultDict[str, int] = collections.defaultdict(int)
+        self.url_reqs_count: DefaultDict[str, int] = collections.defaultdict(int)
         # store the timestamps to check if server is down
-        self.model_failed_response_timestamp : list[float] = []
+        self.model_failed_response_timestamp: list[float] = []
         self._validate_completions_api_support()
         self._client: BaseClient
 
-    def _set_client(
-        self, url: str, auth_token: Optional[str] = None, async_client: bool = True
-    ):
+    def _set_client(self, url: str, auth_token: Optional[str] = None, async_client: bool = True):
         """Get or create the client instance on demand."""
-        self._client = ClientFactory.create_client(
-            self.model_config, url, auth_token, async_client
-        )
+        self._client = ClientFactory.create_client(self.model_config, url, auth_token, async_client)
 
     def _validate_completions_api_support(self) -> None:
         """
@@ -168,9 +170,7 @@ class BaseCustomModel(ABC):
         # Apply common finalization logic
         return self._finalize_response(resp_text, resp_status, model_url)
 
-    def _finalize_response(
-        self, resp_text: str, resp_status: int, model_url: str
-    ) -> AIMessage:
+    def _finalize_response(self, resp_text: str, resp_status: int, model_url: str) -> AIMessage:
         """Common response finalization logic"""
         self._update_model_stats(resp_text, resp_status)
         self._handle_server_down(resp_status)
@@ -232,9 +232,7 @@ class BaseCustomModel(ABC):
     ) -> Tuple[str, int]:
         """Generate structured output using native model support"""
         # This will be implemented in specific model classes
-        raise NotImplementedError(
-            "Native structured output not implemented for this model"
-        )
+        raise NotImplementedError("Native structured output not implemented for this model")
 
     async def _generate_fallback_structured_output(
         self,
@@ -251,7 +249,9 @@ class BaseCustomModel(ABC):
         # Modify the prompt to include format instructions
         modified_messages = list(input.messages)
         if modified_messages and modified_messages[-1].content:
-            modified_messages[-1].content = str(modified_messages[-1].content) + f"\n\n{format_instructions}"
+            modified_messages[-1].content = (
+                str(modified_messages[-1].content) + f"\n\n{format_instructions}"
+            )
 
         modified_input = ChatPromptValue(messages=modified_messages)
 
@@ -298,9 +298,7 @@ class BaseCustomModel(ABC):
             if load_balancing == "round_robin":
                 idx = self.call_count % len(url)
                 return_url = url[idx]
-                return_auth_token = (
-                    auth_token[idx] if isinstance(auth_token, list) else auth_token
-                )
+                return_auth_token = auth_token[idx] if isinstance(auth_token, list) else auth_token
             elif load_balancing == "least_requests":
                 # initialize the count for each url if it is not already done
                 if not self.url_reqs_count:
@@ -414,9 +412,7 @@ class BaseCustomModel(ABC):
         if returns 200, its success
         """
         url_obj = self.model_config.get("url")
-        auth_token = self.model_config.get("auth_token") or self.model_config.get(
-            "api_key"
-        )
+        auth_token = self.model_config.get("auth_token") or self.model_config.get("api_key")
         if isinstance(url_obj, list):
             for i, url in enumerate(url_obj):
                 token = auth_token[i] if isinstance(auth_token, list) else auth_token
@@ -426,16 +422,14 @@ class BaseCustomModel(ABC):
                     return status
             return 200
         else:
-            return self._ping_model(
-                url=self.model_config.get("url"), auth_token=auth_token
-            )
+            return self._ping_model(url=self.model_config.get("url"), auth_token=auth_token)
 
     def get_chat_formatted_text(self, chat_format_object: Sequence[BaseMessage]) -> str:
         chat_formatted_text = str(
             self.tokenizer.apply_chat_template(
-            utils.convert_messages_from_langchain_to_chat_format(chat_format_object),
-            tokenize=False,
-            add_generation_prompt=True,
+                utils.convert_messages_from_langchain_to_chat_format(chat_format_object),
+                tokenize=False,
+                add_generation_prompt=True,
             )
         )
         logger.debug(f"Chat formatted text: {chat_formatted_text}")
@@ -452,9 +446,7 @@ class BaseCustomModel(ABC):
             text = text.replace("\\_", "_")
         elif self.name() == "mixtral_instruct_8x22b":
             # very specific pattern observed in 8x22b. The value within the details tag is what we need
-            pattern1 = re.compile(
-                "<details><summary>.*?</summary>(.*?)</details>", re.DOTALL
-            )
+            pattern1 = re.compile("<details><summary>.*?</summary>(.*?)</details>", re.DOTALL)
             res = re.findall(pattern1, text)
             if len(res) == 1:
                 text = res[0]
@@ -519,16 +511,12 @@ class BaseCustomModel(ABC):
                             logger.info(
                                 "Structured output not configured, falling back to regular generation"
                             )
-                            result = await self._generate_text(
-                                input, model_params, **kwargs
-                            )
+                            result = await self._generate_text(input, model_params, **kwargs)
                         else:
                             result = so_result
                     else:
                         # Regular text generation
-                        result = await self._generate_text(
-                            input, model_params, **kwargs
-                        )
+                        result = await self._generate_text(input, model_params, **kwargs)
 
                     # Apply post-processing if defined
                     post_proc = self._get_post_processor()
@@ -537,12 +525,13 @@ class BaseCustomModel(ABC):
                         resp_code = result[1]
                         # IMPORTANT: add more items if needed in future
                         result = (resp_str, resp_code)
-                if attempt.retry_state.outcome is not None and not attempt.retry_state.outcome.failed:
+                if (
+                    attempt.retry_state.outcome is not None
+                    and not attempt.retry_state.outcome.failed
+                ):
                     attempt.retry_state.set_result(result)
         except RetryError:
-            logger.error(
-                f"[{self.name()}] Request failed after {self.retry_attempts} attempts"
-            )
+            logger.error(f"[{self.name()}] Request failed after {self.retry_attempts} attempts")
         return result
 
     async def _generate_text_with_retry(
@@ -588,9 +577,7 @@ class BaseCustomModel(ABC):
                 oldest_timestamp = self.model_failed_response_timestamp[
                     total_in_queue - constants.MAX_FAILED_ERROR
                 ]
-                newest_timestamp = self.model_failed_response_timestamp[
-                    total_in_queue - 1
-                ]
+                newest_timestamp = self.model_failed_response_timestamp[total_in_queue - 1]
                 time_gap_in_sec = newest_timestamp - oldest_timestamp
                 logger.warning(
                     f"Server failure count: {constants.MAX_FAILED_ERROR} in {time_gap_in_sec} seconds."
@@ -682,21 +669,15 @@ class CustomTGI(BaseCustomModel):
 
             resp_text = resp.text
             resp_status = resp.status_code
-            logger.info(
-                f"[{self.name()}][{model_url}] RESPONSE: Native support call successful"
-            )
-            logger.debug(
-                f"[{self.name()}] Native structured output response: {resp_text}"
-            )
+            logger.info(f"[{self.name()}][{model_url}] RESPONSE: Native support call successful")
+            logger.debug(f"[{self.name()}] Native structured output response: {resp_text}")
 
             if resp_status != 200:
                 logger.error(
                     f"[{self.name()}] Native structured output HTTP request failed with code: {resp_status}"
                 )
                 # Fall back to instruction-based approach
-                logger.info(
-                    f"[{self.name()}] Falling back to instruction-based structured output"
-                )
+                logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
                 return await self._generate_fallback_structured_output(
                     input, model_params, pydantic_model, **kwargs
                 )
@@ -706,36 +687,24 @@ class CustomTGI(BaseCustomModel):
 
             # Validate the response against the schema
             try:
-                resp_text = (
-                    json.loads(resp_text) if isinstance(resp_text, str) else resp_text
-                )
+                resp_text = json.loads(resp_text) if isinstance(resp_text, str) else resp_text
                 # Attempt to parse with the pydantic model to validate
                 logger.debug(f"[{self.name()}] Validating response against schema")
                 pydantic_model.model_validate(resp_text)
                 # If validation succeeds, return the validated JSON
-                logger.info(
-                    f"[{self.name()}] Native structured output generation succeeded"
-                )
+                logger.info(f"[{self.name()}] Native structured output generation succeeded")
                 return json.dumps(resp_text), resp_status
             except (json.JSONDecodeError, ValidationError) as e:
-                logger.error(
-                    f"[{self.name()}] Native structured output validation failed: {e}"
-                )
-                logger.info(
-                    f"[{self.name()}] Falling back to instruction-based structured output"
-                )
+                logger.error(f"[{self.name()}] Native structured output validation failed: {e}")
+                logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
                 # Fall back to instruction-based approach
                 return await self._generate_fallback_structured_output(
                     input, model_params, pydantic_model, **kwargs
                 )
 
         except Exception as e:
-            logger.error(
-                f"[{self.name()}] Native structured output generation failed: {e}"
-            )
-            logger.info(
-                f"[{self.name()}] Falling back to instruction-based structured output"
-            )
+            logger.error(f"[{self.name()}] Native structured output generation failed: {e}")
+            logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
             # Fall back to instruction-based approach
             return await self._generate_fallback_structured_output(
                 input, model_params, pydantic_model, **kwargs
@@ -806,9 +775,7 @@ class CustomAzure(BaseCustomModel):
             self._set_client(model_url, model_params.auth_token)
             # Build Request
             payload = {
-                "messages": utils.convert_messages_from_langchain_to_chat_format(
-                    input.messages
-                )
+                "messages": utils.convert_messages_from_langchain_to_chat_format(input.messages)
             }
             payload = self._client.build_request_with_payload(payload=payload)
             # Send Request
@@ -851,12 +818,9 @@ class CustomMistralAPI(BaseCustomModel):
             chat_format_messages = utils.convert_messages_from_langchain_to_chat_format(
                 input.messages
             )
-            messages = [
-                {"role": m["role"], "content": m["content"]}
-                for m in chat_format_messages
-            ]
+            messages = [{"role": m["role"], "content": m["content"]} for m in chat_format_messages]
             self._set_client(model_url, model_params.auth_token)
-            chat_response = await self._client.chat.complete_async( # type: ignore
+            chat_response = await self._client.chat.complete_async(  # type: ignore
                 model=self.model_config.get("model"),
                 messages=messages,
                 **self.generation_params,
@@ -920,23 +884,17 @@ class CustomVLLM(BaseCustomModel):
             extra_params = {**(self.generation_params or {}), "guided_json": json_schema}
 
             # Send the request using the client
-            completion = await client.send_request(
-                payload, self.model_serving_name, extra_params
-            )
+            completion = await client.send_request(payload, self.model_serving_name, extra_params)
 
             # Check if the request was successful based on the response status
-            resp_status = getattr(
-                completion, "status_code", 200
-            )  # Default to 200 if not present
+            resp_status = getattr(completion, "status_code", 200)  # Default to 200 if not present
 
             if resp_status != 200:
                 logger.error(
                     f"[{self.name()}] Native structured output request failed with code: {resp_status}"
                 )
                 # Fall back to instruction-based approach
-                logger.info(
-                    f"[{self.name()}] Falling back to instruction-based structured output"
-                )
+                logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
                 return await self._generate_fallback_structured_output(
                     input, model_params, pydantic_model, **kwargs
                 )
@@ -947,12 +905,8 @@ class CustomVLLM(BaseCustomModel):
             else:
                 resp_text = completion.choices[0].model_dump()["message"]["content"].strip()
 
-            logger.info(
-                f"[{self.name()}][{model_url}] RESPONSE: Native support call successful"
-            )
-            logger.debug(
-                f"[{self.name()}] Native structured output response: {resp_text}"
-            )
+            logger.info(f"[{self.name()}][{model_url}] RESPONSE: Native support call successful")
+            logger.debug(f"[{self.name()}] Native structured output response: {resp_text}")
 
             # Now validate and format the JSON output
             try:
@@ -960,29 +914,19 @@ class CustomVLLM(BaseCustomModel):
                 # Validate with pydantic model
                 pydantic_model(**parsed_data)
                 # Return JSON string representation
-                logger.info(
-                    f"[{self.name()}] Native structured output generation succeeded"
-                )
+                logger.info(f"[{self.name()}] Native structured output generation succeeded")
                 return json.dumps(parsed_data), resp_status
             except (json.JSONDecodeError, ValidationError) as e:
-                logger.error(
-                    f"[{self.name()}] Native structured output validation failed: {e}"
-                )
-                logger.info(
-                    f"[{self.name()}] Falling back to instruction-based structured output"
-                )
+                logger.error(f"[{self.name()}] Native structured output validation failed: {e}")
+                logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
                 # Fall back to instruction-based approach
                 return await self._generate_fallback_structured_output(
                     input, model_params, pydantic_model, **kwargs
                 )
 
         except Exception as e:
-            logger.error(
-                f"[{self.name()}] Native structured output generation failed: {e}"
-            )
-            logger.info(
-                f"[{self.name()}] Falling back to instruction-based structured output"
-            )
+            logger.error(f"[{self.name()}] Native structured output generation failed: {e}")
+            logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
             # Fall back to instruction-based approach
             return await self._generate_fallback_structured_output(
                 input, model_params, pydantic_model, **kwargs
@@ -1019,10 +963,7 @@ class CustomVLLM(BaseCustomModel):
             resp_text = f"{constants.ERROR_PREFIX} Http request failed {x}"
             logger.error(resp_text)
             rcode = self._get_status_from_body(x)
-            if (
-                constants.ELEMAI_JOB_DOWN in resp_text
-                or constants.CONNECTION_ERROR in resp_text
-            ):
+            if constants.ELEMAI_JOB_DOWN in resp_text or constants.CONNECTION_ERROR in resp_text:
                 # inference server is down
                 ret_code = 503
             elif rcode is not None:
@@ -1076,18 +1017,14 @@ class CustomOpenAI(BaseCustomModel):
             )
 
             # Check if the request was successful based on the response status
-            resp_status = getattr(
-                completion, "status_code", 200
-            )  # Default to 200 if not present
+            resp_status = getattr(completion, "status_code", 200)  # Default to 200 if not present
 
             if resp_status != 200:
                 logger.error(
                     f"[{self.name()}] Native structured output request failed with code: {resp_status}"
                 )
                 # Fall back to instruction-based approach
-                logger.info(
-                    f"[{self.name()}] Falling back to instruction-based structured output"
-                )
+                logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
                 return await self._generate_fallback_structured_output(
                     input, model_params, pydantic_model, **kwargs
                 )
@@ -1098,12 +1035,8 @@ class CustomOpenAI(BaseCustomModel):
             else:
                 resp_text = completion.choices[0].model_dump()["message"]["content"].strip()
 
-            logger.info(
-                f"[{self.name()}][{model_url}] RESPONSE: Native support call successful"
-            )
-            logger.debug(
-                f"[{self.name()}] Native structured output response: {resp_text}"
-            )
+            logger.info(f"[{self.name()}][{model_url}] RESPONSE: Native support call successful")
+            logger.debug(f"[{self.name()}] Native structured output response: {resp_text}")
 
             # Try to parse and validate the response
             try:
@@ -1111,29 +1044,19 @@ class CustomOpenAI(BaseCustomModel):
                 # Try to validate with pydantic model
                 logger.debug(f"[{self.name()}] Validating response against schema")
                 pydantic_model.model_validate(json_data)
-                logger.info(
-                    f"[{self.name()}] Native structured output generation succeeded"
-                )
+                logger.info(f"[{self.name()}] Native structured output generation succeeded")
                 return resp_text, resp_status
             except (json.JSONDecodeError, ValidationError) as e:
-                logger.error(
-                    f"[{self.name()}] Native structured output validation failed: {e}"
-                )
-                logger.info(
-                    f"[{self.name()}] Falling back to instruction-based structured output"
-                )
+                logger.error(f"[{self.name()}] Native structured output validation failed: {e}")
+                logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
                 # Fall back to instruction-based approach
                 return await self._generate_fallback_structured_output(
                     input, model_params, pydantic_model, **kwargs
                 )
 
         except Exception as e:
-            logger.error(
-                f"[{self.name()}] Native structured output generation failed: {e}"
-            )
-            logger.info(
-                f"[{self.name()}] Falling back to instruction-based structured output"
-            )
+            logger.error(f"[{self.name()}] Native structured output generation failed: {e}")
+            logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
             # Fall back to instruction-based approach
             return await self._generate_fallback_structured_output(
                 input, model_params, pydantic_model, **kwargs
@@ -1208,23 +1131,17 @@ class CustomOllama(BaseCustomModel):
             extra_params = {**(self.generation_params or {}), "format": json_schema}
 
             # Send the request using the client
-            completion = await self._client.send_request(
-                payload, self.name(), extra_params
-            )
+            completion = await self._client.send_request(payload, self.name(), extra_params)
 
             # Check if the request was successful based on the response status
-            resp_status = getattr(
-                completion, "status_code", 200
-            )  # Default to 200 if not present
+            resp_status = getattr(completion, "status_code", 200)  # Default to 200 if not present
 
             if resp_status != 200:
                 logger.error(
                     f"[{self.name()}] Native structured output request failed with code: {resp_status}"
                 )
                 # Fall back to instruction-based approach
-                logger.info(
-                    f"[{self.name()}] Falling back to instruction-based structured output"
-                )
+                logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
                 return await self._generate_fallback_structured_output(
                     input, model_params, pydantic_model, **kwargs
                 )
@@ -1235,12 +1152,8 @@ class CustomOllama(BaseCustomModel):
             else:
                 resp_text = completion["message"]["content"]
 
-            logger.info(
-                f"[{self.name()}][{model_url}] RESPONSE: Native support call successful"
-            )
-            logger.debug(
-                f"[{self.name()}] Native structured output response: {resp_text}"
-            )
+            logger.info(f"[{self.name()}][{model_url}] RESPONSE: Native support call successful")
+            logger.debug(f"[{self.name()}] Native structured output response: {resp_text}")
 
             # Now validate and format the JSON output
             try:
@@ -1248,29 +1161,19 @@ class CustomOllama(BaseCustomModel):
                 # Try to validate with pydantic model
                 logger.debug(f"[{self.name()}] Validating response against schema")
                 pydantic_model(**parsed_data)
-                logger.info(
-                    f"[{self.name()}] Native structured output generation succeeded"
-                )
+                logger.info(f"[{self.name()}] Native structured output generation succeeded")
                 return resp_text, resp_status
             except (json.JSONDecodeError, ValidationError) as e:
-                logger.error(
-                    f"[{self.name()}] Native structured output validation failed: {e}"
-                )
-                logger.info(
-                    f"[{self.name()}] Falling back to instruction-based structured output"
-                )
+                logger.error(f"[{self.name()}] Native structured output validation failed: {e}")
+                logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
                 # Fall back to instruction-based approach
                 return await self._generate_fallback_structured_output(
                     input, model_params, pydantic_model, **kwargs
                 )
 
         except Exception as e:
-            logger.error(
-                f"[{self.name()}] Native structured output generation failed: {e}"
-            )
-            logger.info(
-                f"[{self.name()}] Falling back to instruction-based structured output"
-            )
+            logger.error(f"[{self.name()}] Native structured output generation failed: {e}")
+            logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
             # Fall back to instruction-based approach
             return await self._generate_fallback_structured_output(
                 input, model_params, pydantic_model, **kwargs
@@ -1304,9 +1207,7 @@ class CustomOllama(BaseCustomModel):
 
 
 class CustomTriton(BaseCustomModel):
-    def _get_payload_config_template(
-        self, inference_server: str, payload_key: str = "default"
-    ):
+    def _get_payload_config_template(self, inference_server: str, payload_key: str = "default"):
         """
         Get the payload configuration template for the Triton server.
 
@@ -1346,9 +1247,7 @@ class CustomTriton(BaseCustomModel):
         # get the payload JSON
         payload_json_template = payload_cfg.get(constants.PAYLOAD_JSON)
         # payload json must be defined for triton server(for the specific API or default)
-        assert payload_json_template is not None, (
-            "Payload JSON must be defined for Triton server."
-        )
+        assert payload_json_template is not None, "Payload JSON must be defined for Triton server."
         return payload_json_template
 
     def _create_triton_request(
@@ -1398,11 +1297,9 @@ class CustomTriton(BaseCustomModel):
 
                 if error_msg == "Invalid JSON returned by model.":
                     logger.error("Invalid JSON returned, JSON mode specified")
-                    final_resp_text = inner_error.get(
-                        "model_output"
-                    ) or inner_error.get("response_metadata", {}).get("models", [{}])[
-                        0
-                    ].get("debug_info", {}).get("raw_model_output", "")
+                    final_resp_text = inner_error.get("model_output") or inner_error.get(
+                        "response_metadata", {}
+                    ).get("models", [{}])[0].get("debug_info", {}).get("raw_model_output", "")
                 else:
                     logger.error(f"Not a JSON error. Error message: {error_msg}")
                     raise RuntimeError("Not a JSON error")
@@ -1431,12 +1328,8 @@ class CustomTriton(BaseCustomModel):
             payload_config_template = self._get_payload_config_template(
                 constants.INFERENCE_SERVER_TRITON, payload_key
             )
-            payload_json_template = self._get_payload_json_template(
-                payload_config_template
-            )
-            conversation = utils.convert_messages_from_langchain_to_chat_format(
-                input.messages
-            )
+            payload_json_template = self._get_payload_json_template(payload_config_template)
+            conversation = utils.convert_messages_from_langchain_to_chat_format(input.messages)
             payload = self._create_triton_request(
                 payload_json_template, conversation, self.generation_params
             )

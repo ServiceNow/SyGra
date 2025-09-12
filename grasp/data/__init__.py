@@ -9,16 +9,14 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 try:
-    from grasp.core.dataset.dataset_config import (
-        DataSourceConfig, # noqa: F401
-        DataSourceType, # noqa: F401
-        OutputConfig, # noqa: F401
-        OutputType, # noqa: F401
-        ShardConfig, # noqa: F401
-        TransformConfig, # noqa: F401
-    )
-    from grasp.core.dataset.file_handler import FileHandler # noqa: F401
-    from grasp.core.dataset.huggingface_handler import HuggingFaceHandler # noqa: F401
+    from grasp.core.dataset.dataset_config import DataSourceConfig  # noqa: F401
+    from grasp.core.dataset.dataset_config import DataSourceType  # noqa: F401
+    from grasp.core.dataset.dataset_config import OutputConfig  # noqa: F401
+    from grasp.core.dataset.dataset_config import OutputType  # noqa: F401
+    from grasp.core.dataset.dataset_config import ShardConfig  # noqa: F401
+    from grasp.core.dataset.dataset_config import TransformConfig  # noqa: F401
+    from grasp.core.dataset.file_handler import FileHandler  # noqa: F401
+    from grasp.core.dataset.huggingface_handler import HuggingFaceHandler  # noqa: F401
 
     CORE_DATA_AVAILABLE = True
 except ImportError:
@@ -110,9 +108,7 @@ class DataSource:
         self._config["transformations"].append(transform_config)
         return self
 
-    def add_shard(
-        self, regex: str = "*", index: Optional[list[int]] = None
-    ) -> "DataSource":
+    def add_shard(self, regex: str = "*", index: Optional[list[int]] = None) -> "DataSource":
         """Add shard configuration."""
         shard_config: dict[str, Any] = {"regex": regex}
         if index:

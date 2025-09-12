@@ -519,9 +519,7 @@ def dummy_instance(mock_args, mock_grasp_config, mock_model_config):
 
         # Mock init_graph and compiled graph return
         mock_compiled_graph = MagicMock()
-        mock_compiled_graph.get_graph.return_value.draw_ascii.return_value = (
-            "ascii_graph"
-        )
+        mock_compiled_graph.get_graph.return_value.draw_ascii.return_value = "ascii_graph"
         instance.init_graph = MagicMock()
         instance.init_graph.return_value.compile.return_value = mock_compiled_graph
 
@@ -608,9 +606,7 @@ def test_missing_graph_config_key(mock_args, mock_model_config):
             BaseTaskExecutor(mock_args, graph_config_dict=invalid_config)
 
 
-def test_invalid_variable_type_in_output(
-    mock_args, mock_grasp_config, mock_model_config
-):
+def test_invalid_variable_type_in_output(mock_args, mock_grasp_config, mock_model_config):
     """
     Test that a ValueError is raised if `output_keys` is not a list or string.
 
@@ -907,13 +903,9 @@ def test_subgraph_merging_with_looping_edge(
     } in edge_configs
 
     # Check conditional edge from generate_answer
-    conditional_edge = next(
-        (e for e in graph.edges if e.edge_config.get("condition")), None
-    )
+    conditional_edge = next((e for e in graph.edges if e.edge_config.get("condition")), None)
     assert conditional_edge is not None
-    assert (
-        conditional_edge.edge_config["from"] == "generate_answer.generate_answer_inner"
-    )
+    assert conditional_edge.edge_config["from"] == "generate_answer.generate_answer_inner"
     assert conditional_edge.edge_config["condition"] == "tasks.should_continue"
     assert conditional_edge.edge_config["path_map"] == {
         "generate_answer": "generate_answer.generate_answer_inner",
@@ -1051,10 +1043,7 @@ def test_conditional_edge_from_subgraph(
         None,
     )
     assert conditional_edge is not None
-    assert (
-        conditional_edge.edge_config["condition"]
-        == "tasks.subgraph.condition.should_continue"
-    )
+    assert conditional_edge.edge_config["condition"] == "tasks.subgraph.condition.should_continue"
     assert conditional_edge.edge_config["path_map"] == {
         "loop": "subgraph_node.sub_node_logic",
         "exit": "END",
@@ -1081,9 +1070,7 @@ def test_prompt_placeholder_override(mock_args, mock_grasp_config, mock_model_co
         {"user": "say {something}"}
     ]
 
-    override = {
-        "build_text_node": {"prompt_placeholder_map": {"something": "anything"}}
-    }
+    override = {"build_text_node": {"prompt_placeholder_map": {"something": "anything"}}}
 
     def mock_load_yaml_file(*args, **kwargs):
         path = args[0] if args else kwargs.get("filepath", "")
@@ -1108,15 +1095,11 @@ def test_prompt_placeholder_override(mock_args, mock_grasp_config, mock_model_co
             override_config=override,
         )
 
-        prompt = graph_config.graph_config["nodes"]["build_text_node"]["prompt"][0][
-            "user"
-        ]
+        prompt = graph_config.graph_config["nodes"]["build_text_node"]["prompt"][0]["user"]
         assert "{anything}" in prompt
 
 
-def test_nested_config_override_merging(
-    mock_args, mock_grasp_config, mock_model_config
-):
+def test_nested_config_override_merging(mock_args, mock_grasp_config, mock_model_config):
     """
     Test that nested configuration overrides are *not* applied by default unless explicitly passed.
 
@@ -1137,20 +1120,16 @@ def test_nested_config_override_merging(
             "grasp.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
-        patch(
-            "grasp.core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}]
-        ),
+        patch("grasp.core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}]),
     ):
         executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
-        updated_temp = executor.graph_config.graph_config["nodes"]["evol_text_node"][
-            "model"
-        ]["parameters"]["temperature"]
+        updated_temp = executor.graph_config.graph_config["nodes"]["evol_text_node"]["model"][
+            "parameters"
+        ]["temperature"]
         assert updated_temp == 1.0  # should remain original
 
 
-def test_override_applied_only_to_specified_node(
-    mock_args, mock_grasp_config, mock_model_config
-):
+def test_override_applied_only_to_specified_node(mock_args, mock_grasp_config, mock_model_config):
     """
     Test that node-specific overrides do not affect unrelated nodes in the graph.
 
@@ -1171,19 +1150,14 @@ def test_override_applied_only_to_specified_node(
             "grasp.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
-        patch(
-            "grasp.core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}]
-        ),
+        patch("grasp.core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}]),
     ):
         executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
-        evol_lambda = executor.graph_config.graph_config["nodes"]["build_text_node"][
-            "lambda"
-        ]
+        evol_lambda = executor.graph_config.graph_config["nodes"]["build_text_node"]["lambda"]
 
         # Check that no override is accidentally applied
         assert (
-            evol_lambda
-            == "grasp.recipes.evol_instruct.task_executor.EvolInstructPromptGenerator"
+            evol_lambda == "grasp.recipes.evol_instruct.task_executor.EvolInstructPromptGenerator"
         )
 
 
@@ -1277,9 +1251,7 @@ def test_extract_from_iterable_dataset(mock_args, mock_grasp_config, mock_model_
             "grasp.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
-        patch(
-            "grasp.core.dataset.file_handler.FileHandler.read", return_value=dummy_data
-        ),
+        patch("grasp.core.dataset.file_handler.FileHandler.read", return_value=dummy_data),
     ):
         executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
         assert "x" in executor.graph_config.state_variables
@@ -1313,9 +1285,7 @@ def test_extract_from_prompt_templates(mock_args, mock_grasp_config, mock_model_
             "grasp.core.dataset.file_handler.FileHandler.read",
             return_value=[{"text": "hello"}],
         ),
-        patch(
-            "grasp.core.base_task_executor.utils.extract_pattern", return_value={"text"}
-        ),
+        patch("grasp.core.base_task_executor.utils.extract_pattern", return_value={"text"}),
     ):
         executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
         assert "text" in executor.graph_config.state_variables
@@ -1413,9 +1383,7 @@ def test_edges_are_initialized(dummy_instance):
     assert len(edges) > 0
 
 
-def test_duplicate_state_variables_error(
-    mock_args, mock_grasp_config, mock_model_config
-):
+def test_duplicate_state_variables_error(mock_args, mock_grasp_config, mock_model_config):
     """
     Test that duplicate `output_keys` in a node configuration are retained as-is.
 
