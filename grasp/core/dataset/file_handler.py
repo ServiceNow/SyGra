@@ -70,10 +70,12 @@ class FileHandler(DataHandler):
                 df = pd.read_csv(file_path, encoding=self.source_config.encoding if self.source_config else "utf-8")
                 return cast(list[dict[str, Any]], df.to_dict(orient="records"))
             elif file_path.suffix == ".jsonl":
-                with open(file_path, "r", encoding=self.source_config.encoding) as f:
+                enc = self.source_config.encoding if self.source_config else "utf-8"
+                with open(file_path, "r", encoding=enc) as f:
                     return cast(list[dict[str, Any]], [json.loads(line) for line in f])
             elif file_path.suffix == ".json":
-                with open(file_path, "r", encoding=self.source_config.encoding) as f:
+                enc = self.source_config.encoding if self.source_config else "utf-8"
+                with open(file_path, "r", encoding=enc) as f:
                     data = json.load(f)
                     if isinstance(data, list):
                         return cast(list[dict[str, Any]], data)
@@ -118,13 +120,15 @@ class FileHandler(DataHandler):
                 df = pd.DataFrame(data)
                 df.to_parquet(output_path)
             elif output_path.suffix == ".jsonl":
-                with open(output_path, "a", encoding=self.output_config.encoding) as f:
+                enc = self.output_config.encoding if self.output_config else "utf-8"
+                with open(output_path, "a", encoding=enc) as f:
                     for item in data:
                         f.write(
                             json.dumps(item, ensure_ascii=False, cls=JSONEncoder) + "\n"
                         )
             else:
-                with open(output_path, "w", encoding=self.output_config.encoding) as f:
+                enc = self.output_config.encoding if self.output_config else "utf-8"
+                with open(output_path, "w", encoding=enc) as f:
                     json.dump(data, f, indent=2, ensure_ascii=False, cls=JSONEncoder)
 
             logger.info(f"Successfully wrote data to {output_path}")
@@ -149,7 +153,10 @@ class FileHandler(DataHandler):
             raise ValueError("Source directory not configured")
 
         source_dir = Path(self.source_config.file_path).parent
-        pattern = self.source_config.file_pattern or "*"
+        # Use shard.regex from DataSourceConfig if provided; otherwise default to match all
+        pattern = "*"
+        if self.source_config and self.source_config.shard and self.source_config.shard.regex:
+            pattern = self.source_config.shard.regex
         extensions = [".parquet", ".jsonl", ".json"]
 
         matching_files: list[Path] = []

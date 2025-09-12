@@ -103,7 +103,7 @@ class DataSource:
         if "transformations" not in self._config:
             self._config["transformations"] = []
 
-        transform_config = {"transform": transform}
+        transform_config: dict[str, Any] = {"transform": transform}
         if params:
             transform_config["params"] = params
 
@@ -114,7 +114,7 @@ class DataSource:
         self, regex: str = "*", index: Optional[list[int]] = None
     ) -> "DataSource":
         """Add shard configuration."""
-        shard_config = {"regex": regex}
+        shard_config: dict[str, Any] = {"regex": regex}
         if index:
             shard_config["index"] = index
 

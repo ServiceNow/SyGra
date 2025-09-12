@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib
 import inspect
-from typing import Any, Optional, Type, Dict, Tuple
+from typing import Any, Optional, Type, Dict, Tuple, cast
 
 from pydantic import BaseModel, create_model
 
@@ -14,9 +14,9 @@ class SchemaConfigParser:
 
     def __init__(self, config: dict[str, Any]):
         self.config = config
-        self.schema_type = None  # Will be 'class' or 'schema'
-        self.schema_data = None
-        self.class_path = None
+        self.schema_type : Optional[str] = None  # Will be 'class' or 'schema'
+        self.schema_data : Optional[dict[Any, Any]] = None
+        self.class_path : Optional[str] = None
 
         self._parse_schema()
 
@@ -52,8 +52,8 @@ class SchemaConfigParser:
         except Exception as e:
             raise ValueError(f"Failed to import class '{class_path}': {str(e)}")
 
-        self.schema_type : str = "class"
-        self.class_path : str = class_path
+        self.schema_type = "class"
+        self.class_path = class_path
         self.schema_data = None
 
     def _handle_schema_dict(self, schema_dict: dict):
@@ -62,8 +62,8 @@ class SchemaConfigParser:
         if not self._is_valid_schema_dict(schema_dict):
             raise ValueError("Invalid schema dictionary structure")
 
-        self.schema_type : str = "schema"
-        self.schema_data : dict[Any, Any] = schema_dict
+        self.schema_type = "schema"
+        self.schema_data = schema_dict
         self.class_path = None
 
     def _is_valid_class_path(self, class_path: str) -> bool:
@@ -185,18 +185,34 @@ class StructuredOutputConfig:
     ) -> Type[BaseModel]:
         """Create pydantic model from YAML schema definition"""
         try:
-            fields: Dict[str, Tuple[Any, Any]] = {}
+            # Use string annotations to satisfy pydantic create_model typing overloads
+            fields: Dict[str, Tuple[str, Any]] = {}
             for field_name, field_config in schema_dict.get("fields", {}).items():
-                field_type = self._get_python_type(field_config.get("type", "str"))
+                type_str_raw = field_config.get("type", "str")
+                type_str = str(type_str_raw).lower()
+                # Ensure only supported annotation strings are used
+                if type_str not in {"str", "string", "int", "integer", "float", "number", "bool", "boolean", "list", "array", "dict", "object"}:
+                    type_str = "str"
+                # Normalize to canonical annotation names
+                normalization_map = {
+                    "string": "str",
+                    "integer": "int",
+                    "number": "float",
+                    "boolean": "bool",
+                    "array": "list",
+                    "object": "dict",
+                }
+                ann = normalization_map.get(type_str, type_str)
+
                 field_default = field_config.get("default", ...)
-
                 if field_default != ...:
-                    fields[field_name] = (field_type, field_default)
+                    fields[field_name] = (ann, field_default)
                 else:
-                    fields[field_name] = (field_type, ...)
+                    fields[field_name] = (ann, ...)
 
-            model_name = schema_dict.get("name", "DynamicModel")
-            return create_model(model_name, **fields)  # type: ignore[arg-type]
+            model_name: str = str(schema_dict.get("name", "DynamicModel"))
+            # Pass config=None to match create_model overload and provide field definitions via kwargs
+            return cast(Type[BaseModel], create_model(model_name, __config__=None, **fields))
         except Exception as e:
             logger.error(f"Failed to create pydantic model from YAML schema: {e}")
             raise

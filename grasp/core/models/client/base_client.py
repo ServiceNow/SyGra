@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Dict, Any
 
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import BaseMessage, convert_to_messages
@@ -70,14 +70,14 @@ class BaseClient(ABC):
         raise NotImplementedError("Build request must be implemented")
 
     @abstractmethod
-    def send_request(self, payload, model_name: str, **kwargs):
+    def send_request(self, payload, model_name: str, generation_params: Optional[Dict[str, Any]] = None):
         """
         Send the request payload to the model and return the response.
 
         Args:
             payload (dict): The request payload to send.
             model_name (str): The name of the model to send the request to.
-            **kwargs: Additional keyword arguments to include in the request.
+            generation_params: Optional[Dict[str, Any]]: Additional keyword arguments to include in the request.
 
         Returns:
             dict: The response from the model.

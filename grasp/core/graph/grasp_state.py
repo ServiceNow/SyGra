@@ -9,6 +9,4 @@ class GraspState(TypedDict, total=False):
     Base class is only added for readability and keeping langgraph decoupled from platform
     """
 
-    def __init__(self):
-        # this is added to complete the class
-        return
+    pass

@@ -170,8 +170,8 @@ class SemanticClusterer:
 
     def _cluster_cuml(self, X) -> List[int]:
         try:
-            import cupy as cp # type: ignore[import-untyped]
-            from cuml.cluster import DBSCAN as CuDBSCAN # type: ignore[import-untyped]
+            import cupy as cp  # type: ignore[import-not-found]
+            from cuml.cluster import DBSCAN as CuDBSCAN  # type: ignore[import-not-found]
         except Exception as e:
             logger.warning(
                 "cuML not available; falling back to scikit-learn DBSCAN: %s", e
@@ -524,7 +524,8 @@ def _write_output(obj: list[dict[str, Any]], path: Optional[str]) -> None:
     if path in (None, "-"):
         sys.stdout.write(text + "\n")
     else:
-        with open(path, "w", encoding="utf-8") as f:
+        out_path = cast(str, path)
+        with open(out_path, "w", encoding="utf-8") as f:
             f.write(text)
 
 

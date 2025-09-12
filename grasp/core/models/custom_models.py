@@ -640,7 +640,7 @@ class CustomTGI(BaseCustomModel):
                 "parameters": {"grammar": {"type": "json", "value": json_schema}},
             }
 
-            payload = self._client.build_request(payload=payload)
+            payload = self._client.build_request_with_payload(payload=payload)
 
             # Send Request with guidance parameters
             resp = await self._client.async_send_request(
@@ -716,7 +716,7 @@ class CustomTGI(BaseCustomModel):
             self._set_client(model_params.url, model_params.auth_token)
             # Build Request
             payload = {"inputs": self.get_chat_formatted_text(input.messages)}
-            payload = self._client.build_request(payload=payload)
+            payload = self._client.build_request_with_payload(payload=payload)
             # Send Request
             resp = await self._client.async_send_request(
                 payload, generation_params=self.generation_params
@@ -768,7 +768,7 @@ class CustomAzure(BaseCustomModel):
                     input.messages
                 )
             }
-            payload = self._client.build_request(payload=payload)
+            payload = self._client.build_request_with_payload(payload=payload)
             # Send Request
             resp = await self._client.async_send_request(
                 payload, generation_params=self.generation_params
@@ -1397,7 +1397,7 @@ class CustomTriton(BaseCustomModel):
             payload = self._create_triton_request(
                 payload_json_template, conversation, self.generation_params
             )
-            payload = self._client.build_request(payload=payload)
+            payload = self._client.build_request_with_payload(payload=payload)
 
             # Send Request
             resp = await self._client.async_send_request(payload)

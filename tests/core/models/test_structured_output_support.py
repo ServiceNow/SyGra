@@ -12,6 +12,7 @@ import json
 import sys
 import unittest
 from pathlib import Path
+from typing import Dict, Any
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -63,6 +64,9 @@ class MockClient:
 
     def build_request(self, **kwargs):
         return kwargs
+
+    def build_request_with_payload(self, payload: Dict[str, Any], **kwargs):
+        return payload
 
     async def async_send_request(self, payload, **kwargs):
         response = Mock()
