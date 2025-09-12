@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 from types import SimpleNamespace
 
 import aiohttp
@@ -68,7 +68,7 @@ class HttpClient(BaseClient):
 
     def build_request(
         self,
-        messages: Optional[List[BaseMessage]] = None,
+        messages: Optional[Sequence[BaseMessage]] = None,
         formatted_prompt: Optional[str] = None,
         stop: Optional[List[str]] = None,
         **kwargs,

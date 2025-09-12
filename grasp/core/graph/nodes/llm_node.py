@@ -83,16 +83,15 @@ class LLMNode(BaseNode):
         self, response: AIMessage, state: dict[str, Any]
     ) -> dict[str, Any]:
         # only if post processor is not defined
+        output_dict: dict[str, Any] = {}
         if self.output_keys == "messages":
-            output_dict = {
-                self.output_keys: [
-                    self.role_cls_map[self.output_role](
-                        response.content, name=self.name
-                    )
-                ]
-            }
+            output_dict["messages"] = [
+                self.role_cls_map[self.output_role](
+                    response.content, name=self.name
+                )
+            ]
         else:
-            output_dict = {self.output_keys: response.content}
+            output_dict[self.output_keys] = response.content
         return output_dict
 
     def _generate_prompt(self, state: dict[str, Any]):

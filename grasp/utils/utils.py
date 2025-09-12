@@ -4,11 +4,11 @@ import os
 import re
 import threading
 from pathlib import Path
-from typing import Any, Callable, Iterator, Union, Optional
+from typing import Any, Callable, Iterator, Union, cast, Optional, Sequence
 
-import yaml
-from datasets import IterableDataset
-from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage
+import yaml # type: ignore[import-untyped]
+from datasets import IterableDataset # type: ignore[import-untyped]
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage, BaseMessage
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
@@ -24,7 +24,7 @@ from grasp.logger.logger_config import logger
 from grasp.utils import constants
 
 
-def load_model_config() -> dict[str, Union[dict, Any]]:
+def load_model_config() -> Any:
     """
     Load model configurations from both models.yaml and environment variables.
 
@@ -143,7 +143,7 @@ def get_env_name(name):
     return re.sub(r"\s+", "_", name).upper()
 
 
-def load_yaml_file(filepath: str) -> dict[str, Any]:
+def load_yaml_file(filepath: str) -> Any:
     with open(filepath) as f:
         return yaml.safe_load(f)
 
@@ -278,13 +278,15 @@ def validate_required_keys(
         )
 
 
-def get_func_from_str(func_str: str) -> Callable:
+def get_func_from_str(func_str: str) -> Callable[..., Any]:
     assert not func_str.startswith(".")
     objects = func_str.split(".")
     module = ".".join(objects[:-1])
     method_name = objects[-1]
     obj = getattr(importlib.import_module(module), method_name)
-    return obj
+    if not callable(obj):
+        raise TypeError(f"Resolved object '{func_str}' is not callable")
+    return cast(Callable[..., Any], obj)
 
 
 def flatten_dict(d, parent_key="", sep="_"):
@@ -322,7 +324,7 @@ def deep_update(target: dict, src: dict):
 def convert_messages_from_chat_format_to_langchain(
     messages: list[dict],
 ) -> list[BaseMessagePromptTemplate]:
-    langchain_messages = []
+    langchain_messages: list[BaseMessagePromptTemplate] = []
     for message in messages:
         role, content = message["role"], message["content"]
         if role == "user":
@@ -348,7 +350,7 @@ def convert_messages_from_config_to_chat_format(
 
 
 def convert_messages_from_langchain_to_chat_format(
-    messages: list[AnyMessage],
+    messages: Sequence[BaseMessage],
 ) -> list[dict]:
     chat_messages = []
     for message in messages:
@@ -416,7 +418,7 @@ def get_graph_factory(backend: str):
         raise ValueError(f"{backend} is not a supported backend.")
 
 
-def get_graph_properties(task_name: str = None) -> dict:
+def get_graph_properties(task_name: Optional[str] = None) -> Any:
     task = task_name or current_task
     if not task:
         logger.error("Current task name is not initialized.")
@@ -428,7 +430,7 @@ def get_graph_properties(task_name: str = None) -> dict:
     return yaml_config.get("graph_config", {}).get("graph_properties", {})
 
 
-def get_graph_property(key: str, default_value: Any, task_name: str = None) -> Any:
+def get_graph_property(key: str, default_value: Any, task_name: Optional[str] = None) -> Any:
     """
     Get the graph property value
     If task_name is None, returns the property value from current task
@@ -437,17 +439,17 @@ def get_graph_property(key: str, default_value: Any, task_name: str = None) -> A
     return props.get(key, default_value)
 
 
-def get_dataset(datasrc: dict) -> Union[list[dict], Iterator]:
+def get_dataset(datasrc: dict) -> Union[list[dict[str, Any]], IterableDataset]:
     """
     Get dataset from HuggingFace dataset or Disk based on yaml configuration(dict).
     """
     ds_type = datasrc.get("type")
-    datasrc = DataSourceConfig.from_dict(datasrc)
+    ds_cfg = DataSourceConfig.from_dict(datasrc)
     if ds_type == "hf":
-        hf = HuggingFaceHandler(datasrc)
+        hf = HuggingFaceHandler(ds_cfg)
         dataset = hf.read()
     elif ds_type == "disk":
-        fh = FileHandler(datasrc)
+        fh = FileHandler(ds_cfg)
         dataset = fh.read()
     else:
         raise ValueError(f"{ds_type} is not supported.")
@@ -460,12 +462,16 @@ def get_dataset(datasrc: dict) -> Union[list[dict], Iterator]:
 # sampler_cache stores the dataset and pointer to read next record
 # key is the datasource dictionary in string format to make it unique
 # {key: (dataset, pointer)}
-sampler_cache = {}
+sampler_cache: dict[
+    str,
+    tuple[Union[IterableDataset, list[dict[str, Any]]], int],
+] = {}
 cache_lock = threading.Lock()
 
 
 def fetch_next_record(datasrc: dict, column: str):
     key = str(datasrc)
+    record: Any = None
     with cache_lock:
         if key in sampler_cache:
             dataset, pointer = sampler_cache[key]
@@ -569,4 +575,4 @@ class BackendFactoryProxy:
 backend_factory = BackendFactoryProxy()
 
 # store the current task to access it later to fetch properties
-current_task: Optional[str] = None
+current_task = None

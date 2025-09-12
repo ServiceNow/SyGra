@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, List, Optional, Union, cast, Sequence
 
 import httpx
 from langchain_core.messages import BaseMessage
@@ -69,7 +69,7 @@ class OpenAIAzureClient(BaseClient):
 
     def build_request(
         self,
-        messages: Optional[List[BaseMessage]] = None,
+        messages: Optional[Sequence[BaseMessage]] = None,
         formatted_prompt: Optional[str] = None,
         stop: Optional[List[str]] = None,
         **kwargs: Any,

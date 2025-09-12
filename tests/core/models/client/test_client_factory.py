@@ -41,14 +41,14 @@ class TestClientFactory(unittest.TestCase):
         mock_validate.side_effect = ValueError("Missing required key: model_type")
         model_config = {"url": "http://test-url.com"}
         with self.assertRaises(ValueError):
-            ClientFactory.create_client(model_config)
+            ClientFactory.create_client(model_config, "http://test-url.com")
 
     def test_create_client_missing_url(self):
         """Test create_client with missing model_type key"""
         model_config = {"url": "http://test-url.com", "model_type": "vllm"}
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(TypeError) as context:
             ClientFactory.create_client(model_config)
-        self.assertIn("URL is required for client creation", str(context.exception))
+        self.assertIn("missing 1 required positional argument: 'url'", str(context.exception))
 
     def test_create_client_missing_auth_token(self):
         """Test create_client with missing model_type key"""

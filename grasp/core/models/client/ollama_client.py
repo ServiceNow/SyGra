@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from langchain_core.messages import BaseMessage
 from langchain_openai.chat_models.base import _convert_message_to_dict
@@ -58,7 +58,7 @@ class OllamaClient(BaseClient):
 
     def build_request(
         self,
-        messages: Optional[List[BaseMessage]] = None,
+        messages: Optional[Sequence[BaseMessage]] = None,
         formatted_prompt: Optional[str] = None,
         stop: Optional[List[str]] = None,
         **kwargs,

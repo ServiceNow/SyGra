@@ -566,12 +566,11 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         model._structured_output_lock.__aenter__ = AsyncMock(return_value=None)
         model._structured_output_lock.__aexit__ = AsyncMock(return_value=None)
 
-        resp_text, resp_status = await model._handle_structured_output(
+        resp = await model._handle_structured_output(
             self.test_input, self.test_params
         )
 
-        self.assertIsNone(resp_text)
-        self.assertIsNone(resp_status)
+        self.assertIsNone(resp)
 
     @patch("grasp.utils.utils.validate_required_keys")
     @patch(
