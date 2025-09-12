@@ -4,7 +4,7 @@ import os
 import re
 import threading
 from pathlib import Path
-from typing import Any, Callable, Iterator, Union
+from typing import Any, Callable, Iterator, Union, Optional
 
 import yaml
 from datasets import IterableDataset
@@ -24,7 +24,7 @@ from grasp.logger.logger_config import logger
 from grasp.utils import constants
 
 
-def load_model_config() -> Any:
+def load_model_config() -> dict[str, Union[dict, Any]]:
     """
     Load model configurations from both models.yaml and environment variables.
 
@@ -143,7 +143,7 @@ def get_env_name(name):
     return re.sub(r"\s+", "_", name).upper()
 
 
-def load_yaml_file(filepath: str) -> Any:
+def load_yaml_file(filepath: str) -> dict[str, Any]:
     with open(filepath) as f:
         return yaml.safe_load(f)
 
@@ -569,4 +569,4 @@ class BackendFactoryProxy:
 backend_factory = BackendFactoryProxy()
 
 # store the current task to access it later to fetch properties
-current_task = None
+current_task: Optional[str] = None

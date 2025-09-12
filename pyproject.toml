@@ -78,6 +78,7 @@ mlxtend = "*"
 pandarallel = "*"
 sentence-transformers = "*"
 soundfile = "*"
+types-pyyaml = "^6.0.12.20250822"
 
 [tool.poetry.group.ui.dependencies]
 streamlit = "*"

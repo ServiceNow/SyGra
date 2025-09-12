@@ -6,7 +6,7 @@ using graph-based architectures with LLMs, agents, and custom processing nodes.
 """
 
 import logging
-from typing import Any, Dict, Union
+from typing import Any, Union, Callable
 
 from .configuration import ConfigLoader, load_config
 from .exceptions import (
@@ -80,7 +80,7 @@ except ImportError:
 
 # Utility modules
 try:
-    from . import utils
+    from .utils import utils
     from .logger.logger_config import (
         logger, # noqa: F401
         reset_to_internal_logger, # noqa: F401
@@ -152,19 +152,19 @@ def quick_agent(
     return (
         Workflow(f"quick_agent_{model.replace('/', '_')}")
         .source(data_source)
-        .agent(model, prompt, tools)
+        .agent(model=model, tools=tools, prompt=prompt)
         .sink(output)
     )
 
 
 def quick_multi_llm(
-    models: Dict[str, str], prompt: str, data_source: str, output: str = "output.json"
+    models: dict[str, Any], prompt: str, data_source: str, output: str = "output.json"
 ):
     """Quick multi-LLM workflow creation."""
     return (
         Workflow("quick_multi_llm")
         .source(data_source)
-        .multi_llm(models, prompt)
+        .multi_llm(models=models, prompt=prompt)
         .sink(output)
     )
 
@@ -204,8 +204,8 @@ def create_chat_workflow(name: str, conversation_type: str = "multiturn") -> Wor
 
 
 def create_structured_schema(
-    fields: Dict[str, str], name: str = "CustomSchema"
-) -> Dict[str, Any]:
+    fields: dict[str, str], name: str = "CustomSchema"
+) -> dict[str, Any]:
     """Create structured output schema configuration."""
     return {
         "enabled": True,
@@ -219,21 +219,21 @@ def create_structured_schema(
     }
 
 
-def pydantic_schema(model_class: str) -> Dict[str, Any]:
+def pydantic_schema(model_class: str) -> dict[str, Any]:
     """Create structured output schema from Pydantic model class path."""
     return {"enabled": True, "schema": model_class}
 
 
 def create_processor_config(
-    processor: Union[str, callable], **params
-) -> Dict[str, Any]:
+    processor: Union[str, Callable], **params
+) -> dict[str, Any]:
     """Create processor configuration."""
     if callable(processor):
         processor_path = f"{processor.__module__}.{processor.__name__}"
     else:
         processor_path = processor
 
-    config = {"processor": processor_path}
+    config: dict[str, Any] = {"processor": processor_path}
     if params:
         config["params"] = params
 
@@ -241,15 +241,15 @@ def create_processor_config(
 
 
 def create_transformation_config(
-    transform: Union[str, callable], **params
-) -> Dict[str, Any]:
+    transform: Union[str, Callable], **params
+) -> dict[str, Any]:
     """Create data transformation configuration."""
     if callable(transform):
         transform_path = f"{transform.__module__}.{transform.__name__}"
     else:
         transform_path = transform
 
-    config = {"transform": transform_path}
+    config: dict[str, Any] = {"transform": transform_path}
     if params:
         config["params"] = params
 
@@ -266,7 +266,7 @@ def setup_logging(level: str = "INFO") -> None:
     logging.getLogger("grasp").setLevel(getattr(logging, level.upper()))
 
 
-def validate_environment() -> Dict[str, bool]:
+def validate_environment() -> dict[str, bool]:
     """Validate environment setup."""
     return {
         "core_available": CORE_AVAILABLE,
@@ -279,7 +279,7 @@ def validate_environment() -> Dict[str, bool]:
     }
 
 
-def get_info() -> Dict[str, Any]:
+def get_info() -> dict[str, Any]:
     """Get library information and feature availability."""
     return {
         "version": __version__,
@@ -301,7 +301,7 @@ def list_available_models() -> list[str]:
         return [f"Error loading models: {e}"]
 
 
-def get_model_info(model_name: str) -> Dict[str, Any]:
+def get_model_info(model_name: str) -> dict[str, Any]:
     """Get information about a specific model."""
     if not UTILS_AVAILABLE:
         return {"error": "Framework not available"}
