@@ -80,7 +80,7 @@ except ImportError:
 
 # Utility modules
 try:
-    from .utils import utils
+    from . import utils
     from .logger.logger_config import (
         logger, # noqa: F401
         reset_to_internal_logger, # noqa: F401

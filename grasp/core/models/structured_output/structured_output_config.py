@@ -4,7 +4,7 @@ import importlib
 import inspect
 from typing import Any, Optional, Type, Dict, Tuple, cast
 
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel, create_model, Field
 
 from grasp.logger.logger_config import logger
 
@@ -185,34 +185,17 @@ class StructuredOutputConfig:
     ) -> Type[BaseModel]:
         """Create pydantic model from YAML schema definition"""
         try:
-            # Use string annotations to satisfy pydantic create_model typing overloads
-            fields: Dict[str, Tuple[str, Any]] = {}
+            field_definitions: Dict[str, Any] = {}
             for field_name, field_config in schema_dict.get("fields", {}).items():
-                type_str_raw = field_config.get("type", "str")
-                type_str = str(type_str_raw).lower()
-                # Ensure only supported annotation strings are used
-                if type_str not in {"str", "string", "int", "integer", "float", "number", "bool", "boolean", "list", "array", "dict", "object"}:
-                    type_str = "str"
-                # Normalize to canonical annotation names
-                normalization_map = {
-                    "string": "str",
-                    "integer": "int",
-                    "number": "float",
-                    "boolean": "bool",
-                    "array": "list",
-                    "object": "dict",
-                }
-                ann = normalization_map.get(type_str, type_str)
+                field_type = self._get_python_type(field_config.get("type", "str"))
+                default = field_config.get("default", ...)
+                description = field_config.get("description", "")
+                # Use Field to attach metadata
+                field_definitions[field_name] = (field_type, Field(default=default, description=description))
 
-                field_default = field_config.get("default", ...)
-                if field_default != ...:
-                    fields[field_name] = (ann, field_default)
-                else:
-                    fields[field_name] = (ann, ...)
-
-            model_name: str = str(schema_dict.get("name", "DynamicModel"))
-            # Pass config=None to match create_model overload and provide field definitions via kwargs
-            return cast(Type[BaseModel], create_model(model_name, __config__=None, **fields))
+            model_name = schema_dict.get("name", "DynamicModel")
+            model: Type[BaseModel] = create_model(model_name, **field_definitions)
+            return model
         except Exception as e:
             logger.error(f"Failed to create pydantic model from YAML schema: {e}")
             raise

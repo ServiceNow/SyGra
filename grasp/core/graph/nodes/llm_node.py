@@ -142,9 +142,9 @@ class LLMNode(BaseNode):
             prompt_lines.append(f"{agent_name}: {record['response']}")
         prompt_lines.append(constants.SUFFIX_SINGLETURN_CONV.format(self.name))
         logger.info(f"Injecting history with prompt count: {len(prompt_lines)}")
-        final_prompt = "\n".join(prompt_lines)
-        final_prompt = HumanMessage(content=final_prompt)
-        updated_msg_list.append(final_prompt)
+        final_prompt_text = "\n".join(prompt_lines)
+        final_prompt_msg = HumanMessage(content=final_prompt_text)
+        updated_msg_list.append(final_prompt_msg)
         return updated_msg_list
 
     def _inject_history(self, state: dict[str, Any], prompt):
@@ -181,7 +181,6 @@ class LLMNode(BaseNode):
         """
         for message in chat_frmt_messages:
             contents = message["content"]
-            expanded_contents = []
             # if it's a normal text conversation then no need to expand
             if isinstance(contents, str):
                 continue
@@ -234,25 +233,18 @@ class LLMNode(BaseNode):
         # wrap the message to pass to the class - new implementation
         responseMsg = GraspMessage(response)
 
-        # if it is a class, apply() method is expected
-        post_process_sig = (
-            signature(self.post_process().apply)
-            if isclass(self.post_process)
-            else signature(self.post_process)
-        )
-
-        # Handle legacy post-processors
-        if len(post_process_sig.parameters) == 1:
-            updated_state = (
-                self.post_process().apply(responseMsg)
-                if isclass(self.post_process)
-                else self.post_process(response)
-            )
-        else:
+        # Call post-processor with best effort: try (resp, state) then fallback to (resp)
+        try:
             updated_state = (
                 self.post_process().apply(responseMsg, state)
                 if isclass(self.post_process)
                 else self.post_process(response, state)
+            )
+        except TypeError:
+            updated_state = (
+                self.post_process().apply(responseMsg)
+                if isclass(self.post_process)
+                else self.post_process(response) # type: ignore
             )
 
         # Store chat history if enabled for this node

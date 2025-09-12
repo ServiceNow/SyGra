@@ -6,7 +6,7 @@ import random
 import sys
 import time
 from abc import abstractmethod
-from typing import Any, Callable, List, Literal, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, List, Literal, Optional, Sequence, Tuple, Union, Dict, DefaultDict
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel, LanguageModelInput
@@ -69,13 +69,13 @@ class GraspBaseChatModel(BaseChatModel):
             )
             if model_config.get("modify_tokenizer", False):
                 self._set_chat_template()
-        self._model_stats = {"resp_code_dist": {}, "errors": {}}
+        self._model_stats : Dict[str, Any] = {"resp_code_dist": {}, "errors": {}}
         # track total count for round_robin load balancing; see "_get_model_url"
         self._call_count = 0
         # track the number of requests per url for least_requests load balancing; see "_get_model_url"
-        self._url_reqs_count = collections.defaultdict(int)
+        self._url_reqs_count : DefaultDict[str, int] = collections.defaultdict(int)
         # store the timestamps to check if server is down
-        self._model_failed_response_timestamp = []
+        self._model_failed_response_timestamp : list[float] = []
         if self._get_name() in constants.COMPLETION_ONLY_MODELS:
             self._config["completions_api"] = True
         self._validate_completions_api_support()
@@ -105,7 +105,7 @@ class GraspBaseChatModel(BaseChatModel):
         str
             The name of the model.
         """
-        return self._config["name"]
+        return str(self._config["name"])
 
     def _set_chat_template(self):
         """
@@ -164,7 +164,7 @@ class GraspBaseChatModel(BaseChatModel):
             elif load_balancing == "least_requests":
                 # initialize the count for each url if it is not already done
                 if not self._url_reqs_count:
-                    self._url_reqs_count = {u: 0 for u in url}
+                    self._url_reqs_count = collections.defaultdict(int, {u: 0 for u in url})
                 # find the url with least requests
                 min_value = min(self._url_reqs_count.values())
                 min_keys = [
@@ -321,7 +321,7 @@ class GraspBaseChatModel(BaseChatModel):
             f" {resp_code} code"
         )
 
-    def _get_status_from_body(self, response: str) -> int:
+    def _get_status_from_body(self, response: str) -> Optional[int]:
         """
         Extract http error status code from body.
 
@@ -343,19 +343,32 @@ class GraspBaseChatModel(BaseChatModel):
             int: The http error status code if it can be extracted, None otherwise.
         """
         try:
-            # openai sends body as dict but tgi sends as string
-            if isinstance(response.body, dict):
-                body = response.body
-            elif isinstance(response.body, str):
-                body = json.loads(response.body)
-            else:
-                return None
+            # Attempt to normalize to a dict body
+            body: Optional[dict[str, Any]] = None
+            # Some SDK exceptions have a `.body` attribute (object with dict or JSON string)
+            if hasattr(response, "body"):
+                resp_body = getattr(response, "body")
+                if isinstance(resp_body, dict):
+                    body = resp_body
+                elif isinstance(resp_body, str):
+                    body = json.loads(resp_body)
+            # If not found via attribute, the response itself might be a dict or JSON string
+            if body is None:
+                if isinstance(response, dict):
+                    body = response
+                elif isinstance(response, str):
+                    # Try load as JSON string
+                    body = json.loads(response)
+                else:
+                    return None
 
             status_code = body.get("statusCode")
             # for openai api it is in code
             if status_code is None:
                 code = body.get("code")
-                return int(code)
+                if code is not None:
+                    return int(code)
+                return None
             else:
                 return int(status_code)
         except Exception:
@@ -375,10 +388,11 @@ class GraspBaseChatModel(BaseChatModel):
         Returns:
             formatted_text: A string formatted according to the chat template.
         """
-        formatted_text = self._tokenizer.apply_chat_template(
+        formatted_text = str(self._tokenizer.apply_chat_template(
             [_convert_message_to_dict(message) for message in messages],
             tokenize=False,
             add_generation_prompt=True,
+            )
         )
         logger.debug(f"Chat formatted text: {formatted_text}")
         return formatted_text
@@ -416,7 +430,9 @@ class GraspBaseChatModel(BaseChatModel):
                     )
                     # Process response with post-processing
                     result = self._invoke_post_process(response), response_code
-                if not attempt.retry_state.outcome.failed:
+                # outcome may be None; guard before accessing attributes
+                outcome = attempt.retry_state.outcome
+                if outcome is not None and not outcome.failed:
                     attempt.retry_state.set_result(result)
 
         except RetryError:
@@ -459,7 +475,8 @@ class GraspBaseChatModel(BaseChatModel):
                     )
                     # Process response with post-processing
                     result = self._invoke_post_process(response), response_code
-                if not attempt.retry_state.outcome.failed:
+                outcome = attempt.retry_state.outcome
+                if outcome is not None and not outcome.failed:
                     attempt.retry_state.set_result(result)
 
         except RetryError:
@@ -524,7 +541,7 @@ class GraspBaseChatModel(BaseChatModel):
         stop: Optional[List[str]] = None,
         run_manager=None,
         **kwargs: Any,
-    ) -> LLMResult:
+    ) -> ChatResult:
         """
         Asynchronous implementation of the `_generate` method.
 
@@ -535,7 +552,7 @@ class GraspBaseChatModel(BaseChatModel):
             **kwargs (Any): Additional keyword arguments for the generation method
 
         Returns:
-            LLMResult: The response text and status code
+            ChatResult: The generated chat result
         """
         generation_info = None
         model_params = self._get_model_params()
@@ -591,8 +608,8 @@ class GraspBaseChatModel(BaseChatModel):
         return self._create_chat_result(response, generation_info)
 
     def _invoke_post_process(
-        self, response: Union[dict, BaseModel]
-    ) -> Union[dict, BaseModel]:
+        self, response: ChatCompletion
+    ) -> ChatCompletion:
         post_proc = self._get_post_processor()
         # if post_process is defined at models.yaml, process the output text
         if post_proc is None:
@@ -662,14 +679,14 @@ class GraspBaseChatModel(BaseChatModel):
 
     def _create_chat_result(
         self,
-        response: Union[dict, BaseModel],
+        response: ChatCompletion,
         generation_info: Optional[dict] = None,
     ) -> ChatResult:
         """
         Create a ChatResult object from the model response.
 
         Args:
-            response (Union[dict, BaseModel]): The response from the model.
+            response ChatCompletion: The response from the model.
             generation_info (Optional[dict], optional): Any additional information
                 about the generation. Defaults to None.
 
@@ -713,12 +730,12 @@ class GraspBaseChatModel(BaseChatModel):
         if "service_tier" in response_dict:
             llm_output["service_tier"] = response_dict["service_tier"]
 
-        if isinstance(response, BaseModel) and getattr(response, "choices", None):
-            message = response.choices[0].message  # type: ignore[attr-defined]
-            if hasattr(message, "parsed"):
-                generations[0].message.additional_kwargs["parsed"] = message.parsed
-            if hasattr(message, "refusal"):
-                generations[0].message.additional_kwargs["refusal"] = message.refusal
+        if isinstance(response, ChatCompletion) and getattr(response, "choices", None):
+            chat_completion_message = response.choices[0].message
+            if hasattr(chat_completion_message, "parsed"):
+                generations[0].message.additional_kwargs["parsed"] = chat_completion_message.parsed
+            if hasattr(chat_completion_message, "refusal"):
+                generations[0].message.additional_kwargs["refusal"] = chat_completion_message.refusal
 
         return ChatResult(generations=generations, llm_output=llm_output)
 
