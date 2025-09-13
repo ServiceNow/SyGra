@@ -1,6 +1,6 @@
-from typing import Any, Type
+from typing import Any, Type, Optional
 
-from pydantic import BaseModel, ValidationError, create_model
+from pydantic import BaseModel, ValidationError, create_model, TypeAdapter
 
 from grasp.core.graph.graph_config import GraphConfig
 from grasp.logger.logger_config import logger
@@ -29,8 +29,8 @@ class SchemaValidator:
         if hasattr(self, "initialized") and self.initialized:
             return
         self.config = graph_config
-        self.schema_class: Type[BaseModel] = None
-        self.fields: dict[str, Any] = []
+        self.schema_class: Optional[Type[BaseModel]] = None
+        self.fields: list[dict[str, Any]] = []
 
         # Access schema config from graphConfig object
         schema_config = self.config.schema_config
@@ -64,10 +64,9 @@ class SchemaValidator:
         """
         try:
             # Dynamically create a Pydantic model with the field name and expected type
-            model = create_model("DynamicModel", **{field_name: (expected_type, ...)})
-
-            # Validate the field value against the dynamically created model
-            model(**{field_name: field_value})
+            # Use TypeAdapter (Pydantic v2) to validate a single value against the expected type
+            adapter = TypeAdapter(expected_type)
+            adapter.validate_python(field_value)
 
             # If validation succeeds, it means the field_value is valid
             return True

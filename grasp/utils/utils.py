@@ -571,4 +571,4 @@ class BackendFactoryProxy:
 backend_factory = BackendFactoryProxy()
 
 # store the current task to access it later to fetch properties
-current_task = None
+current_task : Optional[str] = None

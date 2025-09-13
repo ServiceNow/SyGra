@@ -1,5 +1,5 @@
 from inspect import isclass
-from typing import Any
+from typing import Any, Optional
 
 from langgraph.constants import END, START
 from langgraph.graph import StateGraph
@@ -87,7 +87,7 @@ class LangGraphBuilder:
                 workflow.add_node(node_name, node.to_backend())
         logger.info("Completed adding nodes into the workflow graph.")
 
-    def convert_to_graph(self, node: BaseNode):
+    def convert_to_graph(self, node: Optional[BaseNode]):
         """
         Convert Special node to START or END object.
 
@@ -97,8 +97,11 @@ class LangGraphBuilder:
         Returns:
             BaseNode|START|END: Returns START or END object if they are Start or End. Else returns node name.
         """
+        if node is None:
+            return None
+        name = node.get_name()
         return (
-            self.SPECIAL_NODES_MAP[node.get_name()] if node.is_special_type() else node.get_name()
+            self.SPECIAL_NODES_MAP[name] if node.is_special_type() else name
         )
 
     def add_edges(self, workflow: StateGraph):
@@ -122,7 +125,7 @@ class LangGraphBuilder:
         ):
             edges = self.graph_config.get_edges()
         else:
-            edges = EdgeFactory(edges, self.graph_config.get_nodes()).get_edges()
+            edges = EdgeFactory(edges, self.graph_config.get_nodes(), self.graph_config.sub_graphs).get_edges()
 
         for edge in edges:
             source = edge.get_source()
@@ -130,7 +133,7 @@ class LangGraphBuilder:
             condition = edge.get_condition()
             path_map = edge.get_path_map()
 
-            if not source.is_valid():
+            if source is not None and not source.is_valid():
                 errors.append(f"Invalid source node: {source}")
 
             if condition and path_map:

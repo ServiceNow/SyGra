@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Union, cast
 
 import yaml
 
@@ -34,7 +34,7 @@ class ConfigLoader:
                 raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
         with open(config_path, "r") as f:
-            config = yaml.safe_load(f)
+            config = cast(dict[str, Any], yaml.safe_load(f))
 
         return config
 

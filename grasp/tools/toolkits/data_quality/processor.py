@@ -230,7 +230,7 @@ class DataQuality(BaseTool):
                 if child_id not in visited:
                     dfs_path(path + [child_id], visited)
 
-        visited = set()
+        visited : set[str] = set()
         for root_id in root_ids:
             if root_id not in visited:
                 dfs_path([root_id], visited)

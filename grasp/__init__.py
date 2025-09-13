@@ -280,7 +280,7 @@ def list_available_models() -> list[str]:
         return ["Framework not available - cannot list models"]
 
     try:
-        model_configs = utils.load_model_config()
+        model_configs = utils.utils.load_model_config()
         return list(model_configs.keys())
     except Exception as e:
         return [f"Error loading models: {e}"]
@@ -292,7 +292,8 @@ def get_model_info(model_name: str) -> dict[str, Any]:
         return {"error": "Framework not available"}
 
     try:
-        model_configs = utils.load_model_config()
+        # Ensure the mapping type is explicit so mypy can infer correct return type
+        model_configs: dict[str, dict[str, Any]] = utils.utils.load_model_config()
         return model_configs.get(model_name, {"error": f"Model {model_name} not found"})
     except Exception as e:
         return {"error": f"Error loading model info: {e}"}
