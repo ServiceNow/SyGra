@@ -32,10 +32,10 @@ At the end, generated data is collected in the graph state for a specific record
 ---
 
 ## Components
-GraSP architecture consists of various components, below are three major component diagrams explains various modules.
+GraSP architecture consists of various components, below are the four major component diagrams explains various modules.
 
 ### Data Handler
-Data handler is used for reading and writing the data. Currently it supports file handler with various file types and huggingface handler.
+Data handler is used for reading and writing the data. Currently, it supports file handler with various file types and huggingface handler.
 When reading data from huggingface, it can read the whole dataset and process, or it can stream chunk of data.
 
 ![DataHandler](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/component_data_handler.png)
