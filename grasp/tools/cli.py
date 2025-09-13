@@ -1,14 +1,13 @@
 import argparse
-from grasp.tools.registry import ToolRegistry
+
 from grasp.tools.executor import ToolExecutor
+from grasp.tools.registry import ToolRegistry
 
 
 def main():
     parser = argparse.ArgumentParser(description="Dataset Tools CLI")
     parser.add_argument("--config", help="Path to YAML config file")
-    parser.add_argument(
-        "--list-tools", action="store_true", help="List all registered tools"
-    )
+    parser.add_argument("--list-tools", action="store_true", help="List all registered tools")
 
     args = parser.parse_args()
 

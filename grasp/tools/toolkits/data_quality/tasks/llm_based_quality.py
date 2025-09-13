@@ -1,5 +1,6 @@
 import os
 from argparse import Namespace
+
 from grasp.utils import utils
 
 
@@ -51,7 +52,7 @@ class LLMBasedQualityTask:
             Namespace: A namespace object containing task arguments.
         """
         args = {
-            "task": "data_quality.llm_based",
+            "task": "grasp.internal.data_quality.llm_based",
             "start_index": 0,
             "num_records": self.num_records,
             "run_name": "llm_based_quality",
@@ -80,9 +81,7 @@ class LLMBasedQualityTask:
                     {
                         "transform": "grasp.processors.data_transform.AddNewFieldTransform",
                         "params": {
-                            "mapping": {
-                                "category": self.task_params.get("category", "Generic")
-                            }
+                            "mapping": {"category": self.task_params.get("category", "Generic")}
                         },
                     }
                 ],
@@ -101,13 +100,11 @@ class LLMBasedQualityTask:
         """
         graph_config = utils.load_yaml_file(
             filepath=utils.get_file_in_task_dir(
-                "data_quality.llm_based", "graph_config.yaml"
+                "grasp.internal.data_quality.llm_based", "graph_config.yaml"
             )
         )
         transformations = (
-            graph_config.get("data_config", {})
-            .get("source", {})
-            .get("transformations", [])
+            graph_config.get("data_config", {}).get("source", {}).get("transformations", [])
         )
         graph_config.update({"data_config": data_config})
         graph_config["data_config"]["source"]["transformations"].extend(transformations)

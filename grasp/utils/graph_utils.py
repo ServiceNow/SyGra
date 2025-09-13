@@ -1,9 +1,10 @@
-from typing import Any, Callable
-from langgraph.graph.state import CompiledStateGraph
-from typing import Callable
-from grasp.logger.logger_config import logger
 import traceback
+from typing import Any, Callable
+
 from langchain_core.runnables import RunnableConfig
+from langgraph.graph.state import CompiledStateGraph
+
+from grasp.logger.logger_config import logger
 
 
 def convert_graph_output_to_records(
@@ -16,9 +17,7 @@ def convert_graph_output_to_records(
             if output_record_generator:
                 graph_result = output_record_generator(graph_result)
         except Exception as e:
-            logger.error(
-                f"Exception occured when converting graph output to record: {e}"
-            )
+            logger.error(f"Exception occured when converting graph output to record: {e}")
             graph_result = None
 
         if graph_result is None:
@@ -36,9 +35,7 @@ async def execute_graph(
     if input_record_generator:
         record = input_record_generator(record)
     try:
-        return await graph.ainvoke(
-            record, debug=debug, config=RunnableConfig(recursion_limit=100)
-        )
+        return await graph.ainvoke(record, debug=debug, config=RunnableConfig(recursion_limit=100))
     except Exception as e:
         logger.error(
             f"Exception occured when executing graph for record id {record.get('id', None)}: {e}"

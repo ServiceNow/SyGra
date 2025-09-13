@@ -1,12 +1,12 @@
 from typing import Any
 
+from pydantic import ValidationError
+
+from grasp.core.graph.graph_config import GraphConfig
+from grasp.data_mapper.helper import PipelineConfig, transform_registry
 from grasp.data_mapper.pipelines import PipelineFactory
 from grasp.logger.logger_config import logger
 from grasp.validators.custom_schemas import CoreLLMDataFabricFormat, MetaInfo, PipelineStep
-from grasp.data_mapper.helper import PipelineConfig
-from grasp.core.graph.graph_config import GraphConfig
-from grasp.data_mapper.helper import transform_registry
-from pydantic import ValidationError
 
 
 class DataMapper:
@@ -20,9 +20,7 @@ class DataMapper:
             graph_config (GraphConfig): The configuration for the graph transformation.
         """
         self.config = config
-        self.transform_registry = (
-            transform_registry  # Registry for managing transformations
-        )
+        self.transform_registry = transform_registry  # Registry for managing transformations
         self.transform_type = config.get("type")  # Get transformation type (sft/dpo)
 
         # Create the pipeline using PipelineFactory based on the transform type
@@ -60,16 +58,12 @@ class DataMapper:
             for transform in ordered_transforms:
                 try:
                     # Get the current pipeline step
-                    step = next(
-                        s for s in self.pipeline if s.name == transform.meta.name
-                    )
+                    step = next(s for s in self.pipeline if s.name == transform.meta.name)
                     logger.info(f"Processing step: {step}")
 
                     # Validate that all required context fields are available for the current transform
                     self.transform_registry.validate_requirements(transform, context)
-                    logger.info(
-                        f"Validated requirements for transform '{transform.meta.name}'"
-                    )
+                    logger.info(f"Validated requirements for transform '{transform.meta.name}'")
 
                     # Set the current step in context for logging and tracking
                     context["__current_step__"] = {
@@ -105,15 +99,11 @@ class DataMapper:
                     continue  # Skip to the next transform if something unexpected happens
 
             # After all transforms are applied, build the rows from the final context
-            logger.info(
-                "Finished all transforms, moving to building rows using context"
-            )
+            logger.info("Finished all transforms, moving to building rows using context")
             # Build rows at the end of the process
             result = self.build_rows_and_validate(context)
             logger.debug(f"Finished building rows : {result}")
-            logger.info(
-                "Rows built and validated against CoreLLMDataFabricFormat successfully"
-            )
+            logger.info("Rows built and validated against CoreLLMDataFabricFormat successfully")
             return result
 
         except Exception as e:

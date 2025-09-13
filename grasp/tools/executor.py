@@ -1,17 +1,17 @@
-import os
-import tempfile
 import json
-import time
+import os
 import shutil
+import tempfile
+import time
 from typing import Any, Optional, Union
 
-from grasp.utils import constants
-from grasp.core.dataset.dataset_config import OutputType, DataSourceType
-from grasp.core.dataset.huggingface_handler import HuggingFaceHandler
+from grasp.core.dataset.dataset_config import DataSourceType, OutputType
 from grasp.core.dataset.file_handler import FileHandler
+from grasp.core.dataset.huggingface_handler import HuggingFaceHandler
 from grasp.logger.logger_config import logger
-from grasp.tools.registry import ToolRegistry
 from grasp.tools.config import Config
+from grasp.tools.registry import ToolRegistry
+from grasp.utils import constants
 
 
 class ToolExecutor:
@@ -27,14 +27,10 @@ class ToolExecutor:
             self.config = config
 
         self.source_config = (
-            self.config.data_config.get_source_config()
-            if self.config.data_config
-            else None
+            self.config.data_config.get_source_config() if self.config.data_config else None
         )
         self.sink_config = (
-            self.config.data_config.get_sink_config()
-            if self.config.data_config
-            else None
+            self.config.data_config.get_sink_config() if self.config.data_config else None
         )
 
         self.temp_dir = tempfile.TemporaryDirectory()
@@ -61,9 +57,7 @@ class ToolExecutor:
 
         elif self.source_config.type == DataSourceType.DISK_FILE:
             if not os.path.exists(self.source_config.file_path):
-                raise FileNotFoundError(
-                    f"Input file not found: {self.source_config.file_path}"
-                )
+                raise FileNotFoundError(f"Input file not found: {self.source_config.file_path}")
             self.current_path = self.source_config.file_path
 
         else:
@@ -76,9 +70,7 @@ class ToolExecutor:
 
         tool_names = list(self.config.tools.keys())
 
-        for step_index, (tool_name, tool_config) in enumerate(
-            self.config.tools.items()
-        ):
+        for step_index, (tool_name, tool_config) in enumerate(self.config.tools.items()):
             tool_class = ToolRegistry.get_tool(tool_name)
             if not tool_class:
                 logger.error(
@@ -96,18 +88,14 @@ class ToolExecutor:
                 tool = tool_class(tool_config.config)
                 start_time = time.time()
                 tool.process(input_path=self.current_path, output_path=output_path)
-                logger.info(
-                    f"'{tool_name}' complete in {time.time() - start_time:.2f}s"
-                )
+                logger.info(f"'{tool_name}' complete in {time.time() - start_time:.2f}s")
                 self.current_path = output_path
                 self.final_output_path = output_path
             except Exception as e:
                 logger.error(f"Tool '{tool_name}' failed: {e}")
                 raise
 
-    def _resolve_output_path(
-        self, tool_name: str, step_index: int, is_last_tool: bool
-    ) -> str:
+    def _resolve_output_path(self, tool_name: str, step_index: int, is_last_tool: bool) -> str:
         if is_last_tool:
             if self.sink_config and self.sink_config.type != OutputType.HUGGINGFACE:
                 return self.sink_config.file_path

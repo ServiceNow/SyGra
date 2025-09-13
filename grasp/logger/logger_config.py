@@ -1,6 +1,7 @@
 import logging
 import os
-from typing import Protocol, Optional
+from typing import Optional, Protocol
+
 from grasp.utils.constants import ROOT_DIR
 
 
@@ -103,7 +104,7 @@ class LoggerAdapter:
         formatted_msg = msg % args if args else msg
         if self._external_logger:
             # External loggers might not have critical, fallback to error
-            if hasattr(self._external_logger, 'critical'):
+            if hasattr(self._external_logger, "critical"):
                 self._external_logger.critical(formatted_msg)
             else:
                 self._external_logger.error(f"CRITICAL: {formatted_msg}")
@@ -219,5 +220,5 @@ __all__ = [
     "reset_to_internal_logger",
     "configure_logger",
     "ExternalLoggerProtocol",
-    "LoggerAdapter"
+    "LoggerAdapter",
 ]

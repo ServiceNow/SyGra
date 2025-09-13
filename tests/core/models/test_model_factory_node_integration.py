@@ -1,14 +1,14 @@
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
-from grasp.core.models.model_factory import ModelFactory
 from grasp.core.models.custom_models import CustomVLLM
 from grasp.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
+from grasp.core.models.model_factory import ModelFactory
 
 
 class TestModelFactoryNodeIntegration(unittest.TestCase):
@@ -82,9 +82,7 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
                 node = AgentNode("test_agent_node", node_config)
 
                 # Verify get_model was called with the langgraph backend
-                mock_get_model.assert_called_once_with(
-                    {"name": "test_model"}, "langgraph"
-                )
+                mock_get_model.assert_called_once_with({"name": "test_model"}, "langgraph")
 
     @patch("grasp.utils.utils.load_model_config")
     def test_model_factory_backend_selection(self, mock_load_model_config):
@@ -99,9 +97,7 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
             mock_default.assert_called_once()
 
         # Test langgraph backend uses chat models
-        with patch.object(
-            CustomVLLMChatModel, "__init__", return_value=None
-        ) as mock_langgraph:
+        with patch.object(CustomVLLMChatModel, "__init__", return_value=None) as mock_langgraph:
             model_config = {"name": "test_model", "model_type": "vllm"}
             ModelFactory.create_model(model_config, "langgraph")
             mock_langgraph.assert_called_once()
@@ -114,8 +110,9 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
         self, mock_get_func, mock_get_props, mock_graph_factory, mock_load_model_config
     ):
         """Test that AgentNode ensures using a model extended from BaseChatModel via ModelFactory.get_model"""
-        from grasp.core.graph.nodes.agent_node import AgentNode
         from langchain_core.language_models import BaseChatModel
+
+        from grasp.core.graph.nodes.agent_node import AgentNode
 
         # Test that with langgraph backend, we get a proper BaseChatModel
         with patch("grasp.utils.constants.BACKEND", "langgraph"):
@@ -149,9 +146,7 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
 
                 # Verify the model in the node is our mock with BaseChatModel interface
                 self.assertIsInstance(node.model, MagicMock)
-                self.assertTrue(
-                    issubclass(node.model.__class__.__bases__[0], BaseChatModel)
-                )
+                self.assertTrue(issubclass(node.model.__class__.__bases__[0], BaseChatModel))
 
     @patch("grasp.utils.utils.load_model_config")
     def test_incompatible_model_for_agent_node(self, mock_load_model_config):
@@ -171,14 +166,14 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
             model_config = {"name": "test_model", "model_type": "mistralai"}
             ModelFactory.create_model(model_config, "langgraph")
 
-    @patch('grasp.utils.utils.load_model_config')
+    @patch("grasp.utils.utils.load_model_config")
     def test_incompatible_ollama_model_for_agent_node(self, mock_load_model_config):
         """Test handling of ollama model type which is not supported in langgraph backend"""
         # Configure mock for a model type that doesn't have a langgraph implementation
         mock_load_model_config.return_value = {
             "test_model": {
                 "model_type": "ollama",  # No langgraph implementation for this
-                "parameters": {}
+                "parameters": {},
             }
         }
 

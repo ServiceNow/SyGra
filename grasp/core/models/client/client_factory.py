@@ -1,20 +1,20 @@
-from enum import StrEnum
+from enum import Enum
 from typing import Any, Dict
 
 import httpx
 from httpx import Timeout
 from mistralai_azure import MistralAzure
-from mistralai_azure.utils.retries import RetryConfig, BackoffStrategy
+from mistralai_azure.utils.retries import BackoffStrategy, RetryConfig
 
 from grasp.core.models.client.http_client import HttpClient
 from grasp.core.models.client.ollama_client import OllamaClient
 from grasp.core.models.client.openai_azure_client import OpenAIAzureClient
 from grasp.core.models.client.openai_client import OpenAIClient
 from grasp.logger.logger_config import logger
-from grasp.utils import utils, constants
+from grasp.utils import constants, utils
 
 
-class ModelType(StrEnum):
+class ModelType(Enum):
     """Enum representing the supported model types for client creation."""
 
     VLLM = "vllm"
@@ -25,10 +25,9 @@ class ModelType(StrEnum):
     OLLAMA = "ollama"
     TRITON = "triton"
 
+
 # Define which model types do not require a AUTH_TOKEN
-NO_AUTH_TOKEN_NEEDED_MODEL_TYPES = [
-    ModelType.OLLAMA
-]
+NO_AUTH_TOKEN_NEEDED_MODEL_TYPES = [ModelType.OLLAMA.value]
 
 
 class ClientFactory:
@@ -89,7 +88,7 @@ class ClientFactory:
             )
 
         # Create client based on model type
-        if model_type == ModelType.VLLM:
+        if model_type == ModelType.VLLM.value:
             # Initialize the client with default chat_completions_api
             return cls._create_openai_client(
                 model_config,
@@ -98,7 +97,7 @@ class ClientFactory:
                 async_client,
                 not model_config.get("completions_api", False),
             )
-        elif model_type == ModelType.OPENAI:
+        elif model_type == ModelType.OPENAI.value:
             return cls._create_openai_azure_client(
                 model_config,
                 url,
@@ -106,23 +105,26 @@ class ClientFactory:
                 async_client,
                 not model_config.get("completions_api", False),
             )
-        elif model_type == ModelType.AZURE or model_type == ModelType.TGI or model_type == ModelType.TRITON:
+        elif (
+            model_type == ModelType.AZURE.value
+            or model_type == ModelType.TGI.value
+            or model_type == ModelType.TRITON.value
+        ):
             return cls._create_http_client(model_config, url, auth_token)
-        elif model_type == ModelType.MISTRALAI:
-            return cls._create_mistral_client(
-                model_config, url, auth_token, async_client
+        elif model_type == ModelType.MISTRALAI.value:
+            return cls._create_mistral_client(model_config, url, auth_token, async_client)
+        elif model_type == ModelType.OLLAMA.value:
+            return cls._create_ollama_client(
+                model_config,
+                url,
+                None,
+                async_client,
+                not model_config.get("completions_api", False),
             )
-        elif model_type == ModelType.OLLAMA:
-            return cls._create_ollama_client(model_config, url, None, async_client,
-                                             not model_config.get("completions_api", False))
         else:
             # This should never be reached due to the validation above, but included for completeness
-            logger.error(
-                f"No client implementation available for model type: {model_type}"
-            )
-            raise NotImplementedError(
-                f"Client for model type {model_type} is not implemented"
-            )
+            logger.error(f"No client implementation available for model type: {model_type}")
+            raise NotImplementedError(f"Client for model type {model_type} is not implemented")
 
     @staticmethod
     def _create_openai_client(
@@ -204,7 +206,7 @@ class ClientFactory:
             "api_key": auth_token,
             "timeout": model_config.get("timeout", constants.DEFAULT_TIMEOUT),
             "max_retries": model_config.get("max_retries", 3),
-            "http_client": httpx_client
+            "http_client": httpx_client,
         }
 
         return OpenAIAzureClient(async_client, chat_completions_api, **client_kwargs)
@@ -237,18 +239,14 @@ class ClientFactory:
                 http1=True,
                 verify=ssl_verify,
                 cert=ssl_cert,
-                timeout=Timeout(
-                    timeout=model_config.get("timeout", constants.DEFAULT_TIMEOUT)
-                ),
+                timeout=Timeout(timeout=model_config.get("timeout", constants.DEFAULT_TIMEOUT)),
             )
             if async_client
             else httpx.Client(
                 http1=True,
                 verify=ssl_verify,
                 cert=ssl_cert,
-                timeout=Timeout(
-                    timeout=model_config.get("timeout", constants.DEFAULT_TIMEOUT)
-                ),
+                timeout=Timeout(timeout=model_config.get("timeout", constants.DEFAULT_TIMEOUT)),
             )
         )
         # Configure retry settings
@@ -268,16 +266,16 @@ class ClientFactory:
             "azure_endpoint": url,
             "retry_config": retry_config,
         }
-        client_kwargs.update(
-            {"async_client": httpx_client}
-        ) if async_client else client_kwargs.update({"client": httpx_client})
+        (
+            client_kwargs.update({"async_client": httpx_client})
+            if async_client
+            else client_kwargs.update({"client": httpx_client})
+        )
         client = MistralAzure(**client_kwargs)
         return client
 
     @staticmethod
-    def _create_http_client(
-        model_config: Dict[str, Any], url: str, auth_token: str
-    ) -> HttpClient:
+    def _create_http_client(model_config: Dict[str, Any], url: str, auth_token: str) -> HttpClient:
         """
         Create an HTTP client.
 
@@ -310,12 +308,17 @@ class ClientFactory:
             timeout=timeout,
             max_retries=max_retries,
             ssl_verify=ssl_verify,
-            ssl_cert=ssl_cert
+            ssl_cert=ssl_cert,
         )
 
     @staticmethod
-    def _create_ollama_client(model_config: Dict[str, Any], url: str, auth_token: str = None,
-                              async_client: bool = False, chat_completions_api: bool = True) -> OllamaClient:
+    def _create_ollama_client(
+        model_config: Dict[str, Any],
+        url: str,
+        auth_token: str = None,
+        async_client: bool = False,
+        chat_completions_api: bool = True,
+    ) -> OllamaClient:
         """
         Create a client for Ollama models.
 

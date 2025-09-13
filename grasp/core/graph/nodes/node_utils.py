@@ -1,12 +1,13 @@
 from typing import Any
-from grasp.core.graph.nodes.base_node import NodeType, BaseNode
+
+from grasp.core.graph.nodes.agent_node import AgentNode
+from grasp.core.graph.nodes.base_node import BaseNode, NodeType
+from grasp.core.graph.nodes.connector_node import ConnectorNode
 from grasp.core.graph.nodes.lambda_node import LambdaNode
 from grasp.core.graph.nodes.llm_node import LLMNode
 from grasp.core.graph.nodes.multi_llm_node import MultiLLMNode
 from grasp.core.graph.nodes.special_node import SpecialNode
-from grasp.core.graph.nodes.connector_node import ConnectorNode
 from grasp.core.graph.nodes.weighted_sampler_node import WeightedSamplerNode
-from grasp.core.graph.nodes.agent_node import AgentNode
 
 
 def get_node(node_name: str, node_config: dict[str, Any]) -> BaseNode:
@@ -23,23 +24,23 @@ def get_node(node_name: str, node_config: dict[str, Any]) -> BaseNode:
     Raises:
         NotImplementedError: If the node type is not recognized.
     """
-    assert "node_type" in node_config, (
-        f"node_type is required in node configuration for {node_name}"
-    )
+    assert (
+        "node_type" in node_config
+    ), f"node_type is required in node configuration for {node_name}"
 
     node_type = node_config["node_type"]
 
     node_mapping = {
-        NodeType.LLM: LLMNode,
-        NodeType.AGENT: AgentNode,
-        NodeType.MULTI_LLM: MultiLLMNode,
-        NodeType.WEIGHTED_SAMPLER: WeightedSamplerNode,
-        NodeType.LAMBDA: LambdaNode,
-        NodeType.SPECIAL: SpecialNode,
-        NodeType.CONNECTOR: ConnectorNode,
+        NodeType.LLM.value: LLMNode,
+        NodeType.AGENT.value: AgentNode,
+        NodeType.MULTI_LLM.value: MultiLLMNode,
+        NodeType.WEIGHTED_SAMPLER.value: WeightedSamplerNode,
+        NodeType.LAMBDA.value: LambdaNode,
+        NodeType.SPECIAL.value: SpecialNode,
+        NodeType.CONNECTOR.value: ConnectorNode,
     }
 
-    if node_type == NodeType.SPECIAL or node_type == NodeType.CONNECTOR:
+    if node_type == NodeType.SPECIAL.value or node_type == NodeType.CONNECTOR.value:
         return node_mapping[node_type](node_name)
 
     if node_type not in node_mapping:

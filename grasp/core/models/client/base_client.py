@@ -3,7 +3,7 @@ from typing import List, Optional, Sequence
 
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import BaseMessage, convert_to_messages
-from langchain_core.prompt_values import PromptValue, StringPromptValue, ChatPromptValue
+from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 
 
 class BaseClient(ABC):

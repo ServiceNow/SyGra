@@ -171,7 +171,7 @@ if __name__ == "__main__":
         logger.info(f"Output directory set to: {args.output_dir}")
 
     # check models are available and normalize task name
-    if not task_name.startswith("tasks."):
+    if not task_name.startswith("tasks.") and not '/' in task_name:
         full_task_name = f"tasks.{task_name}"
         check_model_availability(full_task_name)
         args.task = full_task_name

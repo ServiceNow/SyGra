@@ -1,9 +1,10 @@
 import os
 
 from transformers import AutoTokenizer, PreTrainedTokenizer
-from grasp.utils.utils import save_json_file
-from grasp.utils import utils, constants
+
 from grasp.logger.logger_config import logger
+from grasp.utils import constants, utils
+from grasp.utils.utils import save_json_file
 
 
 class DataCharacteristicsTask:
@@ -83,9 +84,11 @@ class DataCharacteristicsTask:
             logger.warning(
                 "Skipped records with missing conversation field. Example IDs: %s%s",
                 to_log,
-                f" and {len(missing_convo_ids) - 10} more..."
-                if len(missing_convo_ids) > 10
-                else "",
+                (
+                    f" and {len(missing_convo_ids) - 10} more..."
+                    if len(missing_convo_ids) > 10
+                    else ""
+                ),
             )
 
         output_file = os.path.join(self.output_dir, "data_characteristics.json")
@@ -95,6 +98,4 @@ class DataCharacteristicsTask:
 
     @staticmethod
     def _set_tokenizer(model_path) -> PreTrainedTokenizer:
-        return AutoTokenizer.from_pretrained(
-            model_path, token=os.environ.get(constants.HF_TOKEN)
-        )
+        return AutoTokenizer.from_pretrained(model_path, token=os.environ.get(constants.HF_TOKEN))

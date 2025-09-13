@@ -1,8 +1,8 @@
 import random
 from typing import Any
 
-from grasp.utils import utils
 from grasp.core.graph.nodes.base_node import BaseNode
+from grasp.utils import utils
 
 
 class WeightedSamplerNode(BaseNode):
@@ -58,9 +58,7 @@ class WeightedSamplerNode(BaseNode):
             else:
                 # else if static value list
                 weights = attr_config.get("weights", [1] * len(attr_values))
-                sampled_values[attr] = random.choices(
-                    population=attr_values, weights=weights
-                )[0]
+                sampled_values[attr] = random.choices(population=attr_values, weights=weights)[0]
         return sampled_values
 
     def _process_weighted_sampler(self, node_config: dict) -> None:

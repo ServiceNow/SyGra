@@ -1,0 +1,43 @@
+data_config:
+    source:
+      type: "disk"
+      file_path: "tasks/examples/evol_instruct/test.json"
+      file_format: "json"
+      encoding: "utf-8"
+graph_config:
+  nodes:
+    evol_text:
+      node_type: subgraph
+      subgraph: grasp.recipes.evol_instruct
+    query_llm:
+      node_type: llm
+      output_keys: llm_response
+      prompt:
+        - user: |
+           {evolved_text}
+      model:
+        name: gpt-4o
+        parameters:
+          temperature: 1.0
+
+  edges:
+    - from: START
+      to: evol_text
+    - from: evol_text
+      to: query_llm
+    - from: query_llm
+      to: END
+
+
+output_config:
+  output_map:
+    id:
+      from: id
+    text:
+      from: text
+    evolved_text:
+      from: evolved_text
+    llm_response:
+      from: llm_response
+
+

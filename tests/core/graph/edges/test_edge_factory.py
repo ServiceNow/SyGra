@@ -1,24 +1,21 @@
-import sys
 import os
+import sys
 
 # Add project root to sys.path for relative imports to work
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
-)
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
 
-from unittest.mock import Mock, patch, mock_open, MagicMock
+from types import SimpleNamespace
+from unittest.mock import MagicMock, Mock, mock_open, patch
+
 import pytest
-from grasp.core.dataset.dataset_config import OutputType
+from datasets import Dataset, Features, IterableDataset, Value
+
 from grasp.core.base_task_executor import BaseTaskExecutor
+from grasp.core.dataset.dataset_config import OutputType
+from grasp.core.graph.edges.edge_factory import BaseEdge, EdgeFactory
 from grasp.core.graph.graph_config import GraphConfig
 from grasp.core.graph.nodes.base_node import BaseNode, NodeType
 from grasp.core.graph.nodes.special_node import SpecialNode
-from grasp.core.graph.edges.edge_factory import EdgeFactory
-from grasp.core.graph.edges.edge_factory import BaseEdge
-from unittest.mock import patch
-from types import SimpleNamespace
-from datasets import Dataset
-from datasets import IterableDataset, Features, Value
 
 
 class DummyNode(BaseNode):
@@ -136,9 +133,7 @@ def test_edge_factory_with_subgraph_resolution(dummy_nodes, dummy_subgraph):
     dummy_nodes["subgraph.exit"] = DummyNode("subgraph.exit")
 
     edges_config = [{"from": "node_a", "to": "subgraph"}]
-    factory = EdgeFactory(
-        edges_config, dummy_nodes, subgraphs={"subgraph": dummy_subgraph}
-    )
+    factory = EdgeFactory(edges_config, dummy_nodes, subgraphs={"subgraph": dummy_subgraph})
     edges = factory.get_edges()
 
     assert len(edges) == 1
@@ -173,9 +168,7 @@ def test_edge_factory_path_map_resolution(dummy_nodes, dummy_subgraph):
         }
     ]
 
-    factory = EdgeFactory(
-        edges_config, dummy_nodes, subgraphs={"subgraph": dummy_subgraph}
-    )
+    factory = EdgeFactory(edges_config, dummy_nodes, subgraphs={"subgraph": dummy_subgraph})
     edge = factory.get_edges()[0]
 
     assert edge.get_condition() == "some.condition.check"

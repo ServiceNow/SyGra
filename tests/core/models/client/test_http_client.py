@@ -1,12 +1,15 @@
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent))
 
 import json
+
 from grasp.core.models.client.http_client import HttpClient, HttpClientConfig
 
 
@@ -54,7 +57,7 @@ class TestHttpClient(unittest.TestCase):
             timeout=30,
             max_retries=2,
             verify_ssl=True,
-            verify_cert=None
+            verify_cert=None,
         )
 
     def test_initialization(self):
@@ -80,9 +83,7 @@ class TestHttpClient(unittest.TestCase):
         self.assertEqual(result, {"prompt": "Hello, world!"})
 
         # Test with additional kwargs
-        result = self.client.build_request(
-            base_payload, temperature=0.7, max_tokens=100
-        )
+        result = self.client.build_request(base_payload, temperature=0.7, max_tokens=100)
         expected = {"prompt": "Hello, world!", "temperature": 0.7, "max_tokens": 100}
         self.assertEqual(result, expected)
 
@@ -118,7 +119,7 @@ class TestHttpClient(unittest.TestCase):
             data=json.dumps(payload).encode(),
             timeout=30,
             verify=True,
-            cert=None
+            cert=None,
         )
         self.assertEqual(response, mock_response)
 
@@ -141,7 +142,7 @@ class TestHttpClient(unittest.TestCase):
             data=json.dumps(expected_payload).encode(),
             timeout=30,
             verify=True,
-            cert=None
+            cert=None,
         )
 
     @patch("requests.request")
@@ -157,6 +158,7 @@ class TestHttpClient(unittest.TestCase):
         # Verify empty response is returned on exception
         self.assertEqual(response, "")
 
+    @pytest.mark.asyncio
     @patch("aiohttp.ClientSession.post")
     async def test_async_send_request(self, mock_post):
         """Test async_send_request method sends HTTP requests correctly"""
@@ -184,6 +186,7 @@ class TestHttpClient(unittest.TestCase):
         self.assertEqual(response.text, '{"result": "Success"}')
         self.assertEqual(response.status_code, 200)
 
+    @pytest.mark.asyncio
     @patch("aiohttp.ClientSession.post")
     async def test_async_send_request_with_generation_params(self, mock_post):
         """Test async_send_request with generation parameters"""
@@ -209,6 +212,7 @@ class TestHttpClient(unittest.TestCase):
         self.assertEqual(sent_payload["temperature"], 0.8)
         self.assertEqual(sent_payload["max_tokens"], 50)
 
+    @pytest.mark.asyncio
     @patch("aiohttp.ClientSession.post")
     async def test_async_send_request_exception_handling(self, mock_post):
         """Test async_send_request handles exceptions correctly"""

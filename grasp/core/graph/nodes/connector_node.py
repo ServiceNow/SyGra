@@ -18,8 +18,8 @@ class ConnectorNode(BaseNode):
         """
 
         super().__init__(node_name, None)
-        self.node_state = NodeState.ACTIVE
-        self.node_type = NodeType.CONNECTOR
+        self.node_state = NodeState.ACTIVE.value
+        self.node_type = NodeType.CONNECTOR.value
 
     def is_valid(self) -> bool:
         return True

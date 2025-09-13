@@ -1,11 +1,12 @@
-import os
 import logging
+import os
 from argparse import Namespace
-from grasp.utils import utils
-from grasp.tasks.data_quality.metadata_tagging.filter_tags import (
+
+from grasp.internal.data_quality.metadata_tagging.filter_tags import (
     PipelineConfig,
     extract_instag_stats,
 )
+from grasp.utils import utils
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,7 @@ class MetadataTaggingTask:
             Namespace: A namespace object containing task arguments.
         """
         args = {
-            "task": "data_quality.metadata_tagging",
+            "task": "grasp.internal.data_quality.metadata_tagging",
             "start_index": 0,
             "num_records": self.num_records,
             "run_name": "metadata_tagging",
@@ -97,13 +98,11 @@ class MetadataTaggingTask:
         """
         graph_config = utils.load_yaml_file(
             filepath=utils.get_file_in_task_dir(
-                "data_quality.metadata_tagging", "graph_config.yaml"
+                "grasp.internal.data_quality.metadata_tagging", "graph_config.yaml"
             )
         )
         transformations = (
-            graph_config.get("data_config", {})
-            .get("source", {})
-            .get("transformations", [])
+            graph_config.get("data_config", {}).get("source", {}).get("transformations", [])
         )
         graph_config.update({"data_config": data_config})
         graph_config["data_config"]["source"]["transformations"] = transformations
@@ -122,9 +121,7 @@ class MetadataTaggingTask:
             with open(input_file, "r", encoding="utf-8") as f:
                 try:
                     data = json.load(f)
-                    logger.info(
-                        f"Loaded {len(data)} records from {input_file} for tag filtering"
-                    )
+                    logger.info(f"Loaded {len(data)} records from {input_file} for tag filtering")
                 except json.JSONDecodeError:
                     f.seek(0)
                     data = [json.loads(line) for line in f if line.strip()]

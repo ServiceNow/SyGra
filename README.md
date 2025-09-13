@@ -2,6 +2,17 @@
   <img width=30% src="https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/grasp_logo.png">
 
   <h1>GRASP: GRAph-oriented Synthetic data generation Pipeline</h1>
+
+<a href="https://github.com/ServiceNow/GraSP/releases">
+    <img alt="Documentation" src="https://img.shields.io/github/v/release/ServiceNow/GraSP?logo=bookstack&logoColor=white"/></a>
+<a href="https://servicenow.github.io/GraSP">
+    <img alt="Documentation" src="https://img.shields.io/badge/MkDocs-Documentation-green.svg"/></a>
+<a href="http://arxiv.org/abs/2508.15432">
+    <img src="https://img.shields.io/badge/arXiv-2508.15432-B31B1B.svg" alt="arXiv"></a>
+<a href="LICENSE">
+    <img alt="Licence" src="https://img.shields.io/badge/License-Apache%202.0-blue.svg"/></a>
+
+<br>
 </div>
 
 
@@ -74,28 +85,16 @@ LLM-based nodes require a model configured in `models.yaml` and runtime paramete
 
 As of now, LLM inference is supported for TGI, vLLM, Azure, Azure OpenAI, Ollama and Triton compatible servers. Model deployment is external and configured in `models.yaml`.
 
-![GraspComponents](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/grasp_usecase2framework.png)
-
----
+<!-- ![GraspComponents](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/grasp_usecase2framework.png) -->
 
 
-## Documentation
+## Contact
 
-For a **complete reference** of all YAML configuration options, node/edge types, data sources and sinks, output mapping, schema validation, and advanced features:
-
-👉 **[Documentation](https://github.com/ServiceNow/GraSP/blob/main/docs/installation.md)**
-
-👉 **[Getting Started](https://github.com/ServiceNow/GraSP/tree/main/docs/getting_started)**
-
-👉 **[Concepts](https://github.com/ServiceNow/GraSP/tree/main/docs/concepts)**
-
-👉 **[GraSP Library](https://github.com/ServiceNow/GraSP/blob/main/docs/grasp_library.md)**
-
----
+To contact us, join our channel or send us an [email](mailto:grasp_team@servicenow.com)!
 
 ## License
 
-[Your license here]
+The package is licensed by ServiceNow, Inc. under the Apache 2.0 license. See [LICENSE](LICENSE) for more details.
 
 ---
 

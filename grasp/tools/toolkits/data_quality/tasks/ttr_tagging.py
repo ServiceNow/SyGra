@@ -1,8 +1,9 @@
-import os
 import json
-from tqdm import tqdm
+import os
 from concurrent.futures import ThreadPoolExecutor
+
 from lexicalrichness import LexicalRichness
+from tqdm import tqdm
 
 from grasp.utils import utils
 
@@ -21,9 +22,7 @@ class TTRTaggingTask:
         kwargs (dict): Optional parameters like thread count.
     """
 
-    def __init__(
-        self, input_file: str, output_dir: str, num_records: int, **kwargs: dict
-    ):
+    def __init__(self, input_file: str, output_dir: str, num_records: int, **kwargs: dict):
         self.input_file = input_file
         self.output_dir = output_dir
         self.num_records = num_records

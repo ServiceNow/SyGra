@@ -1,18 +1,20 @@
 import json
-import numpy as np
-from typing import Optional, Any, Type
-from pydantic import BaseModel, Field
-from grasp.data_mapper.types import Transform
-from grasp.validators.custom_schemas import PipelineStep
 from datetime import datetime
+from typing import Any, Optional, Type
+
+import numpy as np
+from pydantic import BaseModel, Field
+
 from grasp.data_mapper.transformations import (
-    TaxonomyTransform,
     ConversationTransform,
-    QualityTransform,
-    LengthTransform,
     CopyTransform,
     DPOConversationTransform,
+    LengthTransform,
+    QualityTransform,
+    TaxonomyTransform,
 )
+from grasp.data_mapper.types import Transform
+from grasp.validators.custom_schemas import PipelineStep
 
 
 class JSONEncoder(json.JSONEncoder):

@@ -6,11 +6,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableLambda, RunnableParallel
 from langgraph.graph import StateGraph
 
-from grasp.utils import utils
 from grasp.core.graph.backend_factory import BackendFactory
 from grasp.core.graph.graph_config import GraphConfig
 from grasp.core.graph.grasp_message import GraspMessage
 from grasp.core.graph.langgraph.langgraph_state import LangGraphState
+from grasp.utils import utils
 
 
 class LangGraphFactory(BackendFactory):
