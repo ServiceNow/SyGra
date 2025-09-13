@@ -5,8 +5,8 @@ import time
 import uuid
 from typing import Any, Callable, Optional, Union, cast
 
-import datasets # type: ignore[import-untyped]
-import tqdm # type: ignore[import-untyped]
+import datasets  # type: ignore[import-untyped]
+import tqdm  # type: ignore[import-untyped]
 from langgraph.graph.state import CompiledStateGraph
 
 from grasp.core.graph.graph_config import GraphConfig
@@ -78,7 +78,7 @@ class DatasetProcessor:
 
         # Initialize the tqdm progress bar with the correct number of records to process
         self.pbar = tqdm.tqdm(total=self.num_records_total)
-        self.graph_results : list[dict[str, Any]] = []
+        self.graph_results: list[dict[str, Any]] = []
 
         # Initialize input dataset iterator
         self.input_dataset = iter(input_dataset)
@@ -359,7 +359,7 @@ class DatasetProcessor:
                 signal.signal(sig, lambda s, f: self._handle_signal(s, f))
 
         # Use asyncio tasks to process records in parallel up to batch_size
-        pending_tasks : set[asyncio.Task] = set()
+        pending_tasks: set[asyncio.Task] = set()
         # Track how many records we've started processing to limit total for streaming datasets
         records_started = 0
 
@@ -452,7 +452,7 @@ class DatasetProcessor:
         except Exception as e:
             rec_id_str = "unknown"
             if isinstance(record, dict):
-                rec_id_str = str(record.get('id', 'unknown'))
+                rec_id_str = str(record.get("id", "unknown"))
             logger.error(f"Error processing record {rec_id_str}: {e}")
 
             if self.resumable and self.resume_manager:

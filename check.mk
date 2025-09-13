@@ -4,6 +4,7 @@
 
 # Define code paths for various operations
 CODE_PATHS = grasp tests
+LINT_MYPY_PATHS = grasp
 
 # Define paths for JSON files
 JSON_PATHS = $(shell find grasp -name "*.json")
@@ -17,7 +18,7 @@ JSON_PATHS = $(shell find grasp -name "*.json")
 lint: ## Run all linters (Ruff + mypy)
 	@echo "🚀 Running all linters..."
 	poetry run make lint-ruff
-	#poetry run make lint-mypy
+	poetry run make lint-mypy
 
 lint-ruff: ## Fix code with Ruff (including unsafe fixes)
 	@echo "🛠️  Fixing with Ruff"
@@ -25,7 +26,7 @@ lint-ruff: ## Fix code with Ruff (including unsafe fixes)
 
 lint-mypy: ## Type-check the code with mypy
 	@echo "📐 Type-checking with mypy"
-	poetry run mypy $(CODE_PATHS)
+	poetry run mypy $(LINT_MYPY_PATHS)
 
 ########################################################################################################################
 # FORMAT

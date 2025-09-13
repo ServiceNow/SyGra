@@ -100,9 +100,7 @@ class LangGraphBuilder:
         if node is None:
             return None
         name = node.get_name()
-        return (
-            self.SPECIAL_NODES_MAP[name] if node.is_special_type() else name
-        )
+        return self.SPECIAL_NODES_MAP[name] if node.is_special_type() else name
 
     def add_edges(self, workflow: StateGraph):
         """
@@ -125,7 +123,9 @@ class LangGraphBuilder:
         ):
             edges = self.graph_config.get_edges()
         else:
-            edges = EdgeFactory(edges, self.graph_config.get_nodes(), self.graph_config.sub_graphs).get_edges()
+            edges = EdgeFactory(
+                edges, self.graph_config.get_nodes(), self.graph_config.sub_graphs
+            ).get_edges()
 
         for edge in edges:
             source = edge.get_source()

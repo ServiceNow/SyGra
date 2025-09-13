@@ -18,15 +18,13 @@ from typing import (
     Sequence,
     Tuple,
     Type,
-    Union,
     cast,
 )
 
 import openai
-from langchain_core.messages import AIMessage, AnyMessage, BaseMessage
+from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompt_values import ChatPromptValue
-from mistralai_azure import MistralAzure
 from pydantic import BaseModel, ValidationError
 from tenacity import (
     AsyncRetrying,
@@ -39,27 +37,9 @@ from transformers import AutoTokenizer
 
 import grasp.utils.constants as constants
 from grasp.core.models.client.base_client import BaseClient
-from grasp.core.models.client.http_client import HttpClient
-from grasp.core.models.client.ollama_client import OllamaClient
-from grasp.core.models.client.openai_azure_client import OpenAIAzureClient
-from grasp.core.models.client.openai_client import OpenAIClient
-
-
-# Note: We interact with a subset of client methods; define a Protocol to satisfy mypy
-class _PayloadClient(Protocol):
-    def build_request_with_payload(
-        self, payload: Dict[str, Any], **kwargs: Any
-    ) -> Dict[str, Any]: ...
-
-    async def async_send_request(
-        self,
-        payload: Dict[str, Any],
-        model_name: Optional[str] = None,
-        generation_params: Optional[Dict[str, Any]] = None,
-    ) -> Any: ...
-
-
 from grasp.core.models.client.client_factory import ClientFactory
+from grasp.core.models.client.http_client import HttpClient
+from grasp.core.models.client.openai_client import OpenAIClient
 from grasp.core.models.structured_output.structured_output_config import (
     StructuredOutputConfig,
 )
@@ -716,7 +696,7 @@ class CustomTGI(BaseCustomModel):
         try:
             # Set Client
             self._set_client(model_params.url, model_params.auth_token)
-            client = cast(_PayloadClient, self._client)
+            client = cast(HttpClient, self._client)
             # Build Request
             payload = {"inputs": self.get_chat_formatted_text(input.messages)}
             payload = client.build_request_with_payload(payload=payload)

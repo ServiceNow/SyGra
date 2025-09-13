@@ -11,7 +11,7 @@ from typing import Any, Callable, DefaultDict, Dict, List, Literal, Optional, Se
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel, LanguageModelInput
 from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMessage
-from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable, run_in_executor
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
@@ -20,7 +20,6 @@ from langchain_openai.chat_models.base import (
     _convert_message_to_dict,
     _create_usage_metadata,
 )
-from openai import BaseModel
 from openai.types import Completion
 from openai.types.chat import ChatCompletion
 from tenacity import (

@@ -310,7 +310,9 @@ class EdgeFactory:
             return f"{entry_node}"
         return value
 
-    def _get_node(self, node_name: Optional[str], sub_node: Optional[str] = None) -> Optional[BaseNode]:
+    def _get_node(
+        self, node_name: Optional[str], sub_node: Optional[str] = None
+    ) -> Optional[BaseNode]:
         """
         Retrieves the BaseNode instance for a given node name.
         If the node is a subgraph placeholder (stored as a dictionary),

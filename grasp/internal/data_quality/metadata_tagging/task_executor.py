@@ -17,11 +17,11 @@ from grasp.utils import utils
 
 class ExtractCategoryPreProcess(NodePreProcessor):
     def apply(self, state: GraspState) -> GraspState:
-        state["messages"] = [] # type: ignore[typeddict-unknown-key]
-        question: str = str(state.get("question", "")) # type: ignore[typeddict-unknown-key]
+        state["messages"] = []  # type: ignore[typeddict-unknown-key]
+        question: str = str(state.get("question", ""))  # type: ignore[typeddict-unknown-key]
         if len(question) > 4000:
             question = question[:500] + "\n\n...\n\n" + question[-500:]
-        state.update({"question": question}) # type: ignore[typeddict-unknown-key]
+        state.update({"question": question})  # type: ignore[typeddict-unknown-key]
         return state
 
 
@@ -29,9 +29,9 @@ class ExtractCategoryPostProcess(NodePostProcessorWithState):
     def apply(self, resp: GraspMessage, state: GraspState) -> GraspState:
         try:
             category = resp.message.content
-            category = category if category in state.get("categories") else "" # type: ignore[typeddict-unknown-key]
-            state.update({"category": category}) # type: ignore[typeddict-unknown-key]
-            state["messages"] = [] # type: ignore[typeddict-unknown-key]
+            category = category if category in state.get("categories") else ""  # type: ignore[typeddict-unknown-key]
+            state.update({"category": category})  # type: ignore[typeddict-unknown-key]
+            state["messages"] = []  # type: ignore[typeddict-unknown-key]
         except Exception:
             logger.error(
                 f"Error in extract_category_postprocess with content {resp.message.content}"
@@ -43,12 +43,12 @@ class ExtractTagsPostProcess(NodePostProcessorWithState):
     def apply(self, resp: GraspMessage, state: GraspState) -> GraspState:
         tags_list_str = resp.message.content
         if tags_list_str is None:
-            state["instruction_tags"] = [] # type: ignore[typeddict-unknown-key]
+            state["instruction_tags"] = []  # type: ignore[typeddict-unknown-key]
             return state
         tag_list = tags_list_str.split(",")
         tag_list = [tag.strip() for tag in tag_list]
-        state["instruction_tags"] = tag_list # type: ignore[typeddict-unknown-key]
-        state["messages"] = [] # type: ignore[typeddict-unknown-key]
+        state["instruction_tags"] = tag_list  # type: ignore[typeddict-unknown-key]
+        state["messages"] = []  # type: ignore[typeddict-unknown-key]
         return state
 
 
@@ -136,7 +136,7 @@ class MetaTaggingOutputGenerator(BaseOutputGenerator):
     def build_metadata(category: str, state: GraspState) -> dict:
         return {
             "data_taxonomy": {
-                "category": state.get("category", ""), # type: ignore[typeddict-unknown-key]
-                "instruction_tags": state.get("instruction_tags", []), # type: ignore[typeddict-unknown-key]
+                "category": state.get("category", ""),  # type: ignore[typeddict-unknown-key]
+                "instruction_tags": state.get("instruction_tags", []),  # type: ignore[typeddict-unknown-key]
             }
         }

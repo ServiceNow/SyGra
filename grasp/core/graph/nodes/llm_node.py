@@ -1,4 +1,4 @@
-from inspect import isclass, signature
+from inspect import isclass
 from typing import Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage

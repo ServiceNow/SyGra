@@ -4,11 +4,11 @@ import os
 import re
 import threading
 from pathlib import Path
-from typing import Any, Callable, Iterator, Optional, Sequence, Union, cast
+from typing import Any, Callable, Optional, Sequence, Union, cast
 
 import yaml  # type: ignore[import-untyped]
 from datasets import IterableDataset  # type: ignore[import-untyped]
-from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
@@ -571,4 +571,4 @@ class BackendFactoryProxy:
 backend_factory = BackendFactoryProxy()
 
 # store the current task to access it later to fetch properties
-current_task : Optional[str] = None
+current_task: Optional[str] = None

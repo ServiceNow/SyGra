@@ -1,6 +1,6 @@
-from typing import Any, Type, Optional
+from typing import Any, Optional, Type
 
-from pydantic import BaseModel, ValidationError, create_model, TypeAdapter
+from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from grasp.core.graph.graph_config import GraphConfig
 from grasp.logger.logger_config import logger
