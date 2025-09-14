@@ -6,7 +6,7 @@ Pydantic for validation and type checking of configuration parameters.
 """
 
 from enum import Enum
-from typing import Optional, Any, Union
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, field_validator
 
@@ -161,9 +161,7 @@ class DataSourceConfig(BaseModel):
             DataSourceConfig: Validated configuration object
         """
         if "transformations" in config:
-            config["transformations"] = [
-                TransformConfig(**t) for t in config["transformations"]
-            ]
+            config["transformations"] = [TransformConfig(**t) for t in config["transformations"]]
 
         return cls(**config)
 

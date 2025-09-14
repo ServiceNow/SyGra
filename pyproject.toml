@@ -1,50 +1,170 @@
-[tool.poetry]
-name = "GraSP"
-version = "0.1.0"
-description = "GRAph-oriented Synthetic data generation Pipeline"
-authors = ["Gopal Sarda <gopal.sarda@servicenow.com>","Bidyapati Pradhan <bidyapati.pradhan@servicenow.com>", "Jishnu S Nair <jishnus.nair@servicenow.com>", "Surajit Dasgupta <surajit.dasgupta@servicenow.com>", "Vipul Mittal <vipul.mittal@servicenow.com>", "Omkar Anustoop <omkar.anustoop@servicenow.com>", "Amit Saha <amit.saha@servicenow.com>", "Sriram Puttagunta <sriram.puttagunta@servicenow.com>"]
+[build-system]
+requires = ["setuptools>=75", "wheel", "build>=1.2.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grasp"
+version = "1.0.0"
+description = "GRAph-oriented Synthetic data generation Pipeline library"
 readme = "README.md"
-package-mode = false
+requires-python = ">=3.9"
+authors = [
+  {name = "Bidyapati Pradhan", email = "bidyapati.pradhan@servicenow.com"},
+  {name = "Surajit Dasgupta", email = "surajit.dasgupta@servicenow.com"},
+  {name = "Amit Kumar Saha", email = "amit.saha@servicenow.com"},
+  {name = "Sriram Puttagunta", email = "sriram.puttagunta@servicenow.com"},
+  {name = "Omkar Anustoop", email = "omkar.anustoop@servicenow.com"},
+  {name = "Vipul Mittal", email = "vipul.mittal@servicenow.com"},
+  {name = "Gopal Sarda", email = "gopal.sarda@servicenow.com"},
+  {name = "Jishnu S Nair", email = "jishnus.nair@servicenow.com"},
+]
+maintainers = [
+  { name = "GraSP Team", email = "grasp_team@servicenow.com" }
+]
+license = {text = "Apache-2.0"}
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+]
+
+[project.urls]
+Homepage = "https://github.com/ServiceNow/GraSP"
+Issues = "https://github.com/ServiceNow/GraSP/issues"
+
+[tool.setuptools]
+packages = { find = { include = ["grasp*"], exclude = ["tests*", "docs*", "grasp_lib_examples*", "apps*"] } }
+
+[tool.setuptools.package-data]
+grasp = ["**/*.yaml", "**/*.yml", "**/*.jinja2", "**/*.j2", "**/*.json"]
+
+# --- Poetry section (explicit, must duplicate dependencies) ---
+[tool.poetry]
+name = "grasp"
+version = "1.0.0"
+description = "GRAph-oriented Synthetic data generation Pipeline library"
+authors = ["GraSP Team <grasp_team@servicenow.com>"]
+license = "Apache-2.0"
+readme = "README.md"
+homepage = "https://github.com/ServiceNow/GraSP"
+repository = "https://github.com/ServiceNow/GraSP"
 
 [tool.poetry.dependencies]
-python = "^3.11"
-aiohttp = "^3.10.8"
-datasets = "^3.0.1"
-httpx = "^0.27.2"
-httpx-sse = "^0.4.0"
-huggingface-hub = "^0.25.1"
-langchain-community = "^0.3.1"
-langchain-core = "^0.3.8"
-langchain-mistralai = "^0.2.0"
-langgraph = "^0.6.2"
-mistralai = "^1.1.0"
-openai = "^1.51.0"
-pyyaml = "^6.0.2"
-transformers = "^4.45.1"
-grandalf = "^0.8"
-sentencepiece = "^0.2.0"
-protobuf = "^5.28.2"
-jinja2 = "^3.1.4"
-pathvalidate = "^3.2.1"
-ujson = "^5.10.0"
-fasttext = "^0.9.2"
-lexicalrichness = "^0.5.1"
-torch = "^2.7.0"
-pytest = "^8.4.0"
-langchain-openai = "^0.3.24"
-streamlit = "^1.46.0"
-streamlit-agraph= "^0.0.45"
-streamlit-autorefresh= "^1.0.1"
-streamlit-flow-component= "^1.6.1"
-soundfile = "^0.13.1"
-ollama = "^0.5.1"
-mlxtend = "^0.23.4"
-pandarallel = "^1.6.5"
-sentence-transformers = "^5.1.0"
+python = ">=3.9"
+aiohttp = "*"
+datasets = "*"
+httpx = "*"
+httpx-sse = "*"
+huggingface-hub = "*"
+langchain-community = "*"
+langchain-core = "*"
+langchain-mistralai = "*"
+langgraph = "*"
+mistralai = "*"
+openai = "*"
+PyYAML = "*"
+transformers = "*"
+grandalf = "*"
+sentencepiece = "*"
+protobuf = "*"
+Jinja2 = "*"
+pathvalidate = "*"
+ujson = "*"
+fasttext = "*"
+lexicalrichness = "*"
+langchain-openai = "*"
+ollama = "*"
+torch = "*"
+mlxtend = "*"
+pandarallel = "*"
+sentence-transformers = "*"
+soundfile = "*"
+
+[tool.poetry.group.ui.dependencies]
+streamlit = "*"
+streamlit-agraph = "*"
+streamlit-autorefresh = "*"
+streamlit-flow-component = "*"
+watchdog = "*"
 
 [tool.poetry.group.dev.dependencies]
-setuptools = "^75.1.0"
+pytest = "*"
+pytest-asyncio = "*"
+build = "*"
+twine = "*"
+black = "*"
+isort = "*"
+flake8 = "*"
+pylint = "*"
+mypy = "*"
+mkdocs = "*"
+mkdocs-material = "*"
+mkdocs-include-markdown-plugin = "*"
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+
+# --- Tool configurations ---
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310", "py311"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+skip_gitignore = true
+
+[tool.pylint.messages_control]
+disable = [
+    "C0111", # missing-docstring
+    "C0103", # invalid-name
+    "C0330", # bad-continuation
+    "C0326", # bad-whitespace
+    "W0511", # fixme
+    "W1202", # logging-format-interpolation
+    "R0903", # too-few-public-methods
+    "R0913", # too-many-arguments
+    "R0914", # too-many-locals
+    "R0915", # too-many-statements
+]
+max-line-length = 100
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+strict_optional = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_defs = false
+check_untyped_defs = false
+
+[tool.flake8]
+max-line-length = 100
+exclude = [".git", "__pycache__", "build", "dist", ".eggs", "venv", ".venv"]
+extend-ignore = ["E203", "W503"]

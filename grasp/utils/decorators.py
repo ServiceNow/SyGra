@@ -1,5 +1,5 @@
-import warnings
 import functools
+import warnings
 
 
 def future_deprecation(reason=None):

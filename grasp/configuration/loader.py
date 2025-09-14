@@ -1,12 +1,13 @@
 import os
-import yaml
-from typing import Union, Dict, Any
 from pathlib import Path
+from typing import Any, Union
+
+import yaml
 
 try:
-    from grasp.utils import utils
-    from grasp.core.graph.graph_config import GraphConfig
     from grasp.core.dataset.dataset_config import DataSourceConfig, OutputConfig
+    from grasp.core.graph.graph_config import GraphConfig
+    from grasp.utils import utils
 
     UTILS_AVAILABLE = True
 except ImportError:
@@ -16,7 +17,7 @@ except ImportError:
 class ConfigLoader:
     """Loads existing GraSP YAML configurations and converts them to library objects."""
 
-    def load(self, config_path: Union[str, Path, Dict[str, Any]]) -> Dict[str, Any]:
+    def load(self, config_path: Union[str, Path, dict[str, Any]]) -> dict[str, Any]:
         """Load configuration from file or dictionary."""
         if isinstance(config_path, dict):
             return config_path
@@ -24,15 +25,11 @@ class ConfigLoader:
         config_path = Path(config_path)
         if not config_path.exists():
             if UTILS_AVAILABLE:
-                task_config_path = utils.get_file_in_task_dir(
-                    config_path.stem, "graph_config.yaml"
-                )
+                task_config_path = utils.get_file_in_task_dir(config_path.stem, "graph_config.yaml")
                 if os.path.exists(task_config_path):
                     config_path = Path(task_config_path)
                 else:
-                    raise FileNotFoundError(
-                        f"Configuration file not found: {config_path}"
-                    )
+                    raise FileNotFoundError(f"Configuration file not found: {config_path}")
             else:
                 raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
@@ -41,7 +38,7 @@ class ConfigLoader:
 
         return config
 
-    def load_and_create(self, config_path: Union[str, Path, Dict[str, Any]]):
+    def load_and_create(self, config_path: Union[str, Path, dict[str, Any]]):
         """Load config and create appropriate Workflow or Graph object."""
         config = self.load(config_path)
 

@@ -1,13 +1,13 @@
 from typing import Any, Dict
 
 from grasp.core.models.custom_models import (
-    CustomVLLM,
-    CustomMistralAPI,
-    CustomTGI,
     CustomAzure,
-    CustomOpenAI,
+    CustomMistralAPI,
     CustomOllama,
-    CustomTriton
+    CustomOpenAI,
+    CustomTGI,
+    CustomTriton,
+    CustomVLLM,
 )
 from grasp.core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
 from grasp.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
@@ -31,15 +31,13 @@ class ModelFactory:
             "azure": CustomAzure,
             "azure_openai": CustomOpenAI,
             "ollama": CustomOllama,
-            "triton": CustomTriton
+            "triton": CustomTriton,
         },
         "langgraph": {"vllm": CustomVLLMChatModel, "azure_openai": CustomOpenAIChatModel},
     }
 
     @classmethod
-    def create_model(
-        cls, model_config: Dict[str, Any], backend: str = "default"
-    ) -> Any:
+    def create_model(cls, model_config: Dict[str, Any], backend: str = "default") -> Any:
         """
         Create and return an appropriate model instance based on the provided configuration.
 
@@ -72,9 +70,7 @@ class ModelFactory:
                 f"No specialized model implementation for {model_type} found for backend {backend}."
             )
             # If we get here, the model type is not supported
-            raise NotImplementedError(
-                f"Model type {model_type} for {backend} is not implemented"
-            )
+            raise NotImplementedError(f"Model type {model_type} for {backend} is not implemented")
 
     @staticmethod
     def _update_model_config(model_config: Dict[str, Any]) -> Dict[str, Any]:

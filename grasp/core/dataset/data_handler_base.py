@@ -5,7 +5,7 @@ that can read from and write to different data sources.
 """
 
 from abc import ABC, abstractmethod
-from typing import Iterator, Union, Optional, Any
+from typing import Any, Iterator, Optional, Union
 
 
 class DataHandler(ABC):

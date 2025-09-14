@@ -130,7 +130,12 @@ class EdgeFactory:
     Additionally, it updates condition path_map values if they refer to subgraphs.
     """
 
-    def __init__(self, edges_config: list[dict[str, Any]], nodes: dict[str, BaseNode], subgraphs: dict[str, Any]):
+    def __init__(
+        self,
+        edges_config: list[dict[str, Any]],
+        nodes: dict[str, BaseNode],
+        subgraphs: dict[str, Any],
+    ):
         """
         Initialize the EdgeFactory.
 
@@ -180,13 +185,17 @@ class EdgeFactory:
         for sg_name, sg in self.subgraphs.items():
             for e in sg.edges:
                 # Skip subgraph placeholder edges.
-                if e.edge_config.get("from") == constants.START or e.edge_config.get("to") == constants.END:
+                if (
+                    e.edge_config.get("from") == constants.START
+                    or e.edge_config.get("to") == constants.END
+                ):
                     continue
                 self.edges.append(e)
             logger.info(f"Subgraph {sg_name} edges inlined.")
 
-    def update_edge_config(self, edge_cfg: dict, src_node: BaseNode, tgt_node: BaseNode, condition: str,
-                           path_map: dict):
+    def update_edge_config(
+        self, edge_cfg: dict, src_node: BaseNode, tgt_node: BaseNode, condition: str, path_map: dict
+    ):
         """
         Updates the edge configuration dictionary with resolved source and target nodes.
 
@@ -318,13 +327,11 @@ class EdgeFactory:
             node = self.nodes.get(sub_node)
         else:
             if node_name in SpecialNode.SPECIAL_NODES:
-                node = get_node(node_name, {"node_type": NodeType.SPECIAL})
+                node = get_node(node_name, {"node_type": NodeType.SPECIAL.value})
             else:
                 raise RuntimeError(
                     f"Node {node_name} not found in graph or as a special node in edge configuration."
                 )
         if not node.is_valid():
-            raise RuntimeError(
-                f"Node {node_name} is idle, can't be used for edge creation."
-            )
+            raise RuntimeError(f"Node {node_name} is idle, can't be used for edge creation.")
         return node

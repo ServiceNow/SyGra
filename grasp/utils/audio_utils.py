@@ -6,7 +6,15 @@ from typing import Any, Union
 
 import numpy as np
 import requests
-import soundfile as sf
+
+try:
+    import soundfile as sf
+except ModuleNotFoundError:
+    raise ModuleNotFoundError(
+        "GraSP Audio requires the optional 'audio' dependencies. "
+        "Install them with: pip install 'grasp[audio]'"
+    )
+
 
 from grasp.logger.logger_config import logger
 
@@ -182,9 +190,7 @@ def get_audio_fields(sample_record: dict[str, Any]) -> list[str]:
     return fields
 
 
-def expand_audio_item(
-    item: dict[str, Any], state: dict[str, Any]
-) -> list[dict[str, Any]]:
+def expand_audio_item(item: dict[str, Any], state: dict[str, Any]) -> list[dict[str, Any]]:
     """
     Expand an audio item with a variable URL into multiple items if necessary.
 

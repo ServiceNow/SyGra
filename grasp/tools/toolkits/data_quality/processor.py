@@ -1,8 +1,9 @@
 import os
 import tempfile
-from typing import Dict, Any, Optional, Type
+from typing import Any, Dict, Optional, Type
 
 import ujson
+
 from grasp.logger.logger_config import logger
 from grasp.tools.base_tool import BaseTool
 from grasp.tools.registry import register_tool
@@ -108,9 +109,7 @@ class DataQuality(BaseTool):
                 if task_output:
                     self.input = task_output
                 else:
-                    logger.warning(
-                        f"Task {task_name} returned no output; reusing previous input."
-                    )
+                    logger.warning(f"Task {task_name} returned no output; reusing previous input.")
             except Exception as e:
                 logger.error(f"Task {task_name} failed: {e}", exc_info=True)
                 if self.config.get("skip_failed_tasks", True):
@@ -146,19 +145,13 @@ class DataQuality(BaseTool):
 
                 original.setdefault("quality", {}).update(
                     utils.flatten_dict(
-                        {
-                            "quality_characteristics": metadata.get(
-                                "quality_characteristics", {}
-                            )
-                        }
+                        {"quality_characteristics": metadata.get("quality_characteristics", {})}
                     )
                 )
                 original.setdefault("data_characteristics", {}).update(
                     metadata.get("data_characteristics", {})
                 )
-                original.setdefault("categories", []).append(
-                    taxonomy.get("category", "")
-                )
+                original.setdefault("categories", []).append(taxonomy.get("category", ""))
                 original["instruction_tags"] = taxonomy.get("instruction_tags", [])
                 original["languages"] = metadata.get("languages", [])
         else:
@@ -231,9 +224,7 @@ class DataQuality(BaseTool):
                     if mid in node_map
                 ]
                 if conversation:
-                    formatted_conversations.append(
-                        {"id": current_id, "conversation": conversation}
-                    )
+                    formatted_conversations.append({"id": current_id, "conversation": conversation})
 
             for child_id in children_map.get(current_id, set()):
                 if child_id not in visited:

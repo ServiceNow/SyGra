@@ -1,8 +1,8 @@
-import uuid
+import re
+from typing import Any
 
-from transformers import AutoTokenizer
+from transformers import GPT2TokenizerFast
 
-import grasp.utils.utils
 from grasp.core.graph.functions.edge_condition import EdgeCondition
 from grasp.core.graph.functions.lambda_function import LambdaFunction
 from grasp.core.graph.functions.node_processor import (
@@ -11,17 +11,10 @@ from grasp.core.graph.functions.node_processor import (
 )
 from grasp.core.graph.grasp_message import GraspMessage
 from grasp.core.graph.grasp_state import GraspState
-
-import re
-from typing import Dict, Any
-
+from grasp.logger.logger_config import logger
 from grasp.processors.data_transform import DataTransform
 from grasp.utils import constants
-from grasp.logger.logger_config import logger
-from transformers import GPT2TokenizerFast
 
-#
-# tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen3-4B")
 tokenizer = GPT2TokenizerFast.from_pretrained("Xenova/gpt-4")
 
 
@@ -29,9 +22,7 @@ class ImagesMetadata(DataTransform):
     def name(self) -> str:
         return "ImagesMetadata"
 
-    def transform(
-        self, data: list[dict[str, Any]], params: dict[str, Any]
-    ) -> list[dict[str, Any]]:
+    def transform(self, data: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
         """
         Store metadata for images in the state.
         """
@@ -64,6 +55,8 @@ class ImageLoopChecker(EdgeCondition):
 class ExtractTextPostProcessor(NodePostProcessorWithState):
     def apply(self, response: GraspMessage, state: GraspState) -> GraspState:
         ocr_text = self.parse_non_json_text(response.message.content)
+        if not state.get("ocr_texts"):
+            state["ocr_texts"] = []
         state["ocr_texts"].append(ocr_text)
         return state
 

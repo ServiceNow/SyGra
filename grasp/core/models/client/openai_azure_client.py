@@ -1,10 +1,10 @@
-from typing import List, Optional, Dict, Any, Union
+from typing import Any, Dict, List, Optional, Union
 
 import httpx
 from langchain_core.messages import BaseMessage
 from langchain_openai.chat_models.base import _convert_message_to_dict
 from openai import AsyncAzureOpenAI, AzureOpenAI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from grasp.core.models.client.base_client import BaseClient
 from grasp.logger.logger_config import logger
@@ -25,13 +25,12 @@ class AzureClientConfig(BaseModel):
     timeout: int = Field(
         default=constants.DEFAULT_TIMEOUT, description="Request timeout in seconds"
     )
-    max_retries: int = Field(
-        default=3, description="Maximum number of retries for failed requests"
-    )
+    max_retries: int = Field(default=3, description="Maximum number of retries for failed requests")
 
-    class Config:
-        arbitrary_types_allowed = True
-        extra = "allow"
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="allow",
+    )
 
 
 class OpenAIAzureClient(BaseClient):
@@ -141,16 +140,12 @@ class OpenAIAzureClient(BaseClient):
         """
         generation_params = generation_params or {}
         pydantic_model = generation_params.get("pydantic_model")
-        final_params = {
-            k: v for k, v in generation_params.items() if (k != "pydantic_model")
-        }
+        final_params = {k: v for k, v in generation_params.items() if (k != "pydantic_model")}
         if pydantic_model:
             return self.client.beta.chat.completions.parse(
                 model=model_name,
                 messages=(
-                    payload["messages"]
-                    if self.chat_completions_api
-                    else [payload["prompt"]]
+                    payload["messages"] if self.chat_completions_api else [payload["prompt"]]
                 ),
                 response_format=pydantic_model,
                 **final_params,
@@ -160,6 +155,4 @@ class OpenAIAzureClient(BaseClient):
                 **payload, model=model_name, **generation_params
             )
         else:
-            return self.client.completions.create(
-                **payload, model=model_name, **generation_params
-            )
+            return self.client.completions.create(**payload, model=model_name, **generation_params)

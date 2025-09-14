@@ -1,22 +1,23 @@
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
-from grasp.core.models.model_factory import ModelFactory
 from grasp.core.models.custom_models import (
-    CustomVLLM,
-    CustomMistralAPI,
-    CustomTGI,
     CustomAzure,
+    CustomMistralAPI,
+    CustomOllama,
     CustomOpenAI,
-    CustomOllama, CustomTriton
+    CustomTGI,
+    CustomTriton,
+    CustomVLLM,
 )
 from grasp.core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
 from grasp.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
+from grasp.core.models.model_factory import ModelFactory
 
 
 class TestModelFactory(unittest.TestCase):
@@ -52,9 +53,7 @@ class TestModelFactory(unittest.TestCase):
 
     @patch("grasp.utils.utils.load_model_config")
     @patch("grasp.utils.utils.validate_required_keys")
-    def test_update_model_config_with_nested_dict(
-        self, mock_validate, mock_load_model_config
-    ):
+    def test_update_model_config_with_nested_dict(self, mock_validate, mock_load_model_config):
         """Test _update_model_config with nested dictionary values"""
         # Mock the global model config
         mock_load_model_config.return_value = {
@@ -170,17 +169,14 @@ class TestModelFactory(unittest.TestCase):
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
-    @patch('grasp.utils.utils.load_model_config')
+    @patch("grasp.utils.utils.load_model_config")
     def test_create_model_ollama(self, mock_load_model_config):
         """Test create_model with Ollama model type"""
         mock_load_model_config.return_value = {
-            "test_ollama": {
-                "model_type": "ollama",
-                "parameters": {}
-            }
+            "test_ollama": {"model_type": "ollama", "parameters": {}}
         }
 
-        with patch.object(CustomOllama, '__init__', return_value=None) as mock_init:
+        with patch.object(CustomOllama, "__init__", return_value=None) as mock_init:
             model_config = {"name": "test_ollama", "model_type": "ollama"}
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
@@ -194,11 +190,11 @@ class TestModelFactory(unittest.TestCase):
                 "url": "http://triton-test.com",
                 "auth_token": "test-token",
                 "payload_key": "default",
-                "parameters": {}
+                "parameters": {},
             }
         }
 
-        with patch.object(CustomTriton, '__init__', return_value=None) as mock_init:
+        with patch.object(CustomTriton, "__init__", return_value=None) as mock_init:
             model_config = {"name": "test_triton", "model_type": "triton"}
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
@@ -216,9 +212,7 @@ class TestModelFactory(unittest.TestCase):
             }
         }
 
-        with patch.object(
-            CustomVLLMChatModel, "__init__", return_value=None
-        ) as mock_init:
+        with patch.object(CustomVLLMChatModel, "__init__", return_value=None) as mock_init:
             model_config = {"name": "test_vllm", "model_type": "vllm"}
             ModelFactory.create_model(model_config, "langgraph")
             mock_init.assert_called_once()
@@ -238,9 +232,7 @@ class TestModelFactory(unittest.TestCase):
             }
         }
 
-        with patch.object(
-            CustomOpenAIChatModel, "__init__", return_value=None
-        ) as mock_init:
+        with patch.object(CustomOpenAIChatModel, "__init__", return_value=None) as mock_init:
             model_config = {"name": "test_openai", "model_type": "azure_openai"}
             ModelFactory.create_model(model_config, "langgraph")
             mock_init.assert_called_once()
@@ -264,9 +256,7 @@ class TestModelFactory(unittest.TestCase):
 
     @patch("grasp.utils.utils.load_model_config")
     @patch("grasp.utils.utils.validate_required_keys")
-    def test_create_model_unsupported_backend(
-        self, mock_validate, mock_load_model_config
-    ):
+    def test_create_model_unsupported_backend(self, mock_validate, mock_load_model_config):
         """Test create_model with unsupported backend"""
         mock_load_model_config.return_value = {
             "test_model": {
@@ -297,9 +287,7 @@ class TestModelFactory(unittest.TestCase):
 
         # Mock the model instance
         mock_model = MagicMock()
-        with patch.object(
-            ModelFactory, "create_model", return_value=mock_model
-        ) as mock_create:
+        with patch.object(ModelFactory, "create_model", return_value=mock_model) as mock_create:
             model_config = {"name": "test_model", "model_type": "vllm"}
             result = ModelFactory.get_model(model_config)
 
@@ -338,9 +326,7 @@ class TestModelFactory(unittest.TestCase):
         }
 
         # Mock create_model to verify it gets called with the right parameters
-        with patch.object(
-            ModelFactory, "create_model", return_value=MagicMock()
-        ) as mock_create:
+        with patch.object(ModelFactory, "create_model", return_value=MagicMock()) as mock_create:
             # Create an agent node with minimal config
             node_config = {"model": {"name": "test_model"}, "prompt": "test prompt"}
 
@@ -351,9 +337,7 @@ class TestModelFactory(unittest.TestCase):
                         node = AgentNode("test_node", node_config)
 
                         # Verify create_model was called with langgraph backend
-                        mock_create.assert_called_with(
-                            {"name": "test_model"}, "langgraph"
-                        )
+                        mock_create.assert_called_with({"name": "test_model"}, "langgraph")
 
 
 if __name__ == "__main__":

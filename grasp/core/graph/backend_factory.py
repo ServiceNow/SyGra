@@ -1,4 +1,4 @@
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 
 from grasp.core.graph.graph_config import GraphConfig
 from grasp.core.graph.grasp_message import GraspMessage

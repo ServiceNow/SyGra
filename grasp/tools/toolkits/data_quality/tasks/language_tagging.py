@@ -1,13 +1,14 @@
 import os
+from concurrent.futures import ThreadPoolExecutor
+
+import fasttext
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
-from concurrent.futures import ThreadPoolExecutor
 from huggingface_hub import hf_hub_download
-from grasp.logger.logger_config import logger
+from tqdm import tqdm
 
-from grasp.utils import utils, constants, dotenv
-import fasttext
+from grasp.logger.logger_config import logger
+from grasp.utils import constants, dotenv, utils
 
 dotenv.load_dotenv()
 
@@ -18,9 +19,7 @@ class LanguageTaggingTask:
     Thread-safe alternative to multiprocessing for safe execution in test runners and tool pipelines.
     """
 
-    def __init__(
-        self, input_file: str, output_dir: str, num_records: int, **kwargs: dict
-    ):
+    def __init__(self, input_file: str, output_dir: str, num_records: int, **kwargs: dict):
         self.input_file = input_file
         self.output_dir = output_dir
         self.num_records = num_records
@@ -54,15 +53,10 @@ class LanguageTaggingTask:
         df = pd.DataFrame(data)
 
         if "conversation_pretokenized" not in df.columns:
-            raise KeyError(
-                "'conversation_pretokenized' column not found in input data."
-            )
+            raise KeyError("'conversation_pretokenized' column not found in input data.")
 
         texts = df["conversation_pretokenized"].tolist()
-        batches = [
-            texts[i : i + self.batch_size]
-            for i in range(0, len(texts), self.batch_size)
-        ]
+        batches = [texts[i : i + self.batch_size] for i in range(0, len(texts), self.batch_size)]
 
         # --- Parallel prediction ---
         all_predictions = []

@@ -1,6 +1,7 @@
-from pydantic import BaseModel, validator, root_validator, Field
 from datetime import datetime, timezone
 from typing import Any, Optional
+
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class CustomUserSchema(BaseModel):
@@ -16,8 +17,9 @@ class CustomUserSchema(BaseModel):
     language: list[str]
     tags: list[str]
 
-    @root_validator(pre=True)
-    def check_non_empty_lists(cls, values):
+    @model_validator(mode="before")
+    @classmethod
+    def check_non_empty_lists(cls, values: dict[str, Any]):
         if not values.get("id"):
             raise ValueError("id cannot be empty")
         return values
@@ -52,13 +54,13 @@ class CoreLLMDataFabricFormat(BaseModel):
     categories: list[str] = Field(default_factory=list)
     subcategories: list[str] = Field(default_factory=list)
     generated_by: str = ""
-    quality: dict[str, float] = Field(
+    quality: dict[str, Any] = Field(
         default_factory=lambda: {"__default__": True}, validate_default=True
     )
     safety: dict[str, Any] = Field(
         default_factory=lambda: {"__default__": True}, validate_default=True
     )
-    length: dict[str, Any] = Field(default=dict)
+    length: dict[str, Any] = Field(default_factory=dict)
     instruction_tags: list[str] = Field(default_factory=list)
     data_characteristics: dict[str, Any] = Field(
         default_factory=lambda: {"__default__": True}, validate_default=True
@@ -69,58 +71,62 @@ class CoreLLMDataFabricFormat(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     active: bool = True
 
-    @validator("data_characteristics", pre=True, always=True)
-    def set_data_characteristics(cls, data_characteristics):
-        if data_characteristics is None or (
-            isinstance(data_characteristics, dict) and len(data_characteristics) == 0
-        ):
+    @field_validator("data_characteristics", mode="before")
+    @classmethod
+    def set_data_characteristics(cls, v):
+        if v is None or (isinstance(v, dict) and len(v) == 0):
             return {"__default__": True}
-        return data_characteristics
-
-    @validator("quality", pre=True, always=True)
-    def set_quality(cls, quality):
-        if quality is None or (isinstance(quality, dict) and len(quality) == 0):
-            return {"__default__": True}
-        return quality
-
-    @validator("safety", pre=True, always=True)
-    def set_safety(cls, safety):
-        if safety is None or (isinstance(safety, dict) and len(safety) == 0):
-            return {"__default__": True}
-        return safety
-
-    @validator("categories", pre=True, always=True)
-    def set_categories(cls, categories):
-        if categories is None:
-            return []
-        elif isinstance(categories, str):
-            return [categories]
-        return categories
-
-    @validator("instruction_tags", pre=True, always=True)
-    def set_instruction_tags(cls, instruction_tags):
-        if instruction_tags is None:
-            return []
-        elif isinstance(instruction_tags, str):
-            return [instruction_tags]
-        return instruction_tags
-
-    @validator("subcategories", pre=True, always=True)
-    def set_subcategories(cls, subcategories):
-        if subcategories is None:
-            return []
-        elif isinstance(subcategories, str):
-            return [subcategories]
-        return subcategories
-
-    @validator("parent_id")
-    def validate_parent_child(cls, v, values):
-        if "message_level" in values:
-            if values["message_level"] == 1 and v is not None:
-                raise ValueError("First message (level=1) cannot have a parent_id")
-            if values["message_level"] > 1 and v is None:
-                raise ValueError("Non-first messages must have a parent_id")
         return v
+
+    @field_validator("quality", mode="before")
+    @classmethod
+    def set_quality(cls, v):
+        if v is None or (isinstance(v, dict) and len(v) == 0):
+            return {"__default__": True}
+        return v
+
+    @field_validator("safety", mode="before")
+    @classmethod
+    def set_safety(cls, v):
+        if v is None or (isinstance(v, dict) and len(v) == 0):
+            return {"__default__": True}
+        return v
+
+    @field_validator("categories", mode="before")
+    @classmethod
+    def set_categories(cls, v):
+        if v is None:
+            return []
+        if isinstance(v, str):
+            return [v]
+        return v
+
+    @field_validator("instruction_tags", mode="before")
+    @classmethod
+    def set_instruction_tags(cls, v):
+        if v is None:
+            return []
+        if isinstance(v, str):
+            return [v]
+        return v
+
+    @field_validator("subcategories", mode="before")
+    @classmethod
+    def set_subcategories(cls, v):
+        if v is None:
+            return []
+        if isinstance(v, str):
+            return [v]
+        return v
+
+    # ---------- cross-field validation (v2: model_validator) ----------
+    @model_validator(mode="after")
+    def validate_parent_child(self):
+        if self.message_level == 1 and self.parent_id is not None:
+            raise ValueError("First message (level=1) cannot have a parent_id")
+        if self.message_level > 1 and self.parent_id is None:
+            raise ValueError("Non-first messages must have a parent_id")
+        return self
 
 
 class PipelineStep(BaseModel):
