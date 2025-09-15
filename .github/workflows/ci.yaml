@@ -114,7 +114,6 @@ jobs:
           path: site
   # Deploy Docs
   deploy_docs:
-    if: github.ref == 'refs/heads/main'
     needs: docs_build
     runs-on: ubuntu-latest
     environment:
