@@ -8,40 +8,25 @@ on:
     types: [ opened, synchronize, reopened, ready_for_review ]
 
 jobs:
-  # Setup and save environment
+  # Just one lightweight setup job to warm the cache
   setup_grasp:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        id: setup-python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - uses: snok/install-poetry@v1
         with:
           virtualenvs-create: true
           virtualenvs-in-project: true
-          virtualenvs-path: .venv
           installer-parallel: true
-
-      - name: Install dependencies
-        run: make setup-dev
-
-      # Pack venv + poetry binary
-      - name: Pack environment
-        run: |
-          tar -czf env.tar.gz .venv $(which poetry)
-      - name: Upload environment artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/cache@v4
         with:
-          name: grasp-env
-          path: env.tar.gz
+          path: .venv
+          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
+      - run: make setup-dev
 
   # Run Formatting
   format:
@@ -49,12 +34,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/setup-python@v5
         with:
-          name: grasp-env
-      - run: |
-          tar -xzf env.tar.gz
-          echo "$(pwd)" >> $GITHUB_PATH
+          python-version: '3.9'
+      - uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
       - run: make format
   # Run Linting
   lint:
@@ -62,12 +53,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/setup-python@v5
         with:
-          name: grasp-env
-      - run: |
-          tar -xzf env.tar.gz
-          echo "$(pwd)" >> $GITHUB_PATH
+          python-version: '3.9'
+      - uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
       - run: make lint
   # Run Tests
   test:
@@ -75,12 +72,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/setup-python@v5
         with:
-          name: grasp-env
-      - run: |
-          tar -xzf env.tar.gz
-          echo "$(pwd)" >> $GITHUB_PATH
+          python-version: '3.9'
+      - uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
       - run: make test
   # Build Docs
   docs_build:
@@ -88,12 +91,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/setup-python@v5
         with:
-          name: grasp-env
-      - run: |
-          tar -xzf env.tar.gz
-          echo "$(pwd)" >> $GITHUB_PATH
+          python-version: '3.9'
+      - uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
       - run: make docs
   # Deploy Docs
   deploy_docs:
@@ -105,4 +114,3 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
-
