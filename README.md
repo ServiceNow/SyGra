@@ -3,8 +3,10 @@
 
   <h1>GRASP: GRAph-oriented Synthetic data generation Pipeline</h1>
 
+<a href="https://github.com/ServiceNow/GraSP/actions/workflows/ci.yml">
+    <img alt="CI" src="https://github.com/ServiceNow/GraSP/actions/workflows/ci.yml/badge.svg"/></a>
 <a href="https://github.com/ServiceNow/GraSP/releases">
-    <img alt="Documentation" src="https://img.shields.io/github/v/release/ServiceNow/GraSP?logo=bookstack&logoColor=white"/></a>
+    <img alt="Releases" src="https://img.shields.io/github/v/release/ServiceNow/GraSP?logo=bookstack&logoColor=white"/></a>
 <a href="https://servicenow.github.io/GraSP">
     <img alt="Documentation" src="https://img.shields.io/badge/MkDocs-Documentation-green.svg"/></a>
 <a href="http://arxiv.org/abs/2508.15432">
@@ -19,12 +21,12 @@
 
 
 Framework to easily generate complex synthetic data pipelines by visualizing and configuring the pipeline as a
-computational graph. [langgraph](https://python.langchain.com/docs/langgraph/) is used as the underlying graph
+computational graph. [LangGraph](https://python.langchain.com/docs/langgraph/) is used as the underlying graph
 configuration/execution library. Refer
-to [langraph examples](https://github.com/langchain-ai/langgraph/tree/main/examples) to get a sense of the different
+to [LangGraph examples](https://github.com/langchain-ai/langgraph/tree/main/examples) to get a sense of the different
 kinds of computational graph which can be configured.
 <br>
-<be>
+<br>
 
 ## Introduction
 
@@ -41,6 +43,63 @@ Edges define the flow between nodes, which can be conditional or non-conditional
 At the end, generated data is collected in the graph state for a specific record, processed further to generate the final dictionary to be written to the configured data sink.
 
 ![GraspFramework](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/grasp_architecture.png)
+
+---
+
+# Installation
+
+Pick how you want to use **GraSP**:
+
+<div align="center">
+
+<a href="https://servicenow.github.io/GraSP/installation/">
+  <img src="https://img.shields.io/badge/Use%20as-Framework-4F46E5?style=for-the-badge" alt="Install as Framework">
+</a>
+&nbsp;&nbsp;
+<a href="https://servicenow.github.io/GraSP/grasp_library/">
+  <img src="https://img.shields.io/badge/Use%20as-Library-10B981?style=for-the-badge" alt="Install as Library">
+</a>
+
+</div>
+
+### Which one should I choose?
+- **Framework** → Run end-to-end pipelines from YAML graphs + CLI tooling and project scaffolding.
+  (Start here: **[`Installation`](https://servicenow.github.io/GraSP/installation/)**)
+
+- **Library** → Import GraSP in your own Python app/notebook; call APIs directly.
+  (Start here: **[`GraSP Library`](https://servicenow.github.io/GraSP/grasp_library/)**)
+
+
+<details>
+  <summary><strong>TL;DR – Framework Setup</strong></summary>
+
+See full steps in <a href="https://servicenow.github.io/GraSP/installation/">Installation</a>.
+
+```bash
+git clone git@github.com:ServiceNow/GraSP.git
+
+cd GraSP
+
+poetry run python main.py --task examples.glaive_code_assistant --num_records=1
+```
+</details>
+
+<details>
+  <summary><strong>TL;DR – Library Setup</strong></summary>
+
+See full steps in <a href="https://servicenow.github.io/GraSP/grasp_library/">Grasp Library</a>.
+
+```bash
+pip install grasp   
+```
+
+```python
+import grasp
+
+workflow = grasp.Workflow("tasks/examples/glaive_code_assistant")
+workflow.run(num_records=1)
+```
+</details>
 
 ---
 
@@ -92,7 +151,7 @@ As of now, LLM inference is supported for TGI, vLLM, Azure, Azure OpenAI, Ollama
 
 ## Contact
 
-To contact us, join our channel or send us an [email](mailto:grasp_team@servicenow.com)!
+To contact us, please send us an [email](mailto:grasp_team@servicenow.com)!
 
 ## License
 
