@@ -43,7 +43,7 @@ At the end, generated data is collected in the graph state for a specific record
 ---
 
 ## Components
-GraSP architecture consists of various components, below are the four major component diagrams explains various modules.
+The GraSP architecture is composed of multiple components. The following diagrams illustrate the four primary components and their associated modules.
 
 ### Data Handler
 Data handler is used for reading and writing the data. Currently, it supports file handler with various file types and huggingface handler.
