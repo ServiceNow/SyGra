@@ -3,8 +3,10 @@
 
   <h1>GRASP: GRAph-oriented Synthetic data generation Pipeline</h1>
 
+<a href="https://github.com/ServiceNow/GraSP/actions/workflows/ci.yml">
+    <img alt="CI" src="https://github.com/ServiceNow/GraSP/actions/workflows/ci.yml/badge.svg"/></a>
 <a href="https://github.com/ServiceNow/GraSP/releases">
-    <img alt="Documentation" src="https://img.shields.io/github/v/release/ServiceNow/GraSP?logo=bookstack&logoColor=white"/></a>
+    <img alt="Releases" src="https://img.shields.io/github/v/release/ServiceNow/GraSP?logo=bookstack&logoColor=white"/></a>
 <a href="https://servicenow.github.io/GraSP">
     <img alt="Documentation" src="https://img.shields.io/badge/MkDocs-Documentation-green.svg"/></a>
 <a href="http://arxiv.org/abs/2508.15432">
