@@ -46,51 +46,6 @@ At the end, generated data is collected in the graph state for a specific record
 
 ---
 
-## Components
-The GraSP architecture is composed of multiple components. The following diagrams illustrate the four primary components and their associated modules.
-
-### Data Handler
-Data handler is used for reading and writing the data. Currently, it supports file handler with various file types and huggingface handler.
-When reading data from huggingface, it can read the whole dataset and process, or it can stream chunk of data.
-
-<kbd> ![DataHandler](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/component_data_handler.png) </kbd>
-
-### Graph Node Module
-This module is responsible for building various kind of nodes like LLM node, Multi-LLM node, Lambda node, Agent node etc.
-Each node is defined for various task, for example multi-llm node is used to load-balance the data among various inference point running same model.
-
-<kbd> ![Nodes](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/component_nodes.png) </kbd>
-
-### Graph Edge Connection
-Once node are built, we can connect them with simple edge or conditional edge.
-Conditional edge uses python code to decide the path. Conditional edge helps implimenting if-else flow as well as loops in the graph.
-
-<kbd> ![Edges](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/component_edges.png) </kbd>
-
-### Model clients
-GraSP doesn't support inference within the framework, but it supports various clients, which helps connecting with different kind of servers.
-For example, openai client is being supported by Huggingface TGI, vLLM server and Azure services. However, model configuration does not allow to change clients, but it can be configured in models code.
-
-<kbd> ![ModelClient](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/component_model_client.png) </kbd>
-
-## Task Components
-
-GraSP supports extendability and ease of implementation—most tasks are defined as graph configuration YAML files. Each task consists of two major components: a graph configuration and Python code to define conditions and processors.
-YAML contains various parts:
-
-- **Data configuration** : Configure file or huggingface as source and sink for the task.
-- **Data transformation** : Configuration to transform the data into the format it can be used in the graph.
-- **Node configuration** : Configure nodes and corresponding properties, preprocessor and post processor.
-- **Edge configuration** : Connect the nodes configured above with or without conditions. 
-- **Output configuration** : Configuration for data tranformation before writing the data into sink.
-
-A node is defined by the node module, supporting types like LLM call, multiple LLM call, lambda node, and sampler node.  
-
-LLM-based nodes require a model configured in `models.yaml` and runtime parameters. Sampler nodes pick random samples from static YAML lists. For custom node types, you can implement new nodes in the platform.
-
-As of now, LLM inference is supported for TGI, vLLM, Azure, Azure OpenAI, Ollama and Triton compatible servers. Model deployment is external and configured in `models.yaml`.
-
----
 # Installation
 
 Pick how you want to use **GraSP**:
@@ -147,6 +102,52 @@ workflow.run(num_records=1)
 </details>
 
 ---
+
+## Components
+The GraSP architecture is composed of multiple components. The following diagrams illustrate the four primary components and their associated modules.
+
+### Data Handler
+Data handler is used for reading and writing the data. Currently, it supports file handler with various file types and huggingface handler.
+When reading data from huggingface, it can read the whole dataset and process, or it can stream chunk of data.
+
+<kbd> ![DataHandler](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/component_data_handler.png) </kbd>
+
+### Graph Node Module
+This module is responsible for building various kind of nodes like LLM node, Multi-LLM node, Lambda node, Agent node etc.
+Each node is defined for various task, for example multi-llm node is used to load-balance the data among various inference point running same model.
+
+<kbd> ![Nodes](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/component_nodes.png) </kbd>
+
+### Graph Edge Connection
+Once node are built, we can connect them with simple edge or conditional edge.
+Conditional edge uses python code to decide the path. Conditional edge helps implimenting if-else flow as well as loops in the graph.
+
+<kbd> ![Edges](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/component_edges.png) </kbd>
+
+### Model clients
+GraSP doesn't support inference within the framework, but it supports various clients, which helps connecting with different kind of servers.
+For example, openai client is being supported by Huggingface TGI, vLLM server and Azure services. However, model configuration does not allow to change clients, but it can be configured in models code.
+
+<kbd> ![ModelClient](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/component_model_client.png) </kbd>
+
+## Task Components
+
+GraSP supports extendability and ease of implementation—most tasks are defined as graph configuration YAML files. Each task consists of two major components: a graph configuration and Python code to define conditions and processors.
+YAML contains various parts:
+
+- **Data configuration** : Configure file or huggingface as source and sink for the task.
+- **Data transformation** : Configuration to transform the data into the format it can be used in the graph.
+- **Node configuration** : Configure nodes and corresponding properties, preprocessor and post processor.
+- **Edge configuration** : Connect the nodes configured above with or without conditions. 
+- **Output configuration** : Configuration for data tranformation before writing the data into sink.
+
+A node is defined by the node module, supporting types like LLM call, multiple LLM call, lambda node, and sampler node.  
+
+LLM-based nodes require a model configured in `models.yaml` and runtime parameters. Sampler nodes pick random samples from static YAML lists. For custom node types, you can implement new nodes in the platform.
+
+As of now, LLM inference is supported for TGI, vLLM, Azure, Azure OpenAI, Ollama and Triton compatible servers. Model deployment is external and configured in `models.yaml`.
+
+<!-- ![GraspComponents](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/grasp_usecase2framework.png) -->
 
 
 ## Contact
