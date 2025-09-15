@@ -6,7 +6,7 @@
 <a href="https://github.com/ServiceNow/GraSP/releases">
     <img alt="Documentation" src="https://img.shields.io/github/v/release/ServiceNow/GraSP?logo=bookstack&logoColor=white"/></a>
 <a href="https://servicenow.github.io/GraSP">
-    <img alt="Documentation" src="https://img.shields.  io/badge/MkDocs-Documentation-green.svg"/></a>
+    <img alt="Documentation" src="https://img.shields.io/badge/MkDocs-Documentation-green.svg"/></a>
 <a href="http://arxiv.org/abs/2508.15432">
     <img src="https://img.shields.io/badge/arXiv-2508.15432-B31B1B.svg" alt="arXiv"></a>
 <a href="LICENSE">
