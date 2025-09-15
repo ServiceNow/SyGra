@@ -8,11 +8,10 @@ on:
     types: [ opened, synchronize, reopened, ready_for_review ]
 
 jobs:
-  # Setup Grasp
+  # Setup and save environment
   setup_grasp:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -31,26 +30,31 @@ jobs:
           virtualenvs-path: .venv
           installer-parallel: true
 
-      - name: Load cached venv
-        id: cached-poetry-deps
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
-
       - name: Install dependencies
-        if: steps.cached-poetry-deps.outputs.cache-hit != 'true'
         run: make setup-dev
+
+      # Pack venv + poetry binary
+      - name: Pack environment
+        run: |
+          tar -czf env.tar.gz .venv $(which poetry)
+      - name: Upload environment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: grasp-env
+          path: env.tar.gz
+
   # Run Formatting
   format:
     needs: setup_grasp
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      - uses: actions/download-artifact@v4
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
+          name: grasp-env
+      - run: |
+          tar -xzf env.tar.gz
+          echo "$(pwd)" >> $GITHUB_PATH
       - run: make format
   # Run Linting
   lint:
@@ -58,10 +62,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      - uses: actions/download-artifact@v4
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
+          name: grasp-env
+      - run: |
+          tar -xzf env.tar.gz
+          echo "$(pwd)" >> $GITHUB_PATH
       - run: make lint
   # Run Tests
   test:
@@ -69,10 +75,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      - uses: actions/download-artifact@v4
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
+          name: grasp-env
+      - run: |
+          tar -xzf env.tar.gz
+          echo "$(pwd)" >> $GITHUB_PATH
       - run: make test
   # Build Docs
   docs_build:
@@ -80,10 +88,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/cache@v4
+      - uses: actions/download-artifact@v4
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
+          name: grasp-env
+      - run: |
+          tar -xzf env.tar.gz
+          echo "$(pwd)" >> $GITHUB_PATH
       - run: make docs
   # Deploy Docs
   deploy_docs:
