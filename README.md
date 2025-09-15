@@ -134,11 +134,12 @@ For example, openai client is being supported by Huggingface TGI, vLLM server an
 
 GraSP supports extendability and ease of implementation—most tasks are defined as graph configuration YAML files. Each task consists of two major components: a graph configuration and Python code to define conditions and processors.
 YAML contains various parts:
-* **Data configuration** : Configure file or huggingface as source and sink for the task.
-* **Data transformation** : Configuration to transform the data into the format it can be used in the graph.
-* **Node configuration** : Configure nodes and corresponding properties, preprocessor and post processor.
-* **Edge configuration** : Connect the nodes configured above with or without conditions. 
-* **Output configuration** : Configuration for data tranformation before writing the data into sink.
+
+- **Data configuration** : Configure file or huggingface as source and sink for the task.
+- **Data transformation** : Configuration to transform the data into the format it can be used in the graph.
+- **Node configuration** : Configure nodes and corresponding properties, preprocessor and post processor.
+- **Edge configuration** : Connect the nodes configured above with or without conditions. 
+- **Output configuration** : Configuration for data tranformation before writing the data into sink.
 
 A node is defined by the node module, supporting types like LLM call, multiple LLM call, lambda node, and sampler node.  
 
