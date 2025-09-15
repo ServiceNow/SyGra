@@ -17,9 +17,30 @@ The **GraSP Library** provides a high-level Python interface for building and ex
 
 ## Installation
 
-```bash
-chmod +x setup_grasp_lib.sh
-./setup_grasp_lib.sh
+Requirements: Python 3.9-3.11 recommended. We also recommend upgrading `pip` first.
+
+**Install from PyPI**
+```
+python -m pip install -U pip
+
+pip install grasp
+```
+
+If your environment uses multiple Python versions, prefer `python -m pip` or a `virtualenv`
+```
+python -m venv .venv && source .venv/bin/activate
+python -m pip install -U pip
+
+pip install grasp
+```
+
+**Install from source (editable)**
+```
+git clone https://github.com/ServiceNow/GraSP.git
+cd GraSP
+pip install -U pip
+
+pip install -e .
 ```
 
 ---
