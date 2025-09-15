@@ -14,7 +14,6 @@ from typing import (
     DefaultDict,
     Dict,
     Optional,
-    Protocol,
     Sequence,
     Tuple,
     Type,
