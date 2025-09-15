@@ -41,7 +41,7 @@ class LoggerAdapter:
 
     def _setup_internal_logger(self) -> None:
         """Setup the default GraSP internal logger."""
-        log_dir = os.path.join(ROOT_DIR, "logs")
+        log_dir = os.path.join(os.getcwd(), "logs")
         os.makedirs(log_dir, exist_ok=True)
         log_file = os.path.join(log_dir, "out.log")
 
@@ -173,15 +173,15 @@ def configure_logger(debug_mode: bool, clear_logs: bool, run_name: str) -> None:
 
     # Only configure if using internal logger
     if not _logger_adapter.is_using_external():
-        log_dir = os.path.join(ROOT_DIR, "logs")
+        log_dir = os.path.join(os.getcwd(), "logs")
         log_file = os.path.join(log_dir, "out.log")
 
         if clear_logs and os.path.exists(log_file):
             os.remove(log_file)
 
         # Create logs directory if not present
-        if not os.path.exists("logs"):
-            os.makedirs("logs")
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
 
         run_name_text = f" - {run_name}" if run_name else ""
 
