@@ -109,6 +109,9 @@ jobs:
           path: .venv
           key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
       - run: make docs
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
   # Deploy Docs
   deploy_docs:
     if: github.ref == 'refs/heads/main'

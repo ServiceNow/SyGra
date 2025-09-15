@@ -8,16 +8,7 @@ version = "1.0.0"
 description = "GRAph-oriented Synthetic data generation Pipeline library"
 readme = "README.md"
 requires-python = ">=3.9"
-authors = [
-  {name = "Bidyapati Pradhan", email = "bidyapati.pradhan@servicenow.com"},
-  {name = "Surajit Dasgupta", email = "surajit.dasgupta@servicenow.com"},
-  {name = "Amit Kumar Saha", email = "amit.saha@servicenow.com"},
-  {name = "Sriram Puttagunta", email = "sriram.puttagunta@servicenow.com"},
-  {name = "Omkar Anustoop", email = "omkar.anustoop@servicenow.com"},
-  {name = "Vipul Mittal", email = "vipul.mittal@servicenow.com"},
-  {name = "Gopal Sarda", email = "gopal.sarda@servicenow.com"},
-  {name = "Jishnu S Nair", email = "jishnus.nair@servicenow.com"},
-]
+authors = [{ name = "Bidyapati Pradhan, Surajit Dasgupta, Amit Kumar Saha, Sriram Puttagunta, Omkar Anustoop, Vipul Mittal, Gopal Sarda, Jishnu S Nair", email = "grasp_team@servicenow.com" }]
 maintainers = [
   { name = "GraSP Team", email = "grasp_team@servicenow.com" }
 ]
@@ -25,6 +16,8 @@ license = {text = "Apache-2.0"}
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
 ]
 
 [project.urls]
