@@ -92,7 +92,7 @@ As of now, LLM inference is supported for TGI, vLLM, Azure, Azure OpenAI, Ollama
 
 ## Contact
 
-To contact us, join our channel or send us an [email](mailto:grasp_team@servicenow.com)!
+To contact us, please send us an [email](mailto:grasp_team@servicenow.com)!
 
 ## License
 
