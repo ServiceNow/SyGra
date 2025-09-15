@@ -7,6 +7,11 @@ on:
     branches: [ main ]
     types: [ opened, synchronize, reopened, ready_for_review ]
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   # Just one lightweight setup job to warm the cache
   setup_grasp:
@@ -106,6 +111,7 @@ jobs:
       - run: make docs
   # Deploy Docs
   deploy_docs:
+    if: github.ref == 'refs/heads/main'
     needs: docs_build
     runs-on: ubuntu-latest
     environment:
