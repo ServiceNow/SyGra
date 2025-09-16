@@ -48,7 +48,7 @@ dependencies = [
   "pandarallel",
   "sentence-transformers",
   "soundfile",
-  "types-pyyaml>=6.0.12.20250822"
+  "types-pyyaml"
 ]
 
 [project.urls]
@@ -102,7 +102,7 @@ mlxtend = "*"
 pandarallel = "*"
 sentence-transformers = "*"
 soundfile = "*"
-types-pyyaml = "^6.0.12.20250822"
+types-pyyaml = "*"
 
 [tool.poetry.group.ui.dependencies]
 streamlit = "*"
