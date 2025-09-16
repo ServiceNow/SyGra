@@ -19,6 +19,37 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
 ]
+dependencies = [
+  "aiohttp",
+  "datasets",
+  "httpx",
+  "httpx-sse",
+  "huggingface-hub",
+  "langchain-community",
+  "langchain-core",
+  "langchain-mistralai",
+  "langgraph",
+  "mistralai",
+  "openai",
+  "PyYAML",
+  "transformers",
+  "grandalf",
+  "sentencepiece",
+  "protobuf",
+  "Jinja2",
+  "pathvalidate",
+  "ujson",
+  "fasttext",
+  "lexicalrichness",
+  "langchain-openai",
+  "ollama",
+  "torch",
+  "mlxtend",
+  "pandarallel",
+  "sentence-transformers",
+  "soundfile",
+  "types-pyyaml>=6.0.12.20250822"
+]
 
 [project.urls]
 Homepage = "https://github.com/ServiceNow/GraSP"
