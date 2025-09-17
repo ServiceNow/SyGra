@@ -21,25 +21,25 @@ Requirements: Python 3.9-3.11 recommended. We also recommend upgrading `pip` fir
 
 **Install from PyPI**
 ```bash
-    python -m pip install -U pip
-    pip install grasp-ai
+python -m pip install -U pip
+pip install grasp-ai
 ```
 
 If your environment uses multiple Python versions, prefer `python -m pip` or a `virtualenv`
 ```bash
-    python -m venv .venv && source .venv/bin/activate
-    python -m pip install -U pip
-    
-    pip install grasp-ai
+python -m venv .venv && source .venv/bin/activate
+python -m pip install -U pip
+
+pip install grasp-ai
 ```
 
 **Install from source (editable)**
 ```bash
-    git clone https://github.com/ServiceNow/GraSP.git
-    cd GraSP
-    pip install -U pip
-    
-    pip install -e .
+git clone https://github.com/ServiceNow/GraSP.git
+cd GraSP
+pip install -U pip
+
+pip install -e .
 ```
 
 ---
