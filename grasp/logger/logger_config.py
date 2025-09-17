@@ -2,7 +2,6 @@ import logging
 import os
 from typing import Optional, Protocol
 
-from grasp.utils.constants import ROOT_DIR
 
 
 class ExternalLoggerProtocol(Protocol):

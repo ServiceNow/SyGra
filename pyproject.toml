@@ -3,7 +3,7 @@ requires = ["setuptools>=75", "wheel", "build>=1.2.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "grasp"
+name = "grasp-ai"
 version = "1.0.0"
 description = "GRAph-oriented Synthetic data generation Pipeline library"
 readme = "README.md"
@@ -14,11 +14,18 @@ maintainers = [
 ]
 license = {text = "Apache-2.0"}
 classifiers = [
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Libraries",
+  "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Operating System :: OS Independent",
 ]
+keywords = ["llm", "fine-tuning", "data generation", "synthetic data", "nlp", "sft", "dpo", "data quality", "metadata tagging", "graph",]
 dependencies = [
   "aiohttp",
   "datasets",
@@ -63,7 +70,7 @@ grasp = ["**/*.yaml", "**/*.yml", "**/*.jinja2", "**/*.j2", "**/*.json"]
 
 # --- Poetry section (explicit, must duplicate dependencies) ---
 [tool.poetry]
-name = "grasp"
+name = "grasp-ai"
 version = "1.0.0"
 description = "GRAph-oriented Synthetic data generation Pipeline library"
 authors = ["GraSP Team <grasp_team@servicenow.com>"]

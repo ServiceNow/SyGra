@@ -90,7 +90,7 @@ poetry run python main.py --task examples.glaive_code_assistant --num_records=1
 See full steps in <a href="https://servicenow.github.io/GraSP/grasp_library/">Grasp Library</a>.
 
 ```bash
-pip install grasp   
+pip install grasp-ai   
 ```
 
 ```python

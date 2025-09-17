@@ -20,27 +20,26 @@ The **GraSP Library** provides a high-level Python interface for building and ex
 Requirements: Python 3.9-3.11 recommended. We also recommend upgrading `pip` first.
 
 **Install from PyPI**
-```
-python -m pip install -U pip
-
-pip install grasp
+```bash
+    python -m pip install -U pip
+    pip install grasp-ai
 ```
 
 If your environment uses multiple Python versions, prefer `python -m pip` or a `virtualenv`
-```
-python -m venv .venv && source .venv/bin/activate
-python -m pip install -U pip
-
-pip install grasp
+```bash
+    python -m venv .venv && source .venv/bin/activate
+    python -m pip install -U pip
+    
+    pip install grasp-ai
 ```
 
 **Install from source (editable)**
-```
-git clone https://github.com/ServiceNow/GraSP.git
-cd GraSP
-pip install -U pip
-
-pip install -e .
+```bash
+    git clone https://github.com/ServiceNow/GraSP.git
+    cd GraSP
+    pip install -U pip
+    
+    pip install -e .
 ```
 
 ---
