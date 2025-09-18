@@ -15,7 +15,7 @@ authors:
     given-names: Vipul
   - family-names: Gopal
     given-names: Sarda
-title: "SyGra, an open-source GRAph-oriented Synthetic data generation Pipeline"
+title: "SyGra, an open-source Graph-oriented Synthetic data generation Pipeline"
 version: "1.0"
 date-released: "2025-09-15"
 url: "https://servicenow.github.io/sygra"
@@ -28,7 +28,7 @@ license: "Apache-2.0"
 
 preferred-citation:
   type: article
-  title: "SyGra: An open-source GRAph-oriented Synthetic data generation Pipeline"
+  title: "SyGra: An open-source Graph-oriented Synthetic data generation Pipeline"
   authors:
     - family-names: Pradhan
       given-names: Bidyapati

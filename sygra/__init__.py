@@ -1,5 +1,5 @@
 """
-SyGra: GRAph-oriented Synthetic data generation Pipeline library
+SyGra: Graph-oriented Synthetic data generation Pipeline library
 
 A powerful Python library for building and executing complex data synthesis workflows
 using graph-based architectures with LLMs, agents, and custom processing nodes.
@@ -119,7 +119,7 @@ except ImportError:
 
 __version__ = "1.0.0"
 __author__ = "SyGra Team"
-__description__ = "GRAph-oriented Synthetic data generation Pipeline library"
+__description__ = "Graph-oriented Synthetic data generation Pipeline library"
 
 
 # Quick utility functions

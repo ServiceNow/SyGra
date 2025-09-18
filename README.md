@@ -1,7 +1,7 @@
 <div align="center">
   <img width=30% src="https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/sygra_logo.png">
 
-  <h1>SyGra: GRAph-oriented Synthetic data generation Pipeline</h1>
+  <h1>SyGra: Graph-oriented Synthetic data generation Pipeline</h1>
 
 <a href="https://github.com/ServiceNow/SyGra/actions/workflows/ci.yaml">
     <img alt="CI" src="https://github.com/ServiceNow/SyGra/actions/workflows/ci.yaml/badge.svg"/></a>
