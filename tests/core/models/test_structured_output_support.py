@@ -24,7 +24,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.prompt_values import ChatPromptValue
 from pydantic import BaseModel, Field, ValidationError
 
-from grasp.core.models.custom_models import (
+from sygra.core.models.custom_models import (
     BaseCustomModel,
     CustomOllama,
     CustomOpenAI,
@@ -32,7 +32,7 @@ from grasp.core.models.custom_models import (
     CustomVLLM,
     ModelParams,
 )
-from grasp.core.models.structured_output.structured_output_config import (
+from sygra.core.models.structured_output.structured_output_config import (
     SchemaConfigParser,
     StructuredOutputConfig,
 )
@@ -157,7 +157,7 @@ class TestSchemaConfigParser(unittest.TestCase):
 class TestStructuredOutputConfig(unittest.TestCase):
     """Test StructuredOutputConfig initialization and methods"""
 
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     def test_config_enabled_by_default(self, mock_parser):
         """Test config is enabled by default when key present"""
         config = StructuredOutputConfig({})
@@ -165,20 +165,20 @@ class TestStructuredOutputConfig(unittest.TestCase):
         self.assertEqual(config.fallback_strategy, "instruction")
         self.assertEqual(config.max_parse_retries, 2)
 
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     def test_config_disabled_explicitly(self, mock_parser):
         """Test config can be disabled explicitly"""
         config = StructuredOutputConfig({"enabled": False})
         self.assertFalse(config.enabled)
 
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     def test_custom_fallback_strategy(self, mock_parser):
         """Test custom fallback strategy"""
         config = StructuredOutputConfig({"fallback_strategy": "post_process"})
         self.assertEqual(config.fallback_strategy, "post_process")
 
     @patch.object(StructuredOutputConfig, "_load_class_from_path")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     def test_get_pydantic_model_class_path(self, mock_parser, mock_load):
         """Test getting pydantic model from class path"""
         # Setup mock parser
@@ -196,14 +196,14 @@ class TestStructuredOutputConfig(unittest.TestCase):
         self.assertEqual(result, UserSchema)
         mock_load.assert_called_once_with("test.TestSchema")
 
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     def test_get_pydantic_model_disabled(self, mock_parser):
         """Test get_pydantic_model returns None when disabled"""
         config = StructuredOutputConfig({"enabled": False})
         result = config.get_pydantic_model()
         self.assertIsNone(result)
 
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     def test_python_type_mapping(self, mock_parser):
         """Test type string to Python type conversion"""
         config = StructuredOutputConfig({})
@@ -238,8 +238,8 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         self.test_params = ModelParams(url="https://test-url.com", auth_token="test-token")
         self.valid_json = '{"name": "Test User", "age": 30, "email": "test@example.com"}'
 
-    @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.utils.utils.validate_required_keys")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_supports_native_structured_output(self, mock_parser, mock_utils):
         """Test native structured output support detection"""
         openai_model = CustomOpenAI(
@@ -262,9 +262,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             base_model._supports_native_structured_output()
         )  # Base model returns True for these types
 
-    @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.custom_models.PydanticOutputParser")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.utils.utils.validate_required_keys")
+    @patch("sygra.core.models.custom_models.PydanticOutputParser")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_fallback_structured_output(self, mock_parser, mock_output_parser, mock_utils):
         """Test fallback structured output generation"""
         # Setup mocks
@@ -288,8 +288,8 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         parsed_data = json.loads(resp_text)
         self.assertEqual(parsed_data["name"], "Test")
 
-    @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.utils.utils.validate_required_keys")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_openai_native_structured_output_success(self, mock_parser, mock_utils):
         """Test OpenAI native structured output success"""
         model = CustomOpenAI(
@@ -318,8 +318,8 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(resp_status, 200)
             self.assertIn("Test", resp_text)
 
-    @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.utils.utils.validate_required_keys")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_openai_native_structured_output_http_error(self, mock_parser, mock_utils):
         """Test OpenAI native structured output with HTTP error"""
         model = CustomOpenAI(
@@ -344,8 +344,8 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             model._generate_fallback_structured_output.assert_called_once()
             self.assertEqual(resp_status, 200)
 
-    @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.utils.utils.validate_required_keys")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_vllm_native_structured_output_success(self, mock_parser, mock_utils):
         """Test VLLM native structured output success"""
         model = CustomVLLM({**self.test_config, "url": "test", "auth_token": "test"})
@@ -365,8 +365,8 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
 
             self.assertEqual(resp_status, 200)
 
-    @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.utils.utils.validate_required_keys")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_vllm_native_structured_output_validation_error(self, mock_parser, mock_utils):
         """Test VLLM native structured output with validation error"""
         model = CustomVLLM({**self.test_config, "url": "test", "auth_token": "test"})
@@ -401,8 +401,8 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         # Should fallback
         model._generate_fallback_structured_output.assert_called_once()
 
-    @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.utils.utils.validate_required_keys")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_tgi_native_structured_output_success(self, mock_parser, mock_utils):
         """Test TGI native structured output success"""
         model = CustomTGI({**self.test_config, "url": "test", "auth_token": "test"})
@@ -428,8 +428,8 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             # TGI returns parsed dictionary, not JSON string
             self.assertEqual(resp_text, self.valid_json)
 
-    @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.utils.utils.validate_required_keys")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_tgi_native_structured_output_http_error(self, mock_parser, mock_utils):
         """Test TGI native structured output with HTTP error"""
         model = CustomTGI({**self.test_config, "url": "test", "auth_token": "test"})
@@ -449,11 +449,11 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             model._generate_fallback_structured_output.assert_called_once()
             self.assertEqual(resp_status, 200)
 
-    @patch("grasp.utils.utils.validate_required_keys")
+    @patch("sygra.utils.utils.validate_required_keys")
     @patch(
-        "grasp.core.models.structured_output.structured_output_config.StructuredOutputConfig.get_pydantic_model"
+        "sygra.core.models.structured_output.structured_output_config.StructuredOutputConfig.get_pydantic_model"
     )
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_handle_structured_output_with_native_support(
         self, mock_parser, mock_get_model, mock_utils
     ):
@@ -486,11 +486,11 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(resp_text, self.valid_json)
         self.assertEqual(resp_status, 200)
 
-    @patch("grasp.utils.utils.validate_required_keys")
+    @patch("sygra.utils.utils.validate_required_keys")
     @patch(
-        "grasp.core.models.structured_output.structured_output_config.StructuredOutputConfig.get_pydantic_model"
+        "sygra.core.models.structured_output.structured_output_config.StructuredOutputConfig.get_pydantic_model"
     )
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_handle_structured_output_disabled(self, mock_parser, mock_get_model, mock_utils):
         """Test _handle_structured_output when disabled"""
         mock_get_model.return_value = None  # No valid schema
@@ -506,11 +506,11 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(resp)
 
-    @patch("grasp.utils.utils.validate_required_keys")
+    @patch("sygra.utils.utils.validate_required_keys")
     @patch(
-        "grasp.core.models.structured_output.structured_output_config.StructuredOutputConfig.get_pydantic_model"
+        "sygra.core.models.structured_output.structured_output_config.StructuredOutputConfig.get_pydantic_model"
     )
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_handle_structured_output_fallback_mode(
         self, mock_parser, mock_get_model, mock_utils
     ):
@@ -535,9 +535,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(resp_text, self.valid_json)
         self.assertEqual(resp_status, 200)
 
-    @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.custom_models.PydanticOutputParser")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.utils.utils.validate_required_keys")
+    @patch("sygra.core.models.custom_models.PydanticOutputParser")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_fallback_structured_output_parse_error(
         self, mock_parser, mock_output_parser, mock_utils
     ):
@@ -560,8 +560,8 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(resp_text, "Invalid JSON")
         self.assertEqual(resp_status, 200)
 
-    @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.utils.utils.validate_required_keys")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_ollama_completions_api_response_extraction(self, mock_parser, mock_utils):
         """Test Ollama response extraction for completions API"""
         # Test completions API response handling
@@ -597,8 +597,8 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(resp_text, self.valid_json)
             self.assertEqual(resp_status, 200)
 
-    @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.utils.utils.validate_required_keys")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_ollama_chat_api_response_extraction(self, mock_parser, mock_utils):
         """Test Ollama response extraction for chat API"""
         # Test chat API response handling (default)
@@ -628,8 +628,8 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(resp_text, self.valid_json)
             self.assertEqual(resp_status, 200)
 
-    @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.utils.utils.validate_required_keys")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_ollama_generate_text_success(self, mock_parser, mock_utils):
         """Test Ollama regular text generation success"""
         model = CustomOllama({**self.test_config, "url": "test", "auth_token": "test"})
@@ -646,8 +646,8 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(resp_text, "Generated text response")
             self.assertEqual(resp_status, 200)
 
-    @patch("grasp.utils.utils.validate_required_keys")
-    @patch("grasp.core.models.structured_output.structured_output_config.SchemaConfigParser")
+    @patch("sygra.utils.utils.validate_required_keys")
+    @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_ollama_generate_text_exception_handling(self, mock_parser, mock_utils):
         """Test Ollama regular text generation exception handling"""
         model = CustomOllama({**self.test_config, "url": "test", "auth_token": "test"})

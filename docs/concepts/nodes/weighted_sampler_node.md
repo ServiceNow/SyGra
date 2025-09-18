@@ -1,6 +1,6 @@
 ## Weighted Sampler Node
 
-GraSP supports random selection of values for attributes in your workflow using the **weighted_sampler** node. This node enables you to sample configuration values—optionally with custom weights—or pull data directly from external sources.
+SyGra supports random selection of values for attributes in your workflow using the **weighted_sampler** node. This node enables you to sample configuration values—optionally with custom weights—or pull data directly from external sources.
 
 Weighted sampler nodes are useful for randomized data generation, prompt diversity, scenario coverage, and more.
 

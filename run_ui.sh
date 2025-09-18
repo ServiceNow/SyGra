@@ -4,4 +4,4 @@
 PORT=${1:-8501}
 
 # Run the Streamlit app
-streamlit run apps/grasp_app.py --server.port=$PORT
+streamlit run apps/sygra_app.py --server.port=$PORT

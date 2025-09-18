@@ -10,8 +10,8 @@ sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent))
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from grasp.core.models.client.ollama_client import OllamaClient, OllamaClientConfig
-from grasp.utils import constants
+from sygra.core.models.client.ollama_client import OllamaClient, OllamaClientConfig
+from sygra.utils import constants
 
 
 class TestOllamaClientConfig(unittest.TestCase):
@@ -41,7 +41,7 @@ class TestOllamaClient(unittest.TestCase):
             "timeout": constants.DEFAULT_TIMEOUT,
         }
 
-    @patch("grasp.core.models.client.ollama_client.AsyncClient")
+    @patch("sygra.core.models.client.ollama_client.AsyncClient")
     def test_init_async_client(self, mock_async_client):
         """Test initialization of OllamaClient with async client"""
         mock_async_client.return_value = MagicMock()
@@ -56,7 +56,7 @@ class TestOllamaClient(unittest.TestCase):
             host="http://localhost:11434", timeout=constants.DEFAULT_TIMEOUT
         )
 
-    @patch("grasp.core.models.client.ollama_client.Client")
+    @patch("sygra.core.models.client.ollama_client.Client")
     def test_init_sync_client(self, mock_client):
         """Test initialization of OllamaClient with sync client"""
         mock_client.return_value = MagicMock()
@@ -71,7 +71,7 @@ class TestOllamaClient(unittest.TestCase):
             host="http://localhost:11434", timeout=constants.DEFAULT_TIMEOUT
         )
 
-    @patch("grasp.core.models.client.ollama_client.Client")
+    @patch("sygra.core.models.client.ollama_client.Client")
     def test_init_with_completions_api(self, mock_client):
         """Test initialization with completions API flag"""
         mock_client.return_value = MagicMock()
@@ -81,7 +81,7 @@ class TestOllamaClient(unittest.TestCase):
         # Verify chat_completions_api flag was set
         self.assertFalse(client.chat_completions_api)
 
-    @patch("grasp.core.models.client.ollama_client.Client")
+    @patch("sygra.core.models.client.ollama_client.Client")
     def test_init_with_custom_config(self, mock_client):
         """Test initialization with custom configuration"""
         mock_client.return_value = MagicMock()
@@ -96,7 +96,7 @@ class TestOllamaClient(unittest.TestCase):
         # Verify client was created with custom configuration
         mock_client.assert_called_once_with(host="http://custom-host:11434", timeout=120)
 
-    @patch("grasp.core.models.client.ollama_client.Client")
+    @patch("sygra.core.models.client.ollama_client.Client")
     def test_build_request_chat_completions(self, mock_client):
         """Test build_request with chat completions API"""
         mock_client.return_value = MagicMock()
@@ -120,7 +120,7 @@ class TestOllamaClient(unittest.TestCase):
         self.assertEqual(payload["messages"][1]["role"], "user")
         self.assertEqual(payload["messages"][1]["content"], "Hello, how are you?")
 
-    @patch("grasp.core.models.client.ollama_client.Client")
+    @patch("sygra.core.models.client.ollama_client.Client")
     def test_build_request_chat_completions_with_tools(self, mock_client):
         """Test build_request with chat completions API and tools"""
         mock_client.return_value = MagicMock()
@@ -158,7 +158,7 @@ class TestOllamaClient(unittest.TestCase):
         self.assertEqual(client.tools, tools)
         self.assertNotIn("tools", payload)
 
-    @patch("grasp.core.models.client.ollama_client.Client")
+    @patch("sygra.core.models.client.ollama_client.Client")
     def test_build_request_chat_completions_invalid_messages(self, mock_client):
         """Test build_request with chat completions API and invalid messages"""
         mock_client.return_value = MagicMock()
@@ -179,7 +179,7 @@ class TestOllamaClient(unittest.TestCase):
         # Verify the error message
         self.assertIn("messages passed is None or empty", str(context.exception))
 
-    @patch("grasp.core.models.client.ollama_client.Client")
+    @patch("sygra.core.models.client.ollama_client.Client")
     def test_build_request_completions(self, mock_client):
         """Test build_request with completions API"""
         mock_client.return_value = MagicMock()
@@ -194,7 +194,7 @@ class TestOllamaClient(unittest.TestCase):
         self.assertIn("prompt", payload)
         self.assertEqual(payload["prompt"], prompt)
 
-    @patch("grasp.core.models.client.ollama_client.Client")
+    @patch("sygra.core.models.client.ollama_client.Client")
     def test_build_request_completions_invalid_prompt(self, mock_client):
         """Test build_request with completions API and invalid prompt"""
         mock_client.return_value = MagicMock()
@@ -208,7 +208,7 @@ class TestOllamaClient(unittest.TestCase):
         # Verify the error message
         self.assertIn("Formatted prompt passed is None", str(context.exception))
 
-    @patch("grasp.core.models.client.ollama_client.Client")
+    @patch("sygra.core.models.client.ollama_client.Client")
     def test_send_request_chat_completions(self, mock_client):
         """Test send_request with chat completions API"""
         # Create a mock for the client instance
@@ -243,7 +243,7 @@ class TestOllamaClient(unittest.TestCase):
             format=None,
         )
 
-    @patch("grasp.core.models.client.ollama_client.Client")
+    @patch("sygra.core.models.client.ollama_client.Client")
     def test_send_request_chat_completions_with_tools(self, mock_client):
         """Test send_request with chat completions API and tools"""
         # Create a mock for the client instance
@@ -278,7 +278,7 @@ class TestOllamaClient(unittest.TestCase):
             format=None,
         )
 
-    @patch("grasp.core.models.client.ollama_client.Client")
+    @patch("sygra.core.models.client.ollama_client.Client")
     def test_send_request_completions(self, mock_client):
         """Test send_request with completions API"""
         # Create a mock for the client instance
@@ -309,7 +309,7 @@ class TestOllamaClient(unittest.TestCase):
             format=None,
         )
 
-    @patch("grasp.core.models.client.ollama_client.Client")
+    @patch("sygra.core.models.client.ollama_client.Client")
     def test_send_request_with_format(self, mock_client):
         """Test send_request with format parameter"""
         # Create a mock for the client instance

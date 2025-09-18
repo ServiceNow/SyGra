@@ -1,5 +1,5 @@
 """
-pytest configuration file for GraSP tests.
+pytest configuration file for SyGra tests.
 
 This file configures pytest to handle asyncio properly.
 """

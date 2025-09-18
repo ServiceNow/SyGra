@@ -1,6 +1,6 @@
 ## LLM Node
 
-GraSP supports text generation using LLMs. GraSP provides integration with various LLMs hosted on different inference
+SyGra supports text generation using LLMs. SyGra provides integration with various LLMs hosted on different inference
 servers.
 
 To use it, include the following configuration in your `graph_config.yaml` file:
@@ -35,7 +35,7 @@ paraphrase_question:
   The system prompt defines the instructions for the LLM, and the user prompt provides the user query.
 
 - `post_process`: This is the function class of `type NodePostProcessor`, used to post-process the output from the LLM. 
-  The class need to define `apply()` method with parameter `GraspMessage`. `GraspMessage` is just a wrapper on the actual LangGraph message object(`AIMessage`, `UserMessage`, etc).
+  The class need to define `apply()` method with parameter `SygraMessage`. `SygraMessage` is just a wrapper on the actual LangGraph message object(`AIMessage`, `UserMessage`, etc).
   Please note, if the variables returned by the above method are required as state variables, they should be defined in the `output_vars` field for the node.
   This also has backward compatibility, you can set a direct method to `post_process` with the above signature.
 
@@ -53,12 +53,12 @@ paraphrase_question:
   `models.yaml` file under the config folder. Parameters defined in the node override those in `models.yaml`.
 
 - `pre_process`: This is an optional functional class of type `NodePreProcessor`, used to preprocess the input before sending it to the LLM. If not
-  provided, the default preprocessor is used. This class need to define `apply` method with `GraspState` as a parameter.
+  provided, the default preprocessor is used. This class need to define `apply` method with `SygraState` as a parameter.
   
   Example code:
   ```python
   class CritiqueAnsNodePreProcessor(NodePreProcessor):
-      def apply(self, state:GraspState):
+      def apply(self, state:SygraState):
           if not state["messages"]:
               state["messages"] = []
   

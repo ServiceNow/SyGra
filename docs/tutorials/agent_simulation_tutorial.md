@@ -1,6 +1,6 @@
 # Agent Simulation
 
-This tutorial walks you through creating structured AI agent dialogues with opposing viewpoints using the GraSP framework. By the end, you’ll have built a system that orchestrates realistic, multi-turn conversations between dynamically generated personas on specific topics.
+This tutorial walks you through creating structured AI agent dialogues with opposing viewpoints using the SyGra framework. By the end, you’ll have built a system that orchestrates realistic, multi-turn conversations between dynamically generated personas on specific topics.
 
 > **Key Features You’ll Learn**  
 > `agent nodes`, `chat history`, `system message intervention`, `multi-turn dialogue`, `multi-agent`
@@ -11,7 +11,7 @@ This tutorial walks you through creating structured AI agent dialogues with oppo
 
 Before you begin, make sure you have:
 
-- GraSP framework installed and configured (see [Installation Guide](../installation.md))  
+- SyGra framework installed and configured (see [Installation Guide](../installation.md))  
 - A basic understanding of YAML configuration files  
 - Access to an LLM API or local model for generating agent responses  
 
@@ -87,10 +87,10 @@ Implements the processing logic for your nodes:
 
 ### Reference Implementation
 
-See the GraSP repository for complete examples:
+See the SyGra repository for complete examples:
 
-- Graph configuration: [`graph_config.yaml`](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/agent_simulation/graph_config.yaml)  
-- Task executor: [`task_executor.py`](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/agent_simulation/task_executor.py)  
+- Graph configuration: [`graph_config.yaml`](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/agent_simulation/graph_config.yaml)  
+- Task executor: [`task_executor.py`](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/agent_simulation/task_executor.py)  
 
 
 ## Step 5: Creating Your Own Implementation
@@ -106,7 +106,7 @@ To build your own simulation:
 
 ## Step 6: Running the Simulation
 
-From your GraSP project root, run:
+From your SyGra project root, run:
 
 ```bash
 python main.py --task path/to/your/agent_simulation

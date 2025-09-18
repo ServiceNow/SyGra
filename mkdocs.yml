@@ -1,12 +1,12 @@
-site_name: GraSP
+site_name: SyGra
 site_description: GRAph-oriented Synthetic data generation Pipeline
-site_url: https://servicenow.github.io/grasp/
-repo_url: https://github.com/ServiceNow/grasp
+site_url: https://servicenow.github.io/sygra/
+repo_url: https://github.com/ServiceNow/sygra
 
 theme:
   name: material
-  logo: resources/images/grasp_logo.png
-  favicon: resources/images/grasp_logo.png
+  logo: resources/images/sygra_logo.png
+  favicon: resources/images/sygra_logo.png
   features:
     - navigation.top
     - toc.follow
@@ -57,7 +57,7 @@ nav:
       - Image to QnA: tutorials/image_to_qna_tutorial.md
       - Structured Output: tutorials/structured_output_tutorial.md
       - Structured Output with Multi-LLM: tutorials/structured_output_with_multi_llm_tutorial.md
-  - GraSP Library: grasp_library.md
+  - SyGra Library: sygra_library.md
   - Contribute: development.md
 plugins:
   - search

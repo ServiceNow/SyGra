@@ -1,17 +1,17 @@
 import sys
 
-from grasp.core.base_task_executor import DefaultTaskExecutor
-from grasp.logger.logger_config import configure_logger
-from grasp.core.models.custom_models import ModelParams
-from grasp.core.models.model_factory import ModelFactory
-from grasp.utils import utils
+from sygra.core.base_task_executor import DefaultTaskExecutor
+from sygra.logger.logger_config import configure_logger
+from sygra.core.models.custom_models import ModelParams
+from sygra.core.models.model_factory import ModelFactory
+from sygra.utils import utils
 import argparse
 import time
 import ast
 import json
 from pathvalidate import is_valid_filename
 import os
-from grasp.utils.dotenv import load_dotenv
+from sygra.utils.dotenv import load_dotenv
 
 # Sometimes there is SSL retry error; to fix it: https://github.com/huggingface/transformers/issues/17611
 CURL_CA_BUNDLE = os.environ.get("CURL_CA_BUNDLE", "")
@@ -155,7 +155,7 @@ if __name__ == "__main__":
     # initialize logger with/without debug mode
     configure_logger(args.debug, args.clear_logs, args.run_name)
     # this import cannot be moved to the top because logger is not yet initialized
-    from grasp.logger.logger_config import logger
+    from sygra.logger.logger_config import logger
 
     logger.info("------------------------------------")
     logger.info(f"STARTING SYNTHESIS FOR TASK: {task_name}")

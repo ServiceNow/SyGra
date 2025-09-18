@@ -8,9 +8,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from grasp.core.graph.edges.edge_factory import BaseEdge, EdgeFactory
-from grasp.core.graph.nodes.base_node import BaseNode, NodeType
-from grasp.core.graph.nodes.special_node import SpecialNode
+from sygra.core.graph.edges.edge_factory import BaseEdge, EdgeFactory
+from sygra.core.graph.nodes.base_node import BaseNode, NodeType
+from sygra.core.graph.nodes.special_node import SpecialNode
 
 
 class DummyNode(BaseNode):

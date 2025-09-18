@@ -1,0 +1,25 @@
+graph_config:
+  nodes:
+    build_text_node:
+      node_type: lambda
+      output_keys: evol_instruct_final_prompt
+      lambda: sygra.recipes.evol_instruct.task_executor.EvolInstructPromptGenerator
+    evol_text_node:
+      node_type: llm
+      output_keys: evolved_text
+      prompt:
+        - user: |
+            {evol_instruct_final_prompt}
+      model:      
+        name: gpt-4o
+        parameters:          
+          temperature: 1.0
+
+  edges:
+    - from: START
+      to: build_text_node
+    - from: build_text_node
+      to: evol_text_node
+    - from: evol_text_node
+      to: END
+

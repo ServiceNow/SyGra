@@ -9,7 +9,7 @@ from unittest.mock import mock_open, patch
 
 import pytest
 
-from grasp.core.resumable_execution import (
+from sygra.core.resumable_execution import (
     ResumableExecutionManager,
     StreamingPositionTracker,
 )

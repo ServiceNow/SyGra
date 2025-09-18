@@ -2,8 +2,8 @@
 
 from typing import Any
 
-from grasp.logger.logger_config import logger
-from grasp.processors.data_transform import DataTransform
+from sygra.logger.logger_config import logger
+from sygra.processors.data_transform import DataTransform
 
 
 class ExtractUserPromptTransform(DataTransform):

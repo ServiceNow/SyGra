@@ -12,8 +12,8 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompt_values import ChatPromptValue
 from pydantic import BaseModel
 
-from grasp.core.models.custom_models import CustomOllama, ModelParams
-from grasp.utils import constants
+from sygra.core.models.custom_models import CustomOllama, ModelParams
+from sygra.utils import constants
 
 
 class TestCustomOllama(unittest.TestCase):
@@ -64,7 +64,7 @@ class TestCustomOllama(unittest.TestCase):
         self.assertEqual(custom_ollama.generation_params, self.base_config["parameters"])
         self.assertEqual(custom_ollama.name(), "qwen3:1.7b")
 
-    @patch("grasp.core.models.custom_models.logger")
+    @patch("sygra.core.models.custom_models.logger")
     def test_validate_completions_api_support(self, mock_logger):
         """Test _validate_completions_api_support method which should allow completions API"""
         custom_ollama = CustomOllama(self.completions_config)
@@ -105,10 +105,10 @@ class TestCustomOllama(unittest.TestCase):
             self.base_config["parameters"],
         )
 
-    @patch("grasp.core.models.custom_models.ClientFactory")
-    @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
-    @patch("grasp.core.models.custom_models.BaseCustomModel._finalize_response")
-    @patch("grasp.core.models.custom_models.BaseCustomModel.get_chat_formatted_text")
+    @patch("sygra.core.models.custom_models.ClientFactory")
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    @patch("sygra.core.models.custom_models.BaseCustomModel._finalize_response")
+    @patch("sygra.core.models.custom_models.BaseCustomModel.get_chat_formatted_text")
     @pytest.mark.asyncio
     async def test_generate_text_completions_api(
         self, mock_get_formatted, mock_finalize, mock_set_client, mock_client_factory
@@ -144,9 +144,9 @@ class TestCustomOllama(unittest.TestCase):
             self.completions_config["parameters"],
         )
 
-    @patch("grasp.core.models.custom_models.ClientFactory")
-    @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
-    @patch("grasp.core.models.custom_models.BaseCustomModel._finalize_response")
+    @patch("sygra.core.models.custom_models.ClientFactory")
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    @patch("sygra.core.models.custom_models.BaseCustomModel._finalize_response")
     @pytest.mark.asyncio
     async def test_generate_text_exception(
         self, mock_finalize, mock_set_client, mock_client_factory
@@ -171,10 +171,10 @@ class TestCustomOllama(unittest.TestCase):
         self.assertTrue(resp_text.startswith(f"{constants.ERROR_PREFIX} Ollama request failed"))
         self.assertEqual(resp_status, 999)
 
-    @patch("grasp.core.models.custom_models.ClientFactory")
-    @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
-    @patch("grasp.core.models.custom_models.BaseCustomModel._finalize_response")
-    @patch("grasp.core.models.custom_models.json.loads")
+    @patch("sygra.core.models.custom_models.ClientFactory")
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    @patch("sygra.core.models.custom_models.BaseCustomModel._finalize_response")
+    @patch("sygra.core.models.custom_models.json.loads")
     @pytest.mark.asyncio
     async def test_generate_native_structured_output(
         self, mock_json_loads, mock_finalize, mock_set_client, mock_client_factory
@@ -228,9 +228,9 @@ class TestCustomOllama(unittest.TestCase):
             extra_params,
         )
 
-    @patch("grasp.core.models.custom_models.ClientFactory")
-    @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
-    @patch("grasp.core.models.custom_models.BaseCustomModel._generate_fallback_structured_output")
+    @patch("sygra.core.models.custom_models.ClientFactory")
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    @patch("sygra.core.models.custom_models.BaseCustomModel._generate_fallback_structured_output")
     @pytest.mark.asyncio
     async def test_generate_native_structured_output_exception(
         self, mock_fallback, mock_set_client, mock_client_factory
@@ -268,7 +268,7 @@ class TestCustomOllama(unittest.TestCase):
         # Verify result is the fallback result
         self.assertEqual(result.content, '{"name": "John", "age": 30}')
 
-    @patch("grasp.core.models.custom_models.ClientFactory.create_client")
+    @patch("sygra.core.models.custom_models.ClientFactory.create_client")
     @pytest.mark.asyncio
     async def test_set_client(self, mock_create_client):
         """Test _set_client method"""

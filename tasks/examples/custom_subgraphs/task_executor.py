@@ -3,15 +3,15 @@ from typing import Any
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.graph import END
 
-from grasp.core.graph.functions.edge_condition import EdgeCondition
-from grasp.core.graph.functions.node_processor import NodePreProcessor
-from grasp.core.graph.grasp_state import GraspState
-from grasp.processors.output_record_generator import BaseOutputGenerator
-from grasp.utils import utils
+from sygra.core.graph.functions.edge_condition import EdgeCondition
+from sygra.core.graph.functions.node_processor import NodePreProcessor
+from sygra.core.graph.sygra_state import SygraState
+from sygra.processors.output_record_generator import BaseOutputGenerator
+from sygra.utils import utils
 
 
 class CritiqueAnswerNodePreProcessor(NodePreProcessor):
-    def apply(self, state: GraspState) -> GraspState:
+    def apply(self, state: SygraState) -> SygraState:
         if not state.get("messages"):
             state["messages"] = []
 
@@ -24,7 +24,7 @@ class CritiqueAnswerNodePreProcessor(NodePreProcessor):
 
 
 class ShouldContinue(EdgeCondition):
-    def apply(state: GraspState) -> str:
+    def apply(state: SygraState) -> str:
         """
         Decide whether to continue iterating with 'generate_answer'
         or end the pipeline. If we have done too many rounds or we
@@ -44,7 +44,7 @@ class CustomSubgraphsOutputGenerator(BaseOutputGenerator):
     """
 
     @staticmethod
-    def build_conversation(data: Any, state: GraspState) -> list[dict[str, str]]:
+    def build_conversation(data: Any, state: SygraState) -> list[dict[str, str]]:
         """
         Builds the conversation from the messages in the state.
         """
@@ -83,7 +83,7 @@ class CustomSubgraphsOutputGenerator(BaseOutputGenerator):
         return chat_format_messages
 
     @staticmethod
-    def build_metadata(data: Any, state: GraspState) -> dict[str, Any]:
+    def build_metadata(data: Any, state: SygraState) -> dict[str, Any]:
         """
         Builds the metadata from the state.
         """

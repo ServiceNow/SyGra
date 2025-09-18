@@ -161,7 +161,7 @@ data_config:
 
   sink:
     type: "hf"
-    repo_id: ServiceNow-AI/GraSP
+    repo_id: ServiceNow-AI/SyGra
     config_name: MM-doc-audio-1
     split: train
     push_to_hub: true
@@ -205,6 +205,6 @@ output_config:
 ## Notes
 
 - **Audio generation is not supported** in this module. The `audio_url` type is strictly for passing existing audio inputs (e.g., loaded from datasets), not for generating new audio via model output.
-- For a complete working example, see: [`tasks/audio_to_text`](https://github.com/ServiceNow/GraSP/tree/main/tasks/examples/audio_to_text)
+- For a complete working example, see: [`tasks/audio_to_text`](https://github.com/ServiceNow/SyGra/tree/main/tasks/examples/audio_to_text)
 
 

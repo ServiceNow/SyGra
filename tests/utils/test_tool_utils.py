@@ -7,8 +7,8 @@ from langchain_core.tools import BaseTool, Tool
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from grasp.utils import utils
-from grasp.utils.tool_utils import (
+from sygra.utils import utils
+from sygra.utils.tool_utils import (
     _extract_tools_from_class,
     _extract_tools_from_module,
     load_tools,
@@ -31,7 +31,7 @@ class TestToolUtils(unittest.TestCase):
             ("another_non_tool", lambda: None),
         ]
 
-        with patch("grasp.utils.tool_utils.getmembers", return_value=mock_module_members):
+        with patch("sygra.utils.tool_utils.getmembers", return_value=mock_module_members):
             tools = _extract_tools_from_module(mock_module)
 
         self.assertEqual(len(tools), 2)
@@ -53,7 +53,7 @@ class TestToolUtils(unittest.TestCase):
             ("method", lambda self: None),
         ]
 
-        with patch("grasp.utils.tool_utils.getmembers", return_value=mock_class_members):
+        with patch("sygra.utils.tool_utils.getmembers", return_value=mock_class_members):
             tools = _extract_tools_from_class(mock_class)
 
         self.assertEqual(len(tools), 2)
@@ -68,7 +68,7 @@ class TestToolUtils(unittest.TestCase):
         # Use context managers for patching to ensure proper control flow
         with patch.object(utils, "get_func_from_str", return_value=mock_tool) as mock_get_func:
             # The isinstance check in the code needs to pass for our mock_tool
-            with patch("grasp.utils.tool_utils.isinstance", return_value=True):
+            with patch("sygra.utils.tool_utils.isinstance", return_value=True):
                 tools = load_tools(["module.submodule.tool_func"])
 
                 # Assert that the get_func_from_str was called with the right path
@@ -76,7 +76,7 @@ class TestToolUtils(unittest.TestCase):
                 self.assertEqual(len(tools), 1)
                 self.assertEqual(tools[0], mock_tool)
 
-    @patch("grasp.utils.tool_utils.logger")
+    @patch("sygra.utils.tool_utils.logger")
     def test_load_tools_with_invalid_path(self, mock_logger):
         """Test loading tools with an invalid path format"""
         tools = load_tools(["invalid_path_no_dots"])
@@ -85,9 +85,9 @@ class TestToolUtils(unittest.TestCase):
         mock_logger.warn.assert_called_once()
         self.assertEqual(len(tools), 0)
 
-    @patch("grasp.utils.tool_utils.utils.get_func_from_str")
-    @patch("grasp.utils.tool_utils.importlib.import_module")
-    @patch("grasp.utils.tool_utils.logger")
+    @patch("sygra.utils.tool_utils.utils.get_func_from_str")
+    @patch("sygra.utils.tool_utils.importlib.import_module")
+    @patch("sygra.utils.tool_utils.logger")
     def test_load_tools_with_import_error(self, mock_logger, mock_import_module, mock_get_func):
         """Test handling of ImportError when loading tools"""
         mock_get_func.side_effect = ImportError("Module not found")

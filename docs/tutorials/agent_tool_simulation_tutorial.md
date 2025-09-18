@@ -1,6 +1,6 @@
 # Agent Simulation with Tools
 
-This tutorial guides you through integrating external tools with AI agents using the GraSP framework. By the end, you’ll have a system where agents can call mathematical functions implemented as Python modules, classes, or standalone functions.
+This tutorial guides you through integrating external tools with AI agents using the SyGra framework. By the end, you’ll have a system where agents can call mathematical functions implemented as Python modules, classes, or standalone functions.
 
 > **Key Features You’ll Learn**  
 > `function calling`, `tool integration`, `mathematical operations`, `class-based tools`, `module-based tools`
@@ -11,7 +11,7 @@ This tutorial guides you through integrating external tools with AI agents using
 
 Before you begin, make sure you have:
 
-- GraSP framework installed and configured (see [Installation Guide](../installation.md))
+- SyGra framework installed and configured (see [Installation Guide](../installation.md))
 - Basic understanding of Python modules and function/class definitions
 - Access to an LLM API or local model for agent reasoning
 
@@ -89,14 +89,14 @@ The `task_executor.py` file implements the post-processing logic for the agent n
 
 ### Reference Implementation
 
-See the GraSP repository for complete examples:
+See the SyGra repository for complete examples:
 
-- Graph configuration: [agent_tool_simulation/graph_config.yaml](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/agent_tool_simulation/graph_config.yaml)
-- Task Executor: [agent_tool_simulation/task_executor.py](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/agent_tool_simulation/task_executor.py)
+- Graph configuration: [agent_tool_simulation/graph_config.yaml](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/agent_tool_simulation/graph_config.yaml)
+- Task Executor: [agent_tool_simulation/task_executor.py](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/agent_tool_simulation/task_executor.py)
 
 ## Step 5: Running the Simulation
 
-From your GraSP project root, run:
+From your SyGra project root, run:
 
 ```bash
 python main.py --task path/to/your/agent_tool_simulation

@@ -8,7 +8,7 @@ This class defines the state of the graph. It is the base class for the state va
 The nodes communicate with each other using this class. It is mandatory to have `messages` field for using llm nodes.
 
 ### `init_graph` Method
-The init_graph method of the Task Executor is responsible for building and compiling the graph. Users need to use the `GraspStateGraph` class to get the `StateGraph` object.
+The init_graph method of the Task Executor is responsible for building and compiling the graph. Users need to use the `SygraStateGraph` class to get the `StateGraph` object.
 
 ### `init_dataset`Method
 The `init_dataset` method is responsible for initializing the dataset. It is called before the graph is built.

@@ -160,7 +160,7 @@ data_config:
     split: "train"
     streaming: true
     transformations:
-      - transform: grasp.processors.data_transform.AddNewFieldTransform
+      - transform: sygra.processors.data_transform.AddNewFieldTransform
         params:
           mapping:
             graph_judgement: ""
@@ -213,6 +213,6 @@ output_config:
 ## Notes
 
 - **Image generation is not supported** in this module. The `image_url` type is strictly for passing existing image inputs (e.g., loaded from datasets), not for generating new images via model output.
-- For a complete working example, see: [`tasks/image_to_qna`](https://github.com/ServiceNow/GraSP/tree/main/tasks/examples/image_to_qna)
+- For a complete working example, see: [`tasks/image_to_qna`](https://github.com/ServiceNow/SyGra/tree/main/tasks/examples/image_to_qna)
 
 

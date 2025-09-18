@@ -17,7 +17,7 @@ Example:
 - YAML Configuration
 ```yaml
 output_config:
-  generator: grasp.processors.output_record_generator.CodeGenOutputGenerator
+  generator: sygra.processors.output_record_generator.CodeGenOutputGenerator
 ```
 
 - Python Code
@@ -68,7 +68,7 @@ Example:
 
 ```yaml
 output_config:
-  generator: grasp.processors.output_record_generator.CodeGenOutputGenerator
+  generator: sygra.processors.output_record_generator.CodeGenOutputGenerator
 
   output_map:
     id:

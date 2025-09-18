@@ -9,9 +9,9 @@ from langchain_core.messages import HumanMessage
 
 sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent))
 
-from grasp.core.models.custom_models import ModelParams
-from grasp.core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
-from grasp.utils import constants
+from sygra.core.models.custom_models import ModelParams
+from sygra.core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
+from sygra.utils import constants
 
 
 class TestOpenAIChatModel(unittest.TestCase):
@@ -19,7 +19,7 @@ class TestOpenAIChatModel(unittest.TestCase):
     Unit tests for the CustomOpenAIChatModel class.
 
     This test suite validates the functionality of the OpenAI chat model implementation
-    in the GraSP framework. The CustomOpenAIChatModel works with the ClientFactory to
+    in the SyGra framework. The CustomOpenAIChatModel works with the ClientFactory to
     establish connections with OpenAI-compatible model servers, handling both synchronous
     and asynchronous communication patterns.
 
@@ -44,7 +44,7 @@ class TestOpenAIChatModel(unittest.TestCase):
         # Restore original constants
         constants.ERROR_PREFIX = self.original_error_prefix
 
-    @patch("grasp.core.models.langgraph.openai_chat_model.logger")
+    @patch("sygra.core.models.langgraph.openai_chat_model.logger")
     @pytest.mark.asyncio
     async def test_generate_response_success(self, mock_logger):
         """Test successful response generation."""
@@ -92,7 +92,7 @@ class TestOpenAIChatModel(unittest.TestCase):
         # Verify no errors were logged
         mock_logger.error.assert_not_called()
 
-    @patch("grasp.core.models.langgraph.openai_chat_model.logger")
+    @patch("sygra.core.models.langgraph.openai_chat_model.logger")
     @pytest.mark.asyncio
     async def test_generate_response_rate_limit_error(self, mock_logger):
         """Test handling of rate limit errors."""
@@ -139,7 +139,7 @@ class TestOpenAIChatModel(unittest.TestCase):
         warn_message = mock_logger.warn.call_args[0][0]
         self.assertIn("exceeded rate limit", warn_message)
 
-    @patch("grasp.core.models.langgraph.openai_chat_model.logger")
+    @patch("sygra.core.models.langgraph.openai_chat_model.logger")
     @pytest.mark.asyncio
     async def test_generate_response_generic_exception(self, mock_logger):
         """Test handling of generic exceptions."""
@@ -179,7 +179,7 @@ class TestOpenAIChatModel(unittest.TestCase):
         error_message = mock_logger.error.call_args[0][0]
         self.assertIn("Http request failed", error_message)
 
-    @patch("grasp.core.models.langgraph.openai_chat_model.logger")
+    @patch("sygra.core.models.langgraph.openai_chat_model.logger")
     @pytest.mark.asyncio
     async def test_generate_response_status_not_found(self, mock_logger):
         """Test handling of exceptions where status code cannot be extracted."""
@@ -217,8 +217,8 @@ class TestOpenAIChatModel(unittest.TestCase):
         # Verify error was logged
         mock_logger.error.assert_called_once()
 
-    @patch("grasp.core.models.langgraph.openai_chat_model.logger")
-    @patch("grasp.core.models.langgraph.openai_chat_model.GraspBaseChatModel._set_client")
+    @patch("sygra.core.models.langgraph.openai_chat_model.logger")
+    @patch("sygra.core.models.langgraph.openai_chat_model.SygraBaseChatModel._set_client")
     @pytest.mark.asyncio
     async def test_generate_response_with_client_factory(self, mock_set_client, mock_logger):
         """
@@ -264,7 +264,7 @@ class TestOpenAIChatModel(unittest.TestCase):
             {"id": "test-id", "choices": [{"message": {"content": "Test response"}}]},
         )
 
-    @patch("grasp.core.models.langgraph.vllm_chat_model.logger")
+    @patch("sygra.core.models.langgraph.vllm_chat_model.logger")
     @pytest.mark.asyncio
     async def test_generate_response_with_additional_kwargs(self, mock_logger):
         """Test synchronous response generation with additional kwargs passed."""
@@ -328,7 +328,7 @@ class TestOpenAIChatModel(unittest.TestCase):
         # Verify no errors were logged
         mock_logger.error.assert_not_called()
 
-    @patch("grasp.core.models.langgraph.openai_chat_model.logger")
+    @patch("sygra.core.models.langgraph.openai_chat_model.logger")
     def test_sync_generate_response_success(self, mock_logger):
         """Test successful synchronous response generation."""
         model = CustomOpenAIChatModel(self.base_config)
@@ -375,7 +375,7 @@ class TestOpenAIChatModel(unittest.TestCase):
         # Verify no errors were logged
         mock_logger.error.assert_not_called()
 
-    @patch("grasp.core.models.langgraph.openai_chat_model.logger")
+    @patch("sygra.core.models.langgraph.openai_chat_model.logger")
     def test_sync_generate_response_rate_limit_error(self, mock_logger):
         """Test handling of rate limit errors in synchronous mode."""
         model = CustomOpenAIChatModel(self.base_config)
@@ -422,7 +422,7 @@ class TestOpenAIChatModel(unittest.TestCase):
         warn_message = mock_logger.warn.call_args[0][0]
         self.assertIn("exceeded rate limit", warn_message)
 
-    @patch("grasp.core.models.langgraph.openai_chat_model.logger")
+    @patch("sygra.core.models.langgraph.openai_chat_model.logger")
     def test_sync_generate_response_generic_exception(self, mock_logger):
         """Test handling of generic exceptions in synchronous mode."""
         model = CustomOpenAIChatModel(self.base_config)
@@ -462,7 +462,7 @@ class TestOpenAIChatModel(unittest.TestCase):
         error_message = mock_logger.error.call_args[0][0]
         self.assertIn("Http request failed", error_message)
 
-    @patch("grasp.core.models.langgraph.openai_chat_model.logger")
+    @patch("sygra.core.models.langgraph.openai_chat_model.logger")
     def test_sync_generate_response_status_not_found(self, mock_logger):
         """Test handling of exceptions where status code cannot be extracted."""
         model = CustomOpenAIChatModel(self.base_config)
@@ -500,7 +500,7 @@ class TestOpenAIChatModel(unittest.TestCase):
         # Verify error was logged
         mock_logger.error.assert_called_once()
 
-    @patch("grasp.core.models.langgraph.openai_chat_model.logger")
+    @patch("sygra.core.models.langgraph.openai_chat_model.logger")
     def test_sync_generate_response_with_additional_kwargs(self, mock_logger):
         """Test synchronous response generation with additional kwargs passed."""
         model = CustomOpenAIChatModel(self.base_config)
@@ -566,8 +566,8 @@ class TestOpenAIChatModel(unittest.TestCase):
         # Verify no errors were logged
         mock_logger.error.assert_not_called()
 
-    @patch("grasp.core.models.langgraph.openai_chat_model.logger")
-    @patch("grasp.core.models.langgraph.openai_chat_model.GraspBaseChatModel._set_client")
+    @patch("sygra.core.models.langgraph.openai_chat_model.logger")
+    @patch("sygra.core.models.langgraph.openai_chat_model.SygraBaseChatModel._set_client")
     def test_sync_generate_response_with_client_factory(self, mock_set_client, mock_logger):
         """
         Test sync response generation with proper _set_client integration.

@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   # Just one lightweight setup job to warm the cache
-  setup_grasp:
+  setup_sygra:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
@@ -35,7 +35,7 @@ jobs:
 
   # Run Formatting
   format:
-    needs: setup_grasp
+    needs: setup_sygra
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
       - run: make format
   # Run Linting
   lint:
-    needs: setup_grasp
+    needs: setup_sygra
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -73,7 +73,7 @@ jobs:
       - run: make lint
   # Run Tests
   test:
-    needs: setup_grasp
+    needs: setup_sygra
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -92,7 +92,7 @@ jobs:
       - run: make test
   # Build Docs
   docs_build:
-    needs: setup_grasp
+    needs: setup_sygra
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

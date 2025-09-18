@@ -3,11 +3,11 @@
 ########################################################################################################################
 
 # Define code paths for various operations
-CODE_PATHS = grasp tests
-LINT_MYPY_PATHS = grasp
+CODE_PATHS = sygra tests
+LINT_MYPY_PATHS = sygra
 
 # Define paths for JSON files
-JSON_PATHS = $(shell find grasp -name "*.json")
+JSON_PATHS = $(shell find sygra -name "*.json")
 
 ########################################################################################################################
 # LINT

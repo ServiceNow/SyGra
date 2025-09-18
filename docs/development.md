@@ -1,6 +1,6 @@
-# GraSP Development Guide
+# SyGra Development Guide
 
-This guide covers development practices for the GraSP project, including code style, linting, and testing procedures.
+This guide covers development practices for the SyGra project, including code style, linting, and testing procedures.
 
 ## Development Setup
 
@@ -13,7 +13,7 @@ To set up your development environment:
 
 ## Code Style and Linting
 
-GraSP uses several tools to ensure code quality:
+SyGra uses several tools to ensure code quality:
 
 - **Black**: For code formatting
 - **isort**: For import sorting

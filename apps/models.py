@@ -2,8 +2,8 @@ try:
     import streamlit as st
 except ModuleNotFoundError:
     raise ModuleNotFoundError(
-        "GraSP UI requires the optional 'ui' dependencies. "
-        "Install them with: pip install 'grasp[ui]'"
+        "SyGra UI requires the optional 'ui' dependencies. "
+        "Install them with: pip install 'sygra[ui]'"
     )
 import yaml
 import os
@@ -16,12 +16,12 @@ from utils import check_model_status
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from grasp.utils.utils import load_model_config
+from sygra.utils.utils import load_model_config
 
 UTC = timezone.utc
-YAML_FILE = Path("../grasp/config/models.yaml")
+YAML_FILE = Path("../sygra/config/models.yaml")
 USER_TZ = UTC
-st.set_page_config(page_title="GraSP UI", layout="wide")
+st.set_page_config(page_title="SyGra UI", layout="wide")
 
 if "model_statuses" not in st.session_state:
     st.session_state["model_statuses"] = {}

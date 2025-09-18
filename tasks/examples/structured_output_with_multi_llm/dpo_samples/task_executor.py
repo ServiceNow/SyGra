@@ -2,15 +2,15 @@ import json
 from typing import Any, Dict, List
 
 
-from grasp.core.graph.functions.edge_condition import EdgeCondition
-from grasp.core.graph.functions.node_processor import (
+from sygra.core.graph.functions.edge_condition import EdgeCondition
+from sygra.core.graph.functions.node_processor import (
     NodePostProcessor,
     NodePreProcessor,
 )
-from grasp.core.graph.grasp_state import GraspState
-from grasp.logger.logger_config import logger
-from grasp.processors.output_record_generator import BaseOutputGenerator
-from grasp.utils import constants, utils
+from sygra.core.graph.sygra_state import SygraState
+from sygra.logger.logger_config import logger
+from sygra.processors.output_record_generator import BaseOutputGenerator
+from sygra.utils import constants, utils
 
 
 class GenerateSamplesPreProcessor(NodePreProcessor):
@@ -19,7 +19,7 @@ class GenerateSamplesPreProcessor(NodePreProcessor):
     Initializes state variables and prepares for model response collection.
     """
 
-    def apply(self, state: GraspState) -> GraspState:
+    def apply(self, state: SygraState) -> SygraState:
         """
         Initialize state variables needed for the task.
 
@@ -64,7 +64,7 @@ class RateSamplesPreProcessor(NodePreProcessor):
     Prepares model responses for rating.
     """
 
-    def apply(self, state: GraspState) -> GraspState:
+    def apply(self, state: SygraState) -> SygraState:
         """
         Format model responses for rating.
 
@@ -166,7 +166,7 @@ class RateSamplesPostProcessor(NodePostProcessor):
     Processes rating results and organizes them in the state.
     """
 
-    def apply(self, response: Any, state: GraspState) -> GraspState:
+    def apply(self, response: Any, state: SygraState) -> SygraState:
         """
         Process rating results.
 
@@ -222,7 +222,7 @@ class ShouldContinueCondition(EdgeCondition):
     """
 
     @staticmethod
-    def apply(state: GraspState) -> str:
+    def apply(state: SygraState) -> str:
         """
         Check if we should continue generating samples.
 
@@ -239,7 +239,7 @@ class ShouldContinueCondition(EdgeCondition):
             logger.warning(
                 f"ShouldContinueCondition - Reached hard iteration limit: {len(samples_ratings)}"
             )
-            return constants.GRASP_END
+            return constants.SYGRA_END
 
         # Log the current state for debugging
         logger.info(
@@ -276,7 +276,7 @@ class ShouldContinueCondition(EdgeCondition):
             logger.info(
                 f"ShouldContinueCondition - Ending flow: buckets={len(buckets)}, iterations={len(samples_ratings)}"
             )
-            return constants.GRASP_END
+            return constants.SYGRA_END
 
         logger.info("ShouldContinueCondition - Continuing to generate more samples")
         return "generate_samples"
@@ -288,7 +288,7 @@ class DpoSamplesOutputGenerator(BaseOutputGenerator):
     """
 
     @staticmethod
-    def build_conversation(data: Any, state: GraspState) -> list[dict]:
+    def build_conversation(data: Any, state: SygraState) -> list[dict]:
         """
         Build conversation from state data.
 
@@ -309,7 +309,7 @@ class DpoSamplesOutputGenerator(BaseOutputGenerator):
         return conversation
 
     @staticmethod
-    def _generate_asst_content(state: GraspState) -> List[Dict[str, Any]]:
+    def _generate_asst_content(state: SygraState) -> List[Dict[str, Any]]:
         """
         Generate assistant content with ratings and explanations.
 

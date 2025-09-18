@@ -2,14 +2,14 @@ from typing import Any
 
 from langchain_core.messages import AIMessage, HumanMessage
 
-from grasp.core.graph.functions.edge_condition import EdgeCondition
-from grasp.core.graph.functions.node_processor import (
+from sygra.core.graph.functions.edge_condition import EdgeCondition
+from sygra.core.graph.functions.node_processor import (
     NodePostProcessor,
     NodePreProcessor,
 )
-from grasp.core.graph.grasp_state import GraspState
-from grasp.processors.output_record_generator import BaseOutputGenerator
-from grasp.utils import constants, utils
+from sygra.core.graph.sygra_state import SygraState
+from sygra.processors.output_record_generator import BaseOutputGenerator
+from sygra.utils import constants, utils
 
 
 class CritiqueAnsNodePreProcessor(NodePreProcessor):
@@ -17,7 +17,7 @@ class CritiqueAnsNodePreProcessor(NodePreProcessor):
     Old code transformed to new format
     """
 
-    def apply(self, state: GraspState) -> GraspState:
+    def apply(self, state: SygraState) -> SygraState:
         if not state["messages"]:
             state["messages"] = []
 
@@ -31,26 +31,26 @@ class CritiqueAnsNodePreProcessor(NodePreProcessor):
 
 
 class CritiqueAnsNodePostProcessor(NodePostProcessor):
-    def apply(self, response: AIMessage) -> GraspState:
+    def apply(self, response: AIMessage) -> SygraState:
         return {
             "messages": [HumanMessage(response.message.content)],
         }
 
 
 class ShouldContinueCondition(EdgeCondition):
-    def apply(state: GraspState) -> str:
+    def apply(state: SygraState) -> str:
         # End after 4 iterations or the last feedback response contains "NO MORE FEEDBACK"
         messages = state["messages"]
         if len(messages) > 8 or (
             len(messages) > 1 and "no more feedback" in messages[-1].content.lower()
         ):
-            return constants.GRASP_END
+            return constants.SYGRA_END
         return "generate_answer"
 
 
 class CodeGenOutputGenerator(BaseOutputGenerator):
     @staticmethod
-    def build_conversation(data: Any, state: GraspState) -> list[dict]:
+    def build_conversation(data: Any, state: SygraState) -> list[dict]:
         chat_format_messages = utils.convert_messages_from_langchain_to_chat_format(
             data
         )

@@ -1,32 +1,32 @@
 
-![ModelConfig](https://raw.githubusercontent.com/ServiceNow/GraSP/refs/heads/main/docs/resources/images/grasp_model_config.png)
+![ModelConfig](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/sygra_model_config.png)
 
-GraSP requires model configuration as the first step. It supports various clients like HTTP, MistralAzure, AsyncOpenAI, AsyncAzureOpenAI, Ollama to connect to inference servers (Text Generation Inference (TGI), vLLM server, Azure Cloud Service, Ollama, Triton etc.).
+SyGra requires model configuration as the first step. It supports various clients like HTTP, MistralAzure, AsyncOpenAI, AsyncAzureOpenAI, Ollama to connect to inference servers (Text Generation Inference (TGI), vLLM server, Azure Cloud Service, Ollama, Triton etc.).
 
 The `config` folder contains the main configuration file: `models.yaml`. You can add your model alias as a key and define its properties as shown below.
 
 > **Note:**  
-> For Triton, the pre-processing and post-processing configuration (`payload_json` & `response_key`) can be defined in the [`payload_cfg.json`](https://github.com/ServiceNow/GraSP/blob/main/grasp/config/payload_cfg.json) file. `payload_key` in the `payload_cfg.json` file should be added to the `models.yaml` file for the corresponding Triton model. If the payload key is not defined in `models.yaml`, the default payload format will be used.
+> For Triton, the pre-processing and post-processing configuration (`payload_json` & `response_key`) can be defined in the [`payload_cfg.json`](https://github.com/ServiceNow/SyGra/blob/main/sygra/config/payload_cfg.json) file. `payload_key` in the `payload_cfg.json` file should be added to the `models.yaml` file for the corresponding Triton model. If the payload key is not defined in `models.yaml`, the default payload format will be used.
 
 ### Environment Variables for Credentials and Chat Templates
 
 All sensitive connection information such as model URL and tokens **must be set via environment variables** and not stored in the config file.
 
 For each model defined in your `models.yaml`, set environment variables as follows:
-- `GRASP_<MODEL_NAME>_URL` (for the model endpoint)
-- `GRASP_<MODEL_NAME>_TOKEN` (for API keys or tokens)
+- `SYGRA_<MODEL_NAME>_URL` (for the model endpoint)
+- `SYGRA_<MODEL_NAME>_TOKEN` (for API keys or tokens)
 - If `modify_tokenizer: true` is set for a model, provide a chat template string via:
-  - `GRASP_<MODEL_NAME>_CHAT_TEMPLATE`
+  - `SYGRA_<MODEL_NAME>_CHAT_TEMPLATE`
 
 **Naming Convention:**  
 `<MODEL_NAME>` is the model’s key from your `models.yaml`, with all spaces replaced by underscores, and all letters uppercased (e.g., `mixtral 8x7b` → `MIXTRAL_8X7B`).
 
 **Example:**  
 For `mixtral_8x7b` and `gpt4`, set:
-- `GRASP_MIXTRAL_8X7B_URL`, `GRASP_MIXTRAL_8X7B_TOKEN`
-- `GRASP_GPT4_URL`, `GRASP_GPT4_TOKEN`
+- `SYGRA_MIXTRAL_8X7B_URL`, `SYGRA_MIXTRAL_8X7B_TOKEN`
+- `SYGRA_GPT4_URL`, `SYGRA_GPT4_TOKEN`
 - If `mixtral_8x7b` has `modify_tokenizer: true`, set:  
-  - `GRASP_MIXTRAL_8X7B_CHAT_TEMPLATE` to your custom Jinja2 chat template string
+  - `SYGRA_MIXTRAL_8X7B_CHAT_TEMPLATE` to your custom Jinja2 chat template string
 
 You should use a `.env` file at the project root or set these in your shell environment.
 
@@ -36,9 +36,9 @@ If you want to define a list of URLs for any model, you can use pipe (`|`) as a 
 ### Example `.env`:
 
 ```bash
-GRASP_MIXTRAL_8X7B_URL=https://myserver/models/mixtral-8x7b|https://myserver/models/mixtral-8x7b-2
-GRASP_MIXTRAL_8X7B_TOKEN=sk-abc123
-GRASP_MIXTRAL_8X7B_CHAT_TEMPLATE={% for m in messages %} ... {% endfor %}
+SYGRA_MIXTRAL_8X7B_URL=https://myserver/models/mixtral-8x7b|https://myserver/models/mixtral-8x7b-2
+SYGRA_MIXTRAL_8X7B_TOKEN=sk-abc123
+SYGRA_MIXTRAL_8X7B_CHAT_TEMPLATE={% for m in messages %} ... {% endfor %}
 ```
 
 
@@ -105,7 +105,7 @@ qwen_2.5_32b_vl:
 
 qwen3_1.7b:
   hf_chat_template_model_id: Qwen/Qwen3-1.7B
-  post_process: grasp.core.models.model_postprocessor.RemoveThinkData
+  post_process: sygra.core.models.model_postprocessor.RemoveThinkData
   model_type: ollama
   parameters:
     max_tokens: 2048
@@ -113,7 +113,7 @@ qwen3_1.7b:
 
 qwen3-32b-triton:
   hf_chat_template_model_id: Qwen/Qwen3-32B
-  post_process: grasp.core.models.model_postprocessor.RemoveThinkData
+  post_process: sygra.core.models.model_postprocessor.RemoveThinkData
   model_type: triton
   payload_key: default 
   # Uses default payload format defined in config/payload_cfg.json.
@@ -124,6 +124,6 @@ qwen3-32b-triton:
 ```
 
 > **Important:**
-If you set modify_tokenizer: true for a model, you must provide the corresponding chat template in your environment as GRASP_<MODEL_NAME>_CHAT_TEMPLATE.
+If you set modify_tokenizer: true for a model, you must provide the corresponding chat template in your environment as SYGRA_<MODEL_NAME>_CHAT_TEMPLATE.
 Otherwise, exception will be raised during the model initialization.
 ---
