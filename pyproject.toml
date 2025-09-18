@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "sygra"
 version = "1.0.0"
-description = "GRAph-oriented Synthetic data generation Pipeline library"
+description = "Graph-oriented Synthetic data generation Pipeline library"
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [{ name = "Bidyapati Pradhan, Surajit Dasgupta, Amit Kumar Saha, Sriram Puttagunta, Omkar Anustoop, Vipul Mittal, Gopal Sarda, Jishnu S Nair", email = "sygra_team@servicenow.com" }]
@@ -72,7 +72,7 @@ sygra = ["**/*.yaml", "**/*.yml", "**/*.jinja2", "**/*.j2", "**/*.json"]
 [tool.poetry]
 name = "sygra"
 version = "1.0.0"
-description = "GRAph-oriented Synthetic data generation Pipeline library"
+description = "Graph-oriented Synthetic data generation Pipeline library"
 authors = ["SyGra Team <sygra_team@servicenow.com>"]
 license = "Apache-2.0"
 readme = "README.md"
