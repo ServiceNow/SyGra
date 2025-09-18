@@ -1,7 +1,7 @@
 
 ### Run the UI Service
 
-The UI for this project is built using Streamlit and is located in the `apps` directory. To launch the GraSP UI locally, use the provided shell script:
+The UI for this project is built using Streamlit and is located in the `apps` directory. To launch the SyGra UI locally, use the provided shell script:
 
 ```bash
 ./run_ui.sh

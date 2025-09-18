@@ -1,6 +1,6 @@
 # Evolution of Prompts with Evol-Instruct
 
-This tutorial demonstrates how to use the [Evol-Instruct](https://arxiv.org/pdf/2304.12244) in the GraSP framework to automatically evolve prompts into more complex and nuanced instructions.
+This tutorial demonstrates how to use the [Evol-Instruct](https://arxiv.org/pdf/2304.12244) in the SyGra framework to automatically evolve prompts into more complex and nuanced instructions.
 
 > **Key Features You’ll Learn**  
 > `prompt evolution`, `subgraphs`, `automated prompt engineering`, `depth/breadth techniques`, `prompt transformation`
@@ -9,7 +9,7 @@ This tutorial demonstrates how to use the [Evol-Instruct](https://arxiv.org/pdf/
 
 ## Prerequisites
 
-- GraSP framework installed (see [Installation Guide](../installation.md))
+- SyGra framework installed (see [Installation Guide](../installation.md))
 - Basic Python and YAML knowledge
 
 ---
@@ -50,22 +50,22 @@ The main pipeline is defined in `evol_instruct/graph_config.yaml`:
 
 - **Data Source**: Loads prompts from `test.json` (a list of simple instructions or questions).
 - **Nodes**:
-  - `evol_text`: A subgraph node that references the Evol-Instruct recipe in `grasp/recipes/evol_instruct`. This node applies random evolution techniques to the prompt (e.g., adding constraints, requiring reasoning, or generating rare/specialized prompts).
+  - `evol_text`: A subgraph node that references the Evol-Instruct recipe in `sygra/recipes/evol_instruct`. This node applies random evolution techniques to the prompt (e.g., adding constraints, requiring reasoning, or generating rare/specialized prompts).
   - `query_llm`: An LLM node that receives the evolved prompt and generates a response. The prompt simply passes the evolved text to the model.
 - **Edges**: The workflow is linear: prompt → evolution subgraph → LLM response → END.
 - **Output Config**: Maps the original prompt, evolved prompt, and LLM response to the final output structure.
 
-**Reference:** [evol_instruct/graph_config.yaml](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/evol_instruct/graph_config.yaml)
+**Reference:** [evol_instruct/graph_config.yaml](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/evol_instruct/graph_config.yaml)
 
-### Evol-Instruct Subgraph (Internal) (`grasp/recipes/evol_instruct/graph_config.yaml`)
+### Evol-Instruct Subgraph (Internal) (`sygra/recipes/evol_instruct/graph_config.yaml`)
 
-The subgraph, referenced by the parent graph, is defined in `grasp/recipes/evol_instruct/graph_config.yaml`:
+The subgraph, referenced by the parent graph, is defined in `sygra/recipes/evol_instruct/graph_config.yaml`:
 
 - **build_text_node**: A lambda node that applies the `EvolInstructPromptGenerator` to transform the original prompt using a random evolution technique.
 - **evol_text_node**: An LLM node that receives the evolved instruction and outputs the evolved text.
 - **Edges**: The flow is: build_text_node → evol_text_node → END.
 
-**Reference:** [grasp/recipes/evol_instruct/graph_config.yaml](https://github.com/ServiceNow/GraSP/blob/main/grasp/recipes/evol_instruct/graph_config.yaml)
+**Reference:** [sygra/recipes/evol_instruct/graph_config.yaml](https://github.com/ServiceNow/SyGra/blob/main/sygra/recipes/evol_instruct/graph_config.yaml)
 
 ## Step 4: Output Collection
 
@@ -84,7 +84,7 @@ The subgraph, referenced by the parent graph, is defined in `grasp/recipes/evol_
 
 ## Step 5: Running the Pipeline
 
-From your GraSP project root, run:
+From your SyGra project root, run:
 
 ```bash
 python main.py --task path/to/your/evol_instruct

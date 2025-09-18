@@ -1,6 +1,6 @@
 # Structured Output with Multi-LLM
 
-This tutorial demonstrates how to use multiple LLMs in parallel for response generation and evaluation, with structured output and quality rating, using the GraSP framework. The example is based on the DPO (Direct Preference Optimization) Samples task.
+This tutorial demonstrates how to use multiple LLMs in parallel for response generation and evaluation, with structured output and quality rating, using the SyGra framework. The example is based on the DPO (Direct Preference Optimization) Samples task.
 
 > **Key Features You’ll Learn**  
 > `multi-LLM processing`, `response evaluation`, `parallel model inference`, `quality rating`, `structured output schemas`
@@ -9,7 +9,7 @@ This tutorial demonstrates how to use multiple LLMs in parallel for response gen
 
 ## Prerequisites
 
-- GraSP framework installed (see [Installation Guide](../installation.md))
+- SyGra framework installed (see [Installation Guide](../installation.md))
 - Access to multiple LLMs (e.g., gpt4, gpt-4o, gpt-4o-mini)
 - Familiarity with YAML and Python
 
@@ -51,7 +51,7 @@ The main pipeline is defined in `structured_output_with_multi_llm/dpo_samples/gr
 - **Edges**: The graph cycles between generating and rating samples, continuing until all quality buckets are covered or the maximum number of iterations is reached.
 - **Output Config**: Custom output formatting is handled by the output generator in `task_executor.py`.
 
-**Reference:** [dpo_samples/graph_config.yaml](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/structured_output_with_multi_llm/dpo_samples/graph_config.yaml)
+**Reference:** [dpo_samples/graph_config.yaml](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/structured_output_with_multi_llm/dpo_samples/graph_config.yaml)
 
 ### Task Executor (`task_executor.py`)
 
@@ -59,11 +59,11 @@ This file implements custom logic for the pipeline:
 - **GenerateSamplesPreProcessor**: Initializes state variables and prepares for model response collection.
 - **Output formatting**: Compiles and sorts all rated responses, structuring the final output.
 
-**Reference:** [task_executor.py](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/structured_output_with_multi_llm/dpo_samples/task_executor.py)
+**Reference:** [task_executor.py](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/structured_output_with_multi_llm/dpo_samples/task_executor.py)
 
 ## Step 3: Running the Pipeline
 
-From your GraSP project root, run:
+From your SyGra project root, run:
 
 ```bash
 python main.py --task examples.structured_output_with_multi_llm.dpo_samples

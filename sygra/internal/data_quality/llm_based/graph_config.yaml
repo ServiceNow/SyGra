@@ -1,0 +1,507 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: "sygra/internal/data_quality/llm_based/sample.json"
+
+    transformations:
+      - transform: sygra.processors.data_transform.AddNewFieldTransform
+        params:
+          mapping:
+            category: "Generic"
+            scores: {}
+            metadata: {}
+      - transform: sygra.internal.data_quality.llm_based.task_executor.ConvertToQuestionAnswerTransform
+
+
+
+graph_config:
+  nodes:
+    extract_question_quality:
+      node_type: llm
+      prompt:
+        - system: |
+            You are an expert at analyzing and scoring the quality of user prompts. Your task is to analyze the given prompt and assign a quality score, explanation according to the provided guidelines.
+        - user: |
+            Analyze the following user prompt to determine its quality and provide a score from 1 to 5, reflecting the level of clarity, intention, grammar and overall quality of the user prompt.
+            Quality Scoring Guidelines:
+            5 (Very High): Outstandingly clear, insightful, and impactful question with high relevance and depth.
+            4 (High): High-quality question, well-articulated with substantial clarity and relevance.
+            3 (Moderate): Moderately good question, reasonably clear and relevant but lacking depth.
+            2 (Low): Low-quality question, somewhat unclear or lacks meaningful relevance.
+            1 (Very Low): Very poor quality question, confusing, irrelevant, or poorly constructed.
+
+            Note: Sometimes the instruction could be a user question in one of the last turns of a multi-turn conversation. In that case, the instruction may seem to lack an intent or a clear purpose or an actionable instruction. This is because the intent would have been conveyed in earlier questions of the multi-turn conversation not mentioned here. Hence, choose to not give importance to intent / purpose / mentioned actions in the instruction. But rather, evaluate the quality of the provided instruction on objective factors like completion / truncation, swear words or other grave issues.
+
+            Input Question:
+            {question}
+
+            Instructions:
+            - Do not provide any additional information.
+            - Do not include any notes at the end of your response.
+            - NEVER use " only ' in explanations.
+            **STRICTLY FOLLOW THE OUTPUT FORMAT**
+            Respond **only** in JSON format. Do not include explanations or additional text. Your output **must** be a valid JSON object.
+
+            OUTPUT FORMAT:
+
+            {{"QUALITY_SCORE": quality_score, "QUALITY_EXPLANATION": quality_explanation}}
+      model:
+        name: gpt-4o
+        parameters:
+          max_tokens: 1000
+          temperature: 0
+      post_process: sygra.internal.data_quality.llm_based.task_executor.DataQualityQuestionQualityPostProcessor
+
+    generic_prompt:
+      node_type: llm
+      prompt:
+        - system: |
+            You are an expert in evaluating the quality of responses given a query. Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant.
+        - user: |
+            You are provided with a Question and Response pair. Your task is to analyze the response with respect to Question based on criteria mentioned below.     
+              
+            -----------------------------------------------------------------------------------------------------------
+              
+            ### Question:
+            {question}
+              
+            ### Response:
+            {answer}
+              
+            -----------------------------------------------------------------------------------------------------------
+              
+            ### Evaluation Criteria:
+            For each response, evaluate the following generic attributes on a scale from 1 to 5 and -1 if Not Applicable:
+            - **Instruction Following:** Assess how well the response adheres to the given problem instructions while ensuring compliance with safety guidelines.
+            - **Accuracy:** Is the information provided correct and aligned with the input query?
+            - **Relevance:** Does the response directly relate to the query without unnecessary deviation?
+            - **Clarity:** Is the response easy to understand, well-structured, and free from ambiguity?
+            - **Completeness:** Does the response adequately address all parts of the query, providing sufficient information where necessary?
+            - **Conciseness:** Is the response appropriately brief, avoiding unnecessary repetition or verbosity while still being thorough?
+
+            ### Justification Instructions:
+            - Provide a brief justification for each score to explain your reasoning.
+            - Include an overall evaluation summarizing the response's strengths and weaknesses.
+            - NEVER use " only ' in explanations.
+
+            ### Output Format:
+            Respond **only** in JSON format. Do not include explanations or additional text. Your output **must** be a valid JSON object.
+            Return the response in a valid JSON format with the following structure:
+            ```json
+            {{
+                  "instruction_following": <score>,
+                  "explanation_instruction_following": "Explanation for the instruction following score",
+                  "accuracy": <score>,
+                  "explanation_accuracy": "Explanation for the accuracy score",
+                  "relevance": <score>,
+                  "explanation_relevance": "Explanation for the relevance score",
+                  "clarity": <score>,
+                  "explanation_clarity": "Explanation for the clarity score",
+                  "completeness": <score>,
+                  "explanation_completeness": "Explanation for the completeness score",
+                  "conciseness": <score>,
+                  "explanation_conciseness": "Explanation for the conciseness score"
+            }}
+            ```
+      model:
+        name: gpt-4o
+        parameters:
+          max_tokens: 4096
+          temperature: 0
+      post_process: sygra.internal.data_quality.llm_based.task_executor.GenericPromptPostProcessor
+
+    math_prompt:
+      node_type: llm
+      prompt:
+        - system: |
+            You are a Math expert tasked with evaluating the quality of responses to Math problems. Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant.
+        - user: |
+            You are provided with a Mathematics Question and Response pair. Your task is to analyze the response with respect to Question based on criteria mentioned below.             
+            -----------------------------------------------------------------------------------------------------------
+              
+            ### Question (Math Problem):
+            {question}
+              
+            ### Response (Solution):
+            {answer}
+              
+            -----------------------------------------------------------------------------------------------------------
+              
+            ### Response Assessment Criteria:
+              
+            Assess the following attributes on a scale from 1 to 5 and -1 if not applicable:
+            - **Instruction Following:**
+            - **Completeness:**
+            - **Readability:**
+            - **Correctness:**
+            - **Logical Correctness:**
+              
+            ### Justification Instructions:
+            - Provide a brief justification for each score to explain the evaluation.
+            - Include an overall evaluation summarizing the solution's strengths and weaknesses.
+            - NEVER use " only ' in explanations.
+              
+            ### Output Format:
+            Respond **only** in JSON format. Do not include explanations or additional text. Your output **must** be a valid JSON object.
+            Return the response in a valid JSON format with the following structure:
+            ```json
+            {{
+                  "instruction_following": <score>,
+                  "explanation_instruction_following": "Explanation for the instruction following score",
+                  "completeness": <score>,
+                  "explanation_completeness": "Explanation for the completeness score",
+                  "readability": <score>,
+                  "explanation_readability": "Explanation for the readability score",
+                  "correctness": <score>,
+                  "explanation_correctness": "Explanation for the correctness score",
+                  "logical_correctness": <score>,
+                  "explanation_logical_correctness": "Explanation for the logical correctness score"
+            }}
+            ```
+      model:
+        name: gpt-4o
+        parameters:
+          max_tokens: 4096
+          temperature: 0
+      post_process: sygra.internal.data_quality.llm_based.task_executor.GenericPromptPostProcessor
+
+    reasoning_prompt:
+      node_type: llm
+      prompt:
+        - system: |
+            You are a Reasoning expert tasked with evaluating the quality of responses to Reasoning problems. Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant.
+        - user: |
+            You are provided with a Reasoning Question and Response pair. Your task is to analyze the response with respect to Question based on criteria mentioned below.
+            -----------------------------------------------------------------------------------------------------------
+              
+            ### Question:
+            {question}
+              
+            ### Response:
+            {answer}
+              
+            -----------------------------------------------------------------------------------------------------------
+              
+            ### Response Assessment Criteria:
+              
+            Assess the following attributes on a scale from 1 to 5 and -1 if not applicable:
+            - **Instruction Following:**
+            - **Correctness:**
+            - **Interpretation Accuracy:**
+            - **Logical Soundness:**
+            - **Reasoning Completeness:**
+            - **Depth of Reasoning:**
+            - **Causal Reasoning:**
+              
+            ### Justification Instructions:
+            - Provide a brief justification for each score to explain the evaluation.
+            - Include an overall evaluation summarizing the solution's strengths and weaknesses.
+            - NEVER use " only ' in explanations.
+              
+            ### Output Format:
+            Respond **only** in JSON format. Do not include explanations or additional text. Your output **must** be a valid JSON object.
+            Return the response in a valid JSON format with the following structure:
+            ```json
+            {{
+                  "instruction_following": <score>,
+                  "explanation_instruction_following": "Explanation for the instruction following score",
+                  "correctness": <score>,
+                  "explanation_correctness": "Explanation for the correctness score",
+                  "interpretation_accuracy": <score>,
+                  "explanation_interpretation_accuracy": "Explanation for the interpretation accuracy score",
+                  "logical_soundness": <score>,
+                  "explanation_logical_soundness": "Explanation for the logical soundness score",
+                  "reasoning_completeness": <score>,
+                  "explanation_reasoning_completeness": "Explanation for the reasoning completeness score",
+                  "depth_of_reasoning": <score>,
+                  "explanation_depth_of_reasoning": "Explanation for the depth of reasoning score",
+                  "causal_reasoning": <score>,
+                  "explanation_causal_reasoning": "Explanation for the causal reasoning score"
+            }}
+            ```
+      model:
+        name: gpt-4o
+        parameters:
+          max_tokens: 4096
+          temperature: 0
+      post_process: sygra.internal.data_quality.llm_based.task_executor.GenericPromptPostProcessor
+
+    coding_prompt:
+      node_type: llm
+      prompt:
+        - system: |
+            You are a coding expert tasked with evaluating the quality of responses to Coding related problems. Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant.
+        - user: |
+            You are provided with a Coding related Question and Response pair. Your task is to analyze the response with respect to Question based on criteria mentioned below.
+            -----------------------------------------------------------------------------------------------------------
+  
+            ### Coding Question:
+            {question}
+  
+            ### Response:
+            {answer}
+  
+            -----------------------------------------------------------------------------------------------------------
+  
+            ### Response Assessment Criteria:
+  
+            Assess the following attributes on a scale from 1 to 5 and -1 if not applicable:
+            - **Instruction Following:**
+            - **Correctness:**
+            - **Completeness:**
+            - **Readability:**
+            - **Error Handling:**
+            - **Dependency Management:**
+            - **Syntax Validation:**
+            - **Logical Correctness:**
+            - **Efficiency:**
+  
+            ### Justification Instructions:
+            - Provide a brief justification for each score to explain the evaluation.
+            - Include an overall evaluation summarizing the solution's strengths and weaknesses.
+            - NEVER use " only ' in explanations.
+  
+            ### Output Format:
+            Respond **only** in JSON format. Do not include explanations or additional text. Your output **must** be a valid JSON object.
+            Return the response in a valid JSON format with the following structure:
+            ```json
+            {{
+                  "instruction_following": <score>,
+                  "explanation_instruction_following": "Explanation for the instruction following score",
+                  "correctness": <score>,
+                  "explanation_correctness": "Explanation for the correctness score",
+                  "completeness": <score>,
+                  "explanation_completeness": "Explanation for the completeness score",
+                  "readability": <score>,
+                  "explanation_readability": "Explanation for the readability score",
+                  "error_handling": <score>,
+                  "explanation_error_handling": "Explanation for the error handling score",
+                  "dependency_management": <score>,
+                  "explanation_dependency_management": "Explanation for the dependency management score",
+                  "syntax_validity": <score>,
+                  "explanation_syntax_validity": "Explanation for the syntax validity score",
+                  "logical_correctness": <score>,
+                  "explanation_logical_correctness": "Explanation for the logical correctness score",
+                  "efficiency": <score>,
+                  "explanation_efficiency": "Explanation for the efficiency score"
+            }}
+            ```
+      model:
+        name: gpt-4o
+        parameters:
+          max_tokens: 4096
+          temperature: 0
+      post_process: sygra.internal.data_quality.llm_based.task_executor.GenericPromptPostProcessor
+
+    instruction_following_prompt:
+      node_type: llm
+      prompt:
+        - system: |
+            You are an expert in evaluating the quality of instruction following in the response to given context. Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant.
+        - user: |
+            You are provided with a Context and Response pair. Your task is to analyze the response with respect to Context based on criteria mentioned below.
+            -----------------------------------------------------------------------------------------------------------
+
+            ### Context:
+            {question}
+
+            ### Response:
+            {answer}
+
+            -----------------------------------------------------------------------------------------------------------
+
+            ### Response Assessment Criteria:
+
+            Assess the following attributes on a scale from 1 to 5 and -1 if not applicable:
+            - **Adherence to Constraints:**
+            - **Clarity and Coherence:**
+            - **Contextual Accuracy and Relevance:**
+            - **Tone, Style, and Role Consistency:**
+            - **Helpfulness, Honesty, and Safety:**
+            - **Decision Support and Storytelling:**
+
+            ### Justification Instructions:
+            - Provide a brief justification for each score to explain the evaluation.
+            - Include an overall evaluation summarizing the solution's strengths and weaknesses.
+            - NEVER use " only ' in explanations.
+
+            ### Output Format:
+            Respond **only** in JSON format. Do not include explanations or additional text. Your output **must** be a valid JSON object.
+            Return the response in a valid JSON format with the following structure:
+            ```json
+            {{
+                  "adherence_to_constraints": <score>,
+                  "explanation_adherence_to_constraints": "Explanation for the adherence to constraints score",
+                  "clarity_and_coherence": <score>,
+                  "explanation_clarity_and_coherence": "Explanation for the clarity and coherence score",
+                  "contextual_accuracy_and_relevance": <score>,
+                  "explanation_contextual_accuracy_and_relevance": "Explanation for the contextual accuracy and relevance score",
+                  "tone_style_role_consistency": <score>,
+                  "explanation_tone_style_role_consistency": "Explanation for the tone, style and role consistency score",
+                  "helpfulness_honesty_safety": <score>,
+                  "explanation_helpfulness_honesty_safety": "Explanation for the helpfulness, honesty and safety score",
+                  "decision_support_and_story_telling": <score>,
+                  "explanation_decision_support_and_story_telling": "Explanation for the decision support and story telling score"
+            }}
+            ```
+      model:
+        name: gpt-4o
+        parameters:
+          max_tokens: 4096
+          temperature: 0
+      post_process: sygra.internal.data_quality.llm_based.task_executor.GenericPromptPostProcessor
+
+    open_qa_prompt:
+      node_type: llm
+      prompt:
+        - system: |
+            You are an expert in evaluating the Answer to an Open Domain Question. Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant.
+        - user: |
+            You are provided with a Open Domain Question and Answer pair. Your task is to analyze the Answer with respect to Question on criteria mentioned below.
+            -----------------------------------------------------------------------------------------------------------
+
+            ### Open Domain Question:
+            {question}
+
+            ### Answer:
+            {answer}
+
+            -----------------------------------------------------------------------------------------------------------
+
+            ### Response Assessment Criteria:
+
+            Assess the following attributes on a scale from 1 to 5 and -1 if not applicable:
+            - **Instruction Following:**
+            - **Relevance:**
+            - **Accuracy:**
+            - **Completeness:**
+            - **Linguistic Clarity and Grammar:**
+
+            ### Justification Instructions:
+            - Provide a brief justification for each score to explain the evaluation.
+            - Include an overall evaluation summarizing the solution's strengths and weaknesses.
+            - NEVER use " only ' in explanations.
+
+            ### Output Format:
+            Respond **only** in JSON format. Do not include explanations or additional text. Your output **must** be a valid JSON object.
+            Return the response in a valid JSON format with the following structure:
+            ```json
+            {{
+                  "instruction_following": <score>,
+                  "explanation_instruction_following": "Explanation for the instruction following score",
+                  "relevance": <score>,
+                  "explanation_relevance": "Explanation for the relevance score",
+                  "accuracy": <score>,
+                  "explanation_accuracy": "Explanation for the accuracy score",
+                  "completeness": <score>,
+                  "explanation_completeness": "Explanation for the completeness score",
+                  "linguistic_clarity_and_grammar": <score>,
+                  "explanation_linguistic_clarity_and_grammar": "Explanation for the linguistic clarity and grammar score"
+            }}
+            ```
+      model:
+        name: gpt-4o
+        parameters:
+          max_tokens: 4096
+          temperature: 0
+      post_process: sygra.internal.data_quality.llm_based.task_executor.GenericPromptPostProcessor
+
+    closed_qa_prompt:
+      node_type: llm
+      prompt:
+        - system: |
+            You are an expert in evaluating the Answer to an Closed Domain Question. Please act as an impartial judge and evaluate the quality of the response provided by an AI assistant.
+        - user: |
+            You are provided with a Closed Domain Question and Answer pair. Your task is to analyze the Answer with respect to Question on criteria mentioned below.
+            -----------------------------------------------------------------------------------------------------------
+
+            ### Closed Domain Question:
+            {question}
+
+            ### Answer:
+            {answer}
+
+            -----------------------------------------------------------------------------------------------------------
+
+            ### Response Assessment Criteria:
+
+            Assess the following attributes on a scale from 1 to 5 and -1 if not applicable:
+            - **Instruction Following:**
+            - **Contextual Alignment:**
+            - **Accuracy:**
+            - **Completeness:**
+            - **Linguistic Clarity and Grammar:**
+
+            ### Justification Instructions:
+            - Provide a brief justification for each score to explain the evaluation.
+            - Include an overall evaluation summarizing the solution's strengths and weaknesses.
+            - NEVER use " only ' in explanations.
+
+            ### Output Format:
+            Respond **only** in JSON format. Do not include explanations or additional text. Your output **must** be a valid JSON object.
+            Return the response in a valid JSON format with the following structure:
+            ```json
+            {{
+                  "instruction_following": <score>,
+                  "explanation_instruction_following": "Explanation for the instruction following score",
+                  "contextual_alignment": <score>,
+                  "explanation_contextual_alignment": "Explanation for the contextual alignment score",
+                  "accuracy": <score>,
+                  "explanation_accuracy": "Explanation for the accuracy score",
+                  "completeness": <score>,
+                  "explanation_completeness": "Explanation for the completeness score",
+                  "linguistic_clarity_and_grammar": <score>,
+                  "explanation_linguistic_clarity_and_grammar": "Explanation for the linguistic clarity and grammar score"
+            }}
+            ```
+      model:
+        name: gpt-4o
+        parameters:
+          max_tokens: 4096
+          temperature: 0
+      post_process: sygra.internal.data_quality.llm_based.task_executor.GenericPromptPostProcessor
+
+  edges:
+    - from: START
+      to: extract_question_quality
+    - from: extract_question_quality
+      condition: sygra.internal.data_quality.llm_based.task_executor.DataQualityCategoryCondition
+      path_map:
+        generic: generic_prompt
+        math_solving: math_prompt
+        reasoning: reasoning_prompt
+        code_writing: coding_prompt
+        complex_instruction_following: instruction_following_prompt
+        open-domain_question_answering: open_qa_prompt
+        closed-domain_question_answering: closed_qa_prompt
+    - from: generic_prompt
+      to: END
+    - from: math_prompt
+      to: END
+    - from: reasoning_prompt
+      to: END
+    - from: coding_prompt
+      to: END
+    - from: instruction_following_prompt
+      to: END
+    - from: open_qa_prompt
+      to: END
+    - from: closed_qa_prompt
+      to: END
+
+output_config:
+  generator: sygra.internal.data_quality.llm_based.task_executor.DataQualityOutputGenerator
+  output_map:
+    id:
+      from: "id"
+    conversation:
+      from: "conversation"
+    conversation_pretokenized:
+      from: "conversation_pretokenized"
+    inputs_pretokenized:
+      from: "inputs_pretokenized"
+    targets_pretokenized:
+      from: "targets_pretokenized"
+    metadata:
+      from: "metadata"
+      transform: "update_metadata"

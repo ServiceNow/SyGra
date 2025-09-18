@@ -1,0 +1,80 @@
+mixtral8x7b:
+  model_type: tgi
+  # URL and auth_token should be defined at .env file as SYGRA_MIXTRAL8X7B_URL and SYGRA_MIXTRAL8X7B_TOKEN
+  hf_chat_template_model_id: meta-math/MetaMath-Mistral-7B
+  parameters:
+    max_new_tokens: 500
+    temperature: 1.0
+
+mixtral_instruct_8x22b:
+  model_type: vllm  
+  # URL and auth_token should be defined at .env file as SYGRA_MIXTRAL_INSTRUCT_8X22B_URL and SYGRA_MIXTRAL_INSTRUCT_8X22B_TOKEN
+  hf_chat_template_model_id: meta-math/MetaMath-Mistral-7B
+  parameters:
+    max_tokens: 1024
+    temperature: 1.0
+    stop: ["</s>", "[INST]"]
+
+mistralai:
+  model_type: mistralai
+  model: azureai
+  # URL and auth_token should be defined at .env file as SYGRA_MISTRALAI_URL and SYGRA_MISTRALAI_TOKEN
+  parameters:
+    max_tokens: 500
+    temperature: 1.0
+
+gpt4:
+  model_type: azure_openai
+  model: gpt-4-32k
+  # URL and api_key should be defined at .env file as SYGRA_GPT4_URL and SYGRA_GPT4_TOKEN
+  api_version: 2024-05-01-preview
+  parameters:
+    max_tokens: 500
+    temperature: 1.0
+
+gpt-4o:
+  model_type: azure_openai
+  model: gpt-4o
+  # URL and api_key should be defined at .env file as SYGRA_GPT-4O_URL and SYGRA_GPT-4O_TOKEN
+  api_version: 2024-02-15-preview
+  parameters:
+    max_tokens: 500
+    temperature: 1.0
+
+gpt-4o-mini:
+  model_type: azure_openai
+  model: gpt-4o-mini
+  # URL and api_key should be defined at .env file as SYGRA_GPT-4O-MINI_URL and SYGRA_GPT-4O-MINI_TOKEN
+  api_version: 2024-08-01-preview
+  parameters:
+    max_tokens: 5000
+    temperature: 0.0001
+
+#QWEN VL 72b deployed in vllm
+qwen_vl_72b:
+  # URL and api_key should be defined at .env file as SYGRA_QWEN_VL_72B_URL and SYGRA_QWEN_VL_72B_TOKEN
+  hf_chat_template_model_id: Qwen/Qwen2.5-VL-72B-Instruct
+  model_type: vllm
+  parameters:
+    max_tokens: 2048
+    temperature: 1.0
+
+#QWEN 32B deployed in vllm
+qwen3_32b:
+  # URL and api_key should be defined at .env file as SYGRA_QWEN3_32B_URL and SYGRA_QWEN3_32B_TOKEN
+  model_serving_name: qwen3_32b
+  hf_chat_template_model_id: Qwen/Qwen3-32B
+  model_type: vllm
+  parameters:
+    max_tokens: 2048
+    temperature: 0
+
+#qwen3_1.7b
+qwen3_1.7b:
+  model_type: ollama
+  # URL should be defined at .env file as SYGRA_QWEN3_1.7B_URL. auth_token is not needed
+  # Default URL for ollama is http://localhost:11434
+  hf_chat_template_model_id: Qwen/Qwen3-1.7B
+  post_process: sygra.core.models.model_postprocessor.RemoveThinkData
+  parameters:
+    temperature: 0.8

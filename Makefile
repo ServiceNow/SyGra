@@ -16,22 +16,22 @@ POETRY = poetry
 
 .PHONY: setup
 setup: ## Install core dependencies
-	@echo "Installing GraSP core dependencies"
+	@echo "Installing SyGra core dependencies"
 	$(POETRY) install --no-interaction --no-root --without dev,ui
 
 .PHONY: setup-all
 setup-all: ## Install core and extra dependencies
-	@echo "Installing GraSP Core and extra dependencies"
+	@echo "Installing SyGra Core and extra dependencies"
 	$(POETRY) install --no-interaction --no-root --without dev
 
 .PHONY: setup-ui
 setup-ui: ## Install development dependencies
-	@echo "Installing GraSP UI dependencies"
+	@echo "Installing SyGra UI dependencies"
 	$(POETRY) install --no-interaction --no-root --without dev
 
 .PHONY: setup-dev
 setup-dev: ## Install development dependencies
-	@echo "Installing GraSP Core, Extra and Development dependencies"
+	@echo "Installing SyGra Core, Extra and Development dependencies"
 	$(POETRY) install --no-interaction --no-root
 
 ########################################################################################################################
@@ -48,7 +48,7 @@ test-verbose: ## Run tests in verbose mode
 
 .PHONY: test-coverage
 test-coverage: ## Run tests with coverage
-	$(POETRY) run $(PYTEST) --cov=grasp --cov-report=term --cov-report=xml
+	$(POETRY) run $(PYTEST) --cov=sygra --cov-report=term --cov-report=xml
 
 ########################################################################################################################
 # DOCUMENTATION

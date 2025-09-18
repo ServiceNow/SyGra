@@ -4,14 +4,14 @@ import re
 from typing import Any
 
 
-from grasp.core.graph.functions.edge_condition import EdgeCondition
-from grasp.core.graph.functions.node_processor import (
+from sygra.core.graph.functions.edge_condition import EdgeCondition
+from sygra.core.graph.functions.node_processor import (
     NodePostProcessorWithState,
     NodePreProcessor,
 )
-from grasp.core.graph.grasp_message import GraspMessage
-from grasp.core.graph.grasp_state import GraspState
-from grasp.processors.output_record_generator import BaseOutputGenerator
+from sygra.core.graph.sygra_message import SygraMessage
+from sygra.core.graph.sygra_state import SygraState
+from sygra.processors.output_record_generator import BaseOutputGenerator
 
 start_conversation_prompts = [
     "Begin the discussion with polite greetings. Stay in character and ease into the topic assigned to you. Make sure to invite your partner into the conversation. Just give direct response, nothing else.",
@@ -39,7 +39,7 @@ class PersonaPostProcessor(NodePostProcessorWithState):
     PostProcessor that extracts the roles and prompts for agents
     """
 
-    def apply(self, response: GraspMessage, state: GraspState) -> GraspState:
+    def apply(self, response: SygraMessage, state: SygraState) -> SygraState:
         parsed = safe_json_extract(response.message.content)
         parsed["agent_1_role"] = sanitize_name(parsed["agent_1_role"])
         parsed["agent_2_role"] = sanitize_name(parsed["agent_2_role"])
@@ -51,7 +51,7 @@ class PersonaPostProcessor(NodePostProcessorWithState):
 
 
 class ShouldContinueToNextAgent(EdgeCondition):
-    def apply(state: GraspState) -> str:
+    def apply(state: SygraState) -> str:
         if not state.get("__chat_history__") or len(state["__chat_history__"]) == 0:
             return "FINAL_ANSWER"
         last_resp_history = state["__chat_history__"][-1]
@@ -66,7 +66,7 @@ class ShouldContinueToNextAgent(EdgeCondition):
 
 
 class StartConversation(EdgeCondition):
-    def apply(state: GraspState) -> str:
+    def apply(state: SygraState) -> str:
         agent_chosen = random.choice([0, 1])
         if agent_chosen == 0:
             return "agent_1"
@@ -75,7 +75,7 @@ class StartConversation(EdgeCondition):
 
 
 class Agent1PreProcess(NodePreProcessor):
-    def apply(self, state: GraspState) -> GraspState:
+    def apply(self, state: SygraState) -> SygraState:
         state["_agent_name"] = state["agent_1_role"]
         state["_agent_prompt"] = state["agent_1_prompt"]
         if not state.get("__chat_history__"):
@@ -84,7 +84,7 @@ class Agent1PreProcess(NodePreProcessor):
 
 
 class Agent2PreProcess(NodePreProcessor):
-    def apply(self, state: GraspState) -> GraspState:
+    def apply(self, state: SygraState) -> SygraState:
         state["_agent_name"] = state["agent_2_role"]
         state["_agent_prompt"] = state["agent_2_prompt"]
         if not state.get("__chat_history__"):
@@ -94,7 +94,7 @@ class Agent2PreProcess(NodePreProcessor):
 
 class ConversationOutputGenerator(BaseOutputGenerator):
     @staticmethod
-    def build_conversation(data: Any, state: GraspState) -> list[dict]:
+    def build_conversation(data: Any, state: SygraState) -> list[dict]:
         conversation = []
 
         for chat in data:
@@ -103,7 +103,7 @@ class ConversationOutputGenerator(BaseOutputGenerator):
         return conversation
 
     @staticmethod
-    def build_taxonomy(data: Any, state: GraspState) -> list[dict]:
+    def build_taxonomy(data: Any, state: SygraState) -> list[dict]:
         taxonomy = []
         taxonomy.append(
             {"category": state.get("category"), "subcategory": state.get("subcategory")}

@@ -8,10 +8,10 @@ sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
 from datasets import Dataset, Features, IterableDataset, Value
 
-from grasp.core.base_task_executor import BaseTaskExecutor
-from grasp.core.dataset.dataset_config import OutputType
-from grasp.core.graph.graph_config import GraphConfig
-from grasp.utils import utils
+from sygra.core.base_task_executor import BaseTaskExecutor
+from sygra.core.dataset.dataset_config import OutputType
+from sygra.core.graph.graph_config import GraphConfig
+from sygra.utils import utils
 
 # ---------------------- Fixtures ----------------------
 
@@ -45,14 +45,14 @@ def mock_args():
 
 
 @pytest.fixture
-def mock_grasp_config():
+def mock_sygra_config():
     return {
         "graph_config": {
             "nodes": {
                 "build_text_node": {
                     "node_type": "lambda",
                     "output_keys": "evol_instruct_final_prompt",
-                    "lambda": "grasp.recipes.evol_instruct.task_executor.EvolInstructPromptGenerator",
+                    "lambda": "sygra.recipes.evol_instruct.task_executor.EvolInstructPromptGenerator",
                 },
                 "evol_text_node": {
                     "node_type": "llm",
@@ -125,7 +125,7 @@ def mock_main_subgraph_config():
 
 
 @pytest.fixture
-def mock_grasp_sub_config():
+def mock_sygra_sub_config():
     return {
         "graph_config": {
             "nodes": {
@@ -492,26 +492,26 @@ def mock_model_config():
 
 # Sets up a BaseTaskExecutor instance with mocked config loading and graph
 @pytest.fixture
-def dummy_instance(mock_args, mock_grasp_config, mock_model_config):
-    from grasp.core.base_task_executor import BaseTaskExecutor
+def dummy_instance(mock_args, mock_sygra_config, mock_model_config):
+    from sygra.core.base_task_executor import BaseTaskExecutor
 
     def mock_load_yaml_file(*args, **kwargs):
         path = args[0] if args else kwargs.get("filepath", "")
         if "models.yaml" in path:
             return mock_model_config
-        return mock_grasp_config
+        return mock_sygra_config
 
     with (
         patch(
-            "grasp.core.base_task_executor.utils.load_yaml_file",
+            "sygra.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+            "sygra.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "grasp.core.dataset.file_handler.FileHandler.read",
+            "sygra.core.dataset.file_handler.FileHandler.read",
             return_value=[{"id": "abc", "evol_instruct_final_prompt": "hello"}],
         ),
     ):
@@ -545,7 +545,7 @@ def test_init_from_yaml_path(dummy_instance):
     assert "build_text_node" in dummy_instance.graph_config.get_nodes()
 
 
-def test_init_from_dict_config(mock_args, mock_grasp_config, mock_model_config):
+def test_init_from_dict_config(mock_args, mock_sygra_config, mock_model_config):
     """
     Test that BaseTaskExecutor correctly initializes when passed a graph configuration as a dictionary.
 
@@ -555,23 +555,23 @@ def test_init_from_dict_config(mock_args, mock_grasp_config, mock_model_config):
 
     def mock_load_yaml_file(*args, **kwargs):
         filepath = args[0] if args else kwargs.get("filepath", "")
-        return mock_model_config if "models.yaml" in filepath else mock_grasp_config
+        return mock_model_config if "models.yaml" in filepath else mock_sygra_config
 
     with (
         patch(
-            "grasp.core.base_task_executor.utils.load_yaml_file",
+            "sygra.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+            "sygra.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "grasp.core.dataset.file_handler.FileHandler.read",
+            "sygra.core.dataset.file_handler.FileHandler.read",
             return_value=[{"id": "abc"}],
         ),
     ):
-        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
+        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_sygra_config)
         assert "build_text_node" in executor.graph_config.get_nodes()
 
 
@@ -590,15 +590,15 @@ def test_missing_graph_config_key(mock_args, mock_model_config):
 
     with (
         patch(
-            "grasp.core.base_task_executor.utils.load_yaml_file",
+            "sygra.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+            "sygra.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "grasp.core.dataset.file_handler.FileHandler.read",
+            "sygra.core.dataset.file_handler.FileHandler.read",
             return_value=[{"id": "abc"}],
         ),
     ):
@@ -606,35 +606,35 @@ def test_missing_graph_config_key(mock_args, mock_model_config):
             BaseTaskExecutor(mock_args, graph_config_dict=invalid_config)
 
 
-def test_invalid_variable_type_in_output(mock_args, mock_grasp_config, mock_model_config):
+def test_invalid_variable_type_in_output(mock_args, mock_sygra_config, mock_model_config):
     """
     Test that a ValueError is raised if `output_keys` is not a list or string.
 
     Here, `output_keys` is incorrectly set to an integer to simulate a misconfiguration,
     and the executor should throw a validation error during graph parsing.
     """
-    mock_grasp_config["graph_config"]["nodes"]["build_text_node"]["output_keys"] = 123
+    mock_sygra_config["graph_config"]["nodes"]["build_text_node"]["output_keys"] = 123
 
     def mock_load_yaml_file(*args, **kwargs):
         filepath = args[0] if args else kwargs.get("filepath", "")
-        return mock_model_config if "models.yaml" in filepath else mock_grasp_config
+        return mock_model_config if "models.yaml" in filepath else mock_sygra_config
 
     with (
         patch(
-            "grasp.core.base_task_executor.utils.load_yaml_file",
+            "sygra.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+            "sygra.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "grasp.core.dataset.file_handler.FileHandler.read",
+            "sygra.core.dataset.file_handler.FileHandler.read",
             return_value=[{"id": "abc"}],
         ),
     ):
         with pytest.raises(ValueError, match="Invalid variable format"):
-            BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
+            BaseTaskExecutor(mock_args, graph_config_dict=mock_sygra_config)
 
 
 # ----------------------------
@@ -642,10 +642,10 @@ def test_invalid_variable_type_in_output(mock_args, mock_grasp_config, mock_mode
 # ----------------------------
 
 
-@patch("grasp.core.graph.graph_config.utils.load_yaml_file")
-@patch("grasp.core.graph.graph_config.utils.get_file_in_task_dir")
+@patch("sygra.core.graph.graph_config.utils.load_yaml_file")
+@patch("sygra.core.graph.graph_config.utils.get_file_in_task_dir")
 @patch(
-    "grasp.core.graph.nodes.lambda_node.utils.get_func_from_str",
+    "sygra.core.graph.nodes.lambda_node.utils.get_func_from_str",
     return_value=lambda x: x,
 )
 def test_subgraph_merging(
@@ -653,7 +653,7 @@ def test_subgraph_merging(
     mock_get_file,
     mock_load_yaml,
     mock_main_subgraph_config,
-    mock_grasp_sub_config,
+    mock_sygra_sub_config,
     mock_model_config,
 ):
     """
@@ -695,7 +695,7 @@ def test_subgraph_merging(
         if "models.yaml" in filepath:
             return mock_model_config
         elif "generate_answer.yaml" in filepath:
-            return mock_grasp_sub_config
+            return mock_sygra_sub_config
         else:
             return mock_main_subgraph_config
 
@@ -726,10 +726,10 @@ def test_subgraph_merging(
     assert len(edge_tuples) == 2
 
 
-@patch("grasp.core.graph.graph_config.utils.load_yaml_file")
-@patch("grasp.core.graph.graph_config.utils.get_file_in_task_dir")
+@patch("sygra.core.graph.graph_config.utils.load_yaml_file")
+@patch("sygra.core.graph.graph_config.utils.get_file_in_task_dir")
 @patch(
-    "grasp.core.graph.nodes.lambda_node.utils.get_func_from_str",
+    "sygra.core.graph.nodes.lambda_node.utils.get_func_from_str",
     return_value=lambda x: x,
 )
 def test_subgraph_merging_nested_looping(
@@ -828,10 +828,10 @@ def test_subgraph_merging_nested_looping(
     assert len(edge_tuples) == 3, "Expected exactly 3 edges in the merged graph"
 
 
-@patch("grasp.core.graph.graph_config.utils.load_yaml_file")
-@patch("grasp.core.graph.graph_config.utils.get_file_in_task_dir")
+@patch("sygra.core.graph.graph_config.utils.load_yaml_file")
+@patch("sygra.core.graph.graph_config.utils.get_file_in_task_dir")
 @patch(
-    "grasp.core.graph.nodes.lambda_node.utils.get_func_from_str",
+    "sygra.core.graph.nodes.lambda_node.utils.get_func_from_str",
     return_value=lambda x: x,
 )
 def test_subgraph_merging_with_looping_edge(
@@ -916,10 +916,10 @@ def test_subgraph_merging_with_looping_edge(
     assert len(edge_configs) == 2
 
 
-@patch("grasp.core.graph.graph_config.utils.load_yaml_file")
-@patch("grasp.core.graph.graph_config.utils.get_file_in_task_dir")
+@patch("sygra.core.graph.graph_config.utils.load_yaml_file")
+@patch("sygra.core.graph.graph_config.utils.get_file_in_task_dir")
 @patch(
-    "grasp.core.graph.nodes.lambda_node.utils.get_func_from_str",
+    "sygra.core.graph.nodes.lambda_node.utils.get_func_from_str",
     return_value=lambda x: x,
 )
 def test_multiple_subgraphs_merging(
@@ -927,7 +927,7 @@ def test_multiple_subgraphs_merging(
     mock_get_file,
     mock_load_yaml,
     mock_main_with_multiple_subgraphs,
-    mock_grasp_sub_config,
+    mock_sygra_sub_config,
     mock_second_subgraph_config,
     mock_model_config,
 ):
@@ -943,7 +943,7 @@ def test_multiple_subgraphs_merging(
         if "models.yaml" in filepath:
             return mock_model_config
         elif "sg1.yaml" in filepath:
-            return mock_grasp_sub_config  # Contains sub_node
+            return mock_sygra_sub_config  # Contains sub_node
         elif "sg2.yaml" in filepath:
             return mock_second_subgraph_config  # Contains another_sub_node
         else:
@@ -976,10 +976,10 @@ def test_multiple_subgraphs_merging(
     assert len(edge_configs) == 3
 
 
-@patch("grasp.core.graph.graph_config.utils.load_yaml_file")
-@patch("grasp.core.graph.graph_config.utils.get_file_in_task_dir")
+@patch("sygra.core.graph.graph_config.utils.load_yaml_file")
+@patch("sygra.core.graph.graph_config.utils.get_file_in_task_dir")
 @patch(
-    "grasp.core.graph.nodes.lambda_node.utils.get_func_from_str",
+    "sygra.core.graph.nodes.lambda_node.utils.get_func_from_str",
     return_value=lambda x: x,
 )
 def test_conditional_edge_from_subgraph(
@@ -1058,7 +1058,7 @@ def test_conditional_edge_from_subgraph(
 # ----------------------------
 
 
-def test_prompt_placeholder_override(mock_args, mock_grasp_config, mock_model_config):
+def test_prompt_placeholder_override(mock_args, mock_sygra_config, mock_model_config):
     """
     Test that prompt placeholder overrides are correctly applied in the graph configuration.
 
@@ -1066,7 +1066,7 @@ def test_prompt_placeholder_override(mock_args, mock_grasp_config, mock_model_co
     an override to replace it with `{anything}`. It verifies that the transformed
     prompt correctly reflects the overridden placeholder.
     """
-    mock_grasp_config["graph_config"]["nodes"]["build_text_node"]["prompt"] = [
+    mock_sygra_config["graph_config"]["nodes"]["build_text_node"]["prompt"] = [
         {"user": "say {something}"}
     ]
 
@@ -1076,20 +1076,20 @@ def test_prompt_placeholder_override(mock_args, mock_grasp_config, mock_model_co
         path = args[0] if args else kwargs.get("filepath", "")
         if "models.yaml" in path:
             return mock_model_config
-        return mock_grasp_config
+        return mock_sygra_config
 
     with (
         patch(
-            "grasp.core.graph.graph_config.utils.load_yaml_file",
+            "sygra.core.graph.graph_config.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "grasp.core.graph.graph_config.utils.get_file_in_dir",
+            "sygra.core.graph.graph_config.utils.get_file_in_dir",
             return_value="dummy_path.yaml",
         ),
     ):
         graph_config = GraphConfig(
-            config=mock_grasp_config,
+            config=mock_sygra_config,
             dataset=[{"anything": "value"}],
             output_transform_args={"oasst": True, "quality": True},
             override_config=override,
@@ -1099,7 +1099,7 @@ def test_prompt_placeholder_override(mock_args, mock_grasp_config, mock_model_co
         assert "{anything}" in prompt
 
 
-def test_nested_config_override_merging(mock_args, mock_grasp_config, mock_model_config):
+def test_nested_config_override_merging(mock_args, mock_sygra_config, mock_model_config):
     """
     Test that nested configuration overrides are *not* applied by default unless explicitly passed.
 
@@ -1109,27 +1109,27 @@ def test_nested_config_override_merging(mock_args, mock_grasp_config, mock_model
 
     def mock_load_yaml_file(*args, **kwargs):
         filepath = args[0] if args else kwargs.get("filepath", "")
-        return mock_model_config if "models.yaml" in filepath else mock_grasp_config
+        return mock_model_config if "models.yaml" in filepath else mock_sygra_config
 
     with (
         patch(
-            "grasp.core.base_task_executor.utils.load_yaml_file",
+            "sygra.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+            "sygra.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
-        patch("grasp.core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}]),
+        patch("sygra.core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}]),
     ):
-        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
+        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_sygra_config)
         updated_temp = executor.graph_config.graph_config["nodes"]["evol_text_node"]["model"][
             "parameters"
         ]["temperature"]
         assert updated_temp == 1.0  # should remain original
 
 
-def test_override_applied_only_to_specified_node(mock_args, mock_grasp_config, mock_model_config):
+def test_override_applied_only_to_specified_node(mock_args, mock_sygra_config, mock_model_config):
     """
     Test that node-specific overrides do not affect unrelated nodes in the graph.
 
@@ -1139,25 +1139,25 @@ def test_override_applied_only_to_specified_node(mock_args, mock_grasp_config, m
 
     def mock_load_yaml_file(*args, **kwargs):
         filepath = args[0] if args else kwargs.get("filepath", "")
-        return mock_model_config if "models.yaml" in filepath else mock_grasp_config
+        return mock_model_config if "models.yaml" in filepath else mock_sygra_config
 
     with (
         patch(
-            "grasp.core.base_task_executor.utils.load_yaml_file",
+            "sygra.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+            "sygra.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
-        patch("grasp.core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}]),
+        patch("sygra.core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}]),
     ):
-        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
+        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_sygra_config)
         evol_lambda = executor.graph_config.graph_config["nodes"]["build_text_node"]["lambda"]
 
         # Check that no override is accidentally applied
         assert (
-            evol_lambda == "grasp.recipes.evol_instruct.task_executor.EvolInstructPromptGenerator"
+            evol_lambda == "sygra.recipes.evol_instruct.task_executor.EvolInstructPromptGenerator"
         )
 
 
@@ -1166,7 +1166,7 @@ def test_override_applied_only_to_specified_node(mock_args, mock_grasp_config, m
 # ----------------------------
 
 
-def test_extract_from_dataset_list(mock_args, mock_grasp_config, mock_model_config):
+def test_extract_from_dataset_list(mock_args, mock_sygra_config, mock_model_config):
     """
     Test that state variables are correctly extracted from a dataset represented as a list of dictionaries.
 
@@ -1176,27 +1176,27 @@ def test_extract_from_dataset_list(mock_args, mock_grasp_config, mock_model_conf
 
     def mock_load_yaml_file(*args, **kwargs):
         filepath = args[0] if args else kwargs.get("filepath", "")
-        return mock_model_config if "models.yaml" in filepath else mock_grasp_config
+        return mock_model_config if "models.yaml" in filepath else mock_sygra_config
 
     with (
         patch(
-            "grasp.core.base_task_executor.utils.load_yaml_file",
+            "sygra.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+            "sygra.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "grasp.core.dataset.file_handler.FileHandler.read",
+            "sygra.core.dataset.file_handler.FileHandler.read",
             return_value=[{"foo": "bar", "baz": 1}],
         ),
     ):
-        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
+        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_sygra_config)
         assert "foo" in executor.graph_config.state_variables
 
 
-def test_extract_from_dataset_object(mock_args, mock_grasp_config, mock_model_config):
+def test_extract_from_dataset_object(mock_args, mock_sygra_config, mock_model_config):
     """
     Test state variable extraction from HuggingFace `Dataset` object.
 
@@ -1209,27 +1209,27 @@ def test_extract_from_dataset_object(mock_args, mock_grasp_config, mock_model_co
 
     def mock_load_yaml_file(*args, **kwargs):
         path = args[0] if args else kwargs.get("filepath", "")
-        return mock_model_config if "models.yaml" in path else mock_grasp_config
+        return mock_model_config if "models.yaml" in path else mock_sygra_config
 
     with (
         patch(
-            "grasp.core.base_task_executor.utils.load_yaml_file",
+            "sygra.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+            "sygra.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "grasp.core.dataset.file_handler.FileHandler.read",
+            "sygra.core.dataset.file_handler.FileHandler.read",
             return_value=data_as_list,
         ),
     ):
-        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
+        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_sygra_config)
         assert "name" in executor.graph_config.state_variables
 
 
-def test_extract_from_iterable_dataset(mock_args, mock_grasp_config, mock_model_config):
+def test_extract_from_iterable_dataset(mock_args, mock_sygra_config, mock_model_config):
     """
     Test that state variables can be extracted from an IterableDataset (e.g., streaming scenario).
 
@@ -1240,54 +1240,54 @@ def test_extract_from_iterable_dataset(mock_args, mock_grasp_config, mock_model_
 
     def mock_load_yaml_file(*args, **kwargs):
         path = args[0] if args else kwargs.get("filepath", "")
-        return mock_model_config if "models.yaml" in path else mock_grasp_config
+        return mock_model_config if "models.yaml" in path else mock_sygra_config
 
     with (
         patch(
-            "grasp.core.base_task_executor.utils.load_yaml_file",
+            "sygra.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+            "sygra.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
-        patch("grasp.core.dataset.file_handler.FileHandler.read", return_value=dummy_data),
+        patch("sygra.core.dataset.file_handler.FileHandler.read", return_value=dummy_data),
     ):
-        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
+        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_sygra_config)
         assert "x" in executor.graph_config.state_variables
 
 
-def test_extract_from_prompt_templates(mock_args, mock_grasp_config, mock_model_config):
+def test_extract_from_prompt_templates(mock_args, mock_sygra_config, mock_model_config):
     """
     Test that variables used in prompt templates are automatically extracted as state variables.
 
     Verifies:
         - Placeholders in prompts (e.g., '{text}') are extracted and registered in graph state.
     """
-    mock_grasp_config["graph_config"]["nodes"]["evol_text_node"]["prompt"] = [
+    mock_sygra_config["graph_config"]["nodes"]["evol_text_node"]["prompt"] = [
         {"user": "generate from {text}"}
     ]
 
     def mock_load_yaml_file(*args, **kwargs):
         path = args[0] if args else kwargs.get("filepath", "")
-        return mock_model_config if "models.yaml" in path else mock_grasp_config
+        return mock_model_config if "models.yaml" in path else mock_sygra_config
 
     with (
         patch(
-            "grasp.core.base_task_executor.utils.load_yaml_file",
+            "sygra.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+            "sygra.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "grasp.core.dataset.file_handler.FileHandler.read",
+            "sygra.core.dataset.file_handler.FileHandler.read",
             return_value=[{"text": "hello"}],
         ),
-        patch("grasp.core.base_task_executor.utils.extract_pattern", return_value={"text"}),
+        patch("sygra.core.base_task_executor.utils.extract_pattern", return_value={"text"}),
     ):
-        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
+        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_sygra_config)
         assert "text" in executor.graph_config.state_variables
 
 
@@ -1383,7 +1383,7 @@ def test_edges_are_initialized(dummy_instance):
     assert len(edges) > 0
 
 
-def test_duplicate_state_variables_error(mock_args, mock_grasp_config, mock_model_config):
+def test_duplicate_state_variables_error(mock_args, mock_sygra_config, mock_model_config):
     """
     Test that duplicate `output_keys` in a node configuration are retained as-is.
 
@@ -1394,30 +1394,30 @@ def test_duplicate_state_variables_error(mock_args, mock_grasp_config, mock_mode
     Note:
         This test does not assert for an error being raised, but confirms preservation of values.
     """
-    mock_grasp_config["graph_config"]["nodes"]["build_text_node"]["output_keys"] = [
+    mock_sygra_config["graph_config"]["nodes"]["build_text_node"]["output_keys"] = [
         "dup",
         "dup",
     ]
 
     def mock_load_yaml_file(*args, **kwargs):
         path = args[0] if args else kwargs.get("filepath", "")
-        return mock_model_config if "models.yaml" in path else mock_grasp_config
+        return mock_model_config if "models.yaml" in path else mock_sygra_config
 
     with (
         patch(
-            "grasp.core.base_task_executor.utils.load_yaml_file",
+            "sygra.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+            "sygra.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "grasp.core.dataset.file_handler.FileHandler.read",
+            "sygra.core.dataset.file_handler.FileHandler.read",
             return_value=[{"dup": "val"}],
         ),
     ):
-        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_grasp_config)
+        executor = BaseTaskExecutor(mock_args, graph_config_dict=mock_sygra_config)
         node = executor.graph_config.get_nodes()["build_text_node"]
         assert node.node_config["output_keys"] == ["dup", "dup"]
 

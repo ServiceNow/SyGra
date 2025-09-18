@@ -17,8 +17,8 @@ try:
     )
 except ModuleNotFoundError:
     raise ModuleNotFoundError(
-        "GraSP UI requires the optional 'ui' dependencies. "
-        "Install them with: pip install 'grasp[ui]'"
+        "SyGra UI requires the optional 'ui' dependencies. "
+        "Install them with: pip install 'sygra[ui]'"
     )
 
 TASKS_DIR = Path("tasks")
@@ -409,7 +409,7 @@ def show_subtask_details(subtask_path):
 
 
 def main():
-    st.set_page_config(page_title="GraSP UI", layout="wide")
+    st.set_page_config(page_title="SyGra UI", layout="wide")
     if "selected_task" not in st.session_state:
         st.session_state["selected_task"] = None
     if "selected_subtask" not in st.session_state:

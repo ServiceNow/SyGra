@@ -2,7 +2,7 @@ from abc import ABC
 
 from langchain_core.tools import tool
 
-from grasp.logger.logger_config import logger
+from sygra.logger.logger_config import logger
 
 
 class ToolClass(ABC):

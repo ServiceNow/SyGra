@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use GraSP in your projects, please cite it as below."
+message: "If you use SyGra in your projects, please cite it as below."
 authors:
   - family-names: Pradhan
     given-names: Bidyapati
@@ -15,11 +15,11 @@ authors:
     given-names: Vipul
   - family-names: Gopal
     given-names: Sarda
-title: "GraSP, an open-source GRAph-oriented Synthetic data generation Pipeline"
+title: "SyGra, an open-source GRAph-oriented Synthetic data generation Pipeline"
 version: "1.0"
 date-released: "2025-09-15"
-url: "https://servicenow.github.io/grasp"
-repository-code: "https://github.com/ServiceNow/grasp"
+url: "https://servicenow.github.io/sygra"
+repository-code: "https://github.com/ServiceNow/sygra"
 license: "Apache-2.0"
 
 # identifiers:
@@ -28,7 +28,7 @@ license: "Apache-2.0"
 
 preferred-citation:
   type: article
-  title: "GraSP: An open-source GRAph-oriented Synthetic data generation Pipeline"
+  title: "SyGra: An open-source GRAph-oriented Synthetic data generation Pipeline"
   authors:
     - family-names: Pradhan
       given-names: Bidyapati

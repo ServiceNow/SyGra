@@ -11,7 +11,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 from pydantic import BaseModel
 
-from grasp.core.models.client.openai_azure_client import (
+from sygra.core.models.client.openai_azure_client import (
     AzureClientConfig,
     OpenAIAzureClient,
 )
@@ -37,7 +37,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
             "max_retries": 2,
         }
 
-    @patch("grasp.core.models.client.openai_azure_client.AsyncAzureOpenAI")
+    @patch("sygra.core.models.client.openai_azure_client.AsyncAzureOpenAI")
     def test_init_async_client(self, mock_async_openai):
         """Test initialization of OpenaiAzureClient with async client"""
         mock_async_openai.return_value = MagicMock()
@@ -60,7 +60,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
         self.assertEqual(kwargs["max_retries"], 2)
         self.assertEqual(kwargs["default_headers"], {"Connection": "close"})
 
-    @patch("grasp.core.models.client.openai_azure_client.AzureOpenAI")
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
     def test_init_sync_client(self, mock_openai):
         """Test initialization of OpenaiAzureClient with sync client"""
         mock_openai.return_value = MagicMock()
@@ -77,7 +77,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
         self.assertEqual(kwargs["azure_deployment"], "gpt-4")
         self.assertEqual(kwargs["azure_endpoint"], "https://test-endpoint.openai.azure.com")
 
-    @patch("grasp.core.models.client.openai_azure_client.AzureOpenAI")
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
     def test_init_with_stop_sequence(self, mock_openai):
         """Test initialization with stop sequence"""
         mock_openai.return_value = MagicMock()
@@ -88,7 +88,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
         # Verify stop sequence was set
         self.assertEqual(client.stop, stop_sequence)
 
-    @patch("grasp.core.models.client.openai_azure_client.AzureOpenAI")
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
     def test_init_with_completions_api(self, mock_openai):
         """Test initialization with completion API flag"""
         mock_openai.return_value = MagicMock()
@@ -158,7 +158,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
             str(context.exception),
         )
 
-    @patch("grasp.core.models.client.openai_azure_client.AzureOpenAI")
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
     def test_build_request_chat_completions(self, mock_openai):
         """Test build_request with chat completions API"""
         mock_openai.return_value = MagicMock()
@@ -184,7 +184,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
         self.assertEqual(payload["temperature"], 0.7)
         self.assertEqual(payload["max_tokens"], 100)
 
-    @patch("grasp.core.models.client.openai_azure_client.AzureOpenAI")
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
     def test_build_request_chat_completions_with_stop(self, mock_openai):
         """Test build_request with chat completions API and stop sequence"""
         mock_openai.return_value = MagicMock()
@@ -202,7 +202,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
         self.assertIn("stop", payload)
         self.assertEqual(payload["stop"], stop_sequence)
 
-    @patch("grasp.core.models.client.openai_azure_client.AzureOpenAI")
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
     def test_build_request_chat_completions_invalid_messages(self, mock_openai):
         """Test build_request with chat completions API and invalid messages"""
         mock_openai.return_value = MagicMock()
@@ -223,7 +223,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
         # Verify the error message
         self.assertIn("messages passed is None or empty", str(context.exception))
 
-    @patch("grasp.core.models.client.openai_azure_client.AzureOpenAI")
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
     def test_build_request_completions(self, mock_openai):
         """Test build_request with completions API"""
         mock_openai.return_value = MagicMock()
@@ -240,7 +240,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
         self.assertEqual(payload["prompt"], "Hello, how are you?")
         self.assertEqual(payload["temperature"], 0.5)
 
-    @patch("grasp.core.models.client.openai_azure_client.AzureOpenAI")
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
     def test_build_request_completions_invalid_prompt(self, mock_openai):
         """Test build_request with completions API and invalid prompt"""
         mock_openai.return_value = MagicMock()
@@ -256,7 +256,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
         # Verify the error message
         self.assertIn("formatted_prompt passed is None", str(context.exception))
 
-    @patch("grasp.core.models.client.openai_azure_client.AzureOpenAI")
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
     def test_send_request_chat_completions(self, mock_openai):
         """Test send_request with chat completions API"""
         # Create a mock for the client and completions
@@ -283,7 +283,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
             messages=payload["messages"], temperature=0.7, model="gpt-4", stream=False
         )
 
-    @patch("grasp.core.models.client.openai_azure_client.AzureOpenAI")
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
     def test_send_request_completions(self, mock_openai):
         """Test send_request with completions API"""
         # Create a mock for the client and completions
@@ -306,7 +306,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
             prompt="Hello, how are you?", temperature=0.5, model="gpt-4", max_tokens=100
         )
 
-    @patch("grasp.core.models.client.openai_azure_client.AsyncAzureOpenAI")
+    @patch("sygra.core.models.client.openai_azure_client.AsyncAzureOpenAI")
     def test_send_request_async(self, mock_async_openai):
         """Test send_request with async client"""
         # Create a mock for the client and completions
@@ -370,7 +370,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
         self.assertEqual(config_dict["max_retries"], 5)
         self.assertEqual(config_dict["default_headers"], {"Custom": "Header"})
 
-    @patch("grasp.core.models.client.openai_azure_client.AzureOpenAI")
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
     def test_native_structured_output(self, mock_azure_openai):
         """Test structured output using OpenAI's beta.chat.completions.parse"""
         # Set up mock client
@@ -410,7 +410,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
         # Verify the structured data was returned correctly
         self.assertEqual(response, structured_data)
 
-    @patch("grasp.core.models.client.openai_azure_client.AzureOpenAI")
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
     def test_pydantic_validation_error(self, mock_azure_openai):
         """Test handling of validation errors in structured output"""
         # Set up mock client
@@ -443,7 +443,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
             response_format=SampleStructuredOutput,
         )
 
-    @patch("grasp.core.models.client.openai_azure_client.AzureOpenAI")
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
     def test_json_decode_error(self, mock_azure_openai):
         """Test handling of JSON decode errors in structured output"""
         # Set up mock client

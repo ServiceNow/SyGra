@@ -40,7 +40,7 @@ graph_config:
             temperature: 0.7
             max_tokens: 2000
           structured_output:
-            schema: "grasp.core.models.structured_output.schemas_factory.SimpleResponse"
+            schema: "sygra.core.models.structured_output.schemas_factory.SimpleResponse"
         gpt-4o-mini:
           name: gpt-4o-mini
           parameters:

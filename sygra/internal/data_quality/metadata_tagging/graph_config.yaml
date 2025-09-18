@@ -1,0 +1,136 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: "sygra/internal/examples/glaive_code_assistant/test_output.json"
+
+    transformations:
+      - transform: sygra.internal.data_quality.metadata_tagging.task_executor.MetadataTaggingDataTransform
+        params:
+          data_type: "sft"
+
+graph_config:
+  nodes:
+    extract_category:
+     node_type: llm
+     post_process: sygra.internal.data_quality.metadata_tagging.task_executor.ExtractCategoryPostProcess
+     pre_process: sygra.internal.data_quality.metadata_tagging.task_executor.ExtractCategoryPreProcess
+     prompt:
+       - system: |
+           You are a classification AI that strictly follows given instructions and categorizes data accurately. Your primary task is to select the most appropriate task category from a provided list based on User Question and Assistant Response.
+       - user: |
+           Analyze the following conversation between a user and an assistant:
+           --------------------
+           User Question: {question}
+
+           Assistant Response: {response}
+           --------------------
+           Determine the primary task above conversation is achieving. The primary task can be Code Writing, Math Solving, Reasoning, Closed-Domain Question Answering, Open-Domain Question Answering, Complex Instruction Following.
+
+           Description of the tasks are as below:
+           
+           Code Writing:
+              Tasks involving the creation, comprehension, or debugging of code in any programming language.
+              Examples include:
+                  Developing algorithms or functions in any of the programming language.
+                  Resolving syntax or logical errors in code segments.
+                  Clarifying programming concepts with illustrative code samples.
+           
+           Math Solving:
+              Tasks necessitating mathematical computations, equation solving, or interpretation of mathematical symbols. This covers:
+                  Addressing algebraic equations or inequalities.
+                  Computing derivatives, integrals, or limits.
+                  Analyzing or simplifying mathematical expressions.
+           
+           Reasoning: 
+              Tasks requiring logical analysis, planning and reasoning, problem-solving, decision making or deriving conclusions without reliance on any programming or code or mathematical formulas. This includes:
+                  Evaluating scenarios to inform decisions.
+                  Deciphering riddles or puzzles that don't involve mathematical calculations.
+                  Offering explanations or rationales based on provided data.
+           
+           Closed-Domain Question Answering:
+              Tasks where the assistant derives answers from specific provided materials. 
+              This does not involve generation following multiple constraints. Multiple constrained generations fall into category of Complex Instruction Following.
+              Closed-Domain Question Answering involves: 
+                  Responding to inquiries using a supplied passage, document, or dataset.
+           
+           Open-Domain Question Answering:
+              Tasks where the assistant replies based on its pre-existing knowledge without external references.
+              This does not involve generation following multiple constraints. Multiple constrained generations fall into category of Complex Instruction Following.
+              Open-Domain Question Answering includes:
+                  Answering general knowledge questions.
+                  Providing factual information that doesn't require additional context.
+           
+           Complex Instruction Following: Tasks that require the assistant to do some kind of creative writing taking into account multiple constraints in response generation like:
+              length constraints - less than or greater than so many words/lines/paragraphs
+              language constraints - writing in specific language
+              keywords constraints - inclusion/exclusion of certain keywords
+              formatting constraints - format the output in yaml,json, markdown, bullet, list etc.
+              tone/style constraints - constraining style or tone of the text
+              or other kind of constrained generation.
+           
+           Others:
+              Miscellaneous topics and categories that do not fit into above predefined tasks above.
+           
+           Note: Each task should be classified exclusively into one of above distinct categories.
+           
+           **The chosen category key is a simple string and can be only one of Code Writing, Math Solving, Reasoning, Closed-Domain Question Answering, Open-Domain Question Answering, Complex Instruction Following**
+           **STRICTLY FOLLOW THE OUTPUT FORMAT. DO NOT PROVIDE ANY ADDITIONAL EXPLANATION, single/double QUOTES, UNNECESSARY JSON FORMAT**
+           
+           OUTPUT FORMAT:
+           chosen_category_key
+
+     model:
+       name: gpt-4o
+       parameters:
+         temperature: 0
+
+    extract_tags:
+      node_type: llm
+      prompt:
+        - user: |
+            You are a tagging system that provides useful tags for instruction intentions to distinguish instructions for a helpful AI assistant. Below is an
+            instruction:
+            [begin]
+            {question}
+            [end]
+            Please provide coarse-grained tags, such as ”Spelling and Grammar
+            Check” and ”Cosplay”, to identify main intentions of above instruction.
+            Your answer should be a list including titles. Please respond in English.
+            Respond **only** in exact single List format tag1,tag2,tag3 with appropriate tags. DO NOT have any \n characters. Do not include explanations or additional text. Your output **must** be a valid list of strings.
+
+            OUTPUT FORMAT:
+            tag1,tag2,tag3
+      model:
+        name: gpt-4o
+        parameters:
+          temperature: 0.1
+      post_process: sygra.internal.data_quality.metadata_tagging.task_executor.ExtractTagsPostProcess
+
+  edges:
+    - from: START
+      to: extract_tags
+    - from: extract_tags
+      to: extract_category
+    - from: extract_category
+      to: END
+
+output_config:
+  generator: sygra.internal.data_quality.metadata_tagging.task_executor.MetaTaggingOutputGenerator
+  output_map:
+    id:
+      from: "id"
+    conversation:
+      from: "conversation"
+    conversation_pretokenized:
+      from: "conversation_pretokenized"
+    inputs_pretokenized:
+      from: "inputs_pretokenized"
+    targets_pretokenized:
+      from: "targets_pretokenized"
+    metadata:
+      from: "category"
+      transform: "build_metadata"
+    category:
+      from: "category"
+    tags:
+      from: "instruction_tags"

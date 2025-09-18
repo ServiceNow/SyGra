@@ -17,8 +17,8 @@ try:
     )
 except ModuleNotFoundError:
     raise ModuleNotFoundError(
-        "GraSP UI requires the optional 'ui' dependencies. "
-        "Install them with: pip install 'grasp[ui]'"
+        "SyGra UI requires the optional 'ui' dependencies. "
+        "Install them with: pip install 'sygra[ui]'"
     )
 import time
 import json
@@ -30,7 +30,7 @@ import re
 # Constants
 TASKS_DIR = Path("tasks")
 TASKS_DIR.mkdir(exist_ok=True)
-st.set_page_config(page_title="GraSP UI", layout="wide")
+st.set_page_config(page_title="SyGra UI", layout="wide")
 
 st.title("Create New Task")
 
@@ -1223,7 +1223,7 @@ def generate_yaml_and_executor():
             "from core.graph.functions.node_processor import NodePreProcessor, NodePostProcessor",
             "from core.graph.functions.edge_condition import EdgeCondition",
             "from processors.output_record_generator import BaseOutputGenerator",
-            "from core.graph.grasp_state import GraspState",
+            "from core.graph.sygra_state import SygraState",
             "from core.base_task_executor import BaseTaskExecutor",
             "from utils import utils, constants",
         ]
@@ -1237,14 +1237,14 @@ def generate_yaml_and_executor():
             if pre and not any(f"class {pre}(" in c for c in classes):
                 classes.append(f"""
 class {pre}(NodePreProcessor):
-    def apply(self, state:GraspState) -> GraspState:
+    def apply(self, state:SygraState) -> SygraState:
         return state
 """)
 
             if post and not any(f"class {post}(" in c for c in classes):
                 classes.append(f"""
 class {post}(NodePostProcessorWithState):
-    def apply(self, resp:GraspMessage, state:GraspState) -> GraspState:
+    def apply(self, resp:SygraMessage, state:SygraState) -> SygraState:
         return state
 """)
 
@@ -1253,7 +1253,7 @@ class {post}(NodePostProcessorWithState):
             if condition and not any(f"class {condition}(" in c for c in classes):
                 classes.append(f"""
 class {condition}(EdgeCondition):
-    def apply(state:GraspState) -> str:
+    def apply(state:SygraState) -> str:
         return "END"
 """)
 
@@ -1263,7 +1263,7 @@ class {condition}(EdgeCondition):
             if not any(f"class {class_name}(" in c for c in classes):
                 classes.append(f"""
 class {class_name}(BaseOutputGenerator):
-    def map_function(data: Any, state: GraspState):
+    def map_function(data: Any, state: SygraState):
         return None
 """)
 

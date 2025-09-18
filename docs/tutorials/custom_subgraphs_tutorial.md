@@ -1,6 +1,6 @@
 # Custom Subgraphs
 
-This tutorial shows how to create and use custom subgraphs in the GraSP framework. You’ll learn to build modular, reusable graph components for complex AI workflows.
+This tutorial shows how to create and use custom subgraphs in the SyGra framework. You’ll learn to build modular, reusable graph components for complex AI workflows.
 
 > **Key Features You’ll Learn**  
 > `custom subgraphs`, `modular design`, `code generation`, `self-critique`, `feedback loops`
@@ -9,7 +9,7 @@ This tutorial shows how to create and use custom subgraphs in the GraSP framewor
 
 ## Prerequisites
 
-- GraSP framework installed (see [Installation Guide](../installation.md))
+- SyGra framework installed (see [Installation Guide](../installation.md))
 - Understanding of YAML workflow configuration
 - Python basics
 
@@ -53,7 +53,7 @@ The main pipeline is defined in `custom_subgraphs/graph_config.yaml`:
 - **Edges**: The graph cycles between answer generation and critique, controlled by a custom edge condition (`ShouldContinue`). The loop ends if the solution is correct or after a maximum number of rounds.
 - **Output Config**: Custom output formatting is handled by the output generator in `task_executor.py`.
 
-**Reference:** [custom_subgraphs/graph_config.yaml](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/custom_subgraphs/graph_config.yaml)
+**Reference:** [custom_subgraphs/graph_config.yaml](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/custom_subgraphs/graph_config.yaml)
 
 ### Subgraph (`generate_question_subgraph/graph_config.yaml`)
 
@@ -63,7 +63,7 @@ The subgraph, referenced by the parent graph, is defined in `generate_question_s
 - **paraphrase_question**: Uses an LLM to paraphrase the user question according to the sampled persona, preserving all relevant details and outputting a clearly marked paraphrased question.
 - **Edges**: The workflow is linear: persona sampling → paraphrasing → END.
 
-**Reference:** [generate_question_subgraph/graph_config.yaml](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/custom_subgraphs/generate_question_subgraph/graph_config.yaml)
+**Reference:** [generate_question_subgraph/graph_config.yaml](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/custom_subgraphs/generate_question_subgraph/graph_config.yaml)
 
 ### Task Executor (`task_executor.py`)
 
@@ -72,11 +72,11 @@ This file implements custom logic for the pipeline:
 - **ShouldContinue**: Custom edge condition to control the critique/answer loop, ending when the solution is correct or after 8 rounds.
 - **CustomSubgraphsOutputGenerator**: Formats the output to include all conversation turns, critiques, and improvements.
 
-**Reference:** [task_executor.py](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/custom_subgraphs/task_executor.py)
+**Reference:** [task_executor.py](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/custom_subgraphs/task_executor.py)
 
 ## Step 4: Running the Pipeline
 
-From your GraSP project root, run:
+From your SyGra project root, run:
 
 ```bash
 python main.py --task path/to/your/custom_subgraphs

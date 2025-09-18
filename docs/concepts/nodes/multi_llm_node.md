@@ -1,6 +1,6 @@
 ## Multi-LLM Node
 
-GraSP supports the ability to run multiple large language models in parallel using the **multi_llm** node. This is useful for benchmarking, model comparison, or workflows where you want to generate multiple outputs for the same prompt and aggregate or rate the results.
+SyGra supports the ability to run multiple large language models in parallel using the **multi_llm** node. This is useful for benchmarking, model comparison, or workflows where you want to generate multiple outputs for the same prompt and aggregate or rate the results.
 
 A multi-llm node sends the same prompt to several configured models and collects all responses together in the state.
 

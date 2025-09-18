@@ -10,8 +10,8 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 
 import pytest
 
-from grasp.core.base_task_executor import BaseTaskExecutor
-from grasp.core.dataset.dataset_config import OutputType
+from sygra.core.base_task_executor import BaseTaskExecutor
+from sygra.core.dataset.dataset_config import OutputType
 
 # ---------------------- Fixtures ----------------------
 
@@ -40,14 +40,14 @@ def mock_args():
 
 
 @pytest.fixture
-def mock_grasp_config():
+def mock_sygra_config():
     return {
         "graph_config": {
             "nodes": {
                 "build_text_node": {
                     "node_type": "lambda",
                     "output_keys": "evol_instruct_final_prompt",
-                    "lambda": "grasp.recipes.evol_instruct.task_executor.EvolInstructPromptGenerator",
+                    "lambda": "sygra.recipes.evol_instruct.task_executor.EvolInstructPromptGenerator",
                 },
                 "evol_text_node": {
                     "node_type": "llm",
@@ -110,26 +110,26 @@ def mock_model_config():
 
 # Sets up a BaseTaskExecutor instance with mocked config loading and graph
 @pytest.fixture
-def dummy_instance(mock_args, mock_grasp_config, mock_model_config):
-    from grasp.core.base_task_executor import BaseTaskExecutor
+def dummy_instance(mock_args, mock_sygra_config, mock_model_config):
+    from sygra.core.base_task_executor import BaseTaskExecutor
 
     def mock_load_yaml_file(*args, **kwargs):
         path = args[0] if args else kwargs.get("filepath", "")
         if "models.yaml" in path:
             return mock_model_config
-        return mock_grasp_config
+        return mock_sygra_config
 
     with (
         patch(
-            "grasp.core.base_task_executor.utils.load_yaml_file",
+            "sygra.core.base_task_executor.utils.load_yaml_file",
             side_effect=mock_load_yaml_file,
         ),
         patch(
-            "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+            "sygra.core.base_task_executor.utils.get_file_in_task_dir",
             return_value="dummy_path.yaml",
         ),
         patch(
-            "grasp.core.dataset.file_handler.FileHandler.read",
+            "sygra.core.dataset.file_handler.FileHandler.read",
             return_value=[{"id": "abc", "evol_instruct_final_prompt": "hello"}],
         ),
     ):
@@ -147,11 +147,11 @@ def dummy_instance(mock_args, mock_grasp_config, mock_model_config):
 # ------------------ End Fixtures ------------------
 
 
-@patch("grasp.core.base_task_executor.utils.get_file_in_task_dir")
-@patch("grasp.core.base_task_executor.utils.load_yaml_file")
-@patch("grasp.core.base_task_executor.GraphConfig")
-@patch("grasp.core.base_task_executor.BaseTaskExecutor.init_dataset")
-@patch("grasp.core.base_task_executor.BaseTaskExecutor._init_output_generator")
+@patch("sygra.core.base_task_executor.utils.get_file_in_task_dir")
+@patch("sygra.core.base_task_executor.utils.load_yaml_file")
+@patch("sygra.core.base_task_executor.GraphConfig")
+@patch("sygra.core.base_task_executor.BaseTaskExecutor.init_dataset")
+@patch("sygra.core.base_task_executor.BaseTaskExecutor._init_output_generator")
 def test_executor_initialization(
     mock_output_gen,
     mock_init_dataset,
@@ -159,18 +159,18 @@ def test_executor_initialization(
     mock_load_yaml,
     mock_get_file,
     mock_args,
-    mock_grasp_config,
+    mock_sygra_config,
 ):
     """
     Unit test to verify BaseTaskExecutor initialization flow with mocked config loading,
     dataset setup, and graph compilation. Ensures expected internal fields are set correctly.
     """
     mock_get_file.return_value = "/tests/test_task/graph_config.yaml"
-    mock_load_yaml.return_value = mock_grasp_config
+    mock_load_yaml.return_value = mock_sygra_config
     mock_init_dataset.return_value = [{} for _ in range(5)]
 
     mock_graph_config_instance = MagicMock()
-    mock_graph_config_instance.config = mock_grasp_config
+    mock_graph_config_instance.config = mock_sygra_config
     mock_graph_config.return_value = mock_graph_config_instance
     mock_output_gen.return_value = None
 
@@ -331,17 +331,17 @@ def test_output_record_generator_with_output_gen():
     assert executor.output_record_generator(state) == "processed"
 
 
-@patch("grasp.core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}])
-@patch("grasp.core.base_task_executor.logger.warning")
-@patch("grasp.core.base_task_executor.logger.info")
-@patch("grasp.core.base_task_executor.utils.delete_file")
+@patch("sygra.core.dataset.file_handler.FileHandler.read", return_value=[{"id": 1}])
+@patch("sygra.core.base_task_executor.logger.warning")
+@patch("sygra.core.base_task_executor.logger.info")
+@patch("sygra.core.base_task_executor.utils.delete_file")
 @patch(
-    "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+    "sygra.core.base_task_executor.utils.get_file_in_task_dir",
     return_value="/tmp/fake_input.json",
 )
-@patch("grasp.core.base_task_executor.os.path.join", return_value="/tmp/test/metadata.json")
-@patch("grasp.core.base_task_executor.os.makedirs")
-@patch("grasp.core.base_task_executor.os.path.exists", return_value=False)
+@patch("sygra.core.base_task_executor.os.path.join", return_value="/tmp/test/metadata.json")
+@patch("sygra.core.base_task_executor.os.makedirs")
+@patch("sygra.core.base_task_executor.os.path.exists", return_value=False)
 @patch(
     "builtins.open",
     new_callable=mock_open,
@@ -368,17 +368,17 @@ def test_execute_basic_flow(
     dummy_processor = MagicMock()
     dummy_instance.graph_config.config = {"output_config": {}}
 
-    with patch("grasp.core.base_task_executor.DatasetProcessor", return_value=dummy_processor):
+    with patch("sygra.core.base_task_executor.DatasetProcessor", return_value=dummy_processor):
         dummy_instance.execute()
 
     dummy_instance.init_graph.assert_called_once()
     dummy_processor.process_and_store_results.assert_called_once()
 
 
-@patch("grasp.core.base_task_executor.logger.info")
-@patch("grasp.core.base_task_executor.os.path.splitext", return_value=("existing", ".json"))
+@patch("sygra.core.base_task_executor.logger.info")
+@patch("sygra.core.base_task_executor.os.path.splitext", return_value=("existing", ".json"))
 @patch(
-    "grasp.core.base_task_executor.json.load",
+    "sygra.core.base_task_executor.json.load",
     return_value={"task_name": "test_task", "output_file": "existing.json"},
 )
 @patch(
@@ -386,7 +386,7 @@ def test_execute_basic_flow(
     new_callable=mock_open,
     read_data='{"task_name": "test_task", "output_file": "existing.json"}',
 )
-@patch("grasp.core.base_task_executor.os.path.exists", side_effect=[True, True, True])
+@patch("sygra.core.base_task_executor.os.path.exists", side_effect=[True, True, True])
 def test_resume_existing_file(
     mock_exists,
     mock_open_file,
@@ -403,28 +403,28 @@ def test_resume_existing_file(
 
     with (
         patch(
-            "grasp.core.base_task_executor.DatasetProcessor", return_value=MagicMock()
+            "sygra.core.base_task_executor.DatasetProcessor", return_value=MagicMock()
         ) as mock_processor,
-        patch("grasp.core.base_task_executor.DataQuality", return_value=MagicMock()),
+        patch("sygra.core.base_task_executor.DataQuality", return_value=MagicMock()),
     ):
         dummy_instance.execute()
         mock_processor.return_value.process_and_store_results.assert_called_once()
         mock_info.assert_any_call("Resuming with existing output file: existing.json")
 
 
-@patch("grasp.core.base_task_executor.logger")
-@patch("grasp.core.base_task_executor.utils.delete_file")
+@patch("sygra.core.base_task_executor.logger")
+@patch("sygra.core.base_task_executor.utils.delete_file")
 @patch(
-    "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+    "sygra.core.base_task_executor.utils.get_file_in_task_dir",
     side_effect=["/tmp/output.json", "/tmp/metadata.json"],
 )
 @patch("builtins.open", new_callable=mock_open)
 @patch(
-    "grasp.core.base_task_executor.json.load",
+    "sygra.core.base_task_executor.json.load",
     return_value={"task_name": "dummy_task", "output_file": "existing.json"},
 )
 @patch(
-    "grasp.core.base_task_executor.os.path.exists",
+    "sygra.core.base_task_executor.os.path.exists",
     side_effect=[True, True, False, True, True],
 )
 def test_delete_non_resumable_files(
@@ -445,9 +445,9 @@ def test_delete_non_resumable_files(
 
     with (
         patch(
-            "grasp.core.base_task_executor.DatasetProcessor", return_value=MagicMock()
+            "sygra.core.base_task_executor.DatasetProcessor", return_value=MagicMock()
         ) as mock_processor,
-        patch("grasp.core.base_task_executor.DataQuality", return_value=MagicMock()),
+        patch("sygra.core.base_task_executor.DataQuality", return_value=MagicMock()),
     ):
         dummy_instance.execute()
 
@@ -455,9 +455,9 @@ def test_delete_non_resumable_files(
         mock_processor.return_value.process_and_store_results.assert_called_once()
 
 
-@patch("grasp.core.base_task_executor.logger.error")
-@patch("grasp.core.base_task_executor.utils.delete_file")
-@patch("grasp.core.base_task_executor.os.path.exists", return_value=True)
+@patch("sygra.core.base_task_executor.logger.error")
+@patch("sygra.core.base_task_executor.utils.delete_file")
+@patch("sygra.core.base_task_executor.os.path.exists", return_value=True)
 @patch("builtins.open", new_callable=mock_open, read_data='{"id": 1}\n')
 def test_output_sink_error_handling(
     mock_open_file, mock_exists, mock_delete_file, mock_logger_error, dummy_instance
@@ -477,12 +477,12 @@ def test_output_sink_error_handling(
 
     with (
         patch(
-            "grasp.core.base_task_executor.DatasetProcessor",
+            "sygra.core.base_task_executor.DatasetProcessor",
             return_value=dummy_processor,
         ),
-        patch("grasp.core.base_task_executor.DataQuality", return_value=MagicMock()),
+        patch("sygra.core.base_task_executor.DataQuality", return_value=MagicMock()),
         patch(
-            "grasp.core.base_task_executor.FileHandler.write",
+            "sygra.core.base_task_executor.FileHandler.write",
             side_effect=Exception("Write error"),
         ),
         patch("json.loads", return_value={"id": 1}),
@@ -492,14 +492,14 @@ def test_output_sink_error_handling(
         mock_logger_error.assert_called_with("Error writing to sink: Write error")
 
 
-@patch("grasp.core.base_task_executor.os.remove")
+@patch("sygra.core.base_task_executor.os.remove")
 @patch(
-    "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+    "sygra.core.base_task_executor.utils.get_file_in_task_dir",
     return_value="/tmp/test_output/output.json",
 )
-@patch("grasp.core.base_task_executor.logger.info")
+@patch("sygra.core.base_task_executor.logger.info")
 @patch("builtins.open", new_callable=mock_open, read_data='{"id": 1}\n')
-@patch("grasp.core.base_task_executor.os.path.exists", return_value=True)
+@patch("sygra.core.base_task_executor.os.path.exists", return_value=True)
 def test_output_sink_success(
     mock_exists,
     mock_open_file,
@@ -525,25 +525,25 @@ def test_output_sink_success(
 
     with (
         patch(
-            "grasp.core.base_task_executor.DatasetProcessor",
+            "sygra.core.base_task_executor.DatasetProcessor",
             return_value=dummy_processor,
         ),
-        patch("grasp.core.base_task_executor.DataQuality", return_value=MagicMock()),
-        patch("grasp.core.base_task_executor.FileHandler.write") as mock_write,
+        patch("sygra.core.base_task_executor.DataQuality", return_value=MagicMock()),
+        patch("sygra.core.base_task_executor.FileHandler.write") as mock_write,
         patch("json.loads", return_value={"id": 1}),
     ):
         dummy_instance.execute()
         mock_write.assert_called_once()
 
 
-@patch("grasp.core.base_task_executor.os.remove")
+@patch("sygra.core.base_task_executor.os.remove")
 @patch(
-    "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+    "sygra.core.base_task_executor.utils.get_file_in_task_dir",
     return_value="/tmp/test_output/output.json",
 )
-@patch("grasp.core.base_task_executor.logger.info")
+@patch("sygra.core.base_task_executor.logger.info")
 @patch("builtins.open", new_callable=mock_open, read_data='{"id": 1}\n')
-@patch("grasp.core.base_task_executor.os.path.exists", return_value=True)
+@patch("sygra.core.base_task_executor.os.path.exists", return_value=True)
 def test_output_sink_with_quality_success(
     mock_exists,
     mock_open_file,
@@ -569,13 +569,13 @@ def test_output_sink_with_quality_success(
 
     with (
         patch(
-            "grasp.core.base_task_executor.DatasetProcessor",
+            "sygra.core.base_task_executor.DatasetProcessor",
             return_value=dummy_processor,
         ),
         patch(
-            "grasp.core.base_task_executor.DataQuality", return_value=MagicMock()
+            "sygra.core.base_task_executor.DataQuality", return_value=MagicMock()
         ) as mock_quality,
-        patch("grasp.core.base_task_executor.FileHandler.write") as mock_write,
+        patch("sygra.core.base_task_executor.FileHandler.write") as mock_write,
         patch("json.loads", return_value={"id": 1}),
     ):
         dummy_instance.execute()
@@ -584,14 +584,14 @@ def test_output_sink_with_quality_success(
         mock_quality.assert_called_once()
 
 
-@patch("grasp.core.base_task_executor.os.remove")
+@patch("sygra.core.base_task_executor.os.remove")
 @patch(
-    "grasp.core.base_task_executor.utils.get_file_in_task_dir",
+    "sygra.core.base_task_executor.utils.get_file_in_task_dir",
     return_value="/tmp/test_output/output.json",
 )
-@patch("grasp.core.base_task_executor.logger.info")
+@patch("sygra.core.base_task_executor.logger.info")
 @patch("builtins.open", new_callable=mock_open, read_data='{"id": 1}\n{"id": 2}\n')
-@patch("grasp.core.base_task_executor.os.path.exists", return_value=True)
+@patch("sygra.core.base_task_executor.os.path.exists", return_value=True)
 def test_output_sink_jsonl_reading(
     mock_exists, mock_open_file, mock_info, mock_get_file, mock_remove, dummy_instance
 ):
@@ -612,11 +612,11 @@ def test_output_sink_jsonl_reading(
 
     with (
         patch(
-            "grasp.core.base_task_executor.DatasetProcessor",
+            "sygra.core.base_task_executor.DatasetProcessor",
             return_value=dummy_processor,
         ),
-        patch("grasp.core.base_task_executor.DataQuality", return_value=MagicMock()),
-        patch("grasp.core.base_task_executor.FileHandler.write") as mock_write,
+        patch("sygra.core.base_task_executor.DataQuality", return_value=MagicMock()),
+        patch("sygra.core.base_task_executor.FileHandler.write") as mock_write,
         patch("json.loads", side_effect=[{"id": 1}, {"id": 2}]),
     ):
         dummy_instance.execute()

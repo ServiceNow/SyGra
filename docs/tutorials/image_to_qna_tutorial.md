@@ -1,6 +1,6 @@
 # Image to QnA
 
-This tutorial demonstrates how to build a multimodal Question and Answer (QnA) system for images using the GraSP framework. You’ll learn to extract text from images, generate questions, and provide detailed answers using LLMs.
+This tutorial demonstrates how to build a multimodal Question and Answer (QnA) system for images using the SyGra framework. You’ll learn to extract text from images, generate questions, and provide detailed answers using LLMs.
 
 > **Key Features You’ll Learn**  
 > `multimodal LLMs`, `text extraction`, `question generation`, `image processing`, `multi-step reasoning`
@@ -9,7 +9,7 @@ This tutorial demonstrates how to build a multimodal Question and Answer (QnA) s
 
 ## Prerequisites
 
-- GraSP framework installed (see [Installation Guide](../installation.md))
+- SyGra framework installed (see [Installation Guide](../installation.md))
 - Access to multimodal LLMs (e.g., Qwen VL 72B)
 - Basic understanding of image and text data
 
@@ -48,7 +48,7 @@ The main pipeline is defined in `image_to_qna/graph_config.yaml`:
 - **Edges**: The graph loops over images and questions, processing each in turn.
 - **Output Config**: Custom output formatting is handled by the output generator in `task_executor.py`.
 
-**Reference:** [image_to_qna/graph_config.yaml](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/image_to_qna/graph_config.yaml)
+**Reference:** [image_to_qna/graph_config.yaml](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/image_to_qna/graph_config.yaml)
 
 ### Task Executor (`task_executor.py`)
 
@@ -57,7 +57,7 @@ This file implements custom logic for the pipeline:
 - **ImageLoopChecker**: Edge condition for looping through images.
 - **Output formatting**: Assembles all image references, extracted text, questions, answers, and reasoning in a single output.
 
-**Reference:** [task_executor.py](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/image_to_qna/task_executor.py)
+**Reference:** [task_executor.py](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/image_to_qna/task_executor.py)
 
 ## Step 3: Output Collection
 
@@ -65,7 +65,7 @@ This file implements custom logic for the pipeline:
 
 ## Step 4: Running the Pipeline
 
-From your GraSP project root, run:
+From your SyGra project root, run:
 
 ```bash
 python main.py --task path/to/your/image_to_qna

@@ -1,0 +1,16 @@
+data_config:
+    source:
+        type: "disk"
+        file_path: "<path to the conversation data generated from any of the sygra tasks>"
+tools:
+    oasst_mapper:
+      config:
+        type: "sft"
+    data_quality:
+      config:
+        tasks:
+            - name: "conversation_pretokenization"
+              params:
+                  hf_chat_template_model_id: "meta-llama/Meta-Llama-3-8B-Instruct"
+            - name: "metadata_tagging"
+            - name: "llm_based_quality"

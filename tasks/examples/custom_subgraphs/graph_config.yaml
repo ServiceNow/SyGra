@@ -5,7 +5,7 @@ data_config:
     config_name: "sanitized"
     split: ["train"]
     transformations:
-      - transform: grasp.processors.data_transform.RenameFieldsTransform
+      - transform: sygra.processors.data_transform.RenameFieldsTransform
         params:
           mapping:
             task_id: id

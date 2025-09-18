@@ -15,7 +15,7 @@
 2. Clone the repository.
 
     ```bash
-    git clone git@github.com:ServiceNow/grasp.git
+    git clone git@github.com:ServiceNow/sygra.git
     ```
 
 
@@ -34,20 +34,20 @@
 
 # Optional
 
-### GraSP UI Setup
+### SyGra UI Setup
 
-To run GraSP UI, Use the following command:
+To run SyGra UI, Use the following command:
 ```bash
   make setup-ui
 ```
 ---
-### GraSP All features Setup
-To utilize both GraSP Core and UI features, Use the following command:
+### SyGra All features Setup
+To utilize both SyGra Core and UI features, Use the following command:
 ```bash
   make setup-all
 ```
 ---
-### GraSP Development Setup
+### SyGra Development Setup
 To set up your development environment, Use the following command:
 ```bash
   make setup-dev

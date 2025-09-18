@@ -1,4 +1,4 @@
-# GraSP Graph Configuration Guide
+# SyGra Graph Configuration Guide
 
 ## Table of Contents
 
@@ -15,7 +15,7 @@
 
 ## Structure Overview
 
-A GraSP configuration file is a YAML document with these main sections:
+A SyGra configuration file is a YAML document with these main sections:
 
 ```yaml
 data_config:
@@ -61,7 +61,7 @@ data_config:
 
     # Optional transformations to apply to the input data
     transformations:
-      - transform: grasp.processors.data_transform.RenameFieldsTransform  # Path to transformation class
+      - transform: sygra.processors.data_transform.RenameFieldsTransform  # Path to transformation class
         params:                                                     # Parameters for the transformation
           mapping:
             task_id: id                     # Rename 'task_id' field to 'id'
@@ -122,7 +122,7 @@ Transformations allow you to modify the input data before processing.
 It renames the fields in the dataset, so the prompt variables used are meaningful and reusable.
 The Below example shows how the `page` is renamed to `id`, `llm_extract` is renamed to `text` and `type` is renamed to `text_format`.
 ```yaml
-      - transform: grasp.processors.data_transform.RenameFieldsTransform
+      - transform: sygra.processors.data_transform.RenameFieldsTransform
         params:
           mapping:
             page: id
@@ -136,7 +136,7 @@ For example record `11` and `12` will be combined to form `page`=`11-12`, in thi
 And `type`, `model`, `metadata` is just picking data from first record. `$1` denotes first record, `$2` denotes second record and so on. 
 Once `11` and `12` is combined to form `11-12`, it shift by 1 and combines `12` with `13` to form `12-13`.
 ```yaml
-      - transform: grasp.processors.data_transform.CombineRecords
+      - transform: sygra.processors.data_transform.CombineRecords
         params:
           skip:
             from_beginning: 10
@@ -155,7 +155,7 @@ Once `11` and `12` is combined to form `11-12`, it shift by 1 and combines `12` 
 When we want to skip records for a dataset, we can use this transform.
 Below example shows how to skip first 10 and last 10 records using count.
 ```yaml
-      - transform: grasp.processors.data_transform.SkipRecords
+      - transform: sygra.processors.data_transform.SkipRecords
         params:
           skip_type: "count"
           count:
@@ -164,7 +164,7 @@ Below example shows how to skip first 10 and last 10 records using count.
 ```
 Below example shows how to skip first 10 and last 10 records using range.
 ```yaml
-      - transform: grasp.processors.data_transform.SkipRecords
+      - transform: sygra.processors.data_transform.SkipRecords
         params:
           skip_type: "range"
           range: "[:10],[-10:]"
@@ -196,7 +196,7 @@ The `sink` subsection of `data_config` configures where the output data will be 
 
 ### Data Less Configuration
 
-GraSP supports generating data without requiring an input data source. This is useful for knowledge distillation from models, creating purely synthetic datasets, or any scenario where you want to generate content from scratch.
+SyGra supports generating data without requiring an input data source. This is useful for knowledge distillation from models, creating purely synthetic datasets, or any scenario where you want to generate content from scratch.
 
 To generate data without a source:
 
@@ -238,7 +238,7 @@ This defines the graph level properties, it can be a common properties but contr
 
 ### Nodes
 
-Nodes represent the processing steps in your pipeline. GraSP supports multiple types of nodes, such as LLM, multi_llm, weighted_sampler, lambda, agent, subgraph, and more.
+Nodes represent the processing steps in your pipeline. SyGra supports multiple types of nodes, such as LLM, multi_llm, weighted_sampler, lambda, agent, subgraph, and more.
 
 All node types support these common parameters:
 
@@ -247,7 +247,7 @@ All node types support these common parameters:
 | `node_type` | string | Type of node ("llm", "multi_llm", "weighted_sampler", "lambda", etc.) | Required  |
 | `node_state`| string | Node state ("active" or "idle") to enable/disable the node | "active" |
 
-**For detailed documentation and configuration options for each node type, see [nodes/](https://github.com/ServiceNow/GraSP/tree/main/docs/concepts/nodes).**
+**For detailed documentation and configuration options for each node type, see [nodes/](https://github.com/ServiceNow/SyGra/tree/main/docs/concepts/nodes).**
 
 ### Edges
 
@@ -255,7 +255,7 @@ Edges define the flow of execution between nodes.
 
 #### Special Nodes: START and END
 
-GraSP graphs automatically include two special nodes:
+SyGra graphs automatically include two special nodes:
 
 - **START**: The entry point of the graph. Every graph must have at least one edge from START to another node.
 - **END**: The exit point of the graph. When execution reaches the END node, the graph processing is complete.
@@ -288,17 +288,17 @@ Conditional edges define different paths based on a condition. Conditions can di
     generate_answer: generate_answer  # Path to generate_answer when condition returns "generate_answer"
 ```
 
-In condition functions, you can return `constants.GRASP_END` to direct flow to the END node:
+In condition functions, you can return `constants.SYGRA_END` to direct flow to the END node:
 
 ```python
 class ShouldContinueCondition(EdgeCondition):
-    def apply(self, state: GraspState) -> str:
+    def apply(self, state: SygraState) -> str:
         # End after 4 iterations or the last feedback response contains "NO MORE FEEDBACK"
         messages = state["messages"]
         if len(messages) > 8 or (
                 len(messages) > 1 and "no more feedback" in messages[-1].content.lower()
         ):
-            return constants.GRASP_END  # This will direct flow to the END node
+            return constants.SYGRA_END  # This will direct flow to the END node
         return "generate_answer"
 ```
 
@@ -484,7 +484,7 @@ For more complex output generation logic, you can override the `generate()` meth
 
 ```python
 class CustomOutputGenerator(BaseOutputGenerator):
-    def generate(self, state: GraspState) -> dict[str, Any]:
+    def generate(self, state: SygraState) -> dict[str, Any]:
         """
         Create a custom output record from the graph state
         
@@ -532,7 +532,7 @@ data_config:
     split: ["train", "validation", "prompt"]
 
     transformations:
-      - transform: grasp.processors.data_transform.RenameFieldsTransform
+      - transform: sygra.processors.data_transform.RenameFieldsTransform
         params:
           mapping:
             task_id: id
@@ -704,7 +704,7 @@ class CustomUserSchema(BaseModel):
 
 ```yaml
 schema_config:
-  schema: grasp.validators.custom_schemas.CustomUserSchema
+  schema: sygra.validators.custom_schemas.CustomUserSchema
 ```
 #### Sample YAML configuration to define schema in YAML: 
 

@@ -1,6 +1,6 @@
 ## Lambda Node
 
-GraSP supports custom logic in your workflow using the **lambda** node. Lambda nodes allow you to execute arbitrary Python functions or classes, making them ideal for custom data processing, state manipulation, or integration of unique logic that doesn't fit standard node types.
+SyGra supports custom logic in your workflow using the **lambda** node. Lambda nodes allow you to execute arbitrary Python functions or classes, making them ideal for custom data processing, state manipulation, or integration of unique logic that doesn't fit standard node types.
 
 ### Example Configuration
 
@@ -35,17 +35,17 @@ You can implement a lambda either as a class or a function:
 
 ```python
 # Example in yaml: lambda: tasks.my_task.task_executor.TestLambda
-from grasp.core.graph.functions.lambda_function import LambdaFunction
-from grasp.core.graph.grasp_state import GraspState
+from sygra.core.graph.functions.lambda_function import LambdaFunction
+from sygra.core.graph.sygra_state import SygraState
 
 class TestLambda(LambdaFunction):
-    def apply(lambda_node_dict: dict, state: GraspState):
+    def apply(lambda_node_dict: dict, state: SygraState):
         state["return_key1"] = "hello world"
         state["return_key2"] = "dummy world"
         return state
 
 # Or as a direct function:
-def lambda_function(lambda_node_dict: dict, state: GraspState):
+def lambda_function(lambda_node_dict: dict, state: SygraState):
     state["return_key1"] = "hello world"
     state["return_key2"] = "dummy world"
     return state

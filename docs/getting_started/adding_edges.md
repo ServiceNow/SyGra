@@ -18,7 +18,7 @@ Properties  to configure an edge:
 
 ### Special Nodes: START and END
 
-GraSP graphs automatically include two special nodes:
+SyGra graphs automatically include two special nodes:
 
 - **START**: The entry point of the graph. Every graph must have at least one edge from START to another node.
 - **END**: The exit point of the graph. When execution reaches the END node, the graph processing is complete.
@@ -69,19 +69,19 @@ The value should be a fully qualified path to the class.
 Example Code:
 ```python
 class ShouldContinueCondition(EdgeCondition):
-    def apply(state: GraspState) -> str:
+    def apply(state: SygraState) -> str:
         # End after 4 iterations or the last feedback response contains "NO MORE FEEDBACK"
         messages = state["messages"]
         if len(messages) > 8 or (
                 len(messages) > 1 and "no more feedback" in messages[-1].content.lower()
         ):
-            return GRASP_END
+            return SYGRA_END
         return "generate_answer"
 ```
 ```yaml
 condition: tasks.example.ShouldContinueCondition
 ```
-The `condition` class should accept the current state of the graph(`GraspState`) and return a value that matches one of the keys in the `path_map` (explained below).
+The `condition` class should accept the current state of the graph(`SygraState`) and return a value that matches one of the keys in the `path_map` (explained below).
 
 Alternatively, it also supports a direct method like `tasks.example.should_continue` for backward compatibility.
 #### `path_map` (optional)

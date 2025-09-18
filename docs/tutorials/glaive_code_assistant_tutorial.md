@@ -1,6 +1,6 @@
 # Self Improving Code Assistant
 
-This tutorial shows how to build a self-improving code assistant using the GraSP framework. You’ll implement a feedback loop where an LLM generates code, critiques its own answers, and refines them iteratively.
+This tutorial shows how to build a self-improving code assistant using the SyGra framework. You’ll implement a feedback loop where an LLM generates code, critiques its own answers, and refines them iteratively.
 
 > **Key Features You’ll Learn**  
 > `self-critique`, `iterative refinement`, `code generation`, `feedback loop`, `stopping conditions`
@@ -9,7 +9,7 @@ This tutorial shows how to build a self-improving code assistant using the GraSP
 
 ## Prerequisites
 
-- GraSP framework installed (see [Installation Guide](../installation.md))
+- SyGra framework installed (see [Installation Guide](../installation.md))
 - Familiarity with Python and coding problems
 
 ---
@@ -46,7 +46,7 @@ The main pipeline is defined in `glaive_code_assistant/graph_config.yaml`:
 - **Edges**: The graph cycles between answer generation and critique, controlled by a custom edge condition (`ShouldContinueCondition`). The loop ends if the solution is correct or after a maximum number of rounds.
 - **Output Config**: Custom output formatting is handled by the output generator in `task_executor.py`.
 
-**Reference:** [glaive_code_assistant/graph_config.yaml](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/glaive_code_assistant/graph_config.yaml)
+**Reference:** [glaive_code_assistant/graph_config.yaml](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/glaive_code_assistant/graph_config.yaml)
 
 ### Task Executor (`task_executor.py`)
 
@@ -56,7 +56,7 @@ This file implements custom logic for the pipeline:
 - **ShouldContinueCondition**: Custom edge condition to control the critique/answer loop, ending when the solution is correct or after 8 rounds.
 - **CodeGenOutputGenerator**: Formats the output to include all conversation turns, critiques, and improvements.
 
-**Reference:** [task_executor.py](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/glaive_code_assistant/task_executor.py)
+**Reference:** [task_executor.py](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/glaive_code_assistant/task_executor.py)
 
 ## Step 3: Output Collection
 
@@ -65,7 +65,7 @@ This file implements custom logic for the pipeline:
 
 ## Step 4: Running the Pipeline
 
-From your GraSP project root, run:
+From your SyGra project root, run:
 
 ```bash
 python main.py --task path/to/your/glaive_code_assistant

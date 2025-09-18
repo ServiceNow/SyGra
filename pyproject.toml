@@ -3,14 +3,14 @@ requires = ["setuptools>=75", "wheel", "build>=1.2.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "grasp-ai"
+name = "sygra"
 version = "1.0.0"
 description = "GRAph-oriented Synthetic data generation Pipeline library"
 readme = "README.md"
 requires-python = ">=3.9"
-authors = [{ name = "Bidyapati Pradhan, Surajit Dasgupta, Amit Kumar Saha, Sriram Puttagunta, Omkar Anustoop, Vipul Mittal, Gopal Sarda, Jishnu S Nair", email = "grasp_team@servicenow.com" }]
+authors = [{ name = "Bidyapati Pradhan, Surajit Dasgupta, Amit Kumar Saha, Sriram Puttagunta, Omkar Anustoop, Vipul Mittal, Gopal Sarda, Jishnu S Nair", email = "sygra_team@servicenow.com" }]
 maintainers = [
-  { name = "GraSP Team", email = "grasp_team@servicenow.com" }
+  { name = "SyGra Team", email = "sygra_team@servicenow.com" }
 ]
 license = {text = "Apache-2.0"}
 classifiers = [
@@ -59,25 +59,25 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ServiceNow/GraSP"
-Issues = "https://github.com/ServiceNow/GraSP/issues"
+Homepage = "https://github.com/ServiceNow/SyGra"
+Issues = "https://github.com/ServiceNow/SyGra/issues"
 
 [tool.setuptools]
-packages = { find = { include = ["grasp*"], exclude = ["tests*", "docs*", "grasp_lib_examples*", "apps*"] } }
+packages = { find = { include = ["sygra*"], exclude = ["tests*", "docs*", "sygra_lib_examples*", "apps*"] } }
 
 [tool.setuptools.package-data]
-grasp = ["**/*.yaml", "**/*.yml", "**/*.jinja2", "**/*.j2", "**/*.json"]
+sygra = ["**/*.yaml", "**/*.yml", "**/*.jinja2", "**/*.j2", "**/*.json"]
 
 # --- Poetry section (explicit, must duplicate dependencies) ---
 [tool.poetry]
-name = "grasp-ai"
+name = "sygra"
 version = "1.0.0"
 description = "GRAph-oriented Synthetic data generation Pipeline library"
-authors = ["GraSP Team <grasp_team@servicenow.com>"]
+authors = ["SyGra Team <sygra_team@servicenow.com>"]
 license = "Apache-2.0"
 readme = "README.md"
-homepage = "https://github.com/ServiceNow/GraSP"
-repository = "https://github.com/ServiceNow/GraSP"
+homepage = "https://github.com/ServiceNow/SyGra"
+repository = "https://github.com/ServiceNow/SyGra"
 
 [tool.poetry.dependencies]
 python = ">=3.9"
@@ -172,8 +172,8 @@ disallow_untyped_decorators = false
 no_implicit_optional = true
 strict_optional = true
 exclude = [
-    "grasp/recipes/",
-    "grasp/internal/",
+    "sygra/recipes/",
+    "sygra/internal/",
     "tasks/",
 ]
 

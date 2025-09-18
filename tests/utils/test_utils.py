@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from grasp.utils import constants, utils
+from sygra.utils import constants, utils
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
@@ -69,7 +69,7 @@ class TestToolUtils(unittest.TestCase):
         result = utils.extract_pattern(test_string, pattern)
         assert result == ["123", "456"]
 
-    @patch("grasp.core.dataset.huggingface_handler.HuggingFaceHandler.read")
+    @patch("sygra.core.dataset.huggingface_handler.HuggingFaceHandler.read")
     def test_get_dataset(self, hf_read):
         dataset_mocked = [
             {"code": "my python code"},
@@ -92,7 +92,7 @@ class TestToolUtils(unittest.TestCase):
         obj = utils.get_dataset(data_src)
         assert isinstance(obj, list) and len(obj) > 0
 
-    @patch("grasp.utils.utils.get_dataset")
+    @patch("sygra.utils.utils.get_dataset")
     def test_fetch_next_record(self, mock_get_dataset):
         data_src = {
             "type": "hf",
@@ -117,7 +117,7 @@ class TestToolUtils(unittest.TestCase):
         assert "python" in rec1 and "java" in rec2
 
     @patch.dict(os.environ, {}, clear=True)
-    @patch("grasp.utils.utils.load_yaml_file")
+    @patch("sygra.utils.utils.load_yaml_file")
     def test_load_model_config_url_list(self, mock_load_yaml):
         """Test that pipe-separated URLs in environment variables are correctly parsed into lists."""
         # Mock the base configs loaded from YAML
@@ -130,14 +130,14 @@ class TestToolUtils(unittest.TestCase):
         }
 
         # Set up environment variables with pipe-separated URLs
-        os.environ["GRASP_MODEL1_URL"] = (
+        os.environ["SYGRA_MODEL1_URL"] = (
             f"http://server1.example.com/v1/{constants.LIST_SEPARATOR}http://server2.example.com/v1/"
         )
-        os.environ["GRASP_MODEL1_TOKEN"] = "test-token-1"
+        os.environ["SYGRA_MODEL1_TOKEN"] = "test-token-1"
 
         # Set up a regular URL without separator
-        os.environ["GRASP_MODEL2_URL"] = "http://api.openai.com/v1/"
-        os.environ["GRASP_MODEL2_TOKEN"] = "test-token-2"
+        os.environ["SYGRA_MODEL2_URL"] = "http://api.openai.com/v1/"
+        os.environ["SYGRA_MODEL2_TOKEN"] = "test-token-2"
 
         # Call the function
         result = utils.load_model_config()

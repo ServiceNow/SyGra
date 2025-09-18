@@ -1,6 +1,6 @@
 # Structured Output
 
-This tutorial shows how to implement structured output from LLM responses using the GraSP framework. You’ll learn to extract specific information from LLM outputs in a standardized JSON format.
+This tutorial shows how to implement structured output from LLM responses using the SyGra framework. You’ll learn to extract specific information from LLM outputs in a standardized JSON format.
 
 > **Key Features You’ll Learn**  
 > `structured JSON output`, `schema definition`, `post-processing`, `code taxonomy`, `response normalization`
@@ -9,7 +9,7 @@ This tutorial shows how to implement structured output from LLM responses using 
 
 ## Prerequisites
 
-- GraSP framework installed (see [Installation Guide](../installation.md))
+- SyGra framework installed (see [Installation Guide](../installation.md))
 - Familiarity with Python and JSON
 
 ---
@@ -44,14 +44,14 @@ The main pipeline is defined in `structured_output/graph_config.yaml`:
 - **Edges**: The workflow is linear: data → taxonomy extraction → END.
 - **Output Config**: Maps the question, category, and subcategory from the state to the final output structure.
 
-**Reference:** [structured_output/graph_config.yaml](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/structured_output/graph_config.yaml)
+**Reference:** [structured_output/graph_config.yaml](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/structured_output/graph_config.yaml)
 
 ### Task Executor (`task_executor.py`)
 
 This file implements custom logic for the pipeline:
 - **GenerateTaxonomyPostProcessor**: Extracts structured data from the LLM output, handling JSON parsing and normalization.
 
-**Reference:** [task_executor.py](https://github.com/ServiceNow/GraSP/blob/main/tasks/examples/structured_output/task_executor.py)
+**Reference:** [task_executor.py](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/structured_output/task_executor.py)
 
 
 ## Step 3: Output Formatting
@@ -63,7 +63,7 @@ This file implements custom logic for the pipeline:
 
 ## Step 4: Running the Pipeline
 
-From your GraSP project root, run:
+From your SyGra project root, run:
 
 ```bash
 python main.py --task path/to/your/structured_output

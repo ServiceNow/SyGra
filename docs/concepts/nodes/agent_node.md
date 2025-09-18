@@ -1,6 +1,6 @@
 ## Agent Node
 
-GraSP supports creating and executing agents using the ReAct (Reasoning and Acting) framework. Agent nodes extend LLM nodes with additional capabilities for tool usage, reasoning, and autonomous decision-making.
+SyGra supports creating and executing agents using the ReAct (Reasoning and Acting) framework. Agent nodes extend LLM nodes with additional capabilities for tool usage, reasoning, and autonomous decision-making.
 
 To use it, include the following configuration in your `graph_config.yaml` file:
 
@@ -69,7 +69,7 @@ research_agent:
 - `inject_system_messages`: Optional dictionary where keys are conversation turn indices and values are additional system messages to inject at those turns. This allows for dynamic guidance of the agent based on conversation length.
 
 - `post_process`: This is the function class of `type NodePostProcessor`, used to post-process the output from the agent.
-  The class needs to define an `apply()` method with parameter `GraspMessage`. This allows for extracting specific information from the agent's response.
+  The class needs to define an `apply()` method with parameter `SygraMessage`. This allows for extracting specific information from the agent's response.
 
 - `output_keys`: These are the variables used to store the output from the agent. This can be a list or a single variable.
   If a postprocessor is defined, `output_keys` can include multiple variables.

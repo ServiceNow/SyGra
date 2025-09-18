@@ -12,8 +12,8 @@ sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompt_values import ChatPromptValue
 
-from grasp.core.models.custom_models import CustomTriton, ModelParams
-from grasp.utils import constants
+from sygra.core.models.custom_models import CustomTriton, ModelParams
+from sygra.utils import constants
 
 
 class TestCustomTriton(unittest.TestCase):
@@ -63,7 +63,7 @@ class TestCustomTriton(unittest.TestCase):
         self.assertEqual(custom_triton.auth_token, "test_token")
         self.assertEqual(custom_triton.name(), "triton_model")
 
-    @patch("grasp.core.models.custom_models.utils.get_payload")
+    @patch("sygra.core.models.custom_models.utils.get_payload")
     def test_get_payload_config_template_default(self, mock_get_payload):
         """Test _get_payload_config_template method with default payload key"""
         mock_get_payload.return_value = self.mock_payload_config
@@ -76,7 +76,7 @@ class TestCustomTriton(unittest.TestCase):
         self.assertEqual(result, self.mock_payload_config)
         mock_get_payload.assert_called_once_with(constants.INFERENCE_SERVER_TRITON, "default")
 
-    @patch("grasp.core.models.custom_models.utils.get_payload")
+    @patch("sygra.core.models.custom_models.utils.get_payload")
     def test_get_payload_config_template_no_key(self, mock_get_payload):
         """Test _get_payload_config_template method with no payload key"""
         mock_get_payload.return_value = self.mock_payload_config
@@ -87,7 +87,7 @@ class TestCustomTriton(unittest.TestCase):
         self.assertEqual(result, self.mock_payload_config)
         mock_get_payload.assert_called_once_with(constants.INFERENCE_SERVER_TRITON)
 
-    @patch("grasp.core.models.custom_models.utils.get_payload")
+    @patch("sygra.core.models.custom_models.utils.get_payload")
     def test_get_payload_config_template_exception(self, mock_get_payload):
         """Test _get_payload_config_template method with exception"""
         mock_get_payload.side_effect = Exception("Test error")
@@ -158,7 +158,7 @@ class TestCustomTriton(unittest.TestCase):
 
         self.assertEqual(result, "Hello there!")
 
-    @patch("grasp.core.models.custom_models.logger")
+    @patch("sygra.core.models.custom_models.logger")
     def test_get_response_text_json_error(self, mock_logger):
         """Test _get_response_text method with JSON error"""
         custom_triton = CustomTriton(self.base_config)
@@ -184,7 +184,7 @@ class TestCustomTriton(unittest.TestCase):
         self.assertEqual(result, "Raw model output here")
         mock_logger.error.assert_any_call("Invalid JSON returned, JSON mode specified")
 
-    @patch("grasp.core.models.custom_models.logger")
+    @patch("sygra.core.models.custom_models.logger")
     def test_get_response_text_non_json_error(self, mock_logger):
         """Test _get_response_text method with non-JSON error"""
         custom_triton = CustomTriton(self.base_config)
@@ -209,7 +209,7 @@ class TestCustomTriton(unittest.TestCase):
         self.assertEqual(result, "")
         mock_logger.error.assert_any_call("Not a JSON error. Error message: Some other error")
 
-    @patch("grasp.core.models.custom_models.logger")
+    @patch("sygra.core.models.custom_models.logger")
     def test_get_response_text_parse_exception(self, mock_logger):
         """Test _get_response_text method with parse exception"""
         custom_triton = CustomTriton(self.base_config)
@@ -224,8 +224,8 @@ class TestCustomTriton(unittest.TestCase):
             "Failed to get response text: Expecting value: line 1 column 1 (char 0)"
         )
 
-    @patch("grasp.core.models.custom_models.utils")
-    @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
+    @patch("sygra.core.models.custom_models.utils")
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @pytest.mark.asyncio
     async def test_generate_text_success(self, mock_set_client, mock_utils):
         """Test _generate_text method with successful response"""
@@ -276,9 +276,9 @@ class TestCustomTriton(unittest.TestCase):
         mock_client.build_request.assert_called_once()
         mock_client.async_send_request.assert_awaited_once()
 
-    @patch("grasp.core.models.custom_models.logger")
-    @patch("grasp.core.models.custom_models.utils")
-    @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
+    @patch("sygra.core.models.custom_models.logger")
+    @patch("sygra.core.models.custom_models.utils")
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @pytest.mark.asyncio
     async def test_generate_text_http_error(self, mock_set_client, mock_utils, mock_logger):
         """Test _generate_text method with HTTP error"""
@@ -324,8 +324,8 @@ class TestCustomTriton(unittest.TestCase):
             "[triton_model] HTTP request failed with code: 500 and error: Internal Server Error"
         )
 
-    @patch("grasp.core.models.custom_models.logger")
-    @patch("grasp.core.models.custom_models.BaseCustomModel._set_client")
+    @patch("sygra.core.models.custom_models.logger")
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @pytest.mark.asyncio
     async def test_generate_text_exception(self, mock_set_client, mock_logger):
         """Test _generate_text method with exception"""

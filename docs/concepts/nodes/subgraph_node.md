@@ -1,6 +1,6 @@
 ## Subgraph Node
 
-GraSP supports modular graph design through the **subgraph** node. Subgraphs allow you to encapsulate and reuse a sequence of nodes and edges as a single unit within a main graph. This makes complex workflows more organized, reusable, and easier to maintain.
+SyGra supports modular graph design through the **subgraph** node. Subgraphs allow you to encapsulate and reuse a sequence of nodes and edges as a single unit within a main graph. This makes complex workflows more organized, reusable, and easier to maintain.
 
 You can include a subgraph in your main graph and customize the configuration of its internal nodes as needed for your specific workflow.
 

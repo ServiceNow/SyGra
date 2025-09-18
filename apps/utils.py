@@ -2,8 +2,8 @@ try:
     import streamlit as st
 except ModuleNotFoundError:
     raise ModuleNotFoundError(
-        "GraSP UI requires the optional 'ui' dependencies. "
-        "Install them with: pip install 'grasp[ui]'"
+        "SyGra UI requires the optional 'ui' dependencies. "
+        "Install them with: pip install 'sygra[ui]'"
     )
 import httpx
 from openai import AsyncAzureOpenAI

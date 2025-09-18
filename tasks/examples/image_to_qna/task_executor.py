@@ -3,17 +3,17 @@ from typing import Any
 
 from transformers import GPT2TokenizerFast
 
-from grasp.core.graph.functions.edge_condition import EdgeCondition
-from grasp.core.graph.functions.lambda_function import LambdaFunction
-from grasp.core.graph.functions.node_processor import (
+from sygra.core.graph.functions.edge_condition import EdgeCondition
+from sygra.core.graph.functions.lambda_function import LambdaFunction
+from sygra.core.graph.functions.node_processor import (
     NodePostProcessorWithState,
     NodePreProcessor,
 )
-from grasp.core.graph.grasp_message import GraspMessage
-from grasp.core.graph.grasp_state import GraspState
-from grasp.logger.logger_config import logger
-from grasp.processors.data_transform import DataTransform
-from grasp.utils import constants
+from sygra.core.graph.sygra_message import SygraMessage
+from sygra.core.graph.sygra_state import SygraState
+from sygra.logger.logger_config import logger
+from sygra.processors.data_transform import DataTransform
+from sygra.utils import constants
 
 tokenizer = GPT2TokenizerFast.from_pretrained("Xenova/gpt-4")
 
@@ -39,7 +39,7 @@ class ImagesMetadata(DataTransform):
 
 
 class ImagesPreProcessor(NodePreProcessor):
-    def apply(self, state: GraspState) -> GraspState:
+    def apply(self, state: SygraState) -> SygraState:
         """
         Prepares the state for processing images by initializing necessary fields.
         """
@@ -48,14 +48,14 @@ class ImagesPreProcessor(NodePreProcessor):
 
 
 class ImageLoopChecker(EdgeCondition):
-    def apply(state: GraspState) -> str:
+    def apply(state: SygraState) -> str:
         if state["loop_count"] < state["num_images"]:
             return "extract_text"
         return "token_checker"
 
 
 class ExtractTextPostProcessor(NodePostProcessorWithState):
-    def apply(self, response: GraspMessage, state: GraspState) -> GraspState:
+    def apply(self, response: SygraMessage, state: SygraState) -> SygraState:
         ocr_text = self.parse_non_json_text(response.message.content)
         if not state.get("ocr_texts"):
             state["ocr_texts"] = []
@@ -70,7 +70,7 @@ class ExtractTextPostProcessor(NodePostProcessorWithState):
 
 
 class UpdateLoopCount(LambdaFunction):
-    def apply(lambda_node_dict: dict, state: GraspState):
+    def apply(lambda_node_dict: dict, state: SygraState):
         """
         Updates the loop count in the state.
         """
@@ -82,7 +82,7 @@ class UpdateLoopCount(LambdaFunction):
 # check if text extracted, calculate the token count
 # also join the documents extracted from multiple images
 class TokenChecker(LambdaFunction):
-    def apply(lambda_node_dict: dict, state: GraspState):
+    def apply(lambda_node_dict: dict, state: SygraState):
         texts = state["ocr_texts"]
         documents = ""
         if not texts or len(texts) == 0 or texts[0] is None:
@@ -102,14 +102,14 @@ class TokenChecker(LambdaFunction):
 
 
 class ShouldGenerateQuestion(EdgeCondition):
-    def apply(state: GraspState) -> str:
+    def apply(state: SygraState) -> str:
         if state["token_count"] == 0:
-            return constants.GRASP_END
+            return constants.SYGRA_END
         return "generate_question"
 
 
 class QuestionExtractProcessor(NodePostProcessorWithState):
-    def apply(self, response: GraspMessage, state: GraspState) -> GraspState:
+    def apply(self, response: SygraMessage, state: SygraState) -> SygraState:
         response_text = response.message.content
         parsed = []
         question_types = []
@@ -144,7 +144,7 @@ class QuestionExtractProcessor(NodePostProcessorWithState):
 
 ######### Answer node related classes #########################
 class SetCurrentQuestion(NodePreProcessor):
-    def apply(self, state: GraspState) -> GraspState:
+    def apply(self, state: SygraState) -> SygraState:
         current_pointer = state["question_counter"]
         logger.info(f"Current question pointer: {current_pointer}")
         state["question"] = state["generated_questions"][current_pointer]
@@ -152,7 +152,7 @@ class SetCurrentQuestion(NodePreProcessor):
 
 
 class AnswerExtractProcessor(NodePostProcessorWithState):
-    def apply(self, response: GraspMessage, state: GraspState) -> GraspState:
+    def apply(self, response: SygraMessage, state: SygraState) -> SygraState:
         # initialization
         response_text = response.message.content
         if not state.get("generated_responses"):
@@ -184,17 +184,17 @@ class AnswerExtractProcessor(NodePostProcessorWithState):
 
 ####### Looping related classes ##########
 class QuestionLoopChecker(EdgeCondition):
-    def apply(state: GraspState) -> str:
+    def apply(state: SygraState) -> str:
         if state["question_counter"] < state["num_questions"]:
             logger.info(
                 f"More questions to ask. Go to answer generation. Question counter: {state['question_counter']}"
             )
             return "generate_more_answers"
-        return constants.GRASP_END
+        return constants.SYGRA_END
 
 
 class UpdateQuestionCounter(LambdaFunction):
-    def apply(lambda_node_dict: dict, state: GraspState):
+    def apply(lambda_node_dict: dict, state: SygraState):
         """
         Updates the loop count in the state.
         """

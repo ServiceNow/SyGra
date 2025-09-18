@@ -9,7 +9,7 @@ data_config:
       - transform: tasks.examples.image_to_qna.task_executor.ImagesMetadata
         params:
           image_field: "images"
-      - transform: grasp.processors.data_transform.AddNewFieldTransform
+      - transform: sygra.processors.data_transform.AddNewFieldTransform
         params:
           mapping:
             loop_count: 0
