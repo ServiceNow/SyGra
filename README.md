@@ -3,6 +3,8 @@
 
   <h1>SyGra: Graph-oriented Synthetic data generation Pipeline</h1>
 
+<a href="https://pypi.org/project/sygra/">
+    <img src="https://badge.fury.io/py/sygra.svg"/></a>
 <a href="https://github.com/ServiceNow/SyGra/actions/workflows/ci.yaml">
     <img alt="CI" src="https://github.com/ServiceNow/SyGra/actions/workflows/ci.yaml/badge.svg"/></a>
 <a href="https://github.com/ServiceNow/SyGra/releases">
