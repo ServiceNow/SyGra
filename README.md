@@ -103,7 +103,12 @@ workflow.run(num_records=1)
 ```
 </details>
 
+### Quick Start
+> [!NOTE] 
+> To get started with SyGra, please refer to some **[Example Tasks](https://github.com/ServiceNow/SyGra/tree/main/tasks/examples)** or **[SyGra Documentation](https://servicenow.github.io/SyGra/)**
+
 ---
+
 
 ## Components
 The SyGra architecture is composed of multiple components. The following diagrams illustrate the four primary components and their associated modules.
