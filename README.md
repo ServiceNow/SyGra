@@ -105,7 +105,7 @@ workflow.run(num_records=1)
 
 ### Quick Start
 > [!NOTE] 
-> To get started with SyGra, please refer to some [Example Tasks](https://github.com/ServiceNow/SyGra/tree/main/tasks/examples) or [SyGra Documentation](https://servicenow.github.io/SyGra/)
+> To get started with SyGra, please refer to some **[Example Tasks](https://github.com/ServiceNow/SyGra/tree/main/tasks/examples)** or **[SyGra Documentation](https://servicenow.github.io/SyGra/)**
 
 ---
 
