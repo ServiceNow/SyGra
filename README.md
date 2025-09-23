@@ -5,8 +5,8 @@
 
 <a href="https://pypi.org/project/sygra/">
     <img src="https://img.shields.io/pypi/v/sygra.svg?logo=pypi&color=orange"/></a>
-<a href="https://github.com/ServiceNow/SyGra/actions/workflows/ci.yaml">
-    <img alt="CI" src="https://github.com/ServiceNow/SyGra/actions/workflows/ci.yaml/badge.svg"/></a>
+<a href="https://github.com/ServiceNow/SyGra/actions/workflows/ci.yml">
+    <img alt="CI" src="https://github.com/ServiceNow/SyGra/actions/workflows/ci.yml/badge.svg"/></a>
 <a href="https://github.com/ServiceNow/SyGra/releases">
     <img alt="Releases" src="https://img.shields.io/github/v/release/ServiceNow/SyGra?logo=bookstack&logoColor=white"/></a>
 <a href="https://servicenow.github.io/SyGra">
