@@ -44,7 +44,7 @@ class BaseTaskExecutor(ABC):
 
         data_config = self.config.get("data_config", {})
         config_resumable = data_config.get("resumable", False)
-        self.id_column = data_config.get("id_column", {})
+        self.id_column = data_config.get("id_column") or None
 
         self.resumable = self._configure_resume_behavior(args, config_resumable)
 
