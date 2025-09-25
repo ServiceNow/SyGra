@@ -115,6 +115,7 @@ class Workflow:
         self._overrides: dict[str, Any] = {}
         self._node_builders: dict[str, Any] = {}
         self._messages: list[str] = []
+        self._is_existing_task: bool = False
 
         # Feature support flags
         self._supports_subgraphs = True
@@ -122,6 +123,43 @@ class Workflow:
         self._supports_resumable = True
         self._supports_quality = True
         self._supports_oasst = True
+
+        self._load_existing_config_if_present()
+
+    def _load_existing_config_if_present(self):
+        """Load existing task configuration if this appears to be a task path."""
+        if self.name and (
+            os.path.exists(self.name) or "/" in self.name or "\\" in self.name
+        ):
+            task_path = self.name
+            config_file = os.path.join(task_path, "graph_config.yaml")
+
+            if not os.path.isabs(task_path):
+                config_file = os.path.join(os.getcwd(), config_file)
+
+            if os.path.exists(config_file):
+                try:
+                    with open(config_file, "r") as f:
+                        loaded_config = yaml.safe_load(f)
+
+                    if loaded_config:
+                        self._config = loaded_config
+                        self._is_existing_task = True
+
+                        if (
+                            "graph_config" in self._config
+                            and "nodes" in self._config["graph_config"]
+                        ):
+                            self._node_counter = len(
+                                self._config["graph_config"]["nodes"]
+                            )
+
+                        logger.info(f"Loaded existing task config: {self.name}")
+
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to load existing config from {config_file}: {e}"
+                    )
 
     def source(
         self, source: Union[str, Path, dict[str, Any], list[dict[str, Any]], DataSource]
@@ -603,10 +641,7 @@ class Workflow:
             .override("graph_config.nodes.llm_1.model.name", "gpt-4o")
             .override("data_config.source.repo_id", "new/dataset")
         """
-        if not hasattr(self, "_overrides"):
-            self._overrides = {}
-
-        self._overrides[path] = value
+        self._set_nested_value(self._config, path, value)
         return self
 
     def override_model(
@@ -714,17 +749,18 @@ class Workflow:
         # Apply node builders before execution
         self.build()
 
-        has_source = "source" in self._config.get("data_config", {})
         has_nodes = len(self._config["graph_config"]["nodes"]) > 0
 
-        if has_source and has_nodes:
+        if self._is_existing_task:
+            return self._execute_existing_task(
+                num_records, start_index, output_dir, **kwargs
+            )
+        elif has_nodes:
             return self._execute_programmatic_workflow(
                 num_records, start_index, output_dir, **kwargs
             )
-        elif not has_source and not has_nodes:
-            return self._execute_existing_task(num_records, start_index, output_dir, **kwargs)
         else:
-            raise ConfigurationError("Incomplete workflow. Add both source and processing nodes.")
+            raise ConfigurationError("Incomplete workflow. Add processing nodes.")
 
     def save_config(self, path: Union[str, Path]) -> None:
         """Save workflow configuration as YAML file."""
@@ -743,32 +779,14 @@ class Workflow:
     ) -> Any:
         """Execute existing YAML-based task with full feature support."""
         task_name: str = self.name
-        current_task: str = task_name
         utils.current_task = task_name
-
-        config_file = f"{task_name}/graph_config.yaml"
-
-        if not os.path.isabs(task_name):
-            config_file = os.path.join(os.getcwd(), config_file)
-
-        if not os.path.exists(config_file):
-            raise ConfigurationError(
-                f"Task '{task_name}' not found.\n"
-                f"Expected config file: {config_file}\n"
-                f"Or create a programmatic workflow: workflow.source(...).llm(...).run()"
-            )
 
         logger.info(f"Executing existing YAML task with full features: {task_name}")
 
-        import yaml
-
-        with open(config_file, "r") as f:
-            original_config = yaml.safe_load(f)
-
-        modified_config = self._apply_overrides(original_config)
+        modified_config =   self._config
 
         args = Namespace(
-            task=current_task,
+            task=task_name,
             num_records=num_records,
             start_index=start_index,
             output_dir=output_dir,
@@ -788,15 +806,16 @@ class Workflow:
                 executor = JudgeQualityTaskExecutor(args, kwargs.get("quality_config"))
             else:
                 executor = DefaultTaskExecutor(args)
+                BaseTaskExecutor.__init__(executor, args, modified_config)
 
             executor.config = modified_config
 
             result = executor.execute()
-            logger.info(f"Successfully executed task with all features: {task_name}")
+            logger.info(f"Successfully executed task: {task_name}")
             return result
         except Exception as e:
             if "model_type" in str(e).lower() or "model" in str(e).lower():
-                logger.error(f"Model configuration error in {config_file}")
+                logger.error(f"Model configuration error")
             elif "current task name is not initialized" in str(e).lower():
                 logger.error(f"Task context initialization failed for '{task_name}'")
             raise ExecutionError(f"Failed to execute task '{task_name}': {e}")
