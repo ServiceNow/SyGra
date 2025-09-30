@@ -837,6 +837,8 @@ class Workflow:
                 executor = DefaultTaskExecutor(args)
                 BaseTaskExecutor.__init__(executor, args, modified_config)
 
+            executor.config = modified_config
+
             result = executor.execute()
             logger.info(f"Successfully executed task: {task_name}")
             return result
