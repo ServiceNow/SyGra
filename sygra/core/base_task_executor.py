@@ -51,7 +51,7 @@ class BaseTaskExecutor(ABC):
         self.dataset = self.init_dataset()
         output_transform_args = {"oasst": args.oasst, "quality": args.quality}
         self.graph_config = GraphConfig(
-            utils.get_file_in_task_dir(self.task_name, "graph_config.yaml"),
+            self.config,
             self.dataset,
             output_transform_args,
         )

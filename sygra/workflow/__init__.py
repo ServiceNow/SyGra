@@ -91,6 +91,38 @@ class AutoNestedDict(dict):
                 result[k] = v
         return result
 
+    def to_dict(self) -> dict:
+        """Recursively convert AutoNestedDict to regular dict."""
+        result = {}
+        for k, v in self.items():
+            if isinstance(v, AutoNestedDict):
+                result[k] = v.to_dict()
+            elif isinstance(v, dict):
+                result[k] = self._convert_dict_to_regular(v)
+            elif isinstance(v, list):
+                result[k] = [
+                    item.to_dict()
+                    if isinstance(item, AutoNestedDict)
+                    else self._convert_dict_to_regular(item)
+                    if isinstance(item, dict)
+                    else item
+                    for item in v
+                ]
+            else:
+                result[k] = v
+        return result
+
+    @staticmethod
+    def _convert_dict_to_regular(d):
+        """Helper to convert any dict to regular dict recursively."""
+        if isinstance(d, AutoNestedDict):
+            return d.to_dict()
+        elif isinstance(d, dict):
+            return {k: AutoNestedDict._convert_dict_to_regular(v) for k, v in d.items()}
+        elif isinstance(d, list):
+            return [AutoNestedDict._convert_dict_to_regular(item) for item in d]
+        else:
+            return d
 
 class Workflow:
     """
@@ -797,7 +829,7 @@ class Workflow:
         self.build()
 
         with open(path, "w") as f:
-            yaml.dump(self._config, f, default_flow_style=False)
+            yaml.dump(self._config.to_dict(), f, default_flow_style=False)
 
     def _execute_existing_task(
         self,
@@ -836,8 +868,6 @@ class Workflow:
             else:
                 executor = DefaultTaskExecutor(args)
                 BaseTaskExecutor.__init__(executor, args, modified_config)
-
-            executor.config = modified_config
 
             result = executor.execute()
             logger.info(f"Successfully executed task: {task_name}")
