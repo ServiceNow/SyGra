@@ -62,6 +62,36 @@ except ImportError:
     DATA_UTILS_AVAILABLE = False
 
 
+class AutoNestedDict(dict):
+    """Dictionary that automatically creates nested dictionaries on access."""
+
+    def __getitem__(self, key):
+        if key not in self:
+            self[key] = AutoNestedDict()
+        return super().__getitem__(key)
+
+    def __setitem__(self, key, value):
+        if isinstance(value, dict) and not isinstance(value, AutoNestedDict):
+            value = self.convert_dict(value)
+        super().__setitem__(key, value)
+
+    @classmethod
+    def convert_dict(cls, d):
+        """Recursively convert nested dicts to AutoNestedDict."""
+        result = cls()
+        for k, v in d.items():
+            if isinstance(v, dict):
+                result[k] = cls.convert_dict(v)
+            elif isinstance(v, list):
+                result[k] = [
+                    cls.convert_dict(item) if isinstance(item, dict) else item
+                    for item in v
+                ]
+            else:
+                result[k] = v
+        return result
+
+
 class Workflow:
     """
     Unified workflow builder supporting all SyGra paradigms and use cases.
@@ -104,15 +134,14 @@ class Workflow:
 
     def __init__(self, name: Optional[str] = None):
         self.name: str = name or f"workflow_{uuid.uuid4().hex[:8]}"
-        self._config: dict[str, Any] = {
+        self._config: AutoNestedDict = AutoNestedDict({
             "graph_config": {"nodes": {}, "edges": [], "graph_properties": {}},
             "data_config": {},
             "output_config": {},
-        }
+        })
         self._node_counter: int = 0
         self._last_node: Optional[str] = None
         self._temp_files: list[str] = []
-        self._overrides: dict[str, Any] = {}
         self._node_builders: dict[str, Any] = {}
         self._messages: list[str] = []
         self._is_existing_task: bool = False
@@ -143,7 +172,7 @@ class Workflow:
                         loaded_config = yaml.safe_load(f)
 
                     if loaded_config:
-                        self._config = loaded_config
+                        self._config = AutoNestedDict.convert_dict(loaded_config)
                         self._is_existing_task = True
 
                         if (
@@ -808,14 +837,12 @@ class Workflow:
                 executor = DefaultTaskExecutor(args)
                 BaseTaskExecutor.__init__(executor, args, modified_config)
 
-            executor.config = modified_config
-
             result = executor.execute()
             logger.info(f"Successfully executed task: {task_name}")
             return result
         except Exception as e:
             if "model_type" in str(e).lower() or "model" in str(e).lower():
-                logger.error(f"Model configuration error")
+                logger.error("Model configuration error")
             elif "current task name is not initialized" in str(e).lower():
                 logger.error(f"Task context initialization failed for '{task_name}'")
             raise ExecutionError(f"Failed to execute task '{task_name}': {e}")
@@ -902,21 +929,6 @@ class Workflow:
             raise ExecutionError(f"Programmatic workflow execution failed: {e}")
         finally:
             self._cleanup()
-
-    def _apply_overrides(self, config: dict[str, Any]) -> dict[str, Any]:
-        """Apply all overrides to the loaded configuration."""
-        if not hasattr(self, "_overrides") or not self._overrides:
-            return config
-
-        import copy
-
-        modified_config = copy.deepcopy(config)
-
-        for path, value in self._overrides.items():
-            self._set_nested_value(modified_config, path, value)
-
-        logger.info(f"Applied {len(self._overrides)} configuration overrides")
-        return modified_config
 
     def _set_nested_value(self, config: dict[str, Any], path: str, value: Any) -> None:
         """Set a nested value using dot notation path."""
