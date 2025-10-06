@@ -22,8 +22,8 @@ from sygra.core.dataset.dataset_processor import DatasetProcessor
 from sygra.core.dataset.file_handler import FileHandler
 from sygra.core.dataset.huggingface_handler import HuggingFaceHandler
 from sygra.core.graph.graph_config import GraphConfig
-from sygra.core.graph.sygra_state import SygraState
 from sygra.core.graph.langgraph.graph_builder import LangGraphBuilder
+from sygra.core.graph.sygra_state import SygraState
 from sygra.logger.logger_config import logger
 from sygra.processors.output_record_generator import BaseOutputGenerator
 from sygra.tools.toolkits.data_quality.processor import DataQuality
