@@ -15,7 +15,8 @@ class TestClientFactory(unittest.TestCase):
     def test_model_type_enum(self):
         """Test ModelType enum values are correct"""
         self.assertEqual(ModelType.VLLM.value, "vllm")
-        self.assertEqual(ModelType.OPENAI.value, "azure_openai")
+        self.assertEqual(ModelType.OPENAI.value, "openai")
+        self.assertEqual(ModelType.AZURE_OPENAI.value, "azure_openai")
         self.assertEqual(ModelType.AZURE.value, "azure")
         self.assertEqual(ModelType.MISTRALAI.value, "mistralai")
         self.assertEqual(ModelType.TGI.value, "tgi")
