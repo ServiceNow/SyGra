@@ -18,7 +18,8 @@ class ModelType(Enum):
     """Enum representing the supported model types for client creation."""
 
     VLLM = "vllm"
-    OPENAI = "azure_openai"
+    OPENAI = "openai"
+    AZURE_OPENAI = "azure_openai"
     AZURE = "azure"
     MISTRALAI = "mistralai"
     TGI = "tgi"
@@ -88,7 +89,7 @@ class ClientFactory:
             )
 
         # Create client based on model type
-        if model_type == ModelType.VLLM.value:
+        if model_type == ModelType.VLLM.value or model_type == ModelType.OPENAI.value:
             # Initialize the client with default chat_completions_api
             return cls._create_openai_client(
                 model_config,
@@ -97,7 +98,7 @@ class ClientFactory:
                 async_client,
                 not model_config.get("completions_api", False),
             )
-        elif model_type == ModelType.OPENAI.value:
+        elif model_type == ModelType.AZURE_OPENAI.value:
             return cls._create_openai_azure_client(
                 model_config,
                 url,
