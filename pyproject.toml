@@ -39,7 +39,7 @@ dependencies = [
   "mistralai",
   "openai",
   "PyYAML",
-  "transformers",
+  "transformers>=4.56,<4.57",
   "grandalf",
   "sentencepiece",
   "protobuf",
