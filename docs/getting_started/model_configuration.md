@@ -44,19 +44,19 @@ SYGRA_MIXTRAL_8X7B_CHAT_TEMPLATE={% for m in messages %} ... {% endfor %}
 
 ### Configuration Properties
 
-| Key                          | Description                                                                                           |
-|------------------------------|-------------------------------------------------------------------------------------------------------|
-| `model_type`                 | Type of backend server (`tgi`, `vllm`, `azure_openai`, `azure`, `mistralai`, `ollama`, `triton`)      |
-| `model_name`                 | Model name for your deployments (for Azure/Azure OpenAI)                                              |
-| `api_version`                | API version for Azure or Azure OpenAI                                                                 |
-| `hf_chat_template_model_id`  | Hugging Face model ID                                                                                 |
-| `completions_api`            | *(Optional)* Boolean: use completions API instead of chat completions API (default: false)            |
-| `modify_tokenizer`           | *(Optional)* Boolean: apply custom chat template and modify the base model tokenizer (default: false) |
-| `special_tokens`             | *(Optional)* List of special stop tokens used in generation                                           |
-| `post_process`               | *(Optional)* Post processor after model inference (e.g. `models.model_postprocessor.RemoveThinkData`) |
-| `parameters`                 | *(Optional)* Generation parameters (see below)                                                        |
-| `ssl_verify`                 | *(Optional)* Verify SSL certificate (default: true)                                                   |
-| `ssl_cert`                   | *(Optional)* Path to SSL certificate file                                                             |
+| Key                          | Description                                                                                                |
+|------------------------------|------------------------------------------------------------------------------------------------------------|
+| `model_type`                 | Type of backend server (`tgi`, `vllm`, `openai`, `azure_openai`, `azure`, `mistralai`, `ollama`, `triton`) |
+| `model_name`                 | Model name for your deployments (for Azure/Azure OpenAI)                                                   |
+| `api_version`                | API version for Azure or Azure OpenAI                                                                      |
+| `hf_chat_template_model_id`  | Hugging Face model ID                                                                                      |
+| `completions_api`            | *(Optional)* Boolean: use completions API instead of chat completions API (default: false)                 |
+| `modify_tokenizer`           | *(Optional)* Boolean: apply custom chat template and modify the base model tokenizer (default: false)      |
+| `special_tokens`             | *(Optional)* List of special stop tokens used in generation                                                |
+| `post_process`               | *(Optional)* Post processor after model inference (e.g. `models.model_postprocessor.RemoveThinkData`)      |
+| `parameters`                 | *(Optional)* Generation parameters (see below)                                                             |
+| `ssl_verify`                 | *(Optional)* Verify SSL certificate (default: true)                                                        |
+| `ssl_cert`                   | *(Optional)* Path to SSL certificate file                                                                  |
 > **Note:**  
 > - Do **not** include `url`, `auth_token`, or `api_key` in your YAML config. These are sourced from environment variables as described above.<br>
 > - If you want to set **ssl_verify** to **false** globally, you can set `ssl_verify:false` under `model_config` section in config/configuration.yaml
