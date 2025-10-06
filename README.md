@@ -71,7 +71,7 @@ Pick how you want to use **SyGra**:
 - **Library** → Import SyGra in your own Python app/notebook; call APIs directly.
   (Start here: **[`SyGra Library`](https://servicenow.github.io/SyGra/sygra_library/)**)
 
-> [!NOTE]  
+![Note](https://img.shields.io/badge/Note-important-yellow)  
 > Before running the commands below, make sure to add your model configuration in `config/models.yaml` and set environment variables for credentials and chat templates as described in the [Model Configuration](https://servicenow.github.io/SyGra/getting_started/model_configuration/) docs.
 
 <details>
@@ -105,7 +105,6 @@ workflow.run(num_records=1)
 </details>
 
 ### Quick Start
-> [!NOTE] 
 > To get started with SyGra, please refer to some **[Example Tasks](https://github.com/ServiceNow/SyGra/tree/main/tasks/examples)** or **[SyGra Documentation](https://servicenow.github.io/SyGra/)**
 
 ---
