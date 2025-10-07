@@ -44,19 +44,19 @@ SYGRA_MIXTRAL_8X7B_CHAT_TEMPLATE={% for m in messages %} ... {% endfor %}
 
 ### Configuration Properties
 
-| Key                          | Description                                                                                           |
-|------------------------------|-------------------------------------------------------------------------------------------------------|
-| `model_type`                 | Type of backend server (`tgi`, `vllm`, `azure_openai`, `azure`, `mistralai`, `ollama`, `triton`)      |
-| `model_name`                 | Model name for your deployments (for Azure/Azure OpenAI)                                              |
-| `api_version`                | API version for Azure or Azure OpenAI                                                                 |
-| `hf_chat_template_model_id`  | Hugging Face model ID                                                                                 |
-| `completions_api`            | *(Optional)* Boolean: use completions API instead of chat completions API (default: false)            |
-| `modify_tokenizer`           | *(Optional)* Boolean: apply custom chat template and modify the base model tokenizer (default: false) |
-| `special_tokens`             | *(Optional)* List of special stop tokens used in generation                                           |
-| `post_process`               | *(Optional)* Post processor after model inference (e.g. `models.model_postprocessor.RemoveThinkData`) |
-| `parameters`                 | *(Optional)* Generation parameters (see below)                                                        |
-| `ssl_verify`                 | *(Optional)* Verify SSL certificate (default: true)                                                   |
-| `ssl_cert`                   | *(Optional)* Path to SSL certificate file                                                             |
+| Key                          | Description                                                                                                |
+|------------------------------|------------------------------------------------------------------------------------------------------------|
+| `model_type`                 | Type of backend server (`tgi`, `vllm`, `openai`, `azure_openai`, `azure`, `mistralai`, `ollama`, `triton`) |
+| `model_name`                 | Model name for your deployments (for Azure/Azure OpenAI)                                                   |
+| `api_version`                | API version for Azure or Azure OpenAI                                                                      |
+| `hf_chat_template_model_id`  | Hugging Face model ID                                                                                      |
+| `completions_api`            | *(Optional)* Boolean: use completions API instead of chat completions API (default: false)                 |
+| `modify_tokenizer`           | *(Optional)* Boolean: apply custom chat template and modify the base model tokenizer (default: false)      |
+| `special_tokens`             | *(Optional)* List of special stop tokens used in generation                                                |
+| `post_process`               | *(Optional)* Post processor after model inference (e.g. `models.model_postprocessor.RemoveThinkData`)      |
+| `parameters`                 | *(Optional)* Generation parameters (see below)                                                             |
+| `ssl_verify`                 | *(Optional)* Verify SSL certificate (default: true)                                                        |
+| `ssl_cert`                   | *(Optional)* Path to SSL certificate file                                                                  |
 > **Note:**  
 > - Do **not** include `url`, `auth_token`, or `api_key` in your YAML config. These are sourced from environment variables as described above.<br>
 > - If you want to set **ssl_verify** to **false** globally, you can set `ssl_verify:false` under `model_config` section in config/configuration.yaml
@@ -87,7 +87,7 @@ mixtral_8x7b:
     max_new_tokens: 2048
 
 gpt4:
-  model_type: azure
+  model_type: azure_openai
   model_name: gpt-4-32k
   api_version: 2024-05-01-preview
   parameters:
@@ -126,4 +126,53 @@ qwen3-32b-triton:
 > **Important:**
 If you set modify_tokenizer: true for a model, you must provide the corresponding chat template in your environment as SYGRA_<MODEL_NAME>_CHAT_TEMPLATE.
 Otherwise, exception will be raised during the model initialization.
+---
+
+# Understanding `openai` vs `azure_openai` vs `azure` Model Types
+
+SyGra supports multiple ways of connecting to OpenAI and OpenAI-compatible models. The following clarifies the difference between **`openai`**, **`azure_openai`**, and **`azure`** model types:
+
+| Model Type     | Description | Typical Use Case | Required Config Keys                                                  |
+|----------------|-------------|------------------|-----------------------------------------------------------------------|
+| **`openai`** | Connects directly to the **public OpenAI API** (`https://api.openai.com/v1`). | Use this for hosted OpenAI models like `gpt-4o`, `gpt-3.5-turbo`, etc. | `model_type: openai`                                                  |
+| **`azure_openai`** | Connects to **OpenAI models hosted on Azure** (Azure Cognitive Services → OpenAI deployment). Requires `model_name` and `api_version`. | Use when your organization deploys *OpenAI models* via Azure. | `model_type: azure_openai`, `model_name`, `api_version`               |
+| **`azure`** | Generic **HTTP client wrapper** for *non-OpenAI* Azure models (e.g., **Anthropic Claude**, **Mistral**, **Custom inference endpoints**) using Azure API Gateway / Managed Endpoints. | Use when Azure acts simply as a proxy HTTP endpoint to another model. | `model_type: azure`, plus any extra headers in `.env` and models.yaml |
+
+---
+
+## ✅ Environment Variables
+
+| Client | Required Environment Variables |
+|--------|-------------------------------|
+| `openai` | `SYGRA_<MODEL>_URL=https://api.openai.com/v1`<br>`SYGRA_<MODEL>_TOKEN=sk-...` |
+| `azure_openai` | `SYGRA_<MODEL>_URL=https://<resource>.openai.azure.com`<br>`SYGRA_<MODEL>_TOKEN=<azure-key>` |
+| `azure` | `SYGRA_<MODEL>_URL=https://<your-azure-endpoint>`<br>`SYGRA_<MODEL>_TOKEN=<auth-if-required>` |
+
+---
+
+## 🔧 Example Configuration (`models.yaml`)
+
+```yaml
+gpt4_openai:
+  model_type: openai
+  parameters:
+    temperature: 0.7
+    max_tokens: 512
+
+gpt4_azure:
+  model_type: azure_openai
+  model_name: gpt-4-32k
+  api_version: 2024-05-01-preview
+  parameters:
+    temperature: 0.7
+    max_tokens: 512
+
+llama_3_1_405b_instruct:
+  model_type: azure
+  load_balancing: round_robin
+  parameters:
+    max_tokens: 4096
+    temperature: 0.8
+  hf_chat_template_model_id: meta-llama/Meta-Llama-3.1-405B-Instruct
+```
 ---
