@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "Graph-oriented Synthetic data generation Pipeline library"
 readme = "README.md"
 requires-python = ">=3.9"
-authors = [{ name = "Bidyapati Pradhan, Surajit Dasgupta, Amit Kumar Saha, Sriram Puttagunta, Omkar Anustoop, Vipul Mittal, Gopal Sarda, Jishnu S Nair", email = "sygra_team@servicenow.com" }]
+authors = [{ name = "Bidyapati Pradhan, Surajit Dasgupta, Amit Kumar Saha, Sriram Puttagunta, Omkar Anustoop, Vipul Mittal, Gopal Sarda", email = "sygra_team@servicenow.com" }]
 maintainers = [
   { name = "SyGra Team", email = "sygra_team@servicenow.com" }
 ]
@@ -39,7 +39,7 @@ dependencies = [
   "mistralai",
   "openai",
   "PyYAML",
-  "transformers",
+  "transformers>=4.56,<4.57",
   "grandalf",
   "sentencepiece",
   "protobuf",
@@ -93,7 +93,7 @@ langgraph = "*"
 mistralai = "*"
 openai = "*"
 PyYAML = "*"
-transformers = "*"
+transformers = ">=4.56,<4.57"
 grandalf = "*"
 sentencepiece = "*"
 protobuf = "*"
