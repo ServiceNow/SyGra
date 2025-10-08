@@ -3,7 +3,6 @@ import os
 from typing import Optional, Protocol
 
 
-
 class ExternalLoggerProtocol(Protocol):
     """Protocol defining the interface for external loggers."""
 

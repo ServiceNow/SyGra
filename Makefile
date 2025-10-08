@@ -81,7 +81,7 @@ clean: ## Clean build artifacts
 	find . -name '.DS_Store' -delete
 
 .PHONY: ci
-ci: format lint test ## Run CI tasks (format, lint, test)
+ci: check-format check-lint test ## Run CI tasks (format, lint, test)
 
 # Default target
 .DEFAULT_GOAL := help
