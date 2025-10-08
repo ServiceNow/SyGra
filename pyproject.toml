@@ -7,8 +7,8 @@ name = "sygra"
 version = "1.0.0"
 description = "Graph-oriented Synthetic data generation Pipeline library"
 readme = "README.md"
-requires-python = ">=3.9"
-authors = [{ name = "Bidyapati Pradhan, Surajit Dasgupta, Amit Kumar Saha, Sriram Puttagunta, Omkar Anustoop, Vipul Mittal, Gopal Sarda, Jishnu S Nair", email = "sygra_team@servicenow.com" }]
+requires-python = ">=3.9,<3.12,!=3.9.7"
+authors = [{ name = "Bidyapati Pradhan, Surajit Dasgupta, Amit Kumar Saha, Sriram Puttagunta, Omkar Anustoop, Vipul Mittal, Gopal Sarda", email = "sygra_team@servicenow.com" }]
 maintainers = [
   { name = "SyGra Team", email = "sygra_team@servicenow.com" }
 ]
@@ -27,40 +27,66 @@ classifiers = [
 ]
 keywords = ["llm", "fine-tuning", "data generation", "synthetic data", "nlp", "sft", "dpo", "data quality", "metadata tagging", "graph",]
 dependencies = [
-  "aiohttp",
-  "datasets",
-  "httpx",
-  "httpx-sse",
-  "huggingface-hub",
-  "langchain-community",
-  "langchain-core",
-  "langchain-mistralai",
-  "langgraph",
-  "mistralai",
-  "openai",
-  "PyYAML",
-  "transformers",
-  "grandalf",
-  "sentencepiece",
-  "protobuf",
-  "Jinja2",
-  "pathvalidate",
-  "ujson",
-  "fasttext",
-  "lexicalrichness",
-  "langchain-openai",
-  "ollama",
-  "torch",
-  "mlxtend",
-  "pandarallel",
-  "sentence-transformers",
-  "soundfile",
-  "types-pyyaml"
+  "aiohttp>=3.12,<4.0",
+  "datasets>=4.0,<5.0",
+  "httpx>=0.28,<0.29",
+  "httpx-sse>=0.4,<0.5",
+  "huggingface-hub>=0.34,<1.0",
+  "langchain-community>=0.3,<1.0",
+  "langchain-core>=0.3,<1.0",
+  "langchain-mistralai>=0.2,<1.0",
+  "langgraph>=0.6,<1.0",
+  "mistralai>=1.9,<2.0",
+  "openai>=1.107,<2.0",
+  "PyYAML>=6.0,<7.0",
+  "transformers>=4.56,<4.57",
+  "grandalf>=0.8,<1.0",
+  "sentencepiece>=0.2,<1.0",
+  "protobuf>=6.32,<7.0",
+  "Jinja2>=3.1,<4.0",
+  "pathvalidate>=3.3,<4.0",
+  "ujson>=5.11,<6.0",
+  "fasttext>=0.9,<1.0",
+  "lexicalrichness>=0.5,<1.0",
+  "langchain-openai>=0.3,<1.0",
+  "ollama>=0.5,<1.0",
+  "torch>=2.8,<3.0",
+  "mlxtend>=0.23,<1.0",
+  "pandarallel>=1.6,<2.0",
+  "sentence-transformers>=5.1,<6.0",
+  "soundfile>=0.13,<1.0",
+  "types-pyyaml>=6.0,<7.0",
+]
+
+[project.optional-dependencies]
+ui = [
+  "streamlit>=1.49,<2.0",
+  "streamlit-agraph>=0.0,<1.0",
+  "streamlit-autorefresh>=1.0,<2.0",
+  "streamlit-flow-component>=1.6,<2.0",
+  "watchdog>=6.0,<7.0",
+]
+
+dev = [
+  "pytest>=8.4,<9.0",
+  "pytest-asyncio>=1.1,<2.0",
+  "build>=1.3,<2.0",
+  "twine>=6.2,<7.0",
+  "black>=25.1,<26.0",
+  "isort>=6.0,<7.0",
+  "ruff>=0.13,<1.0",
+  "mypy>=1.17,<2.0",
+  "mkdocs>=1.6,<2.0",
+  "mkdocs-material>=9.6,<10.0",
+  "mkdocs-include-markdown-plugin>=7.1,<8.0",
 ]
 
 [project.urls]
 Homepage = "https://github.com/ServiceNow/SyGra"
+Documentation = "https://servicenow.github.io/SyGra"
+Releases = "https://github.com/ServiceNow/SyGra/releases"
 Issues = "https://github.com/ServiceNow/SyGra/issues"
+Discussions = "https://github.com/ServiceNow/SyGra/discussions"
 
 [tool.setuptools]
 packages = { find = { include = ["sygra*"], exclude = ["tests*", "docs*", "sygra_lib_examples*", "apps*"] } }
@@ -80,56 +106,57 @@ homepage = "https://github.com/ServiceNow/SyGra"
 repository = "https://github.com/ServiceNow/SyGra"
 
 [tool.poetry.dependencies]
-python = ">=3.9"
-aiohttp = "*"
-datasets = "*"
-httpx = "*"
-httpx-sse = "*"
-huggingface-hub = "*"
-langchain-community = "*"
-langchain-core = "*"
-langchain-mistralai = "*"
-langgraph = "*"
-mistralai = "*"
-openai = "*"
-PyYAML = "*"
-transformers = "*"
-grandalf = "*"
-sentencepiece = "*"
-protobuf = "*"
-Jinja2 = "*"
-pathvalidate = "*"
-ujson = "*"
-fasttext = "*"
-lexicalrichness = "*"
-langchain-openai = "*"
-ollama = "*"
-torch = "*"
-mlxtend = "*"
-pandarallel = "*"
-sentence-transformers = "*"
-soundfile = "*"
-types-pyyaml = "*"
+python = ">=3.9,<3.12,!=3.9.7"
+
+aiohttp = "^3.12"
+datasets = "^4.0"
+httpx = "^0.28"
+httpx-sse = "^0.4"
+huggingface-hub = "^0.34"
+langchain-community = "^0.3"
+langchain-core = "^0.3"
+langchain-mistralai = "^0.2"
+langgraph = "^0.6"
+mistralai = "^1.9"
+openai = "^1.107"
+PyYAML = "^6.0"
+transformers = ">=4.56,<4.57"
+grandalf = "^0.8"
+sentencepiece = "^0.2"
+protobuf = "^6.32"
+Jinja2 = "^3.1"
+pathvalidate = "^3.3"
+ujson = "^5.11"
+fasttext = "^0.9"
+lexicalrichness = "^0.5"
+langchain-openai = "^0.3"
+ollama = "^0.5"
+torch = "^2.8"
+mlxtend = "^0.23"
+pandarallel = "^1.6"
+sentence-transformers = "^5.1"
+soundfile = "^0.13"
+types-pyyaml = "^6.0"
 
 [tool.poetry.group.ui.dependencies]
-streamlit = "*"
-streamlit-agraph = "*"
-streamlit-autorefresh = "*"
-streamlit-flow-component = "*"
-watchdog = "*"
+streamlit = { version = "^1.49", markers = "python_version != '3.9.7'" }
+streamlit-agraph = "^0.0"
+streamlit-autorefresh = "^1.0"
+streamlit-flow-component = "^1.6"
+watchdog = "^6.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "*"
-pytest-asyncio = "*"
-build = "*"
-twine = "*"
-black = "*"
-isort = "*"
-ruff = "*"
-mypy = "*"
-mkdocs = "*"
-mkdocs-material = "*"
-mkdocs-include-markdown-plugin = "*"
+pytest = "^8.4"
+pytest-asyncio = "^1.1"
+build = "^1.3"
+twine = "^6.2"
+black = "^25.1"
+isort = "^6.0"
+ruff = "^0.13"
+mypy = "^1.17"
+mkdocs = "^1.6"
+mkdocs-material = "^9.6"
+mkdocs-include-markdown-plugin = "^7.1"
 
 
 # --- Tool configurations ---

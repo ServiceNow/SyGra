@@ -79,7 +79,7 @@ research_agent:
   - **NOTE**: 
     - The model extending from BaseChatModel should be implemented in models/langgraph folder. Refer to `CustomVLLMChatModel` in `models/langgraph/vllm_chat_model.py`
     - `backend: langgraph` Needs be set in models.yaml against the model being used in agent node.
-    - **Supported model types:** `vllm, azure_openai`
+    - **Supported model types:** `vllm, openai, azure_openai`
 
 - `pre_process`: This is an optional functional class of type `NodePreProcessor`, used to preprocess the input before sending it to the agent.
 
