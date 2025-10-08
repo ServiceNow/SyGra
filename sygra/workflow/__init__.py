@@ -84,8 +84,7 @@ class AutoNestedDict(dict):
                 result[k] = cls.convert_dict(v)
             elif isinstance(v, list):
                 result[k] = [
-                    cls.convert_dict(item) if isinstance(item, dict) else item
-                    for item in v
+                    cls.convert_dict(item) if isinstance(item, dict) else item for item in v
                 ]
             else:
                 result[k] = v
@@ -101,11 +100,11 @@ class AutoNestedDict(dict):
                 result[k] = self._convert_dict_to_regular(v)
             elif isinstance(v, list):
                 converted_list: list[Any] = [
-                    item.to_dict()
-                    if isinstance(item, AutoNestedDict)
-                    else self._convert_dict_to_regular(item)
-                    if isinstance(item, dict)
-                    else item
+                    (
+                        item.to_dict()
+                        if isinstance(item, AutoNestedDict)
+                        else self._convert_dict_to_regular(item) if isinstance(item, dict) else item
+                    )
                     for item in v
                 ]
                 result[k] = converted_list
@@ -124,6 +123,7 @@ class AutoNestedDict(dict):
             return [AutoNestedDict._convert_dict_to_regular(item) for item in d]
         else:
             return d
+
 
 class Workflow:
     """
@@ -167,11 +167,13 @@ class Workflow:
 
     def __init__(self, name: Optional[str] = None):
         self.name: str = name or f"workflow_{uuid.uuid4().hex[:8]}"
-        self._config: AutoNestedDict = AutoNestedDict({
-            "graph_config": {"nodes": {}, "edges": [], "graph_properties": {}},
-            "data_config": {},
-            "output_config": {},
-        })
+        self._config: AutoNestedDict = AutoNestedDict(
+            {
+                "graph_config": {"nodes": {}, "edges": [], "graph_properties": {}},
+                "data_config": {},
+                "output_config": {},
+            }
+        )
         self._node_counter: int = 0
         self._last_node: Optional[str] = None
         self._temp_files: list[str] = []
@@ -190,9 +192,7 @@ class Workflow:
 
     def _load_existing_config_if_present(self):
         """Load existing task configuration if this appears to be a task path."""
-        if self.name and (
-            os.path.exists(self.name) or "/" in self.name or "\\" in self.name
-        ):
+        if self.name and (os.path.exists(self.name) or "/" in self.name or "\\" in self.name):
             task_path = self.name
             config_file = os.path.join(task_path, "graph_config.yaml")
 
@@ -212,16 +212,12 @@ class Workflow:
                             "graph_config" in self._config
                             and "nodes" in self._config["graph_config"]
                         ):
-                            self._node_counter = len(
-                                self._config["graph_config"]["nodes"]
-                            )
+                            self._node_counter = len(self._config["graph_config"]["nodes"])
 
                         logger.info(f"Loaded existing task config: {self.name}")
 
                 except Exception as e:
-                    logger.warning(
-                        f"Failed to load existing config from {config_file}: {e}"
-                    )
+                    logger.warning(f"Failed to load existing config from {config_file}: {e}")
 
     def source(
         self, source: Union[str, Path, dict[str, Any], list[dict[str, Any]], DataSource]
@@ -814,9 +810,7 @@ class Workflow:
         has_nodes = len(self._config["graph_config"]["nodes"]) > 0
 
         if self._is_existing_task:
-            return self._execute_existing_task(
-                num_records, start_index, output_dir, **kwargs
-            )
+            return self._execute_existing_task(num_records, start_index, output_dir, **kwargs)
         elif has_nodes:
             return self._execute_programmatic_workflow(
                 num_records, start_index, output_dir, **kwargs
@@ -845,7 +839,7 @@ class Workflow:
 
         logger.info(f"Executing existing YAML task with full features: {task_name}")
 
-        modified_config =   self._config.to_dict()
+        modified_config = self._config.to_dict()
 
         args = Namespace(
             task=task_name,
