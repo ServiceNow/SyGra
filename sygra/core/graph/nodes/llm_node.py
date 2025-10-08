@@ -59,7 +59,7 @@ class LLMNode(BaseNode):
         self._initialize_model()
 
         self.task_name = utils.current_task
-        self.graph_properties = utils.get_graph_properties(self.task_name)
+        self.graph_properties = getattr(utils, '_current_graph_properties', {})
 
     def _initialize_model(self):
         """

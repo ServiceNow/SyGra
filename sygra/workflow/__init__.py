@@ -890,15 +890,18 @@ class Workflow:
         try:
             task_name = self.name
             utils.current_task = self.name
-            os.makedirs(task_name, exist_ok=True)
-            self._temp_files.append(task_name)
+
+            # Determine output directory
+            if output_dir is None:
+                output_dir = tempfile.mkdtemp(prefix=f"sygra_output_{task_name}_")
+                self._temp_files.append(output_dir)
+            else:
+                os.makedirs(output_dir, exist_ok=True)
 
             if not kwargs.get("enable_default_transforms", False):
                 self.disable_default_transforms()
 
-            config_file = f"{task_name}/graph_config.yaml"
-            with open(config_file, "w") as f:
-                yaml.dump(self._config, f, default_flow_style=False)
+            config_dict = self._config.to_dict()
 
             utils.current_task = self.name
 
@@ -930,7 +933,7 @@ class Workflow:
             if kwargs.get("quality_only", False):
                 executor = JudgeQualityTaskExecutor(args, kwargs.get("quality_config"))
             else:
-                executor = DefaultTaskExecutor(args)
+                executor = DefaultTaskExecutor(args, config_dict)
 
             result = executor.execute()
 
@@ -1052,6 +1055,11 @@ class Workflow:
 
     def _cleanup(self):
         """Clean up temporary files."""
+        if not self._temp_files:
+            logger.info("No temporary files to clean up")
+            return
+
+        logger.info(f"Cleaning up {len(self._temp_files)} temporary files")
         for temp_file in self._temp_files:
             try:
                 if os.path.isfile(temp_file):
@@ -1064,7 +1072,10 @@ class Workflow:
 
     def __del__(self):
         """Cleanup on destruction."""
-        self._cleanup()
+        try:
+            self._cleanup()
+        except:
+            pass
 
 
 def create_graph(name: str) -> Workflow:
