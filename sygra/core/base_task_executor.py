@@ -50,10 +50,14 @@ class BaseTaskExecutor(ABC):
 
         self.dataset = self.init_dataset()
         output_transform_args = {"oasst": args.oasst, "quality": args.quality}
+
+        graph_props = self.config.get("graph_config", {}).get("graph_properties", {})
+
         self.graph_config = GraphConfig(
-            utils.get_file_in_task_dir(self.task_name, "graph_config.yaml"),
+            self.config,
             self.dataset,
             output_transform_args,
+            graph_properties=graph_props,
         )
         self.output_generator: Optional[BaseOutputGenerator] = self._init_output_generator()
 
@@ -662,6 +666,6 @@ class DefaultTaskExecutor(BaseTaskExecutor):
     we fall back to this class by default.
     """
 
-    def __init__(self, args):
-        super().__init__(args)
+    def __init__(self, args, graph_config_dict=None):
+        super().__init__(args, graph_config_dict)
         logger.info("Using DefaultTaskExecutor for task: %s", self.task_name)
