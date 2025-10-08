@@ -17,7 +17,7 @@ async def check_openai_status(session, model_name, model_data):
     try:
         client = AsyncAzureOpenAI(
             azure_endpoint=model_data["url"],
-            api_key=model_data["api_key"],
+            api_key=model_data["auth_token"],
             api_version=model_data["api_version"],
             timeout=model_data.get("timeout", 10),
             default_headers={"Connection": "close"},
