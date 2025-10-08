@@ -93,14 +93,14 @@ class AutoNestedDict(dict):
 
     def to_dict(self) -> dict:
         """Recursively convert AutoNestedDict to regular dict."""
-        result = {}
+        result: dict[str, Any] = {}
         for k, v in self.items():
             if isinstance(v, AutoNestedDict):
                 result[k] = v.to_dict()
             elif isinstance(v, dict):
                 result[k] = self._convert_dict_to_regular(v)
             elif isinstance(v, list):
-                result[k] = [
+                converted_list: list[Any] = [
                     item.to_dict()
                     if isinstance(item, AutoNestedDict)
                     else self._convert_dict_to_regular(item)
@@ -108,6 +108,7 @@ class AutoNestedDict(dict):
                     else item
                     for item in v
                 ]
+                result[k] = converted_list
             else:
                 result[k] = v
         return result
@@ -629,15 +630,15 @@ class Workflow:
         if "source" not in self._config["data_config"]:
             self._config["data_config"]["source"] = {}
 
-        transformations: list = []
+        transformations_list: list[Union[dict[str, Any], str]] = []  # <-- CORRECT TYPE
 
         for transform in transforms:
             if callable(transform):
-                transformations.append(self._callable_to_string_path(transform))
+                transformations_list.append(self._callable_to_string_path(transform))
             else:
-                transformations.append(transform)
+                transformations_list.append(transform)
 
-        self._config["data_config"]["source"]["transformations"] = transformations
+        self._config["data_config"]["source"]["transformations"] = transformations_list
         return self
 
     def graph_properties(self, properties: dict[str, Any]) -> "Workflow":
@@ -844,7 +845,7 @@ class Workflow:
 
         logger.info(f"Executing existing YAML task with full features: {task_name}")
 
-        modified_config =   self._config
+        modified_config =   self._config.to_dict()
 
         args = Namespace(
             task=task_name,
@@ -1056,7 +1057,6 @@ class Workflow:
     def _cleanup(self):
         """Clean up temporary files."""
         if not self._temp_files:
-            logger.info("No temporary files to clean up")
             return
 
         logger.info(f"Cleaning up {len(self._temp_files)} temporary files")
@@ -1072,10 +1072,7 @@ class Workflow:
 
     def __del__(self):
         """Cleanup on destruction."""
-        try:
-            self._cleanup()
-        except:
-            pass
+        self._cleanup()
 
 
 def create_graph(name: str) -> Workflow:

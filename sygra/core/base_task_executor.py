@@ -52,7 +52,6 @@ class BaseTaskExecutor(ABC):
         output_transform_args = {"oasst": args.oasst, "quality": args.quality}
 
         graph_props = self.config.get("graph_config", {}).get("graph_properties", {})
-        utils._current_graph_properties = graph_props
 
         self.graph_config = GraphConfig(
             self.config,
