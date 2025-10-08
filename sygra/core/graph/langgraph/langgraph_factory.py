@@ -8,8 +8,8 @@ from langgraph.graph import StateGraph
 
 from sygra.core.graph.backend_factory import BackendFactory
 from sygra.core.graph.graph_config import GraphConfig
-from sygra.core.graph.sygra_message import SygraMessage
 from sygra.core.graph.langgraph.langgraph_state import LangGraphState
+from sygra.core.graph.sygra_message import SygraMessage
 from sygra.utils import utils
 
 

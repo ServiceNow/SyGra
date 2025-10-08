@@ -13,7 +13,7 @@ JSON_PATHS = $(shell find sygra -name "*.json")
 # LINT
 ########################################################################################################################
 
-.PHONY: lint lint-ruff lint-mypy
+.PHONY: check-lint lint lint-ruff lint-mypy
 
 lint: ## Run all linters (Ruff + mypy)
 	@echo "🚀 Running all linters..."
@@ -26,6 +26,11 @@ lint-ruff: ## Fix code with Ruff (including unsafe fixes)
 
 lint-mypy: ## Type-check the code with mypy
 	@echo "📐 Type-checking with mypy"
+	poetry run mypy $(LINT_MYPY_PATHS)
+
+check-lint: ## Run Ruff + mypy without making any changes
+	@echo "🔎 Checking code style and types..."
+	poetry run ruff check $(CODE_PATHS)
 	poetry run mypy $(LINT_MYPY_PATHS)
 
 ########################################################################################################################

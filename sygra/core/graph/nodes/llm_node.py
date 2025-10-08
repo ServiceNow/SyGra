@@ -4,8 +4,8 @@ from typing import Any
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from sygra.core.graph.sygra_message import SygraMessage
 from sygra.core.graph.nodes.base_node import BaseNode
+from sygra.core.graph.sygra_message import SygraMessage
 from sygra.logger.logger_config import logger
 from sygra.utils import constants, utils
 from sygra.utils.audio_utils import expand_audio_item
