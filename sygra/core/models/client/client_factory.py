@@ -189,7 +189,7 @@ class ClientFactory:
         """
         model_config = utils.get_updated_model_config(model_config)
         utils.validate_required_keys(
-            ["url", "api_key", "api_version", "model"], model_config, "model"
+            ["url", "auth_token", "api_version", "model"], model_config, "model"
         )
         ssl_verify: bool = bool(model_config.get("ssl_verify", True))
         ssl_cert = model_config.get("ssl_cert")

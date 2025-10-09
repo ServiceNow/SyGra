@@ -152,7 +152,34 @@ class TestToolUtils(unittest.TestCase):
         # Verify model2 has a single URL string
         self.assertIsInstance(result["model2"]["url"], str)
         self.assertEqual(result["model2"]["url"], "http://api.openai.com/v1/")
-        self.assertEqual(result["model2"]["api_key"], "test-token-2")
+        self.assertEqual(result["model2"]["auth_token"], "test-token-2")
+
+    @patch.dict(os.environ, {}, clear=True)
+    @patch("sygra.utils.utils.load_yaml_file")
+    def test_load_model_config_url_token_list(self, mock_load_yaml):
+        """Test that pipe-separated URLs in environment variables are correctly parsed into lists."""
+        # Mock the base configs loaded from YAML
+        mock_load_yaml.return_value = {
+            "model1": {"model_type": "vllm", "parameters": {"temperature": 0.7}},
+        }
+
+        # Set up environment variables with pipe-separated URLs, Tokens
+        os.environ["SYGRA_MODEL1_URL"] = (
+            f"http://server1.example.com/v1/{constants.LIST_SEPARATOR}http://server2.example.com/v1/"
+        )
+        os.environ["SYGRA_MODEL1_TOKEN"] = f"test-token-1{constants.LIST_SEPARATOR}test-token-2"
+
+        # Call the function
+        result = utils.load_model_config()
+
+        # Verify model1 has a list of URLs
+        self.assertIsInstance(result["model1"]["url"], list)
+        self.assertEqual(len(result["model1"]["url"]), 2)
+        self.assertEqual(result["model1"]["url"][0], "http://server1.example.com/v1/")
+        self.assertEqual(result["model1"]["url"][1], "http://server2.example.com/v1/")
+        self.assertIsInstance(result["model1"]["auth_token"], list)
+        self.assertEqual(result["model1"]["auth_token"][0], "test-token-1")
+        self.assertEqual(result["model1"]["auth_token"][1], "test-token-2")
 
 
 if __name__ == "__main__":

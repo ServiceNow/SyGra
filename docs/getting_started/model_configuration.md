@@ -58,7 +58,7 @@ SYGRA_MIXTRAL_8X7B_CHAT_TEMPLATE={% for m in messages %} ... {% endfor %}
 | `ssl_verify`                 | *(Optional)* Verify SSL certificate (default: true)                                                        |
 | `ssl_cert`                   | *(Optional)* Path to SSL certificate file                                                                  |
 > **Note:**  
-> - Do **not** include `url`, `auth_token`, or `api_key` in your YAML config. These are sourced from environment variables as described above.<br>
+> - Do **not** include `url`, `auth_token` in your YAML config. These are sourced from environment variables as described above.<br>
 > - If you want to set **ssl_verify** to **false** globally, you can set `ssl_verify:false` under `model_config` section in config/configuration.yaml
 #### Customizable Model Parameters
 

@@ -68,12 +68,11 @@ def load_model_config() -> Any:
 
         # Look for auth token/API key in environment variables
         if token := os.environ.get(f"{env_prefix}_TOKEN"):
-            # Determine whether to use auth_token or api_key based on model_type
-            model_type = config.get("model_type", "").lower()
-
-            # OpenAI models use api_key, others use auth_token
-            if model_type == "azure_openai":
-                config["api_key"] = token
+            # Check if it contains the list separator (indicating a list of Auth Tokens)
+            if constants.LIST_SEPARATOR in token:
+                # Split by the separator and filter out any empty strings
+                token_list = [t for t in token.split(constants.LIST_SEPARATOR) if t]
+                config["auth_token"] = token_list
             else:
                 config["auth_token"] = token
 

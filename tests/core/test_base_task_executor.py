@@ -90,7 +90,7 @@ def mock_sygra_config():
 def mock_model_config():
     return {
         "gpt-4o": {
-            "api_key": "dummy-key",
+            "auth_token": "dummy-key",
             "api_version": "2024-02-15-preview",
             "model": "gpt-4o",
             "model_type": "azure_openai",
@@ -98,7 +98,7 @@ def mock_model_config():
             "url": "https://test-url.com/",
         },
         "gpt4": {
-            "api_key": "dummy-key",
+            "auth_token": "dummy-key",
             "api_version": "2024-05-01-preview",
             "model": "gpt-4-32k",
             "model_type": "azure_openai",
