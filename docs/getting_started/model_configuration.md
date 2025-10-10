@@ -58,9 +58,11 @@ SYGRA_MIXTRAL_8X7B_CHAT_TEMPLATE={% for m in messages %} ... {% endfor %}
 | `chat_template_params`       | *(Optional)* Chat template parameters (e.g. `reasoning_effort` for `gpt-oss-120b`) <br/> when `completions_api` is enabled |
 | `ssl_verify`                 | *(Optional)* Verify SSL certificate (default: true)                                                                        |
 | `ssl_cert`                   | *(Optional)* Path to SSL certificate file                                                                                  |
-> **Note:**  
+
+![Note](https://img.shields.io/badge/Note-important-yellow)  
 > - Do **not** include `url`, `auth_token`, or `api_key` in your YAML config. These are sourced from environment variables as described above.<br>
 > - If you want to set **ssl_verify** to **false** globally, you can set `ssl_verify:false` under `model_config` section in config/configuration.yaml
+
 #### Customizable Model Parameters
 
 - `temperature`: Sampling randomness (0.0–2.0; lower is more deterministic)
@@ -71,8 +73,7 @@ SYGRA_MIXTRAL_8X7B_CHAT_TEMPLATE={% for m in messages %} ... {% endfor %}
 - `presence_penalty`: (OpenAI only) Encourages novel tokens
 - `frequency_penalty`: (OpenAI only) Penalizes frequently occurring tokens
 
-The model alias set as a key in the configuration is referenced in your graph YAML files (for node types such as `llm` or `multi_llm`). 
-You can override these model parameters,chat_template_params in the graph YAML for specific scenarios.
+The model alias set as a key in the configuration is referenced in your graph YAML files (for node types such as `llm` or `multi_llm`). You can override these model `parameters`, `chat_template_params` in the graph YAML for specific scenarios.
 
 ---
 
