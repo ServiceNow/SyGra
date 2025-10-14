@@ -396,9 +396,7 @@ class TestWorkflowIntegration:
         }
 
         assert isinstance(workflow._config["custom_data"], AutoNestedDict)
-        assert isinstance(
-            workflow._config["custom_data"]["source"]["params"], AutoNestedDict
-        )
+        assert isinstance(workflow._config["custom_data"]["source"]["params"], AutoNestedDict)
 
         assert isinstance(workflow._config["graph_config"], dict)
         assert isinstance(workflow._config["data_config"], dict)
@@ -406,15 +404,10 @@ class TestWorkflowIntegration:
         assert isinstance(workflow._config["graph_config"]["nodes"]["node1"], dict)
 
         assert (
-            workflow._config["graph_config"]["nodes"]["node1"]["model"]["config"][
-                "temperature"
-            ]
+            workflow._config["graph_config"]["nodes"]["node1"]["model"]["config"]["temperature"]
             == 0.7
         )
-        assert (
-            workflow._config["custom_data"]["source"]["params"]["path"]
-            == "/data/input.json"
-        )
+        assert workflow._config["custom_data"]["source"]["params"]["path"] == "/data/input.json"
 
 
 class TestEdgeCases:
