@@ -1,6 +1,6 @@
-# 📚 SyGra Complete Usage Guide
+# SyGra Complete Usage Guide
 
-**Comprehensive documentation with tested, working examples**
+**Comprehensive documentation with examples**
 
 ---
 
