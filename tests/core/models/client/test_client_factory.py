@@ -205,7 +205,7 @@ class TestClientFactory(unittest.TestCase):
         model_config = {
             "model_type": "azure_openai",
             "url": model_url,
-            "api_key": auth_token,
+            "auth_token": auth_token,
             "api_version": "2023-05-15",
             "model": "gpt-4",
             "timeout": 90,
@@ -216,7 +216,7 @@ class TestClientFactory(unittest.TestCase):
 
         # Verify the client was created with the right parameters
         mock_validate.assert_called_once_with(
-            ["url", "api_key", "api_version", "model"], model_config, "model"
+            ["url", "auth_token", "api_version", "model"], model_config, "model"
         )
         self.assertIsNotNone(client)
         mock_openai_client.assert_called_once()
@@ -246,7 +246,7 @@ class TestClientFactory(unittest.TestCase):
         model_config = {
             "model_type": "azure_openai",
             "url": [model_url1, model_url2],
-            "api_key": [auth_token1, auth_token2],
+            "auth_token": [auth_token1, auth_token2],
             "api_version": "2023-05-15",
             "model": "gpt-4",
             "timeout": 90,
@@ -257,7 +257,7 @@ class TestClientFactory(unittest.TestCase):
 
         # Verify the client was created with the right parameters
         mock_validate.assert_called_once_with(
-            ["url", "api_key", "api_version", "model"], model_config, "model"
+            ["url", "auth_token", "api_version", "model"], model_config, "model"
         )
         self.assertIsNotNone(client)
         mock_openai_client.assert_called_once()
@@ -288,7 +288,7 @@ class TestClientFactory(unittest.TestCase):
         model_config = {
             "model_type": "azure_openai",
             "url": [model_url1, model_url2],
-            "api_key": auth_token,
+            "auth_token": auth_token,
             "api_version": "2023-05-15",
             "model": "gpt-4",
             "timeout": 90,
@@ -299,7 +299,7 @@ class TestClientFactory(unittest.TestCase):
 
         # Verify the client was created with the right parameters
         mock_validate.assert_called_once_with(
-            ["url", "api_key", "api_version", "model"], model_config, "model"
+            ["url", "auth_token", "api_version", "model"], model_config, "model"
         )
         self.assertIsNotNone(client)
         mock_openai_client.assert_called_once()

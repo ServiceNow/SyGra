@@ -143,10 +143,7 @@ class SygraBaseChatModel(BaseChatModel):
             ModelParams: The model parameters.
         """
         url = self._config["url"]
-        if "auth_token" in self._config:
-            auth_token = self._config["auth_token"]
-        else:
-            auth_token = self._config["api_key"]
+        auth_token = self._config["auth_token"]
 
         return_url = None
         return_auth_token = None

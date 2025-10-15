@@ -48,7 +48,7 @@ class TestValidateCompletionApiSupport(unittest.TestCase):
             "name": "test_openai",
             "model_type": "azure_openai",
             "url": "http://openai-test.com",
-            "api_key": "test-key",
+            "auth_token": "test-key",
             "api_version": "2023-05-15",
             "model": "gpt-4",
         }
