@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Union, cast
+from typing import Any, Union
 
 import yaml
 
@@ -8,6 +8,7 @@ try:
     from sygra.core.dataset.dataset_config import DataSourceConfig, OutputConfig  # noqa: F401
     from sygra.core.graph.graph_config import GraphConfig  # noqa: F401
     from sygra.utils import utils
+    from sygra.workflow import AutoNestedDict
 
     UTILS_AVAILABLE = True
 except ImportError:
@@ -34,7 +35,10 @@ class ConfigLoader:
                 raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
         with open(config_path, "r") as f:
-            config = cast(dict[str, Any], yaml.safe_load(f))
+            loaded_config = yaml.safe_load(f)
+            if not isinstance(loaded_config, dict):
+                raise TypeError(f"Expected dict from YAML, got {type(loaded_config)}")
+            config: dict[str, Any] = loaded_config
 
         return config
 
@@ -46,7 +50,7 @@ class ConfigLoader:
         from ..workflow import Workflow
 
         workflow = Workflow()
-        workflow._config = config
+        workflow._config = AutoNestedDict.convert_dict(config)
 
         workflow._supports_subgraphs = True
         workflow._supports_multimodal = True
