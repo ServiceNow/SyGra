@@ -23,6 +23,7 @@ class GraphConfig:
         output_transform_args: dict,
         parent_node: str = "",
         override_config=None,  # New parameter for overrides
+        graph_properties: Optional[dict] = None,
     ) -> None:
         """
         Initialize a GraphConfig.
@@ -42,6 +43,7 @@ class GraphConfig:
         self.state_variables: set = set()
         self.graph_state_config: dict[str, Any] = {}
         self.pattern_to_extract_variables = r"(?<!\{)\{([^{}]+)\}(?!\})"
+        self.graph_properties = graph_properties or {}
 
         if isinstance(config, str):
             config = utils.load_yaml_file(filepath=config)

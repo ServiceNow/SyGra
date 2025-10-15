@@ -153,7 +153,7 @@ if st.session_state.get("show_add_model_form", False):
         )
         new_model_model = st.text_input("Model")
         new_model_url = st.text_input("URL")
-        new_model_api_key = st.text_input("API Key / Auth Token", type="password")
+        new_model_auth_token = st.text_input("Auth Token", type="password")
         new_model_api_version = st.text_input("API Version")
 
         if st.form_submit_button("➕ Add New Parameter"):
@@ -214,7 +214,7 @@ if st.session_state.get("show_add_model_form", False):
                     "model_type": new_model_type,
                     "model": new_model_model,
                     "url": new_model_url,
-                    "api_key": new_model_api_key,
+                    "auth_token": new_model_auth_token,
                     "api_version": new_model_api_version,
                     **new_params,
                     "parameters": {

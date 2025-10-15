@@ -24,7 +24,7 @@ from sygra.logger.logger_config import logger
 from sygra.utils import constants
 
 
-def load_model_config() -> Any:
+def load_model_config(config_path: Optional[str] = None) -> Any:
     """
     Load model configurations from both models.yaml and environment variables.
 
@@ -39,6 +39,10 @@ def load_model_config() -> Any:
       Example: "http://url1.com|http://url2.com|http://url3.com"
     - SYGRA_{MODEL_NAME}_TOKEN: Authentication token or API key for the model
 
+    Args:
+        config_path: Optional path to custom config file.
+                     Custom configs override default models.yaml values.
+
     Returns:
         Dict containing combined model configurations
     """
@@ -49,6 +53,11 @@ def load_model_config() -> Any:
 
     # Load base configurations from models.yaml
     base_configs = load_yaml_file(constants.MODEL_CONFIG_YAML)
+
+    # Load and merge custom config if provided
+    if config_path and os.path.exists(config_path):
+        custom_configs = load_yaml_file(config_path)
+        base_configs = {**base_configs, **custom_configs}
 
     # For each model, look for corresponding environment variables
     for model_name, config in base_configs.items():
@@ -68,12 +77,11 @@ def load_model_config() -> Any:
 
         # Look for auth token/API key in environment variables
         if token := os.environ.get(f"{env_prefix}_TOKEN"):
-            # Determine whether to use auth_token or api_key based on model_type
-            model_type = config.get("model_type", "").lower()
-
-            # OpenAI models use api_key, others use auth_token
-            if model_type == "azure_openai":
-                config["api_key"] = token
+            # Check if it contains the list separator (indicating a list of Auth Tokens)
+            if constants.LIST_SEPARATOR in token:
+                # Split by the separator and filter out any empty strings
+                token_list = [t for t in token.split(constants.LIST_SEPARATOR) if t]
+                config["auth_token"] = token_list
             else:
                 config["auth_token"] = token
 

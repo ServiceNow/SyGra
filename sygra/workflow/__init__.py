@@ -62,6 +62,69 @@ except ImportError:
     DATA_UTILS_AVAILABLE = False
 
 
+class AutoNestedDict(dict):
+    """Dictionary that automatically creates nested dictionaries on access."""
+
+    def __getitem__(self, key):
+        if key not in self:
+            self[key] = AutoNestedDict()
+        return super().__getitem__(key)
+
+    def __setitem__(self, key, value):
+        if isinstance(value, dict) and not isinstance(value, AutoNestedDict):
+            value = self.convert_dict(value)
+        super().__setitem__(key, value)
+
+    @classmethod
+    def convert_dict(cls, d):
+        """Recursively convert nested dicts to AutoNestedDict."""
+        result = cls()
+        for k, v in d.items():
+            if isinstance(v, dict):
+                result[k] = cls.convert_dict(v)
+            elif isinstance(v, list):
+                result[k] = [
+                    cls.convert_dict(item) if isinstance(item, dict) else item for item in v
+                ]
+            else:
+                result[k] = v
+        return result
+
+    def to_dict(self) -> dict:
+        """Recursively convert AutoNestedDict to regular dict."""
+        result: dict[str, Any] = {}
+        for k, v in self.items():
+            if isinstance(v, AutoNestedDict):
+                result[k] = v.to_dict()
+            elif isinstance(v, dict):
+                result[k] = self._convert_dict_to_regular(v)
+            elif isinstance(v, list):
+                converted_list: list[Any] = [
+                    (
+                        item.to_dict()
+                        if isinstance(item, AutoNestedDict)
+                        else self._convert_dict_to_regular(item) if isinstance(item, dict) else item
+                    )
+                    for item in v
+                ]
+                result[k] = converted_list
+            else:
+                result[k] = v
+        return result
+
+    @staticmethod
+    def _convert_dict_to_regular(d):
+        """Helper to convert any dict to regular dict recursively."""
+        if isinstance(d, AutoNestedDict):
+            return d.to_dict()
+        elif isinstance(d, dict):
+            return {k: AutoNestedDict._convert_dict_to_regular(v) for k, v in d.items()}
+        elif isinstance(d, list):
+            return [AutoNestedDict._convert_dict_to_regular(item) for item in d]
+        else:
+            return d
+
+
 class Workflow:
     """
     Unified workflow builder supporting all SyGra paradigms and use cases.
@@ -104,17 +167,19 @@ class Workflow:
 
     def __init__(self, name: Optional[str] = None):
         self.name: str = name or f"workflow_{uuid.uuid4().hex[:8]}"
-        self._config: dict[str, Any] = {
-            "graph_config": {"nodes": {}, "edges": [], "graph_properties": {}},
-            "data_config": {},
-            "output_config": {},
-        }
+        self._config: AutoNestedDict = AutoNestedDict(
+            {
+                "graph_config": {"nodes": {}, "edges": [], "graph_properties": {}},
+                "data_config": {},
+                "output_config": {},
+            }
+        )
         self._node_counter: int = 0
         self._last_node: Optional[str] = None
         self._temp_files: list[str] = []
-        self._overrides: dict[str, Any] = {}
         self._node_builders: dict[str, Any] = {}
         self._messages: list[str] = []
+        self._is_existing_task: bool = False
 
         # Feature support flags
         self._supports_subgraphs = True
@@ -122,6 +187,37 @@ class Workflow:
         self._supports_resumable = True
         self._supports_quality = True
         self._supports_oasst = True
+
+        self._load_existing_config_if_present()
+
+    def _load_existing_config_if_present(self):
+        """Load existing task configuration if this appears to be a task path."""
+        if self.name and (os.path.exists(self.name) or "/" in self.name or "\\" in self.name):
+            task_path = self.name
+            config_file = os.path.join(task_path, "graph_config.yaml")
+
+            if not os.path.isabs(task_path):
+                config_file = os.path.join(os.getcwd(), config_file)
+
+            if os.path.exists(config_file):
+                try:
+                    with open(config_file, "r") as f:
+                        loaded_config = yaml.safe_load(f)
+
+                    if loaded_config:
+                        self._config = AutoNestedDict.convert_dict(loaded_config)
+                        self._is_existing_task = True
+
+                        if (
+                            "graph_config" in self._config
+                            and "nodes" in self._config["graph_config"]
+                        ):
+                            self._node_counter = len(self._config["graph_config"]["nodes"])
+
+                        logger.info(f"Loaded existing task config: {self.name}")
+
+                except Exception as e:
+                    logger.warning(f"Failed to load existing config from {config_file}: {e}")
 
     def source(
         self, source: Union[str, Path, dict[str, Any], list[dict[str, Any]], DataSource]
@@ -530,15 +626,15 @@ class Workflow:
         if "source" not in self._config["data_config"]:
             self._config["data_config"]["source"] = {}
 
-        transformations: list = []
+        transformations_list: list[Union[dict[str, Any], str]] = []  # <-- CORRECT TYPE
 
         for transform in transforms:
             if callable(transform):
-                transformations.append(self._callable_to_string_path(transform))
+                transformations_list.append(self._callable_to_string_path(transform))
             else:
-                transformations.append(transform)
+                transformations_list.append(transform)
 
-        self._config["data_config"]["source"]["transformations"] = transformations
+        self._config["data_config"]["source"]["transformations"] = transformations_list
         return self
 
     def graph_properties(self, properties: dict[str, Any]) -> "Workflow":
@@ -603,10 +699,7 @@ class Workflow:
             .override("graph_config.nodes.llm_1.model.name", "gpt-4o")
             .override("data_config.source.repo_id", "new/dataset")
         """
-        if not hasattr(self, "_overrides"):
-            self._overrides = {}
-
-        self._overrides[path] = value
+        self._set_nested_value(self._config, path, value)
         return self
 
     def override_model(
@@ -714,17 +807,16 @@ class Workflow:
         # Apply node builders before execution
         self.build()
 
-        has_source = "source" in self._config.get("data_config", {})
         has_nodes = len(self._config["graph_config"]["nodes"]) > 0
 
-        if has_source and has_nodes:
+        if self._is_existing_task:
+            return self._execute_existing_task(num_records, start_index, output_dir, **kwargs)
+        elif has_nodes:
             return self._execute_programmatic_workflow(
                 num_records, start_index, output_dir, **kwargs
             )
-        elif not has_source and not has_nodes:
-            return self._execute_existing_task(num_records, start_index, output_dir, **kwargs)
         else:
-            raise ConfigurationError("Incomplete workflow. Add both source and processing nodes.")
+            raise ConfigurationError("Incomplete workflow. Add processing nodes.")
 
     def save_config(self, path: Union[str, Path]) -> None:
         """Save workflow configuration as YAML file."""
@@ -732,7 +824,7 @@ class Workflow:
         self.build()
 
         with open(path, "w") as f:
-            yaml.dump(self._config, f, default_flow_style=False)
+            yaml.dump(self._config.to_dict(), f, default_flow_style=False)
 
     def _execute_existing_task(
         self,
@@ -743,32 +835,14 @@ class Workflow:
     ) -> Any:
         """Execute existing YAML-based task with full feature support."""
         task_name: str = self.name
-        current_task: str = task_name
         utils.current_task = task_name
-
-        config_file = f"{task_name}/graph_config.yaml"
-
-        if not os.path.isabs(task_name):
-            config_file = os.path.join(os.getcwd(), config_file)
-
-        if not os.path.exists(config_file):
-            raise ConfigurationError(
-                f"Task '{task_name}' not found.\n"
-                f"Expected config file: {config_file}\n"
-                f"Or create a programmatic workflow: workflow.source(...).llm(...).run()"
-            )
 
         logger.info(f"Executing existing YAML task with full features: {task_name}")
 
-        import yaml
-
-        with open(config_file, "r") as f:
-            original_config = yaml.safe_load(f)
-
-        modified_config = self._apply_overrides(original_config)
+        modified_config = self._config.to_dict()
 
         args = Namespace(
-            task=current_task,
+            task=task_name,
             num_records=num_records,
             start_index=start_index,
             output_dir=output_dir,
@@ -788,15 +862,14 @@ class Workflow:
                 executor = JudgeQualityTaskExecutor(args, kwargs.get("quality_config"))
             else:
                 executor = DefaultTaskExecutor(args)
-
-            executor.config = modified_config
+                BaseTaskExecutor.__init__(executor, args, modified_config)
 
             result = executor.execute()
-            logger.info(f"Successfully executed task with all features: {task_name}")
+            logger.info(f"Successfully executed task: {task_name}")
             return result
         except Exception as e:
             if "model_type" in str(e).lower() or "model" in str(e).lower():
-                logger.error(f"Model configuration error in {config_file}")
+                logger.error("Model configuration error")
             elif "current task name is not initialized" in str(e).lower():
                 logger.error(f"Task context initialization failed for '{task_name}'")
             raise ExecutionError(f"Failed to execute task '{task_name}': {e}")
@@ -812,15 +885,18 @@ class Workflow:
         try:
             task_name = self.name
             utils.current_task = self.name
-            os.makedirs(task_name, exist_ok=True)
-            self._temp_files.append(task_name)
+
+            # Determine output directory
+            if output_dir is None:
+                output_dir = tempfile.mkdtemp(prefix=f"sygra_output_{task_name}_")
+                self._temp_files.append(output_dir)
+            else:
+                os.makedirs(output_dir, exist_ok=True)
 
             if not kwargs.get("enable_default_transforms", False):
                 self.disable_default_transforms()
 
-            config_file = f"{task_name}/graph_config.yaml"
-            with open(config_file, "w") as f:
-                yaml.dump(self._config, f, default_flow_style=False)
+            config_dict = self._config.to_dict()
 
             utils.current_task = self.name
 
@@ -852,7 +928,7 @@ class Workflow:
             if kwargs.get("quality_only", False):
                 executor = JudgeQualityTaskExecutor(args, kwargs.get("quality_config"))
             else:
-                executor = DefaultTaskExecutor(args)
+                executor = DefaultTaskExecutor(args, config_dict)
 
             result = executor.execute()
 
@@ -883,21 +959,6 @@ class Workflow:
             raise ExecutionError(f"Programmatic workflow execution failed: {e}")
         finally:
             self._cleanup()
-
-    def _apply_overrides(self, config: dict[str, Any]) -> dict[str, Any]:
-        """Apply all overrides to the loaded configuration."""
-        if not hasattr(self, "_overrides") or not self._overrides:
-            return config
-
-        import copy
-
-        modified_config = copy.deepcopy(config)
-
-        for path, value in self._overrides.items():
-            self._set_nested_value(modified_config, path, value)
-
-        logger.info(f"Applied {len(self._overrides)} configuration overrides")
-        return modified_config
 
     def _set_nested_value(self, config: dict[str, Any], path: str, value: Any) -> None:
         """Set a nested value using dot notation path."""
@@ -989,6 +1050,10 @@ class Workflow:
 
     def _cleanup(self):
         """Clean up temporary files."""
+        if not self._temp_files:
+            return
+
+        logger.info(f"Cleaning up {len(self._temp_files)} temporary files")
         for temp_file in self._temp_files:
             try:
                 if os.path.isfile(temp_file):

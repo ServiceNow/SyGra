@@ -44,6 +44,7 @@ SYGRA_MIXTRAL_8X7B_CHAT_TEMPLATE={% for m in messages %} ... {% endfor %}
 
 ### Configuration Properties
 
+
 | Key                          | Description                                                                                                                |
 |------------------------------|----------------------------------------------------------------------------------------------------------------------------|
 | `model_type`                 | Type of backend server (`tgi`, `vllm`, `openai`, `azure_openai`, `azure`, `mistralai`, `ollama`, `triton`)                 |

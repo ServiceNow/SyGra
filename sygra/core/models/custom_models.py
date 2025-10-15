@@ -263,10 +263,7 @@ class BaseCustomModel(ABC):
 
     def _get_model_params(self) -> ModelParams:
         url = self.model_config.get("url", "")
-        if "auth_token" in self.model_config:
-            auth_token = self.model_config.get("auth_token", "")
-        else:
-            auth_token = self.model_config.get("api_key", "")
+        auth_token = self.model_config.get("auth_token", "")
 
         return_url = None
         return_auth_token = None
@@ -392,7 +389,7 @@ class BaseCustomModel(ABC):
         if returns 200, its success
         """
         url_obj = self.model_config.get("url")
-        auth_token = self.model_config.get("auth_token") or self.model_config.get("api_key")
+        auth_token = self.model_config.get("auth_token")
         if isinstance(url_obj, list):
             for i, url in enumerate(url_obj):
                 token = auth_token[i] if isinstance(auth_token, list) else auth_token
@@ -973,7 +970,7 @@ class CustomOpenAI(BaseCustomModel):
     def __init__(self, model_config: dict[str, Any]) -> None:
         super().__init__(model_config)
         utils.validate_required_keys(
-            ["url", "api_key", "api_version", "model"], model_config, "model"
+            ["url", "auth_token", "api_version", "model"], model_config, "model"
         )
         self.model_config = model_config
 
