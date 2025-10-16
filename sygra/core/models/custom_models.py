@@ -1174,10 +1174,22 @@ class CustomOpenAI(BaseCustomModel):
                 **tts_params
             )
 
-            # Return base64 encoded audio
+            # Map response format to MIME type
+            mime_types = {
+                'mp3': 'audio/mpeg',
+                'opus': 'audio/opus',
+                'aac': 'audio/aac',
+                'flac': 'audio/flac',
+                'wav': 'audio/wav',
+                'pcm': 'audio/pcm'
+            }
+            mime_type = mime_types.get(response_format, 'audio/wav')
+
+            # Create base64 encoded data URL
             audio_base64 = base64.b64encode(audio_response.content).decode('utf-8')
-            logger.info(f"[{self.name()}] Audio converted to base64 ({len(audio_base64)} characters)")
-            resp_text = audio_base64
+            data_url = f"data:{mime_type};base64,{audio_base64}"
+            logger.info(f"[{self.name()}] Audio converted to data URL with format {response_format} ({len(data_url)} characters)")
+            resp_text = data_url
 
         except openai.RateLimitError as e:
             logger.warning(f"[{self.name()}] OpenAI TTS API request exceeded rate limit: {e}")
