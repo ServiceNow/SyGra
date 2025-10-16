@@ -237,7 +237,7 @@ class BaseCustomModel(ABC):
         modified_input = ChatPromptValue(messages=modified_messages)
 
         # Generate the text with retry (uses our centralized retry logic)
-        resp_text, resp_status = await self._generate_text_with_retry(
+        resp_text, resp_status = await self._generate_response_with_retry(
             modified_input, model_params, **kwargs
         )
 
@@ -365,7 +365,7 @@ class BaseCustomModel(ABC):
             logger.info(f"[{self.name()}] Model Stats: {temp_model_stats}")
 
     @abstractmethod
-    async def _generate_text(
+    async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
         pass
@@ -381,7 +381,7 @@ class BaseCustomModel(ABC):
         msg = utils.backend_factory.get_test_message()
         # build parameters
         model_param = ModelParams(url=url, auth_token=auth_token)
-        _, status = asyncio.run(self._generate_text(msg, model_param))
+        _, status = asyncio.run(self._generate_response(msg, model_param))
         return status
 
     def ping(self) -> int:
@@ -492,12 +492,12 @@ class BaseCustomModel(ABC):
                             logger.info(
                                 "Structured output not configured, falling back to regular generation"
                             )
-                            result = await self._generate_text(input, model_params, **kwargs)
+                            result = await self._generate_response(input, model_params, **kwargs)
                         else:
                             result = so_result
                     else:
                         # Regular text generation
-                        result = await self._generate_text(input, model_params, **kwargs)
+                        result = await self._generate_response(input, model_params, **kwargs)
 
                     # Apply post-processing if defined
                     post_proc = self._get_post_processor()
@@ -515,7 +515,7 @@ class BaseCustomModel(ABC):
             logger.error(f"[{self.name()}] Request failed after {self.retry_attempts} attempts")
         return result
 
-    async def _generate_text_with_retry(
+    async def _generate_response_with_retry(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> Tuple[str, int]:
         """
@@ -695,7 +695,7 @@ class CustomTGI(BaseCustomModel):
                 input, model_params, pydantic_model, **kwargs
             )
 
-    async def _generate_text(
+    async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
         try:
@@ -755,7 +755,7 @@ class CustomAzure(BaseCustomModel):
         else:
             raise ValueError("auth_token must be a string or non-empty list of strings")
 
-    async def _generate_text(
+    async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
         model_url = model_params.url
@@ -798,7 +798,7 @@ class CustomMistralAPI(BaseCustomModel):
     def __init__(self, model_config: dict[str, Any]) -> None:
         super().__init__(model_config)
 
-    async def _generate_text(
+    async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
         ret_code = 200
@@ -923,7 +923,7 @@ class CustomVLLM(BaseCustomModel):
                 input, model_params, pydantic_model, **kwargs
             )
 
-    async def _generate_text(
+    async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
         ret_code = 200
@@ -1057,9 +1057,28 @@ class CustomOpenAI(BaseCustomModel):
                 input, model_params, pydantic_model, **kwargs
             )
 
-    async def _generate_text(
+    async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
+        # Check if this is a TTS request based on output_type
+        if self.model_config.get("output_type") == "audio":
+            return await self._generate_speech(input, model_params)
+        
+
+    async def _generate_text(
+            self, input: ChatPromptValue, model_params: ModelParams
+    ) -> Tuple[str, int]:
+        """
+        Generate text using OpenAI/Azure OpenAI Chat or Completions API.
+        This method is called when output_type is 'text' or not specified in model config.
+        Args:
+            input: ChatPromptValue containing the messages for chat completion
+            model_params: Model parameters including URL and auth token
+        Returns:
+            Tuple of (response_text, status_code)
+            - On success: returns generated text and 200
+            - On error: returns error message and error code
+        """
         ret_code = 200
         model_url = model_params.url
         try:
@@ -1091,35 +1110,12 @@ class CustomOpenAI(BaseCustomModel):
             ret_code = rcode if rcode else 999
         return resp_text, ret_code
 
-
-class CustomOpenAITTS(BaseCustomModel):
-    """
-    Custom model class for OpenAI Text-to-Speech (TTS) API.
-    Supports models like tts-1 and tts-1-hd.
-
-    Configuration parameters:
-    - url: API endpoint URL
-    - auth_token: OpenAI API key
-    - api_version: API version
-    - model: TTS model name (e.g., 'tts-1', 'tts-1-hd')
-    - voice: Voice to use (alloy, echo, fable, onyx, nova, shimmer) - optional, defaults to 'alloy'
-    - response_format: Audio format (mp3, opus, aac, flac, wav, pcm) - optional, defaults to 'mp3'
-    - speed: Speed of audio (0.25 to 4.0) - optional, defaults to 1.0
-    - output_file: Path to save audio file - optional, if not provided returns base64 encoded audio
-    """
-
-    def __init__(self, model_config: dict[str, Any]) -> None:
-        super().__init__(model_config)
-        utils.validate_required_keys(
-            ["url", "auth_token", "api_version", "model"], model_config, "model"
-        )
-        self.model_config = model_config
-
-    async def _generate_text(
+    async def _generate_speech(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
         """
-        Generate speech from text using OpenAI TTS API.
+        Generate speech from text using OpenAI/Azure OpenAI TTS API.
+        This method is called when output_type is 'audio' in model config.
 
         Args:
             input: ChatPromptValue containing the text to convert to speech
@@ -1138,7 +1134,7 @@ class CustomOpenAITTS(BaseCustomModel):
             # Extract text from messages
             text_to_speak = ""
             for message in input.messages:
-                if hasattr(message, "content"):
+                if hasattr(message, 'content'):
                     text_to_speak += str(message.content) + " "
             text_to_speak = text_to_speak.strip()
 
@@ -1148,72 +1144,61 @@ class CustomOpenAITTS(BaseCustomModel):
 
             # Validate text length (OpenAI TTS limit is 4096 characters)
             if len(text_to_speak) > 4096:
-                logger.error(
-                    f"[{self.name()}] Text exceeds 4096 character limit: {len(text_to_speak)} characters"
-                )
+                logger.error(f"[{self.name()}] Text exceeds 4096 character limit: {len(text_to_speak)} characters")
                 return f"{constants.ERROR_PREFIX} Text exceeds 4096 character limit", 400
 
             # Set up the OpenAI client
             self._set_client(model_url, model_params.auth_token)
 
             # Get TTS-specific parameters from generation_params or model_config
-            voice = self.generation_params.get("voice", self.model_config.get("voice", "alloy"))
-            response_format = self.generation_params.get(
-                "response_format", self.model_config.get("response_format", "mp3")
-            )
-            speed = self.generation_params.get("speed", self.model_config.get("speed", 1.0))
-            output_file = self.generation_params.get(
-                "output_file", self.model_config.get("output_file")
-            )
+            voice = self.generation_params.get('voice', self.model_config.get('voice', 'alloy'))
+            response_format = self.generation_params.get('response_format', self.model_config.get('response_format', 'mp3'))
+            speed = self.generation_params.get('speed', self.model_config.get('speed', 1.0))
+            output_file = self.generation_params.get('output_file', self.model_config.get('output_file'))
 
             # Validate voice option
-            valid_voices = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+            valid_voices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
             if voice not in valid_voices:
                 logger.warning(f"[{self.name()}] Invalid voice '{voice}', using 'alloy'")
-                voice = "alloy"
+                voice = 'alloy'
 
             # Validate response format
-            valid_formats = ["mp3", "opus", "aac", "flac", "wav", "pcm"]
+            valid_formats = ['mp3', 'opus', 'aac', 'flac', 'wav', 'pcm']
             if response_format not in valid_formats:
                 logger.warning(f"[{self.name()}] Invalid format '{response_format}', using 'mp3'")
-                response_format = "mp3"
+                response_format = 'mp3'
 
             # Validate speed
             speed = max(0.25, min(4.0, float(speed)))
 
-            logger.info(
-                f"[{self.name()}] Converting text to speech: {len(text_to_speak)} characters"
-            )
-            logger.debug(
-                f"[{self.name()}] TTS parameters - voice: {voice}, format: {response_format}, speed: {speed}"
-            )
+            logger.info(f"[{self.name()}] Converting text to speech: {len(text_to_speak)} characters")
+            logger.debug(f"[{self.name()}] TTS parameters - voice: {voice}, format: {response_format}, speed: {speed}")
 
             # Prepare TTS request parameters
             tts_params = {
-                "input": text_to_speak,
-                "voice": voice,
-                "response_format": response_format,
-                "speed": speed,
+                'input': text_to_speak,
+                'voice': voice,
+                'response_format': response_format,
+                'speed': speed
             }
 
             # Make the TTS API call
             audio_response = await self._client.create_speech(
-                model=str(self.model_config.get("model")), **tts_params
+                model=str(self.model_config.get("model")),
+                **tts_params
             )
 
             # Handle the response based on whether output_file is specified
             if output_file:
                 # Save to file
-                with open(output_file, "wb") as f:
+                with open(output_file, 'wb') as f:
                     f.write(audio_response.content)
                 logger.info(f"[{self.name()}] Audio saved to {output_file}")
                 resp_text = f"Audio successfully saved to: {output_file}"
             else:
                 # Return base64 encoded audio
-                audio_base64 = base64.b64encode(audio_response.content).decode("utf-8")
-                logger.info(
-                    f"[{self.name()}] Audio converted to base64 ({len(audio_base64)} characters)"
-                )
+                audio_base64 = base64.b64encode(audio_response.content).decode('utf-8')
+                logger.info(f"[{self.name()}] Audio converted to base64 ({len(audio_base64)} characters)")
                 resp_text = audio_base64
 
         except openai.RateLimitError as e:
@@ -1223,7 +1208,7 @@ class CustomOpenAITTS(BaseCustomModel):
         except openai.APIError as e:
             logger.error(f"[{self.name()}] OpenAI TTS API error: {e}")
             resp_text = f"{constants.ERROR_PREFIX} API error: {e}"
-            ret_code = getattr(e, "status_code", 500)
+            ret_code = getattr(e, 'status_code', 500)
         except Exception as x:
             resp_text = f"{constants.ERROR_PREFIX} TTS request failed: {x}"
             logger.error(f"[{self.name()}] {resp_text}")
@@ -1319,7 +1304,7 @@ class CustomOllama(BaseCustomModel):
                 input, model_params, pydantic_model, **kwargs
             )
 
-    async def _generate_text(
+    async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
         ret_code = 200
@@ -1456,7 +1441,7 @@ class CustomTriton(BaseCustomModel):
         self.model_config = model_config
         self.auth_token = str(model_config.get("auth_token")).replace("Bearer ", "")
 
-    async def _generate_text(
+    async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
         ret_code = 200
