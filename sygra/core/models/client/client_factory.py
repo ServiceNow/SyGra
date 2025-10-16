@@ -91,7 +91,11 @@ class ClientFactory:
             )
 
         # Create client based on model type
-        if model_type == ModelType.VLLM.value or model_type == ModelType.OPENAI.value or model_type == ModelType.OPENAI_TTS.value:
+        if (
+            model_type == ModelType.VLLM.value
+            or model_type == ModelType.OPENAI.value
+            or model_type == ModelType.OPENAI_TTS.value
+        ):
             # Initialize the client with default chat_completions_api
             return cls._create_openai_client(
                 model_config,
@@ -100,7 +104,10 @@ class ClientFactory:
                 async_client,
                 not model_config.get("completions_api", False),
             )
-        elif model_type == ModelType.AZURE_OPENAI.value or model_type == ModelType.AZURE_OPENAI_TTS.value:
+        elif (
+            model_type == ModelType.AZURE_OPENAI.value
+            or model_type == ModelType.AZURE_OPENAI_TTS.value
+        ):
             return cls._create_openai_azure_client(
                 model_config,
                 url,

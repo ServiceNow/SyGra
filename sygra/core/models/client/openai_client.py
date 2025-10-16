@@ -208,7 +208,9 @@ class OpenAIClient(BaseClient):
             ValueError: If async_client is False (TTS requires async client)
         """
         if not self.async_client:
-            raise ValueError("TTS API requires async client. Please initialize with async_client=True")
+            raise ValueError(
+                "TTS API requires async client. Please initialize with async_client=True"
+            )
 
         client = cast(Any, self.client)
         return await client.audio.speech.create(

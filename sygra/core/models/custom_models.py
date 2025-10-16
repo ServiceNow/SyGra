@@ -1096,7 +1096,7 @@ class CustomOpenAITTS(BaseCustomModel):
     """
     Custom model class for OpenAI Text-to-Speech (TTS) API.
     Supports models like tts-1 and tts-1-hd.
-    
+
     Configuration parameters:
     - url: API endpoint URL
     - auth_token: OpenAI API key
@@ -1107,7 +1107,7 @@ class CustomOpenAITTS(BaseCustomModel):
     - speed: Speed of audio (0.25 to 4.0) - optional, defaults to 1.0
     - output_file: Path to save audio file - optional, if not provided returns base64 encoded audio
     """
-    
+
     def __init__(self, model_config: dict[str, Any]) -> None:
         super().__init__(model_config)
         utils.validate_required_keys(
@@ -1120,11 +1120,11 @@ class CustomOpenAITTS(BaseCustomModel):
     ) -> Tuple[str, int]:
         """
         Generate speech from text using OpenAI TTS API.
-        
+
         Args:
             input: ChatPromptValue containing the text to convert to speech
             model_params: Model parameters including URL and auth token
-            
+
         Returns:
             Tuple of (response_text, status_code)
             - If output_file is specified: returns file path and 200
@@ -1133,78 +1133,89 @@ class CustomOpenAITTS(BaseCustomModel):
         """
         ret_code = 200
         model_url = model_params.url
-        
+
         try:
             # Extract text from messages
             text_to_speak = ""
             for message in input.messages:
-                if hasattr(message, 'content'):
+                if hasattr(message, "content"):
                     text_to_speak += str(message.content) + " "
             text_to_speak = text_to_speak.strip()
-            
+
             if not text_to_speak:
                 logger.error(f"[{self.name()}] No text provided for TTS conversion")
                 return f"{constants.ERROR_PREFIX} No text provided for TTS conversion", 400
-            
+
             # Validate text length (OpenAI TTS limit is 4096 characters)
             if len(text_to_speak) > 4096:
-                logger.error(f"[{self.name()}] Text exceeds 4096 character limit: {len(text_to_speak)} characters")
+                logger.error(
+                    f"[{self.name()}] Text exceeds 4096 character limit: {len(text_to_speak)} characters"
+                )
                 return f"{constants.ERROR_PREFIX} Text exceeds 4096 character limit", 400
-            
+
             # Set up the OpenAI client
             self._set_client(model_url, model_params.auth_token)
-            
+
             # Get TTS-specific parameters from generation_params or model_config
-            voice = self.generation_params.get('voice', self.model_config.get('voice', 'alloy'))
-            response_format = self.generation_params.get('response_format', self.model_config.get('response_format', 'mp3'))
-            speed = self.generation_params.get('speed', self.model_config.get('speed', 1.0))
-            output_file = self.generation_params.get('output_file', self.model_config.get('output_file'))
-            
+            voice = self.generation_params.get("voice", self.model_config.get("voice", "alloy"))
+            response_format = self.generation_params.get(
+                "response_format", self.model_config.get("response_format", "mp3")
+            )
+            speed = self.generation_params.get("speed", self.model_config.get("speed", 1.0))
+            output_file = self.generation_params.get(
+                "output_file", self.model_config.get("output_file")
+            )
+
             # Validate voice option
-            valid_voices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
+            valid_voices = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
             if voice not in valid_voices:
                 logger.warning(f"[{self.name()}] Invalid voice '{voice}', using 'alloy'")
-                voice = 'alloy'
-            
+                voice = "alloy"
+
             # Validate response format
-            valid_formats = ['mp3', 'opus', 'aac', 'flac', 'wav', 'pcm']
+            valid_formats = ["mp3", "opus", "aac", "flac", "wav", "pcm"]
             if response_format not in valid_formats:
                 logger.warning(f"[{self.name()}] Invalid format '{response_format}', using 'mp3'")
-                response_format = 'mp3'
-            
+                response_format = "mp3"
+
             # Validate speed
             speed = max(0.25, min(4.0, float(speed)))
-            
-            logger.info(f"[{self.name()}] Converting text to speech: {len(text_to_speak)} characters")
-            logger.debug(f"[{self.name()}] TTS parameters - voice: {voice}, format: {response_format}, speed: {speed}")
-            
+
+            logger.info(
+                f"[{self.name()}] Converting text to speech: {len(text_to_speak)} characters"
+            )
+            logger.debug(
+                f"[{self.name()}] TTS parameters - voice: {voice}, format: {response_format}, speed: {speed}"
+            )
+
             # Prepare TTS request parameters
             tts_params = {
-                'input': text_to_speak,
-                'voice': voice,
-                'response_format': response_format,
-                'speed': speed
+                "input": text_to_speak,
+                "voice": voice,
+                "response_format": response_format,
+                "speed": speed,
             }
-            
+
             # Make the TTS API call
             audio_response = await self._client.create_speech(
-                model=str(self.model_config.get("model")),
-                **tts_params
+                model=str(self.model_config.get("model")), **tts_params
             )
-            
+
             # Handle the response based on whether output_file is specified
             if output_file:
                 # Save to file
-                with open(output_file, 'wb') as f:
+                with open(output_file, "wb") as f:
                     f.write(audio_response.content)
                 logger.info(f"[{self.name()}] Audio saved to {output_file}")
                 resp_text = f"Audio successfully saved to: {output_file}"
             else:
                 # Return base64 encoded audio
-                audio_base64 = base64.b64encode(audio_response.content).decode('utf-8')
-                logger.info(f"[{self.name()}] Audio converted to base64 ({len(audio_base64)} characters)")
+                audio_base64 = base64.b64encode(audio_response.content).decode("utf-8")
+                logger.info(
+                    f"[{self.name()}] Audio converted to base64 ({len(audio_base64)} characters)"
+                )
                 resp_text = audio_base64
-            
+
         except openai.RateLimitError as e:
             logger.warning(f"[{self.name()}] OpenAI TTS API request exceeded rate limit: {e}")
             resp_text = f"{constants.ERROR_PREFIX} Rate limit exceeded: {e}"
@@ -1212,13 +1223,13 @@ class CustomOpenAITTS(BaseCustomModel):
         except openai.APIError as e:
             logger.error(f"[{self.name()}] OpenAI TTS API error: {e}")
             resp_text = f"{constants.ERROR_PREFIX} API error: {e}"
-            ret_code = getattr(e, 'status_code', 500)
+            ret_code = getattr(e, "status_code", 500)
         except Exception as x:
             resp_text = f"{constants.ERROR_PREFIX} TTS request failed: {x}"
             logger.error(f"[{self.name()}] {resp_text}")
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
-            
+
         return resp_text, ret_code
 
 
