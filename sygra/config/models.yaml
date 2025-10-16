@@ -78,3 +78,14 @@ qwen3_1.7b:
   post_process: sygra.core.models.model_postprocessor.RemoveThinkData
   parameters:
     temperature: 0.8
+
+# TTS openai model
+tts_openai:
+  model: tts
+  model_type: azure_openai_tts
+  api_version: 2025-03-01-preview
+  # URL and api_key should be defined at .env file as SYGRA_TTS_OPENAI_URL and SYGRA_TTS_OPENAI_TOKEN
+  parameters:
+    voice: "alloy"
+    response_format: "wav"
+    speed: 1.0
