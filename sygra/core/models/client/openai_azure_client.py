@@ -175,8 +175,8 @@ class OpenAIAzureClient(BaseClient):
         Args:
             model (str): The TTS model deployment name (e.g., 'tts-1', 'tts-1-hd')
             input (str): The text to convert to speech
-            voice (str): The voice to use (alloy, echo, fable, onyx, nova, shimmer)
-            response_format (str, optional): The audio format (mp3, opus, aac, flac, wav, pcm). Defaults to 'mp3'
+            voice (str): The voice to use like alloy, echo, fable, onyx, nova, shimmer etc.
+            response_format (str, optional): The audio formats like mp3, opus, aac, flac, wav, pcm etc. Defaults to 'wav'
             speed (float, optional): The speed of the audio (0.25 to 4.0). Defaults to 1.0
 
         Returns:
