@@ -18,24 +18,19 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: 3.9
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v4
+          python-version: '3.9'
+      - uses: snok/install-poetry@v1
         with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.local/share/pypoetry
-            ~/.venv
-          key: poetry-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            poetry-${{ runner.os }}-
-      - name: Install Poetry
-        run: pip install poetry
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
       - run: make setup-dev
 
   # Run Formatting
@@ -43,24 +38,19 @@ jobs:
     needs: setup_sygra
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: 3.9
-      - name: Restore Poetry dependencies cache
-        uses: actions/cache@v4
+          python-version: '3.9'
+      - uses: snok/install-poetry@v1
         with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.local/share/pypoetry
-            ~/.venv
-          key: poetry-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            poetry-${{ runner.os }}-
-      - name: Install Poetry
-        run: pip install poetry
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
       - run: make setup-dev
       - run: make check-format
   # Run Linting
@@ -68,24 +58,19 @@ jobs:
     needs: setup_sygra
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: 3.9
-      - name: Restore Poetry dependencies cache
-        uses: actions/cache@v4
+          python-version: '3.9'
+      - uses: snok/install-poetry@v1
         with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.local/share/pypoetry
-            ~/.venv
-          key: poetry-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            poetry-${{ runner.os }}-
-      - name: Install Poetry
-        run: pip install poetry
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
       - run: make setup-dev
       - run: make check-lint
   # Run Tests
@@ -93,24 +78,19 @@ jobs:
     needs: setup_sygra
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: 3.9
-      - name: Restore Poetry dependencies cache
-        uses: actions/cache@v4
+          python-version: '3.9'
+      - uses: snok/install-poetry@v1
         with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.local/share/pypoetry
-            ~/.venv
-          key: poetry-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            poetry-${{ runner.os }}-
-      - name: Install Poetry
-        run: pip install poetry
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
       - run: make setup-dev
       - run: make test
   # Build Docs
@@ -118,24 +98,19 @@ jobs:
     needs: setup_sygra
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: 3.9
-      - name: Restore Poetry dependencies cache
-        uses: actions/cache@v4
+          python-version: '3.9'
+      - uses: snok/install-poetry@v1
         with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.local/share/pypoetry
-            ~/.venv
-          key: poetry-${{ runner.os }}-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            poetry-${{ runner.os }}-
-      - name: Install Poetry
-        run: pip install poetry
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
       - run: make setup-dev
       - run: make docs
       - uses: actions/upload-pages-artifact@v3
