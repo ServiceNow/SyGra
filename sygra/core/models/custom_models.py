@@ -1064,6 +1064,8 @@ class CustomOpenAI(BaseCustomModel):
         # Check if this is a TTS request based on output_type
         if self.model_config.get("output_type") == "audio":
             return await self._generate_speech(input, model_params)
+        else:
+            return await self._generate_text(input, model_params)
         
 
     async def _generate_text(
@@ -1144,14 +1146,13 @@ class CustomOpenAI(BaseCustomModel):
 
             # Validate text length (OpenAI TTS limit is 4096 characters)
             if len(text_to_speak) > 4096:
-                logger.error(f"[{self.name()}] Text exceeds 4096 character limit: {len(text_to_speak)} characters")
-                return f"{constants.ERROR_PREFIX} Text exceeds 4096 character limit", 400
+                logger.warn(f"[{self.name()}] Text exceeds 4096 character limit: {len(text_to_speak)} characters")
 
             # Set up the OpenAI client
             self._set_client(model_url, model_params.auth_token)
 
             # Get TTS-specific parameters from generation_params or model_config
-            voice = self.generation_params.get('voice', self.model_config.get('voice', ""))
+            voice = self.generation_params.get('voice', self.model_config.get('voice', None))
             response_format = self.generation_params.get('response_format', self.model_config.get('response_format', 'wav'))
             speed = self.generation_params.get('speed', self.model_config.get('speed', 1.0))
 
@@ -1188,7 +1189,6 @@ class CustomOpenAI(BaseCustomModel):
             # Create base64 encoded data URL
             audio_base64 = base64.b64encode(audio_response.content).decode('utf-8')
             data_url = f"data:{mime_type};base64,{audio_base64}"
-            logger.info(f"[{self.name()}] Audio converted to data URL with format {response_format} ({len(data_url)} characters)")
             resp_text = data_url
 
         except openai.RateLimitError as e:
