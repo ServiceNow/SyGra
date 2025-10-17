@@ -74,6 +74,7 @@ class BaseCustomModel(ABC):
         # max_wait for 8 attempts = 2^(8-1) = 128 secs
         self.retry_attempts = model_config.get("retry_attempts", 8)
         self.generation_params: dict[Any, Any] = model_config.get("parameters") or {}
+        self.chat_template_params: dict[Any, Any] = model_config.get("chat_template_params") or {}
         self.hf_chat_template_model_id = model_config.get("hf_chat_template_model_id")
         if self.hf_chat_template_model_id:
             self.tokenizer = AutoTokenizer.from_pretrained(
@@ -262,10 +263,7 @@ class BaseCustomModel(ABC):
 
     def _get_model_params(self) -> ModelParams:
         url = self.model_config.get("url", "")
-        if "auth_token" in self.model_config:
-            auth_token = self.model_config.get("auth_token", "")
-        else:
-            auth_token = self.model_config.get("api_key", "")
+        auth_token = self.model_config.get("auth_token", "")
 
         return_url = None
         return_auth_token = None
@@ -391,7 +389,7 @@ class BaseCustomModel(ABC):
         if returns 200, its success
         """
         url_obj = self.model_config.get("url")
-        auth_token = self.model_config.get("auth_token") or self.model_config.get("api_key")
+        auth_token = self.model_config.get("auth_token")
         if isinstance(url_obj, list):
             for i, url in enumerate(url_obj):
                 token = auth_token[i] if isinstance(auth_token, list) else auth_token
@@ -403,12 +401,15 @@ class BaseCustomModel(ABC):
         else:
             return self._ping_model(url=self.model_config.get("url"), auth_token=auth_token)
 
-    def get_chat_formatted_text(self, chat_format_object: Sequence[BaseMessage]) -> str:
+    def get_chat_formatted_text(
+        self, chat_format_object: Sequence[BaseMessage], **chat_template_params
+    ) -> str:
         chat_formatted_text = str(
             self.tokenizer.apply_chat_template(
                 utils.convert_messages_from_langchain_to_chat_format(chat_format_object),
                 tokenize=False,
                 add_generation_prompt=True,
+                **chat_template_params,
             )
         )
         logger.debug(f"Chat formatted text: {chat_formatted_text}")
@@ -631,7 +632,11 @@ class CustomTGI(BaseCustomModel):
             json_schema = pydantic_model.model_json_schema()
 
             # Build Request
-            payload = {"inputs": self.get_chat_formatted_text(input.messages)}
+            payload = {
+                "inputs": self.get_chat_formatted_text(
+                    input.messages, **(self.chat_template_params or {})
+                )
+            }
 
             # Prepare generation parameters with guidance
             generation_params_with_guidance = {
@@ -697,7 +702,11 @@ class CustomTGI(BaseCustomModel):
             self._set_client(model_params.url, model_params.auth_token)
             client = cast(HttpClient, self._client)
             # Build Request
-            payload = {"inputs": self.get_chat_formatted_text(input.messages)}
+            payload = {
+                "inputs": self.get_chat_formatted_text(
+                    input.messages, **(self.chat_template_params or {})
+                )
+            }
             payload = client.build_request_with_payload(payload=payload)
             # Send Request
             resp = await client.async_send_request(
@@ -854,7 +863,9 @@ class CustomVLLM(BaseCustomModel):
 
             # Prepare payload using the client
             if self.model_config.get("completions_api", False):
-                formatted_prompt = self.get_chat_formatted_text(input.messages)
+                formatted_prompt = self.get_chat_formatted_text(
+                    input.messages, **(self.chat_template_params or {})
+                )
                 payload = client.build_request(formatted_prompt=formatted_prompt)
             else:
                 payload = client.build_request(messages=input.messages)
@@ -922,7 +933,9 @@ class CustomVLLM(BaseCustomModel):
             # https://github.com/encode/httpx/discussions/2959#discussioncomment-7665278
             self._set_client(model_url, model_params.auth_token)
             if self.model_config.get("completions_api", False):
-                formatted_prompt = self.get_chat_formatted_text(input.messages)
+                formatted_prompt = self.get_chat_formatted_text(
+                    input.messages, **(self.chat_template_params or {})
+                )
                 payload = self._client.build_request(formatted_prompt=formatted_prompt)
             else:
                 payload = self._client.build_request(messages=input.messages)
@@ -957,7 +970,7 @@ class CustomOpenAI(BaseCustomModel):
     def __init__(self, model_config: dict[str, Any]) -> None:
         super().__init__(model_config)
         utils.validate_required_keys(
-            ["url", "api_key", "api_version", "model"], model_config, "model"
+            ["url", "auth_token", "api_version", "model"], model_config, "model"
         )
         self.model_config = model_config
 
@@ -980,7 +993,9 @@ class CustomOpenAI(BaseCustomModel):
 
             # Prepare payload using the client
             if self.model_config.get("completions_api", False):
-                formatted_prompt = self.get_chat_formatted_text(input.messages)
+                formatted_prompt = self.get_chat_formatted_text(
+                    input.messages, **(self.chat_template_params or {})
+                )
                 payload = self._client.build_request(formatted_prompt=formatted_prompt)
             else:
                 payload = self._client.build_request(messages=input.messages)
@@ -1051,7 +1066,9 @@ class CustomOpenAI(BaseCustomModel):
             # set header to close connection otherwise spurious event loop errors show up - https://github.com/encode/httpx/discussions/2959#discussioncomment-7665278
             self._set_client(model_url, model_params.auth_token)
             if self.model_config.get("completions_api", False):
-                formatted_prompt = self.get_chat_formatted_text(input.messages)
+                formatted_prompt = self.get_chat_formatted_text(
+                    input.messages, **(self.chat_template_params or {})
+                )
                 payload = self._client.build_request(formatted_prompt=formatted_prompt)
             else:
                 payload = self._client.build_request(messages=input.messages)
@@ -1101,7 +1118,9 @@ class CustomOllama(BaseCustomModel):
 
             # Prepare payload using the client
             if self.model_config.get("completions_api", False):
-                formatted_prompt = self.get_chat_formatted_text(input.messages)
+                formatted_prompt = self.get_chat_formatted_text(
+                    input.messages, **(self.chat_template_params or {})
+                )
                 payload = self._client.build_request(formatted_prompt=formatted_prompt)
             else:
                 payload = self._client.build_request(messages=input.messages)
@@ -1166,7 +1185,9 @@ class CustomOllama(BaseCustomModel):
         try:
             self._set_client(model_url, model_params.auth_token)
             if self.model_config.get("completions_api", False):
-                formatted_prompt = self.get_chat_formatted_text(input.messages)
+                formatted_prompt = self.get_chat_formatted_text(
+                    input.messages, **(self.chat_template_params or {})
+                )
                 payload = self._client.build_request(formatted_prompt=formatted_prompt)
             else:
                 payload = self._client.build_request(messages=input.messages)

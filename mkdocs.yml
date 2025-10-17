@@ -57,7 +57,9 @@ nav:
       - Image to QnA: tutorials/image_to_qna_tutorial.md
       - Structured Output: tutorials/structured_output_tutorial.md
       - Structured Output with Multi-LLM: tutorials/structured_output_with_multi_llm_tutorial.md
-  - SyGra Library: sygra_library.md
+  - SyGra Library:
+      - API Reference: library/sygra_library.md
+      - Examples: library/sygra_library_examples.md
   - Contribute: development.md
 plugins:
   - search
