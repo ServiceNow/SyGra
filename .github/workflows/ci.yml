@@ -18,13 +18,15 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - name: Install poetry
-        run: pipx install poetry
-      - uses: actions/setup-python@v6
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.9'
-          cache: 'poetry'
+          python-version: 3.9
+          cache: poetry
+      - name: Install Poetry
+        run: pip install poetry
       - run: make setup-dev
 
   # Run Formatting
@@ -32,52 +34,60 @@ jobs:
     needs: setup_sygra
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - name: Install poetry
-        run: pipx install poetry
-      - uses: actions/setup-python@v6
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.9'
-          cache: 'poetry'
+          python-version: 3.9
+          cache: poetry
+      - name: Install Poetry
+        run: pip install poetry
       - run: make check-format
   # Run Linting
   lint:
     needs: setup_sygra
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - name: Install poetry
-        run: pipx install poetry
-      - uses: actions/setup-python@v6
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.9'
-          cache: 'poetry'
+          python-version: 3.9
+          cache: poetry
+      - name: Install Poetry
+        run: pip install poetry
       - run: make check-lint
   # Run Tests
   test:
     needs: setup_sygra
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - name: Install poetry
-        run: pipx install poetry
-      - uses: actions/setup-python@v6
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.9'
-          cache: 'poetry'
+          python-version: 3.9
+          cache: poetry
+      - name: Install Poetry
+        run: pip install poetry
       - run: make test
   # Build Docs
   docs_build:
     needs: setup_sygra
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - name: Install poetry
-        run: pipx install poetry
-      - uses: actions/setup-python@v6
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.9'
-          cache: 'poetry'
+          python-version: 3.9
+          cache: poetry
+      - name: Install Poetry
+        run: pip install poetry
       - run: make docs
       - uses: actions/upload-pages-artifact@v3
         with:
