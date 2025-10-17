@@ -24,7 +24,9 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: 3.9
-          cache: poetry
+          cache-dependency-path: |
+            **/poetry.lock
+            **/pyproject.toml
       - name: Install Poetry
         run: pip install poetry
       - run: make setup-dev
@@ -40,7 +42,9 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: 3.9
-          cache: poetry
+          cache-dependency-path: |
+            **/poetry.lock
+            **/pyproject.toml
       - name: Install Poetry
         run: pip install poetry
       - run: make check-format
@@ -55,7 +59,9 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: 3.9
-          cache: poetry
+          cache-dependency-path: |
+            **/poetry.lock
+            **/pyproject.toml
       - name: Install Poetry
         run: pip install poetry
       - run: make check-lint
@@ -70,7 +76,9 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: 3.9
-          cache: poetry
+          cache-dependency-path: |
+            **/poetry.lock
+            **/pyproject.toml
       - name: Install Poetry
         run: pip install poetry
       - run: make test
@@ -85,7 +93,9 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: 3.9
-          cache: poetry
+          cache-dependency-path: |
+            **/poetry.lock
+            **/pyproject.toml
       - name: Install Poetry
         run: pip install poetry
       - run: make docs
