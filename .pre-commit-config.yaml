@@ -1,26 +1,32 @@
 default_language_version:
-  python: python3.11
+  python: python3.9
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
-        types: [python]
+        args: [--markdown-linebreak-ext=md]
       - id: end-of-file-fixer
-        types: [python]
-      - id: check-yaml
-        args: [--unsafe]
-      - id: check-json
-      - id: check-toml
-      - id: check-added-large-files
-        args: [--maxkb=1000]
-      - id: check-case-conflict
-      - id: check-merge-conflict
-      - id: check-docstring-first
-      - id: debug-statements
       - id: mixed-line-ending
-        args: [--fix=lf]
+        args: [--fix=auto]
+      - id: check-merge-conflict
+      - id: check-json
+      - id: check-yaml
+      - id: check-toml
+      - id: check-ast
+      - id: debug-statements
+      - id: detect-private-key
+      - id: pretty-format-json
+        args: [--autofix, --no-ensure-ascii, --indent=2]
+      - id: check-illegal-windows-names
+      - id: check-case-conflict
+      - id: check-symlinks
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: requirements-txt-fixer
+      - id: no-commit-to-branch
+        args: [--branch, main]
 
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
