@@ -61,6 +61,7 @@ jobs:
             poetry-${{ runner.os }}-
       - name: Install Poetry
         run: pip install poetry
+      - run: make setup-dev
       - run: make check-format
   # Run Linting
   lint:
@@ -85,6 +86,7 @@ jobs:
             poetry-${{ runner.os }}-
       - name: Install Poetry
         run: pip install poetry
+      - run: make setup-dev
       - run: make check-lint
   # Run Tests
   test:
@@ -109,6 +111,7 @@ jobs:
             poetry-${{ runner.os }}-
       - name: Install Poetry
         run: pip install poetry
+      - run: make setup-dev
       - run: make test
   # Build Docs
   docs_build:
@@ -133,6 +136,7 @@ jobs:
             poetry-${{ runner.os }}-
       - name: Install Poetry
         run: pip install poetry
+      - run: make setup-dev
       - run: make docs
       - uses: actions/upload-pages-artifact@v3
         with:
