@@ -4,7 +4,7 @@ This module orchestrates the use of audio_utils and image_utils to save base64 d
 """
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from sygra.logger.logger_config import logger
 from sygra.utils import audio_utils, image_utils
@@ -120,7 +120,7 @@ def process_batch_multimodal_data(
     # Create multimodal output directory
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    processed_records = []
+    processed_records: List[Dict[str, Any]] = []
     for record in records:
         # Use record ID if available, otherwise use index
         record_id = str(record.get("id", f"record_{len(processed_records)}"))

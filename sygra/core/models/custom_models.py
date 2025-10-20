@@ -1175,7 +1175,9 @@ class CustomOpenAI(BaseCustomModel):
             }
 
             # Make the TTS API call
-            audio_response = await self._client.create_speech(
+            # Cast to OpenAIClient since BaseClient doesn't have create_speech
+            openai_client = cast(OpenAIClient, self._client)
+            audio_response = await openai_client.create_speech(
                 model=str(self.model_config.get("model")), **tts_params
             )
 
