@@ -78,9 +78,7 @@ class TestCustomTGI(unittest.TestCase):
         """Test _generate_response method with successful response"""
         # Setup mock client
         mock_client = MagicMock()
-        mock_client.build_request_with_payload.return_value = {
-            "inputs": "<s>[INST] Hello [/INST]"
-        }
+        mock_client.build_request_with_payload.return_value = {"inputs": "<s>[INST] Hello [/INST]"}
 
         # Configure mock response
         mock_response = MagicMock()
@@ -91,15 +89,11 @@ class TestCustomTGI(unittest.TestCase):
         # Setup custom model
         custom_tgi = CustomTGI(self.base_config)
         custom_tgi._client = mock_client
-        custom_tgi.get_chat_formatted_text = MagicMock(
-            return_value="<s>[INST] Hello [/INST]"
-        )
+        custom_tgi.get_chat_formatted_text = MagicMock(return_value="<s>[INST] Hello [/INST]")
 
         # Call _generate_response
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_response(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_tgi._generate_response(self.chat_input, model_params)
 
         # Verify results
         self.assertEqual(resp_text, "Hello! I'm doing well, thank you!")
@@ -115,9 +109,7 @@ class TestCustomTGI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @pytest.mark.asyncio
-    async def test_generate_response_http_error(
-        self, mock_set_client, mock_tokenizer, mock_logger
-    ):
+    async def test_generate_response_http_error(self, mock_set_client, mock_tokenizer, mock_logger):
         """Test _generate_response method with HTTP error"""
         # Setup mock client
         mock_client = MagicMock()
@@ -136,9 +128,7 @@ class TestCustomTGI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_response(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_tgi._generate_response(self.chat_input, model_params)
 
         # Verify results - should have ERROR prefix
         self.assertIn(constants.ERROR_PREFIX, resp_text)
@@ -174,9 +164,7 @@ class TestCustomTGI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_response(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_tgi._generate_response(self.chat_input, model_params)
 
         # Verify results - status should be set to 503
         self.assertIn(constants.ELEMAI_JOB_DOWN, resp_text)
@@ -208,9 +196,7 @@ class TestCustomTGI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_response(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_tgi._generate_response(self.chat_input, model_params)
 
         # Verify results - status should be set to 503
         self.assertIn(constants.CONNECTION_ERROR, resp_text)
@@ -220,9 +206,7 @@ class TestCustomTGI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @pytest.mark.asyncio
-    async def test_generate_response_exception(
-        self, mock_set_client, mock_tokenizer, mock_logger
-    ):
+    async def test_generate_response_exception(self, mock_set_client, mock_tokenizer, mock_logger):
         """Test _generate_response method with exception"""
         # Setup mock client to raise exception
         mock_client = MagicMock()
@@ -236,9 +220,7 @@ class TestCustomTGI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_response(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_tgi._generate_response(self.chat_input, model_params)
 
         # Verify results
         self.assertIn(constants.ERROR_PREFIX, resp_text)
@@ -267,9 +249,7 @@ class TestCustomTGI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_response(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_tgi._generate_response(self.chat_input, model_params)
 
         # Verify extracted status code is used
         self.assertEqual(resp_status, 503)
@@ -316,7 +296,11 @@ class TestCustomTGI(unittest.TestCase):
 
         # Verify schema was passed in generation params
         call_args = mock_client.async_send_request.call_args
-        generation_params = call_args.args[1] if len(call_args.args) > 1 else call_args.kwargs.get("generation_params")
+        generation_params = (
+            call_args.args[1]
+            if len(call_args.args) > 1
+            else call_args.kwargs.get("generation_params")
+        )
         self.assertIn("parameters", generation_params)
         self.assertIn("grammar", generation_params["parameters"])
 
@@ -380,7 +364,7 @@ class TestCustomTGI(unittest.TestCase):
         # Setup mock client with invalid response
         mock_client = MagicMock()
         mock_client.build_request_with_payload.return_value = {"inputs": "Test input"}
-        
+
         # Response with invalid data (age is string instead of int)
         invalid_json = '{"name": "John", "age": "thirty"}'
         mock_response = MagicMock()
@@ -442,7 +426,9 @@ class TestCustomTGI(unittest.TestCase):
 
         # Verify error logging
         mock_logger.error.assert_called()
-        self.assertIn("Native structured output generation failed", str(mock_logger.error.call_args))
+        self.assertIn(
+            "Native structured output generation failed", str(mock_logger.error.call_args)
+        )
 
 
 if __name__ == "__main__":

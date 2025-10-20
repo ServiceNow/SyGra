@@ -235,7 +235,7 @@ def parse_audio_data_url(data_url: str) -> Tuple[str, str, bytes]:
         ValueError: If the data URL format is invalid
     """
     # Pattern: data:<mime_type>;base64,<base64_data>
-    pattern = r'^data:([^;]+);base64,(.+)$'
+    pattern = r"^data:([^;]+);base64,(.+)$"
     match = re.match(pattern, data_url)
 
     if not match:
@@ -252,30 +252,26 @@ def parse_audio_data_url(data_url: str) -> Tuple[str, str, bytes]:
 
     # Determine file extension from MIME type
     mime_to_ext = {
-        'audio/mpeg': 'mp3',
-        'audio/mp3': 'mp3',
-        'audio/opus': 'opus',
-        'audio/aac': 'aac',
-        'audio/flac': 'flac',
-        'audio/wav': 'wav',
-        'audio/wave': 'wav',
-        'audio/pcm': 'pcm',
-        'audio/ogg': 'ogg',
-        'audio/m4a': 'm4a',
-        'audio/aiff': 'aiff',
+        "audio/mpeg": "mp3",
+        "audio/mp3": "mp3",
+        "audio/opus": "opus",
+        "audio/aac": "aac",
+        "audio/flac": "flac",
+        "audio/wav": "wav",
+        "audio/wave": "wav",
+        "audio/pcm": "pcm",
+        "audio/ogg": "ogg",
+        "audio/m4a": "m4a",
+        "audio/aiff": "aiff",
     }
 
-    file_extension = mime_to_ext.get(mime_type, mime_type.split('/')[-1])
+    file_extension = mime_to_ext.get(mime_type, mime_type.split("/")[-1])
 
     return mime_type, file_extension, decoded_bytes
 
 
 def save_audio_data_url(
-    data_url: str,
-    output_dir: Path,
-    record_id: str,
-    field_name: str,
-    index: int = 0
+    data_url: str, output_dir: Path, record_id: str, field_name: str, index: int = 0
 ) -> str:
     """
     Save an audio data URL to a file and return the file path.
@@ -306,7 +302,7 @@ def save_audio_data_url(
         file_path = audio_dir / filename
 
         # Save the decoded bytes to file
-        with open(file_path, 'wb') as f:
+        with open(file_path, "wb") as f:
             f.write(decoded_bytes)
 
         # full path from root

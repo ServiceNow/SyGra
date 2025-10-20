@@ -1066,10 +1066,9 @@ class CustomOpenAI(BaseCustomModel):
             return await self._generate_speech(input, model_params)
         else:
             return await self._generate_text(input, model_params)
-        
 
     async def _generate_text(
-            self, input: ChatPromptValue, model_params: ModelParams
+        self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
         """
         Generate text using OpenAI/Azure OpenAI Chat or Completions API.
@@ -1136,7 +1135,7 @@ class CustomOpenAI(BaseCustomModel):
             # Extract text from messages
             text_to_speak = ""
             for message in input.messages:
-                if hasattr(message, 'content'):
+                if hasattr(message, "content"):
                     text_to_speak += str(message.content) + " "
             text_to_speak = text_to_speak.strip()
 
@@ -1146,48 +1145,53 @@ class CustomOpenAI(BaseCustomModel):
 
             # Validate text length (OpenAI TTS limit is 4096 characters)
             if len(text_to_speak) > 4096:
-                logger.warn(f"[{self.name()}] Text exceeds 4096 character limit: {len(text_to_speak)} characters")
+                logger.warn(
+                    f"[{self.name()}] Text exceeds 4096 character limit: {len(text_to_speak)} characters"
+                )
 
             # Set up the OpenAI client
             self._set_client(model_url, model_params.auth_token)
 
             # Get TTS-specific parameters from generation_params or model_config
-            voice = self.generation_params.get('voice', self.model_config.get('voice', None))
-            response_format = self.generation_params.get('response_format', self.model_config.get('response_format', 'wav'))
-            speed = self.generation_params.get('speed', self.model_config.get('speed', 1.0))
+            voice = self.generation_params.get("voice", self.model_config.get("voice", None))
+            response_format = self.generation_params.get(
+                "response_format", self.model_config.get("response_format", "wav")
+            )
+            speed = self.generation_params.get("speed", self.model_config.get("speed", 1.0))
 
             # Validate speed
             speed = max(0.25, min(4.0, float(speed)))
 
-            logger.debug(f"[{self.name()}] TTS parameters - voice: {voice}, format: {response_format}, speed: {speed}")
+            logger.debug(
+                f"[{self.name()}] TTS parameters - voice: {voice}, format: {response_format}, speed: {speed}"
+            )
 
             # Prepare TTS request parameters
             tts_params = {
-                'input': text_to_speak,
-                'voice': voice,
-                'response_format': response_format,
-                'speed': speed
+                "input": text_to_speak,
+                "voice": voice,
+                "response_format": response_format,
+                "speed": speed,
             }
 
             # Make the TTS API call
             audio_response = await self._client.create_speech(
-                model=str(self.model_config.get("model")),
-                **tts_params
+                model=str(self.model_config.get("model")), **tts_params
             )
 
             # Map response format to MIME type
             mime_types = {
-                'mp3': 'audio/mpeg',
-                'opus': 'audio/opus',
-                'aac': 'audio/aac',
-                'flac': 'audio/flac',
-                'wav': 'audio/wav',
-                'pcm': 'audio/pcm'
+                "mp3": "audio/mpeg",
+                "opus": "audio/opus",
+                "aac": "audio/aac",
+                "flac": "audio/flac",
+                "wav": "audio/wav",
+                "pcm": "audio/pcm",
             }
-            mime_type = mime_types.get(response_format, 'audio/wav')
+            mime_type = mime_types.get(response_format, "audio/wav")
 
             # Create base64 encoded data URL
-            audio_base64 = base64.b64encode(audio_response.content).decode('utf-8')
+            audio_base64 = base64.b64encode(audio_response.content).decode("utf-8")
             data_url = f"data:{mime_type};base64,{audio_base64}"
             resp_text = data_url
 
@@ -1198,7 +1202,7 @@ class CustomOpenAI(BaseCustomModel):
         except openai.APIError as e:
             logger.error(f"[{self.name()}] OpenAI TTS API error: {e}")
             resp_text = f"{constants.ERROR_PREFIX} API error: {e}"
-            ret_code = getattr(e, 'status_code', 500)
+            ret_code = getattr(e, "status_code", 500)
         except Exception as x:
             resp_text = f"{constants.ERROR_PREFIX} TTS request failed: {x}"
             logger.error(f"[{self.name()}] {resp_text}")

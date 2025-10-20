@@ -199,7 +199,7 @@ def parse_image_data_url(data_url: str) -> Tuple[str, str, bytes]:
         ValueError: If the data URL format is invalid
     """
     # Pattern: data:<mime_type>;base64,<base64_data>
-    pattern = r'^data:([^;]+);base64,(.+)$'
+    pattern = r"^data:([^;]+);base64,(.+)$"
     match = re.match(pattern, data_url)
 
     if not match:
@@ -216,29 +216,25 @@ def parse_image_data_url(data_url: str) -> Tuple[str, str, bytes]:
 
     # Determine file extension from MIME type
     mime_to_ext = {
-        'image/jpeg': 'jpg',
-        'image/jpg': 'jpg',
-        'image/png': 'png',
-        'image/gif': 'gif',
-        'image/bmp': 'bmp',
-        'image/tiff': 'tiff',
-        'image/tif': 'tif',
-        'image/webp': 'webp',
-        'image/ico': 'ico',
-        'image/apng': 'apng',
+        "image/jpeg": "jpg",
+        "image/jpg": "jpg",
+        "image/png": "png",
+        "image/gif": "gif",
+        "image/bmp": "bmp",
+        "image/tiff": "tiff",
+        "image/tif": "tif",
+        "image/webp": "webp",
+        "image/ico": "ico",
+        "image/apng": "apng",
     }
 
-    file_extension = mime_to_ext.get(mime_type, mime_type.split('/')[-1])
+    file_extension = mime_to_ext.get(mime_type, mime_type.split("/")[-1])
 
     return mime_type, file_extension, decoded_bytes
 
 
 def save_image_data_url(
-    data_url: str,
-    output_dir: Path,
-    record_id: str,
-    field_name: str,
-    index: int = 0
+    data_url: str, output_dir: Path, record_id: str, field_name: str, index: int = 0
 ) -> str:
     """
     Save an image data URL to a file and return the file path.
@@ -269,7 +265,7 @@ def save_image_data_url(
         file_path = image_dir / filename
 
         # Save the decoded bytes to file
-        with open(file_path, 'wb') as f:
+        with open(file_path, "wb") as f:
             f.write(decoded_bytes)
 
         full_path = str(file_path.resolve())

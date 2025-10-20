@@ -294,7 +294,9 @@ class DatasetProcessor:
                 output_records, Path(multimodal_output_dir)
             )
         except Exception as e:
-            logger.warning(f"Failed to process multimodal data: {e}. Continuing with original records.")
+            logger.warning(
+                f"Failed to process multimodal data: {e}. Continuing with original records."
+            )
 
         # Handle intermediate writing if needed
         if (

@@ -91,7 +91,9 @@ class TestCustomOllama(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://localhost:11434")
-        resp_text, resp_status = await custom_ollama._generate_response(self.chat_input, model_params)
+        resp_text, resp_status = await custom_ollama._generate_response(
+            self.chat_input, model_params
+        )
 
         # Verify results
         self.assertEqual(resp_text, "Hello there!")
@@ -130,7 +132,9 @@ class TestCustomOllama(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://localhost:11434")
-        resp_text, resp_status = await custom_ollama._generate_response(self.chat_input, model_params)
+        resp_text, resp_status = await custom_ollama._generate_response(
+            self.chat_input, model_params
+        )
 
         # Verify results
         self.assertEqual(resp_text, "I'm doing well, thank you!")
@@ -165,7 +169,9 @@ class TestCustomOllama(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://localhost:11434")
-        resp_text, resp_status = await custom_ollama._generate_response(self.chat_input, model_params)
+        resp_text, resp_status = await custom_ollama._generate_response(
+            self.chat_input, model_params
+        )
 
         # Verify error handling
         self.assertTrue(resp_text.startswith(f"{constants.ERROR_PREFIX} Ollama request failed"))

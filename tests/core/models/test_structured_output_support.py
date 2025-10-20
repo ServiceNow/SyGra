@@ -641,7 +641,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
 
         # Mock _set_client to prevent it from overwriting our mock client
         with patch.object(model, "_set_client"):
-            resp_text, resp_status = await model._generate_response(self.test_input, self.test_params)
+            resp_text, resp_status = await model._generate_response(
+                self.test_input, self.test_params
+            )
 
             self.assertEqual(resp_text, "Generated text response")
             self.assertEqual(resp_status, 200)
@@ -654,7 +656,9 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
 
         # Mock _set_client to raise an exception
         with patch.object(model, "_set_client", side_effect=Exception("Connection failed")):
-            resp_text, resp_status = await model._generate_response(self.test_input, self.test_params)
+            resp_text, resp_status = await model._generate_response(
+                self.test_input, self.test_params
+            )
 
             self.assertIn("ERROR", resp_text)
             self.assertIn("Connection failed", resp_text)

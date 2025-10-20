@@ -61,9 +61,7 @@ class TestCustomOpenAI(unittest.TestCase):
         self.chat_input = ChatPromptValue(messages=self.messages)
 
         # Mock messages for TTS
-        self.tts_messages = [
-            HumanMessage(content="Hello, this is a test of text to speech.")
-        ]
+        self.tts_messages = [HumanMessage(content="Hello, this is a test of text to speech.")]
         self.tts_input = ChatPromptValue(messages=self.tts_messages)
 
     def test_init(self):
@@ -123,9 +121,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_text
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_text(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_text(self.chat_input, model_params)
 
         # Verify results (text should be stripped)
         self.assertEqual(resp_text, "Hello! I'm doing well, thank you!")
@@ -139,9 +135,7 @@ class TestCustomOpenAI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @pytest.mark.asyncio
-    async def test_generate_text_completions_api_success(
-        self, mock_set_client, mock_tokenizer
-    ):
+    async def test_generate_text_completions_api_success(self, mock_set_client, mock_tokenizer):
         """Test _generate_text with completions API"""
         # Setup mock client
         mock_client = MagicMock()
@@ -162,9 +156,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_text
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_text(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_text(self.chat_input, model_params)
 
         # Verify results (text should be stripped)
         self.assertEqual(resp_text, "Response text")
@@ -183,7 +175,9 @@ class TestCustomOpenAI(unittest.TestCase):
         mock_client = MagicMock()
         mock_client.build_request.return_value = {"messages": []}
         mock_client.send_request = AsyncMock(
-            side_effect=openai.RateLimitError("Rate limit exceeded", response=MagicMock(), body=None)
+            side_effect=openai.RateLimitError(
+                "Rate limit exceeded", response=MagicMock(), body=None
+            )
         )
 
         # Setup custom model
@@ -192,9 +186,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_text
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_text(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_text(self.chat_input, model_params)
 
         # Verify results - should return 429 for rate limit
         self.assertIn(constants.ERROR_PREFIX, resp_text)
@@ -221,9 +213,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_text
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_text(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_text(self.chat_input, model_params)
 
         # Verify results - should return 999 for generic error
         self.assertIn(constants.ERROR_PREFIX, resp_text)
@@ -250,12 +240,10 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_speech
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_speech(
-            self.tts_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_speech(self.tts_input, model_params)
 
         # Verify results
-        expected_base64 = base64.b64encode(mock_audio_content).decode('utf-8')
+        expected_base64 = base64.b64encode(mock_audio_content).decode("utf-8")
         self.assertEqual(resp_text, expected_base64)
         self.assertEqual(resp_status, 200)
 
@@ -283,9 +271,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_speech
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_speech(
-            self.tts_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_speech(self.tts_input, model_params)
 
         # Verify results
         self.assertIn("Audio successfully saved", resp_text)
@@ -293,7 +279,7 @@ class TestCustomOpenAI(unittest.TestCase):
         self.assertEqual(resp_status, 200)
 
         # Verify file was written
-        mock_file.assert_called_once_with("/tmp/output.mp3", 'wb')
+        mock_file.assert_called_once_with("/tmp/output.mp3", "wb")
         mock_file().write.assert_called_once_with(mock_audio_content)
 
     @patch("sygra.core.models.custom_models.logger")
@@ -309,9 +295,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_speech
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_speech(
-            empty_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_speech(empty_input, model_params)
 
         # Verify results
         self.assertIn(constants.ERROR_PREFIX, resp_text)
@@ -332,9 +316,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_speech
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_speech(
-            long_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_speech(long_input, model_params)
 
         # Verify results
         self.assertIn(constants.ERROR_PREFIX, resp_text)
@@ -367,7 +349,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Verify create_speech was called with 'alloy'
         call_args = mock_client.create_speech.call_args
-        self.assertEqual(call_args.kwargs['voice'], 'alloy')
+        self.assertEqual(call_args.kwargs["voice"], "alloy")
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
@@ -395,7 +377,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Verify create_speech was called with 'mp3'
         call_args = mock_client.create_speech.call_args
-        self.assertEqual(call_args.kwargs['response_format'], 'mp3')
+        self.assertEqual(call_args.kwargs["response_format"], "mp3")
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @pytest.mark.asyncio
@@ -417,7 +399,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Verify speed was clamped to 0.25
         call_args = mock_client.create_speech.call_args
-        self.assertEqual(call_args.kwargs['speed'], 0.25)
+        self.assertEqual(call_args.kwargs["speed"], 0.25)
 
         # Test speed too high
         config_high = {**self.tts_config, "speed": 5.0}
@@ -428,7 +410,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Verify speed was clamped to 4.0
         call_args = mock_client.create_speech.call_args
-        self.assertEqual(call_args.kwargs['speed'], 4.0)
+        self.assertEqual(call_args.kwargs["speed"], 4.0)
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
@@ -438,7 +420,9 @@ class TestCustomOpenAI(unittest.TestCase):
         # Setup mock client to raise RateLimitError
         mock_client = MagicMock()
         mock_client.create_speech = AsyncMock(
-            side_effect=openai.RateLimitError("Rate limit exceeded", response=MagicMock(), body=None)
+            side_effect=openai.RateLimitError(
+                "Rate limit exceeded", response=MagicMock(), body=None
+            )
         )
 
         # Setup custom model
@@ -447,9 +431,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_speech
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_speech(
-            self.tts_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_speech(self.tts_input, model_params)
 
         # Verify results
         self.assertIn(constants.ERROR_PREFIX, resp_text)
@@ -476,9 +458,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_speech
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_speech(
-            self.tts_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_speech(self.tts_input, model_params)
 
         # Verify results
         self.assertIn(constants.ERROR_PREFIX, resp_text)

@@ -341,12 +341,12 @@ class TestCustomMistralAPI(unittest.TestCase):
         call_args = mock_chat.complete_async.call_args
         messages = call_args.kwargs["messages"]
         self.assertEqual(len(messages), 2)
-        
+
         # Check first message
         self.assertEqual(messages[0]["role"], "system")
         self.assertEqual(messages[0]["content"], "System prompt")
         self.assertNotIn("extra_field", messages[0])
-        
+
         # Check second message
         self.assertEqual(messages[1]["role"], "user")
         self.assertEqual(messages[1]["content"], "User message")

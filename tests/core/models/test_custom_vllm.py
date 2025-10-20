@@ -124,9 +124,7 @@ class TestCustomVLLM(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://vllm-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_vllm._generate_response(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_vllm._generate_response(self.chat_input, model_params)
 
         # Verify results
         self.assertEqual(resp_text, "Hello! I'm doing well, thank you!")
@@ -140,9 +138,7 @@ class TestCustomVLLM(unittest.TestCase):
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @pytest.mark.asyncio
-    async def test_generate_response_completions_api_success(
-        self, mock_set_client, mock_tokenizer
-    ):
+    async def test_generate_response_completions_api_success(self, mock_set_client, mock_tokenizer):
         """Test _generate_response with completions API"""
         # Setup mock client
         mock_client = MagicMock()
@@ -163,9 +159,7 @@ class TestCustomVLLM(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://vllm-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_vllm._generate_response(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_vllm._generate_response(self.chat_input, model_params)
 
         # Verify results (text should be stripped)
         self.assertEqual(resp_text, "Response text")
@@ -183,7 +177,11 @@ class TestCustomVLLM(unittest.TestCase):
         # Setup mock client to raise RateLimitError
         mock_client = MagicMock()
         mock_client.build_request.return_value = {"messages": []}
-        mock_client.send_request = AsyncMock(side_effect=openai.RateLimitError("Rate limit exceeded", response=MagicMock(), body=None))
+        mock_client.send_request = AsyncMock(
+            side_effect=openai.RateLimitError(
+                "Rate limit exceeded", response=MagicMock(), body=None
+            )
+        )
 
         # Setup custom model
         custom_vllm = CustomVLLM(self.base_config)
@@ -191,9 +189,7 @@ class TestCustomVLLM(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://vllm-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_vllm._generate_response(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_vllm._generate_response(self.chat_input, model_params)
 
         # Verify results - should return 429 for rate limit
         self.assertIn(constants.ERROR_PREFIX, resp_text)
@@ -223,9 +219,7 @@ class TestCustomVLLM(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://vllm-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_vllm._generate_response(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_vllm._generate_response(self.chat_input, model_params)
 
         # Verify results - should return 503 for server down
         self.assertIn(constants.ERROR_PREFIX, resp_text)
@@ -240,9 +234,7 @@ class TestCustomVLLM(unittest.TestCase):
         # Setup mock client to raise exception with connection error
         mock_client = MagicMock()
         mock_client.build_request.return_value = {"messages": []}
-        mock_client.send_request = AsyncMock(
-            side_effect=Exception(f"{constants.CONNECTION_ERROR}")
-        )
+        mock_client.send_request = AsyncMock(side_effect=Exception(f"{constants.CONNECTION_ERROR}"))
 
         # Setup custom model
         custom_vllm = CustomVLLM(self.base_config)
@@ -251,9 +243,7 @@ class TestCustomVLLM(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://vllm-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_vllm._generate_response(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_vllm._generate_response(self.chat_input, model_params)
 
         # Verify results - should return 503 for connection error
         self.assertEqual(resp_status, 503)
@@ -275,9 +265,7 @@ class TestCustomVLLM(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://vllm-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_vllm._generate_response(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_vllm._generate_response(self.chat_input, model_params)
 
         # Verify results - should return 999 for generic error
         self.assertIn(constants.ERROR_PREFIX, resp_text)
@@ -290,9 +278,7 @@ class TestCustomVLLM(unittest.TestCase):
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @pytest.mark.asyncio
-    async def test_generate_response_with_extracted_status_code(
-        self, mock_set_client, mock_logger
-    ):
+    async def test_generate_response_with_extracted_status_code(self, mock_set_client, mock_logger):
         """Test _generate_response extracts status code from error body"""
         # Setup mock client to raise exception
         mock_client = MagicMock()
@@ -306,9 +292,7 @@ class TestCustomVLLM(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://vllm-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_vllm._generate_response(
-            self.chat_input, model_params
-        )
+        resp_text, resp_status = await custom_vllm._generate_response(self.chat_input, model_params)
 
         # Verify extracted status code is used
         self.assertEqual(resp_status, 503)

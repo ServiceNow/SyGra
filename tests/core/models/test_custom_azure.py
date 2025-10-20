@@ -286,9 +286,7 @@ class TestCustomAzure(unittest.TestCase):
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")
     @pytest.mark.asyncio
-    async def test_generate_response_with_extracted_status_code(
-        self, mock_utils, mock_set_client
-    ):
+    async def test_generate_response_with_extracted_status_code(self, mock_utils, mock_set_client):
         """Test _generate_response extracts status code from error body"""
         # Setup mock client to raise exception
         mock_client = MagicMock()

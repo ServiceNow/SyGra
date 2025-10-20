@@ -261,7 +261,9 @@ class TestCustomTriton(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://triton-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_triton._generate_response(self.chat_input, model_params)
+        resp_text, resp_status = await custom_triton._generate_response(
+            self.chat_input, model_params
+        )
 
         # Verify results
         self.assertEqual(resp_text, "Hello there!")
@@ -313,7 +315,9 @@ class TestCustomTriton(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://triton-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_triton._generate_response(self.chat_input, model_params)
+        resp_text, resp_status = await custom_triton._generate_response(
+            self.chat_input, model_params
+        )
 
         # Verify results
         self.assertEqual(resp_text, "")
@@ -340,7 +344,9 @@ class TestCustomTriton(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://triton-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_triton._generate_response(self.chat_input, model_params)
+        resp_text, resp_status = await custom_triton._generate_response(
+            self.chat_input, model_params
+        )
 
         # Verify results
         self.assertEqual(resp_text, "Http request failed Test error")
