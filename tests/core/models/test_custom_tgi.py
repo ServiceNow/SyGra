@@ -11,7 +11,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompt_values import ChatPromptValue
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from sygra.core.models.custom_models import CustomTGI, ModelParams
 from sygra.utils import constants
