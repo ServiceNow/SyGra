@@ -9,7 +9,9 @@ graph_config:
     math_agent:
       node_type: llm
       post_process: tasks.examples.llm_node_tool_simulation.task_executor.MathAgentPostProcessor
-      output_keys: math_result
+      output_keys:
+        - tool_calls
+        - math_result
       tools:
           - tasks.examples.agent_tool_simulation.tools.add
           - tasks.examples.agent_tool_simulation.tools_from_class.ToolClass
@@ -41,6 +43,8 @@ output_config:
       from: "user_query"
     "math_result":
       from: "math_result"
+    "tool_calls":
+      from: "tool_calls"
 
   oasst_mapper:
     required: "no"

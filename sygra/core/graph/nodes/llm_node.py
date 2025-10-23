@@ -6,6 +6,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from sygra.core.graph.nodes.base_node import BaseNode
 from sygra.core.graph.sygra_message import SygraMessage
+from sygra.core.models.model_response import ModelResponse
 from sygra.logger.logger_config import logger
 from sygra.utils import constants, utils
 from sygra.utils.audio_utils import expand_audio_item
@@ -62,11 +63,11 @@ class LLMNode(BaseNode):
         self.graph_properties = getattr(utils, "_current_graph_properties", {})
 
         # Currently we support direct passing of tools which have decorator @tool and of type Langgraph's BaseTool Class.
-        self.tools = []
         tool_paths = self.node_config.get("tools", [])
-        if tool_paths:
+        self.tool_calls_enabled = True if tool_paths else False
+        self.tools = []
+        if self.tool_calls_enabled:
             from sygra.utils.tool_utils import load_tools
-
             self.tools = load_tools(tool_paths)
 
     def _initialize_model(self):
@@ -96,6 +97,8 @@ class LLMNode(BaseNode):
             ]
         else:
             output_dict[self.output_keys] = response.content
+        if self.tool_calls_enabled:
+            output_dict["tool_calls"] = response.tool_calls if response.tool_calls else []
         return output_dict
 
     def _generate_prompt(self, state: dict[str, Any]):
@@ -221,22 +224,34 @@ class LLMNode(BaseNode):
         # convert the request into chat format to store for multi turn
         request_msgs = graph_factory.convert_to_chat_format(prompt.to_messages())
         # now call the llm server
-        response = await self.model.ainvoke(prompt, tools=self.tools, tool_choice="auto")
+        # Attach tools and tool_choice if tool_calls_enabled
+        kwargs = {
+            "tools": self.tools,
+            "tool_choice": self.node_config.get("tool_choice", "auto")
+        } if self.tool_calls_enabled else {}
+        response: ModelResponse = await self.model.ainvoke(prompt, **kwargs)
+        # Extract AIMessage from ModelResponse
+        ai_message = AIMessage(response.llm_response) if response.llm_response else AIMessage("")
         # wrap the message to pass to the class - new implementation
-        responseMsg = SygraMessage(response)
-
+        responseMsg = SygraMessage(ai_message)
+        # Inject tool_calls to Sygra State
+        if self.tool_calls_enabled:
+            ai_message = AIMessage(response.llm_response,
+                                   tool_calls=response.tool_calls) if response.llm_response else AIMessage("",
+                                                                                                           tool_calls=response.tool_calls)
+            state["tool_calls"] = response.tool_calls if response.tool_calls else []
         # Call post-processor with best effort: try (resp, state) then fallback to (resp)
         try:
             updated_state = (
                 self.post_process().apply(responseMsg, state)
                 if isclass(self.post_process)
-                else self.post_process(response, state)
+                else self.post_process(ai_message, state)
             )
         except TypeError:
             updated_state = (
                 self.post_process().apply(responseMsg)
                 if isclass(self.post_process)
-                else self.post_process(response)  # type: ignore
+                else self.post_process(ai_message)  # type: ignore
             )
 
         # Store chat history if enabled for this node
