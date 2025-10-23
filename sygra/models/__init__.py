@@ -37,18 +37,7 @@ class ModelConfigBuilder:
                     base_config["parameters"] = {}
 
                 params: dict[str, Any] = cast(dict[str, Any], base_config["parameters"])
-                params.update(
-                    {
-                        "temperature": kwargs.get(
-                            "temperature",
-                            params.get("temperature", 0.7),
-                        ),
-                        "max_tokens": kwargs.get(
-                            "max_tokens",
-                            params.get("max_tokens", 1000),
-                        ),
-                    }
-                )
+                params.update(kwargs)
 
                 return base_config
             else:
