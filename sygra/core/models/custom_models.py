@@ -22,7 +22,7 @@ from typing import (
 )
 
 import openai
-from langchain_core.messages import AIMessage, BaseMessage, ToolCall
+from langchain_core.messages import BaseMessage, ToolCall
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.utils.function_calling import convert_to_openai_tool
@@ -415,9 +415,9 @@ class BaseCustomModel(ABC):
         logger.debug(f"Chat formatted text: {chat_formatted_text}")
         return chat_formatted_text
 
-    def _replace_special_tokens(self, text: str) -> Optional[str]:
-        if text is None:
-            return text
+    def _replace_special_tokens(self, text: str) -> str:
+        if not text:
+            return ""
         for token in self.model_config.get("special_tokens", []):
             text = text.replace(token, "")
         return text.strip()
@@ -1102,7 +1102,7 @@ class CustomOpenAI(BaseCustomModel):
             return await self._generate_text(input, model_params)
 
     async def _generate_text(
-            self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         """
         Generate text using OpenAI/Azure OpenAI Chat or Completions API.
@@ -1128,7 +1128,7 @@ class CustomOpenAI(BaseCustomModel):
             else:
                 payload = self._client.build_request(messages=input.messages)
             if kwargs.get("tools"):
-                tools = kwargs.get("tools")
+                tools = kwargs.get("tools", [])
                 formatted_tools = [convert_to_openai_tool(tool, strict=True) for tool in tools]
                 self.generation_params.update({"tools": formatted_tools})
             if kwargs.get("tool_choice"):
@@ -1138,7 +1138,9 @@ class CustomOpenAI(BaseCustomModel):
             )
             tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
             # Convert to Langchain ToolCall
-            tool_calls = [self._openai_to_langchain_toolcall(tc) for tc in tool_calls] if tool_calls else []
+            tool_calls = (
+                [self._openai_to_langchain_toolcall(tc) for tc in tool_calls] if tool_calls else []
+            )
             if self.model_config.get("completions_api", False):
                 resp_text = completion.choices[0].model_dump()["text"]
             else:
@@ -1152,7 +1154,9 @@ class CustomOpenAI(BaseCustomModel):
             logger.error(resp_text)
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
-        return ModelResponse(llm_response=resp_text, response_code=ret_code, tool_calls=tool_calls)
+        return ModelResponse(
+            llm_response=resp_text or "", response_code=ret_code, tool_calls=tool_calls
+        )
 
     async def _generate_speech(
         self, input: ChatPromptValue, model_params: ModelParams
