@@ -68,6 +68,7 @@ class LLMNode(BaseNode):
         self.tools = []
         if self.tool_calls_enabled:
             from sygra.utils.tool_utils import load_tools
+
             self.tools = load_tools(tool_paths)
 
     def _initialize_model(self):
@@ -225,10 +226,11 @@ class LLMNode(BaseNode):
         request_msgs = graph_factory.convert_to_chat_format(prompt.to_messages())
         # now call the llm server
         # Attach tools and tool_choice if tool_calls_enabled
-        kwargs = {
-            "tools": self.tools,
-            "tool_choice": self.node_config.get("tool_choice", "auto")
-        } if self.tool_calls_enabled else {}
+        kwargs = (
+            {"tools": self.tools, "tool_choice": self.node_config.get("tool_choice", "auto")}
+            if self.tool_calls_enabled
+            else {}
+        )
         response: ModelResponse = await self.model.ainvoke(prompt, **kwargs)
         # Extract AIMessage from ModelResponse
         ai_message = AIMessage(response.llm_response) if response.llm_response else AIMessage("")
@@ -236,9 +238,11 @@ class LLMNode(BaseNode):
         responseMsg = SygraMessage(ai_message)
         # Inject tool_calls to Sygra State
         if self.tool_calls_enabled:
-            ai_message = AIMessage(response.llm_response,
-                                   tool_calls=response.tool_calls) if response.llm_response else AIMessage("",
-                                                                                                           tool_calls=response.tool_calls)
+            ai_message = (
+                AIMessage(response.llm_response, tool_calls=response.tool_calls)
+                if response.llm_response
+                else AIMessage("", tool_calls=response.tool_calls)
+            )
             state["tool_calls"] = response.tool_calls if response.tool_calls else []
         # Call post-processor with best effort: try (resp, state) then fallback to (resp)
         try:
