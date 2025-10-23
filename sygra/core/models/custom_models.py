@@ -22,7 +22,7 @@ from typing import (
 )
 
 import openai
-from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.messages import AIMessage, BaseMessage, ToolCall
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.utils.function_calling import convert_to_openai_tool
@@ -153,7 +153,7 @@ class BaseCustomModel(ABC):
         # Apply common finalization logic
         return self._finalize_response(model_response, model_url)
 
-    def _finalize_response(self, model_response: ModelResponse, model_url: str) -> AIMessage:
+    def _finalize_response(self, model_response: ModelResponse, model_url: str) -> ModelResponse:
         """Common response finalization logic"""
         self._update_model_stats(model_response.llm_response, model_response.response_code)
         self._handle_server_down(model_response.response_code)
@@ -162,7 +162,7 @@ class BaseCustomModel(ABC):
         logger.debug(f"[{self.name()}][{model_url}] RESPONSE: {model_response.llm_response}")
         model_response.llm_response = self._replace_special_tokens(model_response.llm_response)
         model_response.llm_response = self._post_process_for_model(model_response.llm_response)
-        return AIMessage(model_response.llm_response)
+        return model_response
 
     async def _get_lock(self) -> asyncio.Lock:
         if self._structured_output_lock is None:
@@ -415,7 +415,9 @@ class BaseCustomModel(ABC):
         logger.debug(f"Chat formatted text: {chat_formatted_text}")
         return chat_formatted_text
 
-    def _replace_special_tokens(self, text: str) -> str:
+    def _replace_special_tokens(self, text: str) -> Optional[str]:
+        if text is None:
+            return text
         for token in self.model_config.get("special_tokens", []):
             text = text.replace(token, "")
         return text.strip()
@@ -986,6 +988,25 @@ class CustomOpenAI(BaseCustomModel):
         if self.model_config.get("completions_api", False):
             logger.info(f"Model {self.name()} supports completion API.")
 
+    def _openai_to_langchain_toolcall(self, openai_tool_call):
+        """Convert an OpenAI-style tool call to a LangChain ToolCall."""
+        if "function" not in openai_tool_call:
+            raise ValueError("Expected 'function' key in OpenAI tool call")
+
+        fn = openai_tool_call["function"]
+        args = fn.get("arguments", "{}")
+        if isinstance(args, str):
+            try:
+                args = json.loads(args)
+            except json.JSONDecodeError:
+                args = {"raw_arguments": args}
+
+        return ToolCall(
+            id=openai_tool_call.get("id"),
+            name=fn.get("name"),
+            args=args,
+        )
+
     async def _generate_native_structured_output(
         self,
         input: ChatPromptValue,
@@ -1116,6 +1137,8 @@ class CustomOpenAI(BaseCustomModel):
                 payload, str(self.model_config.get("model")), self.generation_params
             )
             tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
+            # Convert to Langchain ToolCall
+            tool_calls = [self._openai_to_langchain_toolcall(tc) for tc in tool_calls] if tool_calls else []
             if self.model_config.get("completions_api", False):
                 resp_text = completion.choices[0].model_dump()["text"]
             else:
