@@ -43,6 +43,15 @@ repos:
         args: [--fix, --unsafe-fixes, --exit-non-zero-on-fix, --show-fixes]
         files: ^(sygra|tests)/
 
+  - repo: local
+    hooks:
+      - id: mypy-poetry
+        name: Type check with mypy
+        entry: poetry run mypy sygra
+        language: system
+        pass_filenames: false
+        stages: [ pre-commit ]
+
   - repo: https://github.com/psf/black
     rev: 24.8.0
     hooks:
