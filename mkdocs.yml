@@ -36,6 +36,7 @@ nav:
       - Multimodal:
           - Audio to Text: concepts/multimodal/audio_to_text.md
           - Image to Text: concepts/multimodal/image_to_text.md
+          - Text to Speech: concepts/multimodal/text_to_speech.md
       - Nodes:
           - Agent Node: concepts/nodes/agent_node.md
           - Lambda Node: concepts/nodes/lambda_node.md
