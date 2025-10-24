@@ -16,7 +16,6 @@ from typing import (
     Dict,
     Optional,
     Sequence,
-    Tuple,
     Type,
     cast,
 )
@@ -236,7 +235,7 @@ class BaseCustomModel(ABC):
         modified_input = ChatPromptValue(messages=modified_messages)
 
         # Generate the text with retry (uses our centralized retry logic)
-        model_response: ModelResponse = await self._generate_text_with_retry(
+        model_response: ModelResponse = await self._generate_response_with_retry(
             modified_input, model_params, **kwargs
         )
 
@@ -515,7 +514,7 @@ class BaseCustomModel(ABC):
             logger.error(f"[{self.name()}] Request failed after {self.retry_attempts} attempts")
         return result
 
-    async def _generate_text_with_retry(
+    async def _generate_response_with_retry(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         """
@@ -1160,7 +1159,7 @@ class CustomOpenAI(BaseCustomModel):
 
     async def _generate_speech(
         self, input: ChatPromptValue, model_params: ModelParams
-    ) -> Tuple[str, int]:
+    ) -> ModelResponse:
         """
         Generate speech from text using OpenAI/Azure OpenAI TTS API.
         This method is called when output_type is 'audio' in model config.
@@ -1170,9 +1169,7 @@ class CustomOpenAI(BaseCustomModel):
             model_params: Model parameters including URL and auth token
 
         Returns:
-            Tuple of (response_text, status_code)
-            - On success: returns base64 encoded audio and 200
-            - On error: returns error message and error code
+            Model Response
         """
         ret_code = 200
         model_url = model_params.url
@@ -1187,7 +1184,10 @@ class CustomOpenAI(BaseCustomModel):
 
             if not text_to_speak:
                 logger.error(f"[{self.name()}] No text provided for TTS conversion")
-                return f"{constants.ERROR_PREFIX} No text provided for TTS conversion", 400
+                return ModelResponse(
+                    llm_response=f"{constants.ERROR_PREFIX} No text provided for TTS conversion",
+                    response_code=400,
+                )
 
             # Validate text length (OpenAI TTS limit is 4096 characters)
             if len(text_to_speak) > 4096:
@@ -1257,7 +1257,7 @@ class CustomOpenAI(BaseCustomModel):
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
 
-        return resp_text, ret_code
+        return ModelResponse(llm_response=resp_text, response_code=ret_code)
 
 
 class CustomOllama(BaseCustomModel):

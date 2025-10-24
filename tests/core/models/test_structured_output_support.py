@@ -51,7 +51,7 @@ class UserSchema(BaseModel):
 class CustomModel(BaseCustomModel):
     @pytest.mark.asyncio
     async def _generate_response(self, input, model_params):
-        return "test response", 200
+        return ModelResponse(llm_response="test response", response_code=200)
 
     def _supports_native_structured_output(self):
         # Override to return True for testing
