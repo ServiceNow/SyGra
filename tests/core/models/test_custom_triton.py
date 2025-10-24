@@ -1,10 +1,10 @@
+import asyncio
 import json
 import sys
 import unittest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
@@ -226,12 +226,14 @@ class TestCustomTriton(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.utils")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_success(self, mock_set_client, mock_utils):
+    def test_generate_response_success(self, mock_set_client, mock_utils):
+        asyncio.run(self._run_generate_response_success(mock_set_client, mock_utils))
+
+    async def _run_generate_response_success(self, mock_set_client, mock_utils):
         """Test _generate_response method with successful response"""
         # Setup mock client
         mock_client = MagicMock()
-        mock_client.build_request.return_value = {"payload": "test_payload"}
+        mock_client.build_request_with_payload.return_value = {"payload": "test_payload"}
         mock_client.async_send_request = AsyncMock()
 
         # Configure the mock response
@@ -275,14 +277,18 @@ class TestCustomTriton(unittest.TestCase):
             constants.INFERENCE_SERVER_TRITON, "default"
         )
         custom_triton._get_payload_json_template.assert_called_once_with(self.mock_payload_config)
-        mock_client.build_request.assert_called_once()
+        mock_client.build_request_with_payload.assert_called_once()
         mock_client.async_send_request.assert_awaited_once()
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.utils")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_http_error(self, mock_set_client, mock_utils, mock_logger):
+    def test_generate_response_http_error(self, mock_set_client, mock_utils, mock_logger):
+        asyncio.run(
+            self._run_generate_response_http_error(mock_set_client, mock_utils, mock_logger)
+        )
+
+    async def _run_generate_response_http_error(self, mock_set_client, mock_utils, mock_logger):
         """Test _generate_response method with HTTP error"""
         # Setup mock client
         mock_client = MagicMock()
@@ -330,12 +336,14 @@ class TestCustomTriton(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_exception(self, mock_set_client, mock_logger):
+    def test_generate_response_exception(self, mock_set_client, mock_logger):
+        asyncio.run(self._run_generate_response_exception(mock_set_client, mock_logger))
+
+    async def _run_generate_response_exception(self, mock_set_client, mock_logger):
         """Test _generate_response method with exception"""
         # Setup mock client
         mock_client = MagicMock()
-        mock_client.build_request.side_effect = Exception("Test error")
+        mock_client.build_request_with_payload.side_effect = Exception("Test error")
 
         # Setup custom model
         custom_triton = CustomTriton(self.base_config)

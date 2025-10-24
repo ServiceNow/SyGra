@@ -1,10 +1,10 @@
+import asyncio
 import sys
 import unittest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import openai
-import pytest
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
@@ -99,8 +99,10 @@ class TestCustomVLLM(unittest.TestCase):
             CustomVLLM(config)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_chat_api_success(self, mock_set_client):
+    def test_generate_response_chat_api_success(self, mock_set_client):
+        asyncio.run(self._run_generate_response_chat_api_success(mock_set_client))
+
+    async def _run_generate_response_chat_api_success(self, mock_set_client):
         """Test _generate_response with chat API (non-completions)"""
         # Setup mock client
         mock_client = MagicMock()
@@ -137,8 +139,12 @@ class TestCustomVLLM(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_completions_api_success(self, mock_set_client, mock_tokenizer):
+    def test_generate_response_completions_api_success(self, mock_set_client, mock_tokenizer):
+        asyncio.run(
+            self._run_generate_response_completions_api_success(mock_set_client, mock_tokenizer)
+        )
+
+    async def _run_generate_response_completions_api_success(self, mock_set_client, mock_tokenizer):
         """Test _generate_response with completions API"""
         # Setup mock client
         mock_client = MagicMock()
@@ -171,8 +177,10 @@ class TestCustomVLLM(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_rate_limit_error(self, mock_set_client, mock_logger):
+    def test_generate_response_rate_limit_error(self, mock_set_client, mock_logger):
+        asyncio.run(self._run_generate_response_rate_limit_error(mock_set_client, mock_logger))
+
+    async def _run_generate_response_rate_limit_error(self, mock_set_client, mock_logger):
         """Test _generate_response with rate limit error"""
         # Setup mock client to raise RateLimitError
         mock_client = MagicMock()
@@ -202,8 +210,10 @@ class TestCustomVLLM(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_server_down(self, mock_set_client, mock_logger):
+    def test_generate_response_server_down(self, mock_set_client, mock_logger):
+        asyncio.run(self._run_generate_response_server_down(mock_set_client, mock_logger))
+
+    async def _run_generate_response_server_down(self, mock_set_client, mock_logger):
         """Test _generate_response with server down error"""
         # Setup mock client to raise exception with server down message
         mock_client = MagicMock()
@@ -228,8 +238,10 @@ class TestCustomVLLM(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_connection_error(self, mock_set_client, mock_logger):
+    def test_generate_response_connection_error(self, mock_set_client, mock_logger):
+        asyncio.run(self._run_generate_response_connection_error(mock_set_client, mock_logger))
+
+    async def _run_generate_response_connection_error(self, mock_set_client, mock_logger):
         """Test _generate_response with connection error"""
         # Setup mock client to raise exception with connection error
         mock_client = MagicMock()
@@ -250,8 +262,10 @@ class TestCustomVLLM(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_generic_exception(self, mock_set_client, mock_logger):
+    def test_generate_response_generic_exception(self, mock_set_client, mock_logger):
+        asyncio.run(self._run_generate_response_generic_exception(mock_set_client, mock_logger))
+
+    async def _run_generate_response_generic_exception(self, mock_set_client, mock_logger):
         """Test _generate_response with generic exception"""
         # Setup mock client to raise generic exception
         mock_client = MagicMock()
@@ -277,8 +291,12 @@ class TestCustomVLLM(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_with_extracted_status_code(self, mock_set_client, mock_logger):
+    def test_generate_response_with_extracted_status_code(self, mock_set_client, mock_logger):
+        asyncio.run(
+            self._run_generate_response_with_extracted_status_code(mock_set_client, mock_logger)
+        )
+
+    async def _run_generate_response_with_extracted_status_code(self, mock_set_client, mock_logger):
         """Test _generate_response extracts status code from error body"""
         # Setup mock client to raise exception
         mock_client = MagicMock()
@@ -298,8 +316,10 @@ class TestCustomVLLM(unittest.TestCase):
         self.assertEqual(resp_status, 503)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_with_custom_serving_name(self, mock_set_client):
+    def test_generate_response_with_custom_serving_name(self, mock_set_client):
+        asyncio.run(self._run_generate_response_with_custom_serving_name(mock_set_client))
+
+    async def _run_generate_response_with_custom_serving_name(self, mock_set_client):
         """Test _generate_response uses custom serving name"""
         # Setup mock client
         mock_client = MagicMock()
@@ -325,8 +345,10 @@ class TestCustomVLLM(unittest.TestCase):
         self.assertEqual(call_args.args[1], "custom_serving_name")
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_passes_generation_params(self, mock_set_client):
+    def test_generate_response_passes_generation_params(self, mock_set_client):
+        asyncio.run(self._run_generate_response_passes_generation_params(mock_set_client))
+
+    async def _run_generate_response_passes_generation_params(self, mock_set_client):
         """Test _generate_response passes generation parameters correctly"""
         # Setup mock client
         mock_client = MagicMock()
@@ -363,8 +385,10 @@ class TestCustomVLLM(unittest.TestCase):
         self.assertEqual(passed_params["top_p"], 0.95)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_client_recreated_per_request(self, mock_set_client):
+    def test_client_recreated_per_request(self, mock_set_client):
+        asyncio.run(self._run_client_recreated_per_request(mock_set_client))
+
+    async def _run_client_recreated_per_request(self, mock_set_client):
         """Test that client is recreated for every request"""
         # Setup mock client
         mock_client = MagicMock()

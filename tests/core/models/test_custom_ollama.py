@@ -1,9 +1,9 @@
+import asyncio
 import sys
 import unittest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
@@ -24,6 +24,7 @@ class TestCustomOllama(unittest.TestCase):
         # Base model configuration
         self.base_config = {
             "name": "qwen3:1.7b",
+            "model_type": "ollama",
             "parameters": {"temperature": 0.7, "max_tokens": 100},
             "url": "http://localhost:11434",
         }
@@ -37,12 +38,10 @@ class TestCustomOllama(unittest.TestCase):
             "structured_output": {
                 "enabled": True,
                 "schema": {
-                    "type": "object",
-                    "properties": {
-                        "name": {"type": "string"},
-                        "age": {"type": "integer"},
-                    },
-                    "required": ["name", "age"],
+                    "fields": {
+                        "name": {"type": "str", "description": "Name of the person"},
+                        "age": {"type": "int", "description": "Age of the person"},
+                    }
                 },
             },
         }
@@ -75,8 +74,11 @@ class TestCustomOllama(unittest.TestCase):
         # Verify completions_api flag is set
         self.assertTrue(custom_ollama.model_config.get("completions_api"))
 
-    @pytest.mark.asyncio
-    async def test_generate_response_chat_completions(self):
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_response_chat_completions(self, mock_set_client):
+        asyncio.run(self._run_generate_response_chat_completions(mock_set_client))
+
+    async def _run_generate_response_chat_completions(self, mock_set_client):
         """Test _generate_response method with chat completions API"""
         # Setup mock client
         mock_client = MagicMock()
@@ -90,7 +92,7 @@ class TestCustomOllama(unittest.TestCase):
         custom_ollama._client = mock_client
 
         # Call _generate_response
-        model_params = ModelParams(url="http://localhost:11434")
+        model_params = ModelParams(url="http://localhost:11434", auth_token=None)
         resp_text, resp_status = await custom_ollama._generate_response(
             self.chat_input, model_params
         )
@@ -111,8 +113,16 @@ class TestCustomOllama(unittest.TestCase):
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.BaseCustomModel._finalize_response")
     @patch("sygra.core.models.custom_models.BaseCustomModel.get_chat_formatted_text")
-    @pytest.mark.asyncio
-    async def test_generate_response_completions_api(
+    def test_generate_response_completions_api(
+        self, mock_get_formatted, mock_finalize, mock_set_client, mock_client_factory
+    ):
+        asyncio.run(
+            self._run_generate_response_completions_api(
+                mock_get_formatted, mock_finalize, mock_set_client, mock_client_factory
+            )
+        )
+
+    async def _run_generate_response_completions_api(
         self, mock_get_formatted, mock_finalize, mock_set_client, mock_client_factory
     ):
         """Test _generate_response method with completions API"""
@@ -131,7 +141,7 @@ class TestCustomOllama(unittest.TestCase):
         mock_get_formatted.return_value = "Hello, how are you?"
 
         # Call _generate_response
-        model_params = ModelParams(url="http://localhost:11434")
+        model_params = ModelParams(url="http://localhost:11434", auth_token=None)
         resp_text, resp_status = await custom_ollama._generate_response(
             self.chat_input, model_params
         )
@@ -151,8 +161,14 @@ class TestCustomOllama(unittest.TestCase):
     @patch("sygra.core.models.custom_models.ClientFactory")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.BaseCustomModel._finalize_response")
-    @pytest.mark.asyncio
-    async def test_generate_response_exception(
+    def test_generate_response_exception(self, mock_finalize, mock_set_client, mock_client_factory):
+        asyncio.run(
+            self._run_generate_response_exception(
+                mock_finalize, mock_set_client, mock_client_factory
+            )
+        )
+
+    async def _run_generate_response_exception(
         self, mock_finalize, mock_set_client, mock_client_factory
     ):
         """Test _generate_response method with an exception"""
@@ -168,7 +184,7 @@ class TestCustomOllama(unittest.TestCase):
         custom_ollama._client = mock_client
 
         # Call _generate_response
-        model_params = ModelParams(url="http://localhost:11434")
+        model_params = ModelParams(url="http://localhost:11434", auth_token=None)
         resp_text, resp_status = await custom_ollama._generate_response(
             self.chat_input, model_params
         )
@@ -181,13 +197,21 @@ class TestCustomOllama(unittest.TestCase):
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.BaseCustomModel._finalize_response")
     @patch("sygra.core.models.custom_models.json.loads")
-    @pytest.mark.asyncio
-    async def test_generate_native_structured_output(
+    def test_generate_native_structured_output(
+        self, mock_json_loads, mock_finalize, mock_set_client, mock_client_factory
+    ):
+        asyncio.run(
+            self._run_generate_native_structured_output(
+                mock_json_loads, mock_finalize, mock_set_client, mock_client_factory
+            )
+        )
+
+    async def _run_generate_native_structured_output(
         self, mock_json_loads, mock_finalize, mock_set_client, mock_client_factory
     ):
         """Test _generate_native_structured_output method"""
 
-        # Define a simple Pydantic model for testing
+        # # Define a simple Pydantic model for testing
         class TestPerson(BaseModel):
             name: str
             age: int
@@ -212,13 +236,10 @@ class TestCustomOllama(unittest.TestCase):
         custom_ollama._client = mock_client
 
         # Call _generate_native_structured_output
-        model_params = ModelParams(url="http://localhost:11434")
-        result = await custom_ollama._generate_native_structured_output(
+        model_params = ModelParams(url="http://localhost:11434", auth_token=None)
+        resp_text, resp_status = await custom_ollama._generate_native_structured_output(
             self.chat_input, model_params, TestPerson
         )
-
-        # Verify result is an AIMessage
-        self.assertIsInstance(result, AIMessage)
 
         # Verify client calls with format parameter
         expected_schema = TestPerson.model_json_schema()
@@ -237,8 +258,16 @@ class TestCustomOllama(unittest.TestCase):
     @patch("sygra.core.models.custom_models.ClientFactory")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.BaseCustomModel._generate_fallback_structured_output")
-    @pytest.mark.asyncio
-    async def test_generate_native_structured_output_exception(
+    def test_generate_native_structured_output_exception(
+        self, mock_fallback, mock_set_client, mock_client_factory
+    ):
+        asyncio.run(
+            self._run_generate_native_structured_output_exception(
+                mock_fallback, mock_set_client, mock_client_factory
+            )
+        )
+
+    async def _run_generate_native_structured_output_exception(
         self, mock_fallback, mock_set_client, mock_client_factory
     ):
         """Test _generate_native_structured_output method with an exception that falls back"""
@@ -256,15 +285,15 @@ class TestCustomOllama(unittest.TestCase):
         mock_client.send_request = AsyncMock(side_effect=Exception("Test error"))
 
         # Setup fallback mock
-        mock_fallback.return_value = AIMessage(content='{"name": "John", "age": 30}')
+        mock_fallback.return_value = ('{"name": "John", "age": 30}', 200)
 
         # Setup custom model with mock client
         custom_ollama = CustomOllama(self.structured_config)
         custom_ollama._client = mock_client
 
         # Call _generate_native_structured_output
-        model_params = ModelParams(url="http://localhost:11434")
-        result = await custom_ollama._generate_native_structured_output(
+        model_params = ModelParams(url="http://localhost:11434", auth_token=None)
+        resp_text, resp_status = await custom_ollama._generate_native_structured_output(
             self.chat_input, model_params, TestPerson
         )
 
@@ -272,11 +301,13 @@ class TestCustomOllama(unittest.TestCase):
         mock_fallback.assert_awaited_once_with(self.chat_input, model_params, TestPerson)
 
         # Verify result is the fallback result
-        self.assertEqual(result.content, '{"name": "John", "age": 30}')
+        self.assertEqual(resp_text, '{"name": "John", "age": 30}')
 
     @patch("sygra.core.models.custom_models.ClientFactory.create_client")
-    @pytest.mark.asyncio
-    async def test_set_client(self, mock_create_client):
+    def test_set_client(self, mock_create_client):
+        asyncio.run(self._run_set_client(mock_create_client))
+
+    async def _run_set_client(self, mock_create_client):
         """Test _set_client method"""
         # Setup mock client factory
         mock_client = MagicMock()
@@ -290,7 +321,7 @@ class TestCustomOllama(unittest.TestCase):
 
         # Verify client was created with the right parameters
         mock_create_client.assert_called_once_with(
-            self.base_config, "http://localhost:11434", "test-auth-token", True
+            self.base_config, "http://localhost:11434", None, True
         )
 
         # Verify client was set

@@ -1,10 +1,10 @@
+import asyncio
 import json
 import sys
 import unittest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
@@ -25,6 +25,7 @@ class TestCustomTGI(unittest.TestCase):
         # Base model configuration
         self.base_config = {
             "name": "tgi_model",
+            "model_type": "tgi",
             "parameters": {"temperature": 0.7, "max_tokens": 100},
             "url": "http://tgi-test.com",
             "auth_token": "Bearer test_token_123",
@@ -73,8 +74,10 @@ class TestCustomTGI(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_success(self, mock_set_client, mock_tokenizer):
+    def test_generate_response_success(self, mock_set_client, mock_tokenizer):
+        asyncio.run(self._run_generate_response_success(mock_set_client, mock_tokenizer))
+
+    async def _run_generate_response_success(self, mock_set_client, mock_tokenizer):
         """Test _generate_response method with successful response"""
         # Setup mock client
         mock_client = MagicMock()
@@ -108,8 +111,12 @@ class TestCustomTGI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_http_error(self, mock_set_client, mock_tokenizer, mock_logger):
+    def test_generate_response_http_error(self, mock_set_client, mock_tokenizer, mock_logger):
+        asyncio.run(
+            self._run_generate_response_http_error(mock_set_client, mock_tokenizer, mock_logger)
+        )
+
+    async def _run_generate_response_http_error(self, mock_set_client, mock_tokenizer, mock_logger):
         """Test _generate_response method with HTTP error"""
         # Setup mock client
         mock_client = MagicMock()
@@ -141,8 +148,12 @@ class TestCustomTGI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_server_down(
+    def test_generate_response_server_down(self, mock_set_client, mock_tokenizer, mock_logger):
+        asyncio.run(
+            self._run_generate_response_server_down(mock_set_client, mock_tokenizer, mock_logger)
+        )
+
+    async def _run_generate_response_server_down(
         self, mock_set_client, mock_tokenizer, mock_logger
     ):
         """Test _generate_response method with server down error"""
@@ -152,9 +163,8 @@ class TestCustomTGI(unittest.TestCase):
 
         # Configure mock response with server down error
         mock_response = MagicMock()
-        mock_response.status_code = 500
+        mock_response.status_code = 503
         mock_response.text = f"{constants.ERROR_PREFIX} {constants.ELEMAI_JOB_DOWN}"
-        mock_response.status = 500
         mock_client.async_send_request = AsyncMock(return_value=mock_response)
 
         # Setup custom model
@@ -173,8 +183,14 @@ class TestCustomTGI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_connection_error(
+    def test_generate_response_connection_error(self, mock_set_client, mock_tokenizer, mock_logger):
+        asyncio.run(
+            self._run_generate_response_connection_error(
+                mock_set_client, mock_tokenizer, mock_logger
+            )
+        )
+
+    async def _run_generate_response_connection_error(
         self, mock_set_client, mock_tokenizer, mock_logger
     ):
         """Test _generate_response method with connection error"""
@@ -184,9 +200,8 @@ class TestCustomTGI(unittest.TestCase):
 
         # Configure mock response with connection error
         mock_response = MagicMock()
-        mock_response.status_code = 500
+        mock_response.status_code = 503
         mock_response.text = f"{constants.ERROR_PREFIX} {constants.CONNECTION_ERROR}"
-        mock_response.status = 500
         mock_client.async_send_request = AsyncMock(return_value=mock_response)
 
         # Setup custom model
@@ -205,8 +220,12 @@ class TestCustomTGI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_exception(self, mock_set_client, mock_tokenizer, mock_logger):
+    def test_generate_response_exception(self, mock_set_client, mock_tokenizer, mock_logger):
+        asyncio.run(
+            self._run_generate_response_exception(mock_set_client, mock_tokenizer, mock_logger)
+        )
+
+    async def _run_generate_response_exception(self, mock_set_client, mock_tokenizer, mock_logger):
         """Test _generate_response method with exception"""
         # Setup mock client to raise exception
         mock_client = MagicMock()
@@ -232,8 +251,12 @@ class TestCustomTGI(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_with_extracted_status_code(
+    def test_generate_response_with_extracted_status_code(self, mock_set_client, mock_tokenizer):
+        asyncio.run(
+            self._run_generate_response_with_extracted_status_code(mock_set_client, mock_tokenizer)
+        )
+
+    async def _run_generate_response_with_extracted_status_code(
         self, mock_set_client, mock_tokenizer
     ):
         """Test _generate_response extracts status code from error body"""
@@ -257,8 +280,16 @@ class TestCustomTGI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_native_structured_output_success(
+    def test_generate_native_structured_output_success(
+        self, mock_set_client, mock_tokenizer, mock_logger
+    ):
+        asyncio.run(
+            self._run_generate_native_structured_output_success(
+                mock_set_client, mock_tokenizer, mock_logger
+            )
+        )
+
+    async def _run_generate_native_structured_output_success(
         self, mock_set_client, mock_tokenizer, mock_logger
     ):
         """Test _generate_native_structured_output with successful response"""
@@ -308,8 +339,16 @@ class TestCustomTGI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.BaseCustomModel._generate_fallback_structured_output")
-    @pytest.mark.asyncio
-    async def test_generate_native_structured_output_http_error_fallback(
+    def test_generate_native_structured_output_http_error_fallback(
+        self, mock_fallback, mock_set_client, mock_tokenizer, mock_logger
+    ):
+        asyncio.run(
+            self._run_generate_native_structured_output_http_error_fallback(
+                mock_fallback, mock_set_client, mock_tokenizer, mock_logger
+            )
+        )
+
+    async def _run_generate_native_structured_output_http_error_fallback(
         self, mock_fallback, mock_set_client, mock_tokenizer, mock_logger
     ):
         """Test _generate_native_structured_output falls back on HTTP error"""
@@ -351,8 +390,16 @@ class TestCustomTGI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.BaseCustomModel._generate_fallback_structured_output")
-    @pytest.mark.asyncio
-    async def test_generate_native_structured_output_validation_error_fallback(
+    def test_generate_native_structured_output_validation_error_fallback(
+        self, mock_fallback, mock_set_client, mock_tokenizer, mock_logger
+    ):
+        asyncio.run(
+            self._run_generate_native_structured_output_validation_error_fallback(
+                mock_fallback, mock_set_client, mock_tokenizer, mock_logger
+            )
+        )
+
+    async def _run_generate_native_structured_output_validation_error_fallback(
         self, mock_fallback, mock_set_client, mock_tokenizer, mock_logger
     ):
         """Test _generate_native_structured_output falls back on validation error"""
@@ -393,8 +440,16 @@ class TestCustomTGI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.BaseCustomModel._generate_fallback_structured_output")
-    @pytest.mark.asyncio
-    async def test_generate_native_structured_output_exception_fallback(
+    def test_generate_native_structured_output_exception_fallback(
+        self, mock_fallback, mock_set_client, mock_tokenizer, mock_logger
+    ):
+        asyncio.run(
+            self._run_generate_native_structured_output_exception_fallback(
+                mock_fallback, mock_set_client, mock_tokenizer, mock_logger
+            )
+        )
+
+    async def _run_generate_native_structured_output_exception_fallback(
         self, mock_fallback, mock_set_client, mock_tokenizer, mock_logger
     ):
         """Test _generate_native_structured_output falls back on exception"""
