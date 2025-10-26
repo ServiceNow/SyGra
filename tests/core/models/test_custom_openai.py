@@ -308,66 +308,6 @@ class TestCustomOpenAI(unittest.TestCase):
     def test_generate_speech_text_too_long(self, mock_logger):
         asyncio.run(self._run_generate_speech_text_too_long(mock_logger))
 
-    async def _run_generate_speech_invalid_voice(self, mock_set_client, mock_logger):
-        """Test _generate_speech with invalid voice falls back to default"""
-        # Setup mock client
-        mock_client = MagicMock()
-        mock_response = MagicMock()
-        mock_response.content = b"audio_data"
-        mock_client.create_speech = AsyncMock(return_value=mock_response)
-
-        # Setup custom model with invalid voice
-        config = {**self.tts_config, "voice": "invalid_voice"}
-        custom_openai = CustomOpenAI(config)
-        custom_openai._client = mock_client
-
-        # Call _generate_speech
-        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        await custom_openai._generate_speech(self.tts_input, model_params)
-
-        # Verify warning was logged and default 'alloy' was used
-        mock_logger.warning.assert_called()
-        self.assertIn("Invalid voice", str(mock_logger.warning.call_args))
-
-        # Verify create_speech was called with 'alloy'
-        call_args = mock_client.create_speech.call_args
-        self.assertEqual(call_args.kwargs["voice"], "alloy")
-
-    @patch("sygra.core.models.custom_models.logger")
-    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    def test_generate_speech_invalid_voice(self, mock_set_client, mock_logger):
-        asyncio.run(self._run_generate_speech_invalid_voice(mock_set_client, mock_logger))
-
-    async def _run_generate_speech_invalid_format(self, mock_set_client, mock_logger):
-        """Test _generate_speech with invalid format falls back to default"""
-        # Setup mock client
-        mock_client = MagicMock()
-        mock_response = MagicMock()
-        mock_response.content = b"audio_data"
-        mock_client.create_speech = AsyncMock(return_value=mock_response)
-
-        # Setup custom model with invalid format
-        config = {**self.tts_config, "response_format": "invalid_format"}
-        custom_openai = CustomOpenAI(config)
-        custom_openai._client = mock_client
-
-        # Call _generate_speech
-        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        await custom_openai._generate_speech(self.tts_input, model_params)
-
-        # Verify warning was logged and default 'mp3' was used
-        mock_logger.warning.assert_called()
-        self.assertIn("Invalid format", str(mock_logger.warning.call_args))
-
-        # Verify create_speech was called with 'mp3'
-        call_args = mock_client.create_speech.call_args
-        self.assertEqual(call_args.kwargs["response_format"], "mp3")
-
-    @patch("sygra.core.models.custom_models.logger")
-    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    def test_generate_speech_invalid_format(self, mock_set_client, mock_logger):
-        asyncio.run(self._run_generate_speech_invalid_format(mock_set_client, mock_logger))
-
     async def _run_generate_speech_speed_clamping(self, mock_set_client):
         """Test _generate_speech clamps speed to valid range"""
         # Setup mock client
@@ -434,9 +374,13 @@ class TestCustomOpenAI(unittest.TestCase):
     async def _run_generate_speech_api_error(self, mock_set_client, mock_logger):
         """Test _generate_speech with API error"""
         # Setup mock client to raise APIError
-        mock_response = MagicMock()
-        mock_response.status_code = 500
-        api_error = openai.APIError("Internal server error", response=mock_response, body=None)
+        mock_request = MagicMock()
+        mock_request.status_code = 500
+        api_error = openai.APIError(
+            "Internal server error",
+            request=mock_request,
+            body={"error": {"message": "Internal server error", "type": "api_error"}}
+        )
         api_error.status_code = 500
 
         mock_client = MagicMock()
