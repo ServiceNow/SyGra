@@ -161,24 +161,28 @@ class TestHttpClient(unittest.TestCase):
         # Verify empty response is returned on exception
         self.assertEqual(response, "")
 
-    @patch("aiohttp.ClientSession.post")
+    @patch("aiohttp.ClientSession.post", new_callable=AsyncMock)
     def test_async_send_request(self, mock_post):
         asyncio.run(self._run_async_send_request(mock_post))
 
     async def _run_async_send_request(self, mock_post):
         """Test async_send_request method sends HTTP requests correctly"""
-        # Setup mock response
+
+        # --- Setup mock response ---
         mock_response = AsyncMock()
         mock_response.text = AsyncMock(return_value='{"result": "Success"}')
         mock_response.status = 200
-        mock_response.__aenter__.return_value = mock_response
+        mock_response.headers = {"x-test": "true"}
+        mock_response.__aenter__.return_value = mock_response  # async context manager
+        mock_response.__aexit__.return_value = None
+
         mock_post.return_value = mock_response
 
-        # Test basic async request
+        # --- Run the actual client method ---
         payload = {"prompt": "Test prompt"}
-        response = await self.client.async_send_request(payload)
+        await self.client.async_send_request(payload)
 
-        # Verify request was made with correct parameters
+        # --- Verify the request ---
         mock_post.assert_called_once()
         call_kwargs = mock_post.call_args.kwargs
         self.assertEqual(call_kwargs["headers"], self.headers)
@@ -186,7 +190,7 @@ class TestHttpClient(unittest.TestCase):
         self.assertEqual(call_kwargs["ssl"], True)
         self.assertEqual(json.loads(call_kwargs["data"].decode()), payload)
 
-    @patch("aiohttp.ClientSession.post")
+    @patch("aiohttp.ClientSession.post", new_callable=AsyncMock)
     def test_async_send_request_with_generation_params(self, mock_post):
         asyncio.run(self._run_async_send_request(mock_post))
 

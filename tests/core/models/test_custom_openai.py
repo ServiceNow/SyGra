@@ -379,7 +379,7 @@ class TestCustomOpenAI(unittest.TestCase):
         api_error = openai.APIError(
             "Internal server error",
             request=mock_request,
-            body={"error": {"message": "Internal server error", "type": "api_error"}}
+            body={"error": {"message": "Internal server error", "type": "api_error"}},
         )
         api_error.status_code = 500
 
