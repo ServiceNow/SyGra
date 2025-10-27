@@ -161,7 +161,7 @@ class TestHttpClient(unittest.TestCase):
         # Verify empty response is returned on exception
         self.assertEqual(response, "")
 
-    @patch("aiohttp.ClientSession.post", new_callable=AsyncMock)
+    @patch("aiohttp.ClientSession.post")
     def test_async_send_request(self, mock_post):
         asyncio.run(self._run_async_send_request(mock_post))
 
@@ -190,7 +190,7 @@ class TestHttpClient(unittest.TestCase):
         self.assertEqual(call_kwargs["ssl"], True)
         self.assertEqual(json.loads(call_kwargs["data"].decode()), payload)
 
-    @patch("aiohttp.ClientSession.post", new_callable=AsyncMock)
+    @patch("aiohttp.ClientSession.post")
     def test_async_send_request_with_generation_params(self, mock_post):
         asyncio.run(self._run_async_send_request(mock_post))
 
