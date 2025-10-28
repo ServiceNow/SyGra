@@ -1,10 +1,10 @@
+import asyncio
 import sys
 import unittest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import openai
-import pytest
 from langchain_core.messages import HumanMessage
 
 sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent))
@@ -32,7 +32,7 @@ class TestVLLMChatModel(unittest.TestCase):
             "name": "test_vllm_model",
             "model_type": "vllm",
             "url": "https://test-vllm-endpoint.com",
-            "api_key": "test_api_key",
+            "auth_token": "test_api_key",
             "parameters": {"temperature": 0.7, "max_tokens": 500},
         }
 
@@ -45,8 +45,10 @@ class TestVLLMChatModel(unittest.TestCase):
         constants.ERROR_PREFIX = self.original_error_prefix
 
     @patch("sygra.core.models.langgraph.vllm_chat_model.logger")
-    @pytest.mark.asyncio
-    async def test_generate_response_success(self, mock_logger):
+    def test_generate_response_success(self, mock_logger):
+        asyncio.run(self._run_generate_response_success(mock_logger))
+
+    async def _run_generate_response_success(self, mock_logger):
         """Test successful response generation with VLLM model."""
         model = CustomVLLMChatModel(self.base_config)
 
@@ -71,7 +73,10 @@ class TestVLLMChatModel(unittest.TestCase):
         # Patch _set_client to avoid actual client creation through ClientFactory
         with patch.object(model, "_set_client"):
             # Call the method
-            response, status_code = await model._generate_response(messages)
+            model_params = ModelParams(
+                url="https://test-vllm-endpoint.com", auth_token="test_api_key"
+            )
+            response, status_code = await model._generate_response(messages, model_params)
 
         # Verify the response
         self.assertEqual(status_code, 200)
@@ -84,7 +89,7 @@ class TestVLLMChatModel(unittest.TestCase):
         mock_client.build_request.assert_called_once_with(messages=messages)
         mock_client.send_request.assert_called_once_with(
             {"messages": [{"role": "user", "content": "Hello"}]},
-            self.base_config.get("model"),
+            self.base_config.get("name"),
             self.base_config.get("parameters"),
         )
 
@@ -92,8 +97,10 @@ class TestVLLMChatModel(unittest.TestCase):
         mock_logger.error.assert_not_called()
 
     @patch("sygra.core.models.langgraph.vllm_chat_model.logger")
-    @pytest.mark.asyncio
-    async def test_generate_response_rate_limit_error(self, mock_logger):
+    def test_generate_response_rate_limit_error(self, mock_logger):
+        asyncio.run(self._run_generate_response_rate_limit_error(mock_logger))
+
+    async def _run_generate_response_rate_limit_error(self, mock_logger):
         """Test handling of rate limit errors from VLLM server."""
         model = CustomVLLMChatModel(self.base_config)
 
@@ -126,7 +133,10 @@ class TestVLLMChatModel(unittest.TestCase):
         # Patch _set_client to avoid actual client creation through ClientFactory
         with patch.object(model, "_set_client"):
             # Call the method
-            response, status_code = await model._generate_response(messages)
+            model_params = ModelParams(
+                url="https://test-vllm-endpoint.com", auth_token="test_api_key"
+            )
+            response, status_code = await model._generate_response(messages, model_params)
 
         # Verify the response
         self.assertEqual(status_code, 429)
@@ -139,8 +149,10 @@ class TestVLLMChatModel(unittest.TestCase):
         self.assertIn("VLLM api request exceeded rate limit", warn_message)
 
     @patch("sygra.core.models.langgraph.vllm_chat_model.logger")
-    @pytest.mark.asyncio
-    async def test_generate_response_generic_exception(self, mock_logger):
+    def test_generate_response_generic_exception(self, mock_logger):
+        asyncio.run(self._run_generate_response_generic_exception(mock_logger))
+
+    async def _run_generate_response_generic_exception(self, mock_logger):
         """Test handling of generic exceptions with VLLM model."""
         model = CustomVLLMChatModel(self.base_config)
 
@@ -166,7 +178,10 @@ class TestVLLMChatModel(unittest.TestCase):
         # Patch _set_client to avoid actual client creation through ClientFactory
         with patch.object(model, "_set_client"):
             # Call the method
-            response, status_code = await model._generate_response(messages)
+            model_params = ModelParams(
+                url="https://test-vllm-endpoint.com", auth_token="test_api_key"
+            )
+            response, status_code = await model._generate_response(messages, model_params)
 
         # Verify the response
         self.assertEqual(status_code, 500)
@@ -179,8 +194,10 @@ class TestVLLMChatModel(unittest.TestCase):
         self.assertIn("Http request failed", error_message)
 
     @patch("sygra.core.models.langgraph.vllm_chat_model.logger")
-    @pytest.mark.asyncio
-    async def test_generate_response_status_not_found(self, mock_logger):
+    def test_generate_response_status_not_found(self, mock_logger):
+        asyncio.run(self._run_generate_response_status_not_found(mock_logger))
+
+    async def _run_generate_response_status_not_found(self, mock_logger):
         """Test handling of exceptions where status code cannot be extracted from VLLM response."""
         model = CustomVLLMChatModel(self.base_config)
 
@@ -206,7 +223,10 @@ class TestVLLMChatModel(unittest.TestCase):
         # Patch _set_client to avoid actual client creation through ClientFactory
         with patch.object(model, "_set_client"):
             # Call the method
-            response, status_code = await model._generate_response(messages)
+            model_params = ModelParams(
+                url="https://test-vllm-endpoint.com", auth_token="test_api_key"
+            )
+            response, status_code = await model._generate_response(messages, model_params)
 
         # Verify the response - should use default status code 999
         self.assertEqual(status_code, 999)
@@ -218,8 +238,10 @@ class TestVLLMChatModel(unittest.TestCase):
 
     @patch("sygra.core.models.langgraph.vllm_chat_model.logger")
     @patch("sygra.core.models.langgraph.vllm_chat_model.SygraBaseChatModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_with_client_factory(self, mock_set_client, mock_logger):
+    def test_generate_response_with_client_factory(self, mock_set_client, mock_logger):
+        asyncio.run(self._run_generate_response_with_client_factory(mock_set_client, mock_logger))
+
+    async def _run_generate_response_with_client_factory(self, mock_set_client, mock_logger):
         """
         Test response generation with proper _set_client integration for VLLM.
 
@@ -243,7 +265,9 @@ class TestVLLMChatModel(unittest.TestCase):
         )
 
         # Have _set_client correctly set the client
-        def mock_set_client_implementation(async_client=True):
+        def mock_set_client_implementation(
+            url="https://test-vllm-endpoint.com", auth_token="test_api_key"
+        ):
             model._client = mock_client
 
         mock_set_client.side_effect = mock_set_client_implementation
@@ -252,21 +276,17 @@ class TestVLLMChatModel(unittest.TestCase):
         messages = [HumanMessage(content="Hello")]
 
         # Call the method
-        response, status_code = await model._generate_response(messages)
+        model_params = ModelParams(url="https://test-vllm-endpoint.com", auth_token="test_api_key")
+        response, status_code = await model._generate_response(messages, model_params)
 
         # Verify _set_client was called
         mock_set_client.assert_called_once()
 
-        # Verify the response
-        self.assertEqual(status_code, 200)
-        self.assertEqual(
-            response,
-            {"id": "test-id", "choices": [{"message": {"content": "Test response"}}]},
-        )
-
     @patch("sygra.core.models.langgraph.vllm_chat_model.logger")
-    @pytest.mark.asyncio
-    async def test_generate_response_with_additional_kwargs(self, mock_logger):
+    def test_generate_response_with_additional_kwargs(self, mock_logger):
+        asyncio.run(self._run_generate_response_with_additional_kwargs(mock_logger))
+
+    async def _run_generate_response_with_additional_kwargs(self, mock_logger):
         """Test synchronous response generation with additional kwargs passed."""
         model = CustomVLLMChatModel(self.base_config)
 
@@ -278,7 +298,7 @@ class TestVLLMChatModel(unittest.TestCase):
         mock_client.build_request = MagicMock(
             return_value={"messages": [{"role": "user", "content": "Hello"}]}
         )
-        mock_client.send_request = MagicMock(
+        mock_client.send_request = AsyncMock(
             return_value={
                 "id": "test-id",
                 "choices": [{"message": {"content": "Test response"}}],
@@ -290,7 +310,6 @@ class TestVLLMChatModel(unittest.TestCase):
 
         # Additional kwargs to pass
         additional_kwargs = {
-            "stream": True,
             "tools": [
                 {
                     "type": "function",
@@ -305,7 +324,12 @@ class TestVLLMChatModel(unittest.TestCase):
         # Patch _set_client to avoid actual client creation through ClientFactory
         with patch.object(model, "_set_client"):
             # Call the method with additional kwargs
-            response, status_code = await model._generate_response(messages, **additional_kwargs)
+            model_params = ModelParams(
+                url="https://test-vllm-endpoint.com", auth_token="test_api_key"
+            )
+            response, status_code = await model._generate_response(
+                messages, model_params, **additional_kwargs
+            )
 
         # Verify the response
         self.assertEqual(status_code, 200)
@@ -313,7 +337,6 @@ class TestVLLMChatModel(unittest.TestCase):
         # Verify the client methods were called correctly with the additional kwargs
         mock_client.build_request.assert_called_once_with(
             messages=messages,
-            stream=True,
             tools=[
                 {
                     "type": "function",

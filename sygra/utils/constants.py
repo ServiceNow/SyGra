@@ -85,7 +85,7 @@ LIST_SEPARATOR = "|"
 COMPLETION_ONLY_MODELS: list[str] = []
 
 # constants for template based payload
-PAYLOAD_CFG_FILE = "config/payload_cfg.json"
+PAYLOAD_CFG_FILE = "sygra/config/payload_cfg.json"
 PAYLOAD_JSON = "payload_json"
 TEST_PAYLOAD = "test_payload"
 RESPONSE_KEY = "response_key"

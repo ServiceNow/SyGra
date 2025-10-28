@@ -1,9 +1,8 @@
+import asyncio
 import sys
 import unittest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
@@ -56,8 +55,10 @@ class TestCustomMistralAPI(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")
-    @pytest.mark.asyncio
-    async def test_generate_response_success(self, mock_utils, mock_set_client):
+    def test_generate_response_success(self, mock_utils, mock_set_client):
+        asyncio.run(self._run_generate_response_success(mock_utils, mock_set_client))
+
+    async def _run_generate_response_success(self, mock_utils, mock_set_client):
         """Test _generate_response method with successful response"""
         # Setup mock client
         mock_client = MagicMock()
@@ -110,8 +111,12 @@ class TestCustomMistralAPI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")
-    @pytest.mark.asyncio
-    async def test_generate_response_rate_limit_error(
+    def test_generate_response_rate_limit_error(self, mock_utils, mock_set_client, mock_logger):
+        asyncio.run(
+            self._run_generate_response_rate_limit_error(mock_utils, mock_set_client, mock_logger)
+        )
+
+    async def _run_generate_response_rate_limit_error(
         self, mock_utils, mock_set_client, mock_logger
     ):
         """Test _generate_response method with rate limit error"""
@@ -120,7 +125,7 @@ class TestCustomMistralAPI(unittest.TestCase):
         mock_chat = MagicMock()
         mock_client.chat = mock_chat
 
-        error_msg = "Status 429: Too many requests"
+        error_msg = "Status 429: rate limit error"
         mock_chat.complete_async = AsyncMock(side_effect=Exception(error_msg))
 
         # Mock utils methods
@@ -150,8 +155,14 @@ class TestCustomMistralAPI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")
-    @pytest.mark.asyncio
-    async def test_generate_response_model_overload_error(
+    def test_generate_response_model_overload_error(self, mock_utils, mock_set_client, mock_logger):
+        asyncio.run(
+            self._run_generate_response_model_overload_error(
+                mock_utils, mock_set_client, mock_logger
+            )
+        )
+
+    async def _run_generate_response_model_overload_error(
         self, mock_utils, mock_set_client, mock_logger
     ):
         """Test _generate_response method with model overload error"""
@@ -160,7 +171,7 @@ class TestCustomMistralAPI(unittest.TestCase):
         mock_chat = MagicMock()
         mock_client.chat = mock_chat
 
-        error_msg = "Model is overloaded"
+        error_msg = "model has no capacity"
         mock_chat.complete_async = AsyncMock(side_effect=Exception(error_msg))
 
         # Mock utils methods
@@ -186,8 +197,12 @@ class TestCustomMistralAPI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")
-    @pytest.mark.asyncio
-    async def test_generate_response_generic_exception(
+    def test_generate_response_generic_exception(self, mock_utils, mock_set_client, mock_logger):
+        asyncio.run(
+            self._run_generate_response_generic_exception(mock_utils, mock_set_client, mock_logger)
+        )
+
+    async def _run_generate_response_generic_exception(
         self, mock_utils, mock_set_client, mock_logger
     ):
         """Test _generate_response method with generic exception"""
@@ -226,8 +241,16 @@ class TestCustomMistralAPI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")
-    @pytest.mark.asyncio
-    async def test_generate_response_with_extracted_status_code(
+    def test_generate_response_with_extracted_status_code(
+        self, mock_utils, mock_set_client, mock_logger
+    ):
+        asyncio.run(
+            self._run_generate_response_with_extracted_status_code(
+                mock_utils, mock_set_client, mock_logger
+            )
+        )
+
+    async def _run_generate_response_with_extracted_status_code(
         self, mock_utils, mock_set_client, mock_logger
     ):
         """Test _generate_response extracts status code from error body"""
@@ -260,8 +283,10 @@ class TestCustomMistralAPI(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")
-    @pytest.mark.asyncio
-    async def test_generate_response_with_generation_params(self, mock_utils, mock_set_client):
+    def test_generate_response_with_generation_params(self, mock_utils, mock_set_client):
+        asyncio.run(self._run_generate_response_with_generation_params(mock_utils, mock_set_client))
+
+    async def _run_generate_response_with_generation_params(self, mock_utils, mock_set_client):
         """Test _generate_response passes generation parameters correctly"""
         # Setup mock client
         mock_client = MagicMock()
@@ -306,8 +331,10 @@ class TestCustomMistralAPI(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")
-    @pytest.mark.asyncio
-    async def test_messages_format_conversion(self, mock_utils, mock_set_client):
+    def test_messages_format_conversion(self, mock_utils, mock_set_client):
+        asyncio.run(self._run_messages_format_conversion(mock_utils, mock_set_client))
+
+    async def _run_messages_format_conversion(self, mock_utils, mock_set_client):
         """Test that messages are properly converted to role/content format"""
         # Setup mock client
         mock_client = MagicMock()

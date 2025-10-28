@@ -1,10 +1,9 @@
+import asyncio
 import json
 import sys
 import unittest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
@@ -113,8 +112,10 @@ class TestCustomAzure(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")
-    @pytest.mark.asyncio
-    async def test_generate_response_success(self, mock_utils, mock_set_client):
+    def test_generate_response_success(self, mock_utils, mock_set_client):
+        asyncio.run(self._run_generate_response_success(mock_utils, mock_set_client))
+
+    async def _run_generate_response_success(self, mock_utils, mock_set_client):
         """Test _generate_response method with successful response"""
         # Setup mock client
         mock_client = MagicMock()
@@ -166,8 +167,10 @@ class TestCustomAzure(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")
-    @pytest.mark.asyncio
-    async def test_generate_response_content_filter(self, mock_utils, mock_set_client):
+    def test_generate_response_content_filter(self, mock_utils, mock_set_client):
+        asyncio.run(self._run_generate_response_content_filter(mock_utils, mock_set_client))
+
+    async def _run_generate_response_content_filter(self, mock_utils, mock_set_client):
         """Test _generate_response method with content filter response"""
         # Setup mock client
         mock_client = MagicMock()
@@ -207,8 +210,12 @@ class TestCustomAzure(unittest.TestCase):
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")
-    @pytest.mark.asyncio
-    async def test_generate_response_http_error(self, mock_utils, mock_set_client, mock_logger):
+    def test_generate_response_http_error(self, mock_utils, mock_set_client, mock_logger):
+        asyncio.run(
+            self._run_generate_response_http_error(mock_utils, mock_set_client, mock_logger)
+        )
+
+    async def _run_generate_response_http_error(self, mock_utils, mock_set_client, mock_logger):
         """Test _generate_response method with HTTP error"""
         # Setup mock client
         mock_client = MagicMock()
@@ -250,8 +257,10 @@ class TestCustomAzure(unittest.TestCase):
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")
-    @pytest.mark.asyncio
-    async def test_generate_response_exception(self, mock_utils, mock_set_client, mock_logger):
+    def test_generate_response_exception(self, mock_utils, mock_set_client, mock_logger):
+        asyncio.run(self._run_generate_response_exception(mock_utils, mock_set_client, mock_logger))
+
+    async def _run_generate_response_exception(self, mock_utils, mock_set_client, mock_logger):
         """Test _generate_response method with exception"""
         # Setup mock client to raise exception
         mock_client = MagicMock()
@@ -285,8 +294,12 @@ class TestCustomAzure(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")
-    @pytest.mark.asyncio
-    async def test_generate_response_with_extracted_status_code(self, mock_utils, mock_set_client):
+    def test_generate_response_with_extracted_status_code(self, mock_utils, mock_set_client):
+        asyncio.run(
+            self._run_generate_response_with_extracted_status_code(mock_utils, mock_set_client)
+        )
+
+    async def _run_generate_response_with_extracted_status_code(self, mock_utils, mock_set_client):
         """Test _generate_response extracts status code from error body"""
         # Setup mock client to raise exception
         mock_client = MagicMock()
@@ -315,8 +328,10 @@ class TestCustomAzure(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")
-    @pytest.mark.asyncio
-    async def test_set_client_called_with_correct_params(self, mock_utils, mock_set_client):
+    def test_set_client_called_with_correct_params(self, mock_utils, mock_set_client):
+        asyncio.run(self._run_set_client_called_with_correct_params(mock_utils, mock_set_client))
+
+    async def _run_set_client_called_with_correct_params(self, mock_utils, mock_set_client):
         """Test that _set_client is called with correct parameters"""
         # Setup mock client
         mock_client = MagicMock()

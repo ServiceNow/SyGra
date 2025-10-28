@@ -32,7 +32,7 @@ def is_data_url(val: Any) -> bool:
     Returns:
         bool: True if the value is a data URL, False otherwise.
     """
-    return isinstance(val, str) and val.startswith("data:")
+    return isinstance(val, str) and val.startswith("data:audio/")
 
 
 def is_hf_audio_dict(val: Any) -> bool:

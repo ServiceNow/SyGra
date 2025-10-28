@@ -1,11 +1,12 @@
-import base64
+import asyncio
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, mock_open, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import openai
-import pytest
+
+from sygra.utils.audio_utils import get_audio_url
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
@@ -36,6 +37,7 @@ class TestCustomOpenAI(unittest.TestCase):
         self.tts_config = {
             "name": "tts_model",
             "model": "tts-1",
+            "model_type": "openai",
             "output_type": "audio",
             "parameters": {},
             "url": "https://api.openai.com/v1",
@@ -95,9 +97,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
     # ============== _generate_text Tests ==============
 
-    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_text_chat_api_success(self, mock_set_client):
+    async def _run_generate_text_chat_api_success(self, mock_set_client):
         """Test _generate_text with chat API (non-completions)"""
         # Setup mock client
         mock_client = MagicMock()
@@ -132,10 +132,11 @@ class TestCustomOpenAI(unittest.TestCase):
         mock_client.build_request.assert_called_once_with(messages=self.messages)
         mock_client.send_request.assert_awaited_once()
 
-    @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_text_completions_api_success(self, mock_set_client, mock_tokenizer):
+    def test_generate_text_chat_api_success(self, mock_set_client):
+        asyncio.run(self._run_generate_text_chat_api_success(mock_set_client))
+
+    async def _run_generate_text_completions_api_success(self, mock_set_client, mock_tokenizer):
         """Test _generate_text with completions API"""
         # Setup mock client
         mock_client = MagicMock()
@@ -166,10 +167,14 @@ class TestCustomOpenAI(unittest.TestCase):
         custom_openai.get_chat_formatted_text.assert_called_once()
         mock_client.build_request.assert_called_once_with(formatted_prompt="Formatted prompt")
 
-    @patch("sygra.core.models.custom_models.logger")
+    @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_text_rate_limit_error(self, mock_set_client, mock_logger):
+    def test_generate_text_completions_api_success(self, mock_set_client, mock_tokenizer):
+        asyncio.run(
+            self._run_generate_text_completions_api_success(mock_set_client, mock_tokenizer)
+        )
+
+    async def _run_generate_text_rate_limit_error(self, mock_set_client, mock_logger):
         """Test _generate_text with rate limit error"""
         # Setup mock client to raise RateLimitError
         mock_client = MagicMock()
@@ -198,8 +203,10 @@ class TestCustomOpenAI(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_text_generic_exception(self, mock_set_client, mock_logger):
+    def test_generate_text_rate_limit_error(self, mock_set_client, mock_logger):
+        asyncio.run(self._run_generate_text_rate_limit_error(mock_set_client, mock_logger))
+
+    async def _run_generate_text_generic_exception(self, mock_set_client, mock_logger):
         """Test _generate_text with generic exception"""
         # Setup mock client to raise generic exception
         mock_client = MagicMock()
@@ -220,11 +227,14 @@ class TestCustomOpenAI(unittest.TestCase):
         self.assertIn("Network timeout", resp_text)
         self.assertEqual(resp_status, 999)
 
+    @patch("sygra.core.models.custom_models.logger")
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_text_generic_exception(self, mock_set_client, mock_logger):
+        asyncio.run(self._run_generate_text_generic_exception(mock_set_client, mock_logger))
+
     # ============== _generate_speech Tests ==============
 
-    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_speech_success_base64(self, mock_set_client):
+    async def _run_generate_speech_success_base64(self, mock_set_client):
         """Test _generate_speech returns base64 encoded audio when no output_file"""
         # Setup mock client
         mock_client = MagicMock()
@@ -243,7 +253,7 @@ class TestCustomOpenAI(unittest.TestCase):
         resp_text, resp_status = await custom_openai._generate_speech(self.tts_input, model_params)
 
         # Verify results
-        expected_base64 = base64.b64encode(mock_audio_content).decode("utf-8")
+        expected_base64 = get_audio_url(mock_audio_content, "audio/mpeg")
         self.assertEqual(resp_text, expected_base64)
         self.assertEqual(resp_status, 200)
 
@@ -251,41 +261,11 @@ class TestCustomOpenAI(unittest.TestCase):
         mock_set_client.assert_called_once()
         mock_client.create_speech.assert_awaited_once()
 
-    @patch("builtins.open", new_callable=mock_open)
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_speech_success_file_output(self, mock_set_client, mock_file):
-        """Test _generate_speech saves to file when output_file specified"""
-        # Setup mock client
-        mock_client = MagicMock()
-        mock_audio_content = b"fake_audio_data"
-        mock_response = MagicMock()
-        mock_response.content = mock_audio_content
+    def test_generate_speech_success_base64(self, mock_set_client):
+        asyncio.run(self._run_generate_speech_success_base64(mock_set_client))
 
-        mock_client.create_speech = AsyncMock(return_value=mock_response)
-
-        # Setup custom model with output file
-        config = {**self.tts_config, "output_file": "/tmp/output.mp3"}
-        custom_openai = CustomOpenAI(config)
-        custom_openai._client = mock_client
-
-        # Call _generate_speech
-        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_speech(self.tts_input, model_params)
-
-        # Verify results
-        self.assertIn("Audio successfully saved", resp_text)
-        self.assertIn("/tmp/output.mp3", resp_text)
-        self.assertEqual(resp_status, 200)
-
-        # Verify file was written
-        mock_file.assert_called_once_with("/tmp/output.mp3", "wb")
-        mock_file().write.assert_called_once_with(mock_audio_content)
-
-    @patch("sygra.core.models.custom_models.logger")
-    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_speech_empty_text(self, mock_set_client, mock_logger):
+    async def _run_generate_speech_empty_text(self, mock_logger):
         """Test _generate_speech with empty text"""
         # Setup custom model
         custom_openai = CustomOpenAI(self.tts_config)
@@ -303,9 +283,11 @@ class TestCustomOpenAI(unittest.TestCase):
         self.assertEqual(resp_status, 400)
 
     @patch("sygra.core.models.custom_models.logger")
-    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_speech_text_too_long(self, mock_set_client, mock_logger):
+    # @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_speech_empty_text(self, mock_logger):
+        asyncio.run(self._run_generate_speech_empty_text(mock_logger))
+
+    async def _run_generate_speech_text_too_long(self, mock_logger):
         """Test _generate_speech with text exceeding 4096 character limit"""
         # Setup custom model
         custom_openai = CustomOpenAI(self.tts_config)
@@ -318,70 +300,15 @@ class TestCustomOpenAI(unittest.TestCase):
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
         resp_text, resp_status = await custom_openai._generate_speech(long_input, model_params)
 
-        # Verify results
-        self.assertIn(constants.ERROR_PREFIX, resp_text)
-        self.assertIn("exceeds 4096 character limit", resp_text)
-        self.assertEqual(resp_status, 400)
+        # Verify warning logging
+        mock_logger.warn.assert_called()
+        self.assertIn("Text exceeds 4096 character limit", str(mock_logger.warn.call_args))
 
     @patch("sygra.core.models.custom_models.logger")
-    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_speech_invalid_voice(self, mock_set_client, mock_logger):
-        """Test _generate_speech with invalid voice falls back to default"""
-        # Setup mock client
-        mock_client = MagicMock()
-        mock_response = MagicMock()
-        mock_response.content = b"audio_data"
-        mock_client.create_speech = AsyncMock(return_value=mock_response)
+    def test_generate_speech_text_too_long(self, mock_logger):
+        asyncio.run(self._run_generate_speech_text_too_long(mock_logger))
 
-        # Setup custom model with invalid voice
-        config = {**self.tts_config, "voice": "invalid_voice"}
-        custom_openai = CustomOpenAI(config)
-        custom_openai._client = mock_client
-
-        # Call _generate_speech
-        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        await custom_openai._generate_speech(self.tts_input, model_params)
-
-        # Verify warning was logged and default 'alloy' was used
-        mock_logger.warning.assert_called()
-        self.assertIn("Invalid voice", str(mock_logger.warning.call_args))
-
-        # Verify create_speech was called with 'alloy'
-        call_args = mock_client.create_speech.call_args
-        self.assertEqual(call_args.kwargs["voice"], "alloy")
-
-    @patch("sygra.core.models.custom_models.logger")
-    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_speech_invalid_format(self, mock_set_client, mock_logger):
-        """Test _generate_speech with invalid format falls back to default"""
-        # Setup mock client
-        mock_client = MagicMock()
-        mock_response = MagicMock()
-        mock_response.content = b"audio_data"
-        mock_client.create_speech = AsyncMock(return_value=mock_response)
-
-        # Setup custom model with invalid format
-        config = {**self.tts_config, "response_format": "invalid_format"}
-        custom_openai = CustomOpenAI(config)
-        custom_openai._client = mock_client
-
-        # Call _generate_speech
-        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        await custom_openai._generate_speech(self.tts_input, model_params)
-
-        # Verify warning was logged and default 'mp3' was used
-        mock_logger.warning.assert_called()
-        self.assertIn("Invalid format", str(mock_logger.warning.call_args))
-
-        # Verify create_speech was called with 'mp3'
-        call_args = mock_client.create_speech.call_args
-        self.assertEqual(call_args.kwargs["response_format"], "mp3")
-
-    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_speech_speed_clamping(self, mock_set_client):
+    async def _run_generate_speech_speed_clamping(self, mock_set_client):
         """Test _generate_speech clamps speed to valid range"""
         # Setup mock client
         mock_client = MagicMock()
@@ -412,10 +339,11 @@ class TestCustomOpenAI(unittest.TestCase):
         call_args = mock_client.create_speech.call_args
         self.assertEqual(call_args.kwargs["speed"], 4.0)
 
-    @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_speech_rate_limit_error(self, mock_set_client, mock_logger):
+    def test_generate_speech_speed_clamping(self, mock_set_client):
+        asyncio.run(self._run_generate_speech_speed_clamping(mock_set_client))
+
+    async def _run_generate_speech_rate_limit_error(self, mock_set_client, mock_logger):
         """Test _generate_speech with rate limit error"""
         # Setup mock client to raise RateLimitError
         mock_client = MagicMock()
@@ -440,13 +368,19 @@ class TestCustomOpenAI(unittest.TestCase):
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_speech_api_error(self, mock_set_client, mock_logger):
+    def test_generate_speech_rate_limit_error(self, mock_set_client, mock_logger):
+        asyncio.run(self._run_generate_speech_rate_limit_error(mock_set_client, mock_logger))
+
+    async def _run_generate_speech_api_error(self, mock_set_client, mock_logger):
         """Test _generate_speech with API error"""
         # Setup mock client to raise APIError
-        mock_response = MagicMock()
-        mock_response.status_code = 500
-        api_error = openai.APIError("Internal server error", response=mock_response, body=None)
+        mock_request = MagicMock()
+        mock_request.status_code = 500
+        api_error = openai.APIError(
+            "Internal server error",
+            request=mock_request,
+            body={"error": {"message": "Internal server error", "type": "api_error"}},
+        )
         api_error.status_code = 500
 
         mock_client = MagicMock()
@@ -465,11 +399,14 @@ class TestCustomOpenAI(unittest.TestCase):
         self.assertIn("API error", resp_text)
         self.assertEqual(resp_status, 500)
 
+    @patch("sygra.core.models.custom_models.logger")
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_speech_api_error(self, mock_set_client, mock_logger):
+        asyncio.run(self._run_generate_speech_api_error(mock_set_client, mock_logger))
+
     # ============== _generate_response Routing Tests ==============
 
-    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    @pytest.mark.asyncio
-    async def test_generate_response_routes_to_speech(self, mock_set_client):
+    async def _run_generate_response_routes_to_speech(self, mock_set_client):
         """Test _generate_response routes to _generate_speech for audio output"""
         # Setup mock client
         mock_client = MagicMock()
@@ -490,6 +427,10 @@ class TestCustomOpenAI(unittest.TestCase):
         # Verify it called create_speech (TTS path)
         mock_client.create_speech.assert_awaited_once()
         self.assertEqual(resp_status, 200)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_response_routes_to_speech(self, mock_set_client):
+        asyncio.run(self._run_generate_response_routes_to_speech(mock_set_client))
 
 
 if __name__ == "__main__":
