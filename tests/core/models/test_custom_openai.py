@@ -108,7 +108,7 @@ class TestCustomOpenAI(unittest.TestCase):
         # Setup mock completion response
         mock_choice = MagicMock()
         mock_choice.model_dump.return_value = {
-            "message": {"content": "  Hello! I'm doing well, thank you!  "}
+            "message": {"content": "Hello! I'm doing well, thank you!", "tool_calls": None},
         }
         mock_completion = MagicMock()
         mock_completion.choices = [mock_choice]
@@ -121,11 +121,11 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_text
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_text(self.chat_input, model_params)
+        model_response = await custom_openai._generate_text(self.chat_input, model_params)
 
         # Verify results (text should be stripped)
-        self.assertEqual(resp_text, "Hello! I'm doing well, thank you!")
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.llm_response, "Hello! I'm doing well, thank you!")
+        self.assertEqual(model_response.response_code, 200)
 
         # Verify method calls
         mock_set_client.assert_called_once()
@@ -144,7 +144,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Setup mock completion response for completions API
         mock_choice = MagicMock()
-        mock_choice.model_dump.return_value = {"text": "  Response text  "}
+        mock_choice.model_dump.return_value = {"text": "Response text"}
         mock_completion = MagicMock()
         mock_completion.choices = [mock_choice]
 
@@ -157,11 +157,11 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_text
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_text(self.chat_input, model_params)
+        model_response = await custom_openai._generate_text(self.chat_input, model_params)
 
         # Verify results (text should be stripped)
-        self.assertEqual(resp_text, "Response text")
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.llm_response, "Response text")
+        self.assertEqual(model_response.response_code, 200)
 
         # Verify completions API path was used
         custom_openai.get_chat_formatted_text.assert_called_once()
@@ -191,11 +191,11 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_text
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_text(self.chat_input, model_params)
+        model_response = await custom_openai._generate_text(self.chat_input, model_params)
 
         # Verify results - should return 429 for rate limit
-        self.assertIn(constants.ERROR_PREFIX, resp_text)
-        self.assertEqual(resp_status, 429)
+        self.assertIn(constants.ERROR_PREFIX, model_response.llm_response)
+        self.assertEqual(model_response.response_code, 429)
 
         # Verify warning logging
         mock_logger.warn.assert_called()
@@ -220,12 +220,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_text
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_text(self.chat_input, model_params)
+        model_response = await custom_openai._generate_text(self.chat_input, model_params)
 
         # Verify results - should return 999 for generic error
-        self.assertIn(constants.ERROR_PREFIX, resp_text)
-        self.assertIn("Network timeout", resp_text)
-        self.assertEqual(resp_status, 999)
+        self.assertIn(constants.ERROR_PREFIX, model_response.llm_response)
+        self.assertIn("Network timeout", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 999)
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
@@ -250,12 +250,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_speech
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_speech(self.tts_input, model_params)
+        model_response = await custom_openai._generate_speech(self.tts_input, model_params)
 
         # Verify results
         expected_base64 = get_audio_url(mock_audio_content, "audio/mpeg")
-        self.assertEqual(resp_text, expected_base64)
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.llm_response, expected_base64)
+        self.assertEqual(model_response.response_code, 200)
 
         # Verify method calls
         mock_set_client.assert_called_once()
@@ -275,12 +275,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_speech
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_speech(empty_input, model_params)
+        model_response = await custom_openai._generate_speech(empty_input, model_params)
 
         # Verify results
-        self.assertIn(constants.ERROR_PREFIX, resp_text)
-        self.assertIn("No text provided", resp_text)
-        self.assertEqual(resp_status, 400)
+        self.assertIn(constants.ERROR_PREFIX, model_response.llm_response)
+        self.assertIn("No text provided", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 400)
 
     @patch("sygra.core.models.custom_models.logger")
     # @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
@@ -298,7 +298,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_speech
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_speech(long_input, model_params)
+        await custom_openai._generate_speech(long_input, model_params)
 
         # Verify warning logging
         mock_logger.warn.assert_called()
@@ -359,12 +359,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_speech
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_speech(self.tts_input, model_params)
+        model_response = await custom_openai._generate_speech(self.tts_input, model_params)
 
         # Verify results
-        self.assertIn(constants.ERROR_PREFIX, resp_text)
-        self.assertIn("Rate limit exceeded", resp_text)
-        self.assertEqual(resp_status, 429)
+        self.assertIn(constants.ERROR_PREFIX, model_response.llm_response)
+        self.assertIn("Rate limit exceeded", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 429)
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
@@ -392,12 +392,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_speech
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_speech(self.tts_input, model_params)
+        model_response = await custom_openai._generate_speech(self.tts_input, model_params)
 
         # Verify results
-        self.assertIn(constants.ERROR_PREFIX, resp_text)
-        self.assertIn("API error", resp_text)
-        self.assertEqual(resp_status, 500)
+        self.assertIn(constants.ERROR_PREFIX, model_response.llm_response)
+        self.assertIn("API error", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 500)
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
@@ -420,13 +420,11 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_response (should route to _generate_speech)
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_response(
-            self.tts_input, model_params
-        )
+        model_response = await custom_openai._generate_response(self.tts_input, model_params)
 
         # Verify it called create_speech (TTS path)
         mock_client.create_speech.assert_awaited_once()
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.response_code, 200)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_generate_response_routes_to_speech(self, mock_set_client):

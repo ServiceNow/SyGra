@@ -89,13 +89,13 @@ class TestCustomMistralAPI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="https://api.mistral.ai", auth_token="test_token")
-        resp_text, resp_status = await custom_mistral._generate_response(
-            self.chat_input, model_params
-        )
+        model_reseponse = await custom_mistral._generate_response(self.chat_input, model_params)
 
         # Verify results
-        self.assertEqual(resp_text, "Hello! I'm doing great, thank you for asking!")
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(
+            model_reseponse.llm_response, "Hello! I'm doing great, thank you for asking!"
+        )
+        self.assertEqual(model_reseponse.response_code, 200)
 
         # Verify method calls
         mock_set_client.assert_called_once_with("https://api.mistral.ai", "test_token")
@@ -140,14 +140,12 @@ class TestCustomMistralAPI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="https://api.mistral.ai", auth_token="test_token")
-        resp_text, resp_status = await custom_mistral._generate_response(
-            self.chat_input, model_params
-        )
+        model_response = await custom_mistral._generate_response(self.chat_input, model_params)
 
         # Verify results - should return 429 for rate limit
-        self.assertIn(constants.ERROR_PREFIX, resp_text)
-        self.assertIn("Http request failed", resp_text)
-        self.assertEqual(resp_status, 429)
+        self.assertIn(constants.ERROR_PREFIX, model_response.llm_response)
+        self.assertIn("Http request failed", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 429)
 
         # Verify error logging
         mock_logger.error.assert_called()
@@ -186,13 +184,11 @@ class TestCustomMistralAPI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="https://api.mistral.ai", auth_token="test_token")
-        resp_text, resp_status = await custom_mistral._generate_response(
-            self.chat_input, model_params
-        )
+        model_response = await custom_mistral._generate_response(self.chat_input, model_params)
 
         # Verify results - should return 429 for model overload
-        self.assertIn(constants.ERROR_PREFIX, resp_text)
-        self.assertEqual(resp_status, 429)
+        self.assertIn(constants.ERROR_PREFIX, model_response.llm_response)
+        self.assertEqual(model_response.response_code, 429)
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
@@ -226,14 +222,12 @@ class TestCustomMistralAPI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="https://api.mistral.ai", auth_token="test_token")
-        resp_text, resp_status = await custom_mistral._generate_response(
-            self.chat_input, model_params
-        )
+        model_response = await custom_mistral._generate_response(self.chat_input, model_params)
 
         # Verify results - should return 999 for generic error
-        self.assertIn(constants.ERROR_PREFIX, resp_text)
-        self.assertIn("Connection timeout", resp_text)
-        self.assertEqual(resp_status, 999)
+        self.assertIn(constants.ERROR_PREFIX, model_response.llm_response)
+        self.assertIn("Connection timeout", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 999)
 
         # Verify error logging
         mock_logger.error.assert_called()
@@ -274,12 +268,10 @@ class TestCustomMistralAPI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="https://api.mistral.ai", auth_token="test_token")
-        resp_text, resp_status = await custom_mistral._generate_response(
-            self.chat_input, model_params
-        )
+        model_response = await custom_mistral._generate_response(self.chat_input, model_params)
 
         # Verify extracted status code is used
-        self.assertEqual(resp_status, 503)
+        self.assertEqual(model_response.response_code, 503)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")

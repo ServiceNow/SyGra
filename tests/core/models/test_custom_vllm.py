@@ -126,11 +126,11 @@ class TestCustomVLLM(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://vllm-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_vllm._generate_response(self.chat_input, model_params)
+        model_response = await custom_vllm._generate_response(self.chat_input, model_params)
 
         # Verify results
-        self.assertEqual(resp_text, "Hello! I'm doing well, thank you!")
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.llm_response, "Hello! I'm doing well, thank you!")
+        self.assertEqual(model_response.response_code, 200)
 
         # Verify method calls
         mock_set_client.assert_called_once_with("http://vllm-test.com", "test_token")
@@ -165,11 +165,11 @@ class TestCustomVLLM(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://vllm-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_vllm._generate_response(self.chat_input, model_params)
+        model_response = await custom_vllm._generate_response(self.chat_input, model_params)
 
         # Verify results (text should be stripped)
-        self.assertEqual(resp_text, "Response text")
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.llm_response, "Response text")
+        self.assertEqual(model_response.response_code, 200)
 
         # Verify completions API path was used
         custom_vllm.get_chat_formatted_text.assert_called_once()
@@ -197,12 +197,12 @@ class TestCustomVLLM(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://vllm-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_vllm._generate_response(self.chat_input, model_params)
+        model_response = await custom_vllm._generate_response(self.chat_input, model_params)
 
         # Verify results - should return 429 for rate limit
-        self.assertIn(constants.ERROR_PREFIX, resp_text)
-        self.assertIn("Http request failed", resp_text)
-        self.assertEqual(resp_status, 429)
+        self.assertIn(constants.ERROR_PREFIX, model_response.llm_response)
+        self.assertIn("Http request failed", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 429)
 
         # Verify warning logging
         mock_logger.warn.assert_called()
@@ -229,12 +229,12 @@ class TestCustomVLLM(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://vllm-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_vllm._generate_response(self.chat_input, model_params)
+        model_response = await custom_vllm._generate_response(self.chat_input, model_params)
 
         # Verify results - should return 503 for server down
-        self.assertIn(constants.ERROR_PREFIX, resp_text)
-        self.assertIn(constants.ELEMAI_JOB_DOWN, resp_text)
-        self.assertEqual(resp_status, 503)
+        self.assertIn(constants.ERROR_PREFIX, model_response.llm_response)
+        self.assertIn(constants.ELEMAI_JOB_DOWN, model_response.llm_response)
+        self.assertEqual(model_response.response_code, 503)
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
@@ -255,10 +255,10 @@ class TestCustomVLLM(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://vllm-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_vllm._generate_response(self.chat_input, model_params)
+        model_response = await custom_vllm._generate_response(self.chat_input, model_params)
 
         # Verify results - should return 503 for connection error
-        self.assertEqual(resp_status, 503)
+        self.assertEqual(model_response.response_code, 503)
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
@@ -279,12 +279,12 @@ class TestCustomVLLM(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://vllm-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_vllm._generate_response(self.chat_input, model_params)
+        model_response = await custom_vllm._generate_response(self.chat_input, model_params)
 
         # Verify results - should return 999 for generic error
-        self.assertIn(constants.ERROR_PREFIX, resp_text)
-        self.assertIn("Network timeout", resp_text)
-        self.assertEqual(resp_status, 999)
+        self.assertIn(constants.ERROR_PREFIX, model_response.llm_response)
+        self.assertIn("Network timeout", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 999)
 
         # Verify error logging
         mock_logger.error.assert_called()
@@ -310,10 +310,10 @@ class TestCustomVLLM(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://vllm-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_vllm._generate_response(self.chat_input, model_params)
+        model_response = await custom_vllm._generate_response(self.chat_input, model_params)
 
         # Verify extracted status code is used
-        self.assertEqual(resp_status, 503)
+        self.assertEqual(model_response.response_code, 503)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_generate_response_with_custom_serving_name(self, mock_set_client):

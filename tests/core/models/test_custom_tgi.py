@@ -5,6 +5,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from sygra.core.models.model_response import ModelResponse
+
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
@@ -95,11 +97,11 @@ class TestCustomTGI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_response(self.chat_input, model_params)
+        model_response = await custom_tgi._generate_response(self.chat_input, model_params)
 
         # Verify results
-        self.assertEqual(resp_text, "Hello! I'm doing well, thank you!")
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.llm_response, "Hello! I'm doing well, thank you!")
+        self.assertEqual(model_response.response_code, 200)
 
         # Verify method calls
         mock_set_client.assert_called_once()
@@ -134,11 +136,11 @@ class TestCustomTGI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_response(self.chat_input, model_params)
+        model_response = await custom_tgi._generate_response(self.chat_input, model_params)
 
         # Verify results - should have ERROR prefix
-        self.assertIn(constants.ERROR_PREFIX, resp_text)
-        self.assertEqual(resp_status, 500)
+        self.assertIn(constants.ERROR_PREFIX, model_response.llm_response)
+        self.assertEqual(model_response.response_code, 500)
 
         # Verify error logging
         mock_logger.error.assert_called()
@@ -173,11 +175,11 @@ class TestCustomTGI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_response(self.chat_input, model_params)
+        model_response = await custom_tgi._generate_response(self.chat_input, model_params)
 
         # Verify results - status should be set to 503
-        self.assertIn(constants.ELEMAI_JOB_DOWN, resp_text)
-        self.assertEqual(resp_status, 503)
+        self.assertIn(constants.ELEMAI_JOB_DOWN, model_response.llm_response)
+        self.assertEqual(model_response.response_code, 503)
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.AutoTokenizer")
@@ -210,11 +212,11 @@ class TestCustomTGI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_response(self.chat_input, model_params)
+        model_response = await custom_tgi._generate_response(self.chat_input, model_params)
 
         # Verify results - status should be set to 503
-        self.assertIn(constants.CONNECTION_ERROR, resp_text)
-        self.assertEqual(resp_status, 503)
+        self.assertIn(constants.CONNECTION_ERROR, model_response.llm_response)
+        self.assertEqual(model_response.response_code, 503)
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.AutoTokenizer")
@@ -238,12 +240,12 @@ class TestCustomTGI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_response(self.chat_input, model_params)
+        model_response = await custom_tgi._generate_response(self.chat_input, model_params)
 
         # Verify results
-        self.assertIn(constants.ERROR_PREFIX, resp_text)
-        self.assertIn("Connection timeout", resp_text)
-        self.assertEqual(resp_status, 999)
+        self.assertIn(constants.ERROR_PREFIX, model_response.llm_response)
+        self.assertIn("Connection timeout", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 999)
 
         # Verify error logging
         mock_logger.error.assert_called()
@@ -271,10 +273,10 @@ class TestCustomTGI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_response(self.chat_input, model_params)
+        model_response = await custom_tgi._generate_response(self.chat_input, model_params)
 
         # Verify extracted status code is used
-        self.assertEqual(resp_status, 503)
+        self.assertEqual(model_response.response_code, 503)
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.AutoTokenizer")
@@ -316,13 +318,13 @@ class TestCustomTGI(unittest.TestCase):
 
         # Call _generate_native_structured_output
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_native_structured_output(
+        model_response = await custom_tgi._generate_native_structured_output(
             self.chat_input, model_params, TestPerson
         )
 
         # Verify results
-        self.assertEqual(json.loads(resp_text), {"name": "John", "age": 30})
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(json.loads(model_response.llm_response), {"name": "John", "age": 30})
+        self.assertEqual(model_response.response_code, 200)
 
         # Verify schema was passed in generation params
         call_args = mock_client.async_send_request.call_args
@@ -365,7 +367,9 @@ class TestCustomTGI(unittest.TestCase):
         mock_client.async_send_request = AsyncMock(return_value=mock_response)
 
         # Setup fallback mock
-        mock_fallback.return_value = ('{"name": "Fallback", "age": 25}', 200)
+        mock_fallback.return_value = ModelResponse(
+            llm_response='{"name": "Fallback", "age": 25}', response_code=200
+        )
 
         # Setup custom model
         custom_tgi = CustomTGI(self.base_config)
@@ -374,7 +378,7 @@ class TestCustomTGI(unittest.TestCase):
 
         # Call _generate_native_structured_output
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_native_structured_output(
+        model_response = await custom_tgi._generate_native_structured_output(
             self.chat_input, model_params, TestPerson
         )
 
@@ -382,8 +386,8 @@ class TestCustomTGI(unittest.TestCase):
         mock_fallback.assert_awaited_once()
 
         # Verify fallback result is returned
-        self.assertEqual(resp_text, '{"name": "Fallback", "age": 25}')
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.llm_response, '{"name": "Fallback", "age": 25}')
+        self.assertEqual(model_response.response_code, 200)
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.AutoTokenizer")
@@ -428,7 +432,7 @@ class TestCustomTGI(unittest.TestCase):
 
         # Call _generate_native_structured_output
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_native_structured_output(
+        await custom_tgi._generate_native_structured_output(
             self.chat_input, model_params, TestPerson
         )
 
@@ -471,7 +475,7 @@ class TestCustomTGI(unittest.TestCase):
 
         # Call _generate_native_structured_output
         model_params = ModelParams(url="http://tgi-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_tgi._generate_native_structured_output(
+        await custom_tgi._generate_native_structured_output(
             self.chat_input, model_params, TestPerson
         )
 

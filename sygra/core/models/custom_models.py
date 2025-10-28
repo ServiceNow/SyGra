@@ -1135,15 +1135,15 @@ class CustomOpenAI(BaseCustomModel):
             completion = await self._client.send_request(
                 payload, str(self.model_config.get("model")), self.generation_params
             )
-            tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
-            # Convert to Langchain ToolCall
-            tool_calls = (
-                [self._openai_to_langchain_toolcall(tc) for tc in tool_calls] if tool_calls else []
-            )
             if self.model_config.get("completions_api", False):
                 resp_text = completion.choices[0].model_dump()["text"]
             else:
                 resp_text = completion.choices[0].model_dump()["message"]["content"]
+                tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
+                # Convert to Langchain ToolCall
+                tool_calls = (
+                    [self._openai_to_langchain_toolcall(tc) for tc in tool_calls] if tool_calls else []
+                )
         except openai.RateLimitError as e:
             logger.warn(f"AzureOpenAI api request exceeded rate limit: {e}")
             resp_text = f"{constants.ERROR_PREFIX} Http request failed {e}"
