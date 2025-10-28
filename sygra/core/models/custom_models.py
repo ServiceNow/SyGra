@@ -1092,13 +1092,13 @@ class CustomOpenAI(BaseCustomModel):
             )
 
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         # Check if this is a TTS request based on output_type
         if self.model_config.get("output_type") == "audio":
-            return await self._generate_speech(input, model_params)
+            return await self._generate_speech(input, model_params, **kwargs)
         else:
-            return await self._generate_text(input, model_params)
+            return await self._generate_text(input, model_params, **kwargs)
 
     async def _generate_text(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
@@ -1158,7 +1158,7 @@ class CustomOpenAI(BaseCustomModel):
         )
 
     async def _generate_speech(
-        self, input: ChatPromptValue, model_params: ModelParams
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         """
         Generate speech from text using OpenAI/Azure OpenAI TTS API.

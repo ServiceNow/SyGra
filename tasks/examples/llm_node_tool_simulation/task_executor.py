@@ -6,5 +6,5 @@ from sygra.core.graph.sygra_state import SygraState
 class MathAgentPostProcessor(NodePostProcessorWithState):
     def apply(self, resp: SygraMessage, state: SygraState) -> SygraState:
         answer = resp.message.content
-        state["math_result"] = answer
+        state["response"] = answer
         return state
