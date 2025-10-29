@@ -225,11 +225,7 @@ class OpenAIClient(BaseClient):
         self,
         model: str,
         prompt: str,
-        size: Optional[str] = None,
-        quality: Optional[str] = None,
-        n: int = 1,
-        response_format: Optional[str] = None,
-        style: Optional[str] = None,
+        **kwargs: Any,
     ) -> Any:
         """
         Generate images from text prompts using OpenAI's image generation API.
@@ -237,13 +233,14 @@ class OpenAIClient(BaseClient):
         Args:
             model (str): The image model to use (e.g., 'dall-e-2', 'dall-e-3', 'gpt-image-1')
             prompt (str): The text description of the desired image(s)
-            size (str, optional): The size of generated images. Options depend on model:
-                - dall-e-2: "256x256", "512x512", "1024x1024" (default)
-                - dall-e-3/gpt-image-1: "1024x1024" (default), "1792x1024", "1024x1792"
-            quality (str, optional): Image quality - "standard" or "hd" (dall-e-3/gpt-image-1 only)
-            n (int, optional): Number of images to generate (1-10 for dall-e-2, only 1 for dall-e-3/gpt-image-1). Defaults to 1
-            response_format (str, optional): "url" or "b64_json". Only supported by dall-e models, not gpt-image-1
-            style (str, optional): Image style - "vivid" or "natural" (dall-e-3/gpt-image-1 only)
+            **kwargs: Additional parameters supported by the API:
+                - size (str): Image size (e.g., "1024x1024", "1792x1024")
+                - quality (str): "standard" or "hd"
+                - n (int): Number of images to generate
+                - response_format (str): "url" or "b64_json"
+                - style (str): "vivid" or "natural"
+                - stream (bool): Enable streaming responses
+                - Any other parameters supported by OpenAI API
 
         Returns:
             Any: The image generation response from the API
@@ -258,48 +255,38 @@ class OpenAIClient(BaseClient):
 
         client = cast(Any, self.client)
         
-        # Build the request parameters
+        # Build the request parameters with all provided kwargs
         params: Dict[str, Any] = {
             "model": model,
             "prompt": prompt,
-            "n": n,
+            **kwargs,  # Pass all additional parameters
         }
-        
-        # Add optional parameters if provided
-        if size is not None:
-            params["size"] = size
-        if quality is not None:
-            params["quality"] = quality
-        if response_format is not None:
-            params["response_format"] = response_format
-        if style is not None:
-            params["style"] = style
         
         return await client.images.generate(**params)
 
     async def edit_image(
         self,
-        image: Any,
+        image: Union[Any, List[Any]],
         prompt: str,
-        mask: Optional[Any] = None,
-        model: Optional[str] = None,
-        n: int = 1,
-        size: Optional[str] = None,
-        response_format: Optional[str] = None,
+        **kwargs: Any,
     ) -> Any:
         """
-        Edit an existing image based on a text prompt.
+        Edit existing image(s) based on a text prompt.
 
         Args:
-            image: The image to edit. Must be a valid PNG file, less than 4MB, and square.
-                   Can be a file path (str) or file-like object.
+            image: The image(s) to edit. Can be:
+                   - Single image: file path (str) or file-like object
+                   - Multiple images (gpt-image-1 only): list of file paths or file-like objects
+                   For gpt-image-1: png, webp, or jpg < 50MB each, up to 16 images
+                   For dall-e-2: single square png < 4MB
             prompt (str): A text description of the desired edits
-            mask (optional): An additional image whose fully transparent areas indicate where
-                           the image should be edited. Must be same size as image.
-            model (str, optional): The model to use for editing (e.g., 'dall-e-2')
-            n (int, optional): Number of images to generate (1-10). Defaults to 1
-            size (str, optional): Size of generated images: "256x256", "512x512", or "1024x1024"
-            response_format (str, optional): "url" or "b64_json"
+            **kwargs: Additional parameters supported by the API:
+                - model (str): Model to use (e.g., 'dall-e-2', 'gpt-image-1')
+                - n (int): Number of images to generate
+                - size (str): Size of generated images
+                - response_format (str): "url" or "b64_json"
+                - stream (bool): Enable streaming responses
+                - Any other parameters supported by OpenAI API
 
         Returns:
             Any: The image edit response from the API
@@ -314,22 +301,12 @@ class OpenAIClient(BaseClient):
 
         client = cast(Any, self.client)
         
-        # Build the request parameters
+        # Build the request parameters with all provided kwargs
         params: Dict[str, Any] = {
             "image": image,
             "prompt": prompt,
-            "n": n,
+            **kwargs,  # Pass all additional parameters
         }
-        
-        # Add optional parameters if provided
-        if mask is not None:
-            params["mask"] = mask
-        if model is not None:
-            params["model"] = model
-        if size is not None:
-            params["size"] = size
-        if response_format is not None:
-            params["response_format"] = response_format
         
         return await client.images.edit(**params)
 
