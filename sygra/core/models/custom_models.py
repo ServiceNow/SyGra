@@ -1414,7 +1414,7 @@ class CustomOpenAI(BaseCustomModel):
         self._set_client(model_url, model_params.auth_token)
 
         model_name = str(self.model_config.get("model", "")).lower()
-        # onlu gpt-image-1 supports multiple images for editing
+        # only gpt-image-1 supports multiple images for editing
         supports_multiple_images = "gpt-image-1" == model_name
 
         num_images = len(image_data_urls)
