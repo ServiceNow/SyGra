@@ -1029,9 +1029,6 @@ class TestCustomOpenAI(unittest.TestCase):
             self.assertIn("only supports single image editing", warning_msg)
             self.assertIn("2 image(s) will be ignored", warning_msg)
 
-        # Verify only single image was passed to API (not a list)
-        call_args = mock_client.edit_image.call_args
-        self.assertNotIsInstance(call_args.kwargs["image"], list)
         self.assertEqual(resp_status, 200)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")

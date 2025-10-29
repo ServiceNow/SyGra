@@ -1462,7 +1462,7 @@ class CustomOpenAI(BaseCustomModel):
             image_file = io.BytesIO(image_bytes)
             image_file.name = "image.png"
 
-            image_param = image_file
+            image_param = [image_file]
 
         # Call the image edit API
         openai_client = cast(OpenAIClient, self._client)
