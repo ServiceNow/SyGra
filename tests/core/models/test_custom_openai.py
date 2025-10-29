@@ -39,13 +39,14 @@ class TestCustomOpenAI(unittest.TestCase):
             "model": "tts-1",
             "model_type": "openai",
             "output_type": "audio",
-            "parameters": {},
             "url": "https://api.openai.com/v1",
             "auth_token": "Bearer sk-test_key_123",
             "api_version": "2023-05-15",
-            "voice": "alloy",
-            "response_format": "mp3",
-            "speed": 1.0,
+            "parameters": {
+                "voice": "alloy",
+                "response_format": "mp3",
+                "speed": 1.0,
+            }
         }
 
         # Configuration with completions API
@@ -71,14 +72,14 @@ class TestCustomOpenAI(unittest.TestCase):
             "name": "dalle3_model",
             "model": "dall-e-3",
             "output_type": "image",
-            "parameters": {},
             "url": "https://api.openai.com/v1",
             "auth_token": "Bearer sk-test_key_123",
             "api_version": "2023-05-15",
-            "size": "1024x1024",
-            "quality": "standard",
-            "style": "vivid",
-            "response_format": "b64_json",
+            "parameters": {
+                "size": "1024x1024",
+                "quality": "standard",
+                "style": "vivid"
+            }
         }
 
         # Mock messages for Image Generation
@@ -338,7 +339,7 @@ class TestCustomOpenAI(unittest.TestCase):
         mock_client.create_speech = AsyncMock(return_value=mock_response)
 
         # Test speed too low
-        config_low = {**self.tts_config, "speed": 0.1}
+        config_low = {**self.tts_config, "parameters": {"speed": 0.1}}
         custom_openai_low = CustomOpenAI(config_low)
         custom_openai_low._client = mock_client
 
@@ -350,7 +351,7 @@ class TestCustomOpenAI(unittest.TestCase):
         self.assertEqual(call_args.kwargs["speed"], 0.25)
 
         # Test speed too high
-        config_high = {**self.tts_config, "speed": 5.0}
+        config_high = {**self.tts_config, "parameters": {"speed": 5.0}}
         custom_openai_high = CustomOpenAI(config_high)
         custom_openai_high._client = mock_client
 
@@ -556,7 +557,7 @@ class TestCustomOpenAI(unittest.TestCase):
             mock_client.create_image = AsyncMock(return_value=mock_response)
 
             # Setup custom model with specific size
-            config = {**self.image_config, "size": size}
+            config = {**self.image_config, "parameters": {"size": size}}
             custom_openai = CustomOpenAI(config)
             custom_openai._client = mock_client
 
@@ -570,9 +571,12 @@ class TestCustomOpenAI(unittest.TestCase):
             self.assertIn("data:image/png;base64,", resp_text)
             self.assertEqual(resp_status, 200)
 
-            # Verify create_image was called with the correct size
-            call_args = mock_client.create_image.call_args
-            self.assertEqual(call_args.kwargs["size"], size)
+            # Verify create_image was called and size was passed via kwargs
+            mock_client.create_image.assert_called_once()
+            # Size is in generation_params which gets passed via **params
+            call_kwargs = mock_client.create_image.call_args.kwargs
+            self.assertIn("size", call_kwargs)
+            self.assertEqual(call_kwargs["size"], size)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_generate_image_with_different_sizes(self, mock_set_client):
@@ -595,7 +599,7 @@ class TestCustomOpenAI(unittest.TestCase):
         mock_client.create_image = AsyncMock(return_value=mock_response)
 
         # Setup custom model with HD quality
-        config = {**self.image_config, "quality": "hd"}
+        config = {**self.image_config, "parameters": {"quality": "hd"}}
         custom_openai = CustomOpenAI(config)
         custom_openai._client = mock_client
 
@@ -609,8 +613,10 @@ class TestCustomOpenAI(unittest.TestCase):
         self.assertEqual(resp_status, 200)
 
         # Verify create_image was called with HD quality
-        call_args = mock_client.create_image.call_args
-        self.assertEqual(call_args.kwargs["quality"], "hd")
+        mock_client.create_image.assert_called_once()
+        call_kwargs = mock_client.create_image.call_args.kwargs
+        self.assertIn("quality", call_kwargs)
+        self.assertEqual(call_kwargs["quality"], "hd")
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_generate_image_with_quality_hd(self, mock_set_client):
@@ -636,7 +642,7 @@ class TestCustomOpenAI(unittest.TestCase):
             mock_client.create_image = AsyncMock(return_value=mock_response)
 
             # Setup custom model with specific style
-            config = {**self.image_config, "style": style}
+            config = {**self.image_config, "parameters": {"style": style}}
             custom_openai = CustomOpenAI(config)
             custom_openai._client = mock_client
 
@@ -650,8 +656,10 @@ class TestCustomOpenAI(unittest.TestCase):
             self.assertEqual(resp_status, 200)
 
             # Verify create_image was called with the correct style
-            call_args = mock_client.create_image.call_args
-            self.assertEqual(call_args.kwargs["style"], style)
+            mock_client.create_image.assert_called_once()
+            call_kwargs = mock_client.create_image.call_args.kwargs
+            self.assertIn("style", call_kwargs)
+            self.assertEqual(call_kwargs["style"], style)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_generate_image_with_different_styles(self, mock_set_client):
@@ -811,6 +819,307 @@ class TestCustomOpenAI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_generate_response_routes_to_speech(self, mock_set_client):
         asyncio.run(self._run_generate_response_routes_to_speech(mock_set_client))
+
+    # ===== Image Editing Tests =====
+
+    async def _run_edit_image_single_dalle2(self, mock_set_client):
+        """Test single image editing with DALL-E-2"""
+        import base64
+
+        # Sample image data URL
+        sample_image = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+
+        # Create input with image and text
+        from langchain.schema import HumanMessage
+        messages_with_image = [HumanMessage(content=[
+            {"type": "image_url", "image_url": sample_image},
+            {"type": "text", "text": "Remove the background"}
+        ])]
+        image_edit_input = ChatPromptValue(messages=messages_with_image)
+
+        # Setup mock client
+        mock_client = MagicMock()
+        mock_image_data = b"fake_edited_image"
+        mock_b64 = base64.b64encode(mock_image_data).decode("utf-8")
+
+        mock_img = MagicMock()
+        mock_img.b64_json = mock_b64
+        mock_response = MagicMock()
+        mock_response.data = [mock_img]
+
+        mock_client.edit_image = AsyncMock(return_value=mock_response)
+
+        # Setup custom model for DALL-E-2
+        config = {**self.image_config, "model": "dall-e-2"}
+        custom_openai = CustomOpenAI(config)
+        custom_openai._client = mock_client
+
+        # Call _generate_image (should auto-detect and route to editing)
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_image(
+            image_edit_input, model_params
+        )
+
+        # Verify results
+        self.assertIn("data:image/png;base64,", resp_text)
+        self.assertEqual(resp_status, 200)
+        
+        # Verify edit_image was called (not create_image)
+        mock_client.edit_image.assert_called_once()
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_edit_image_single_dalle2(self, mock_set_client):
+        asyncio.run(self._run_edit_image_single_dalle2(mock_set_client))
+
+    async def _run_edit_image_multiple_gpt_image_1(self, mock_set_client):
+        """Test multi-image editing with GPT-Image-1 (2-16 images)"""
+        import base64
+        import json
+
+        # Sample image data URLs (3 images)
+        sample_image_1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        sample_image_2 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+        sample_image_3 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAHgFPU/tQAAAABJRU5ErkJggg=="
+
+        # Create input with multiple images and text
+        from langchain.schema import HumanMessage
+        messages_with_images = [HumanMessage(content=[
+            {"type": "image_url", "image_url": sample_image_1},
+            {"type": "image_url", "image_url": sample_image_2},
+            {"type": "image_url", "image_url": sample_image_3},
+            {"type": "text", "text": "Combine into a collage"}
+        ])]
+        image_edit_input = ChatPromptValue(messages=messages_with_images)
+
+        # Setup mock client
+        mock_client = MagicMock()
+        mock_image_data1 = b"fake_edited_image_1"
+        mock_image_data2 = b"fake_edited_image_2"
+        mock_b64_1 = base64.b64encode(mock_image_data1).decode("utf-8")
+        mock_b64_2 = base64.b64encode(mock_image_data2).decode("utf-8")
+
+        mock_img1 = MagicMock()
+        mock_img1.b64_json = mock_b64_1
+        mock_img2 = MagicMock()
+        mock_img2.b64_json = mock_b64_2
+        mock_response = MagicMock()
+        mock_response.data = [mock_img1, mock_img2]
+
+        mock_client.edit_image = AsyncMock(return_value=mock_response)
+
+        # Setup custom model for GPT-Image-1
+        config = {**self.image_config, "model": "gpt-image-1", "n": 2}
+        custom_openai = CustomOpenAI(config)
+        custom_openai._client = mock_client
+
+        # Call _generate_image
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_image(
+            image_edit_input, model_params
+        )
+
+        # Verify results - should return multiple images
+        result = json.loads(resp_text)
+        self.assertIn("images", result)
+        self.assertEqual(len(result["images"]), 2)
+        self.assertEqual(resp_status, 200)
+        
+        # Verify edit_image was called with list of images
+        mock_client.edit_image.assert_called_once()
+        call_args = mock_client.edit_image.call_args
+        self.assertIsInstance(call_args.kwargs["image"], list)
+        self.assertEqual(len(call_args.kwargs["image"]), 3)  # 3 input images
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_edit_image_multiple_gpt_image_1(self, mock_set_client):
+        asyncio.run(self._run_edit_image_multiple_gpt_image_1(mock_set_client))
+
+    async def _run_edit_image_more_than_16_images(self, mock_set_client):
+        """Test that >16 images are trimmed to 16 for GPT-Image-1"""
+        import base64
+
+        # Create 20 image data URLs
+        sample_image = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        
+        # Create input with 20 images
+        from langchain.schema import HumanMessage
+        image_items = [{"type": "image_url", "image_url": sample_image} for _ in range(20)]
+        image_items.append({"type": "text", "text": "Create a grid"})
+        messages_with_many_images = [HumanMessage(content=image_items)]
+        image_edit_input = ChatPromptValue(messages=messages_with_many_images)
+
+        # Setup mock client
+        mock_client = MagicMock()
+        mock_image_data = b"fake_edited_image"
+        mock_b64 = base64.b64encode(mock_image_data).decode("utf-8")
+
+        mock_img = MagicMock()
+        mock_img.b64_json = mock_b64
+        mock_response = MagicMock()
+        mock_response.data = [mock_img]
+
+        mock_client.edit_image = AsyncMock(return_value=mock_response)
+
+        # Setup custom model for GPT-Image-1
+        config = {**self.image_config, "model": "gpt-image-1"}
+        custom_openai = CustomOpenAI(config)
+        custom_openai._client = mock_client
+
+        # Call _generate_image
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        
+        with patch("sygra.core.models.custom_models.logger") as mock_logger:
+            resp_text, resp_status = await custom_openai._generate_image(
+                image_edit_input, model_params
+            )
+            
+            # Verify warning was logged
+            mock_logger.warning.assert_called_once()
+            warning_msg = mock_logger.warning.call_args[0][0]
+            self.assertIn("supports max 16 images", warning_msg)
+            self.assertIn("4 image(s) will be ignored", warning_msg)
+
+        # Verify only 16 images were passed to API
+        call_args = mock_client.edit_image.call_args
+        self.assertEqual(len(call_args.kwargs["image"]), 16)
+        self.assertEqual(resp_status, 200)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_edit_image_more_than_16_images(self, mock_set_client):
+        asyncio.run(self._run_edit_image_more_than_16_images(mock_set_client))
+
+    async def _run_edit_image_multiple_with_dalle2_warns(self, mock_set_client):
+        """Test that DALL-E-2 warns and uses only first image when given multiple"""
+        import base64
+
+        # Create input with 3 images
+        sample_image_1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        sample_image_2 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+        sample_image_3 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAHgFPU/tQAAAABJRU5ErkJggg=="
+
+        from langchain.schema import HumanMessage
+        messages_with_images = [HumanMessage(content=[
+            {"type": "image_url", "image_url": sample_image_1},
+            {"type": "image_url", "image_url": sample_image_2},
+            {"type": "image_url", "image_url": sample_image_3},
+            {"type": "text", "text": "Edit this"}
+        ])]
+        image_edit_input = ChatPromptValue(messages=messages_with_images)
+
+        # Setup mock client
+        mock_client = MagicMock()
+        mock_image_data = b"fake_edited_image"
+        mock_b64 = base64.b64encode(mock_image_data).decode("utf-8")
+
+        mock_img = MagicMock()
+        mock_img.b64_json = mock_b64
+        mock_response = MagicMock()
+        mock_response.data = [mock_img]
+
+        mock_client.edit_image = AsyncMock(return_value=mock_response)
+
+        # Setup custom model for DALL-E-2 (single image only)
+        config = {**self.image_config, "model": "dall-e-2"}
+        custom_openai = CustomOpenAI(config)
+        custom_openai._client = mock_client
+
+        # Call _generate_image
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        
+        with patch("sygra.core.models.custom_models.logger") as mock_logger:
+            resp_text, resp_status = await custom_openai._generate_image(
+                image_edit_input, model_params
+            )
+            
+            # Verify warning was logged
+            mock_logger.warning.assert_called_once()
+            warning_msg = mock_logger.warning.call_args[0][0]
+            self.assertIn("only supports single image editing", warning_msg)
+            self.assertIn("2 image(s) will be ignored", warning_msg)
+
+        # Verify only single image was passed to API (not a list)
+        call_args = mock_client.edit_image.call_args
+        self.assertNotIsInstance(call_args.kwargs["image"], list)
+        self.assertEqual(resp_status, 200)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_edit_image_multiple_with_dalle2_warns(self, mock_set_client):
+        asyncio.run(self._run_edit_image_multiple_with_dalle2_warns(mock_set_client))
+
+    async def _run_edit_image_empty_prompt(self, mock_set_client):
+        """Test error when no edit instruction provided"""
+        # Sample image but no text prompt
+        sample_image = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+
+        from langchain.schema import HumanMessage
+        # Only image, no text
+        messages_image_only = [HumanMessage(content=[
+            {"type": "image_url", "image_url": sample_image}
+        ])]
+        image_edit_input = ChatPromptValue(messages=messages_image_only)
+
+        # Setup custom model
+        config = {**self.image_config, "model": "dall-e-2"}
+        custom_openai = CustomOpenAI(config)
+
+        # Call _generate_image
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_image(
+            image_edit_input, model_params
+        )
+
+        # Verify error response
+        self.assertIn("###SERVER_ERROR###", resp_text)
+        self.assertIn("No prompt provided", resp_text)
+        self.assertEqual(resp_status, 400)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_edit_image_empty_prompt(self, mock_set_client):
+        asyncio.run(self._run_edit_image_empty_prompt(mock_set_client))
+
+    async def _run_edit_image_no_images_routes_to_generation(self, mock_set_client):
+        """Test that input without images routes to generation (not editing)"""
+        import base64
+
+        # Text prompt only, no images
+        from langchain.schema import HumanMessage
+        messages_text_only = [HumanMessage(content="Generate a sunset")]
+        text_only_input = ChatPromptValue(messages=messages_text_only)
+
+        # Setup mock client
+        mock_client = MagicMock()
+        mock_image_data = b"fake_generated_image"
+        mock_b64 = base64.b64encode(mock_image_data).decode("utf-8")
+
+        mock_img = MagicMock()
+        mock_img.b64_json = mock_b64
+        mock_response = MagicMock()
+        mock_response.data = [mock_img]
+
+        # Mock create_image (generation)
+        mock_client.create_image = AsyncMock(return_value=mock_response)
+        # Mock edit_image (should NOT be called)
+        mock_client.edit_image = AsyncMock(return_value=mock_response)
+
+        # Setup custom model
+        config = {**self.image_config, "model": "dall-e-3"}
+        custom_openai = CustomOpenAI(config)
+        custom_openai._client = mock_client
+
+        # Call _generate_image
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_image(
+            text_only_input, model_params
+        )
+
+        # Verify create_image was called (generation), NOT edit_image
+        mock_client.create_image.assert_called_once()
+        mock_client.edit_image.assert_not_called()
+        self.assertEqual(resp_status, 200)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_edit_image_no_images_routes_to_generation(self, mock_set_client):
+        asyncio.run(self._run_edit_image_no_images_routes_to_generation(mock_set_client))
 
 
 if __name__ == "__main__":
