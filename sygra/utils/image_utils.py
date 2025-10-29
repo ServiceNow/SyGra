@@ -282,11 +282,11 @@ def save_image_data_url(
 async def url_to_data_url(url: str, model_name: str = "image_model") -> str:
     """
     Fetch an image from URL and convert to base64 data URL.
-    
+
     Args:
         url (str): The image URL to fetch
         model_name (str): Name of the model (for logging)
-    
+
     Returns:
         str: Base64-encoded data URL
     """
@@ -295,17 +295,17 @@ async def url_to_data_url(url: str, model_name: str = "image_model") -> str:
             response = await client.get(url)
             response.raise_for_status()
             image_bytes = response.content
-            
+
             # Convert to base64
-            b64_encoded = base64.b64encode(image_bytes).decode('utf-8')
-            
+            b64_encoded = base64.b64encode(image_bytes).decode("utf-8")
+
             # Determine format from content-type or default to png
-            content_type = response.headers.get('content-type', 'image/png')
-            if 'image/' in content_type:
-                image_format = content_type.split('/')[-1]
+            content_type = response.headers.get("content-type", "image/png")
+            if "image/" in content_type:
+                image_format = content_type.split("/")[-1]
             else:
-                image_format = 'png'
-            
+                image_format = "png"
+
             return f"data:image/{image_format};base64,{b64_encoded}"
     except Exception as e:
         logger.error(f"[{model_name}] Failed to fetch image from URL {url}: {e}")
@@ -317,55 +317,57 @@ async def process_image_response(image_response: Any, model_name: str = "image_m
     """
     Process regular (non-streaming) image response.
     Converts all URLs to data URLs for consistency.
-    
+
     Args:
         image_response: The response from OpenAI images API
         model_name (str): Name of the model (for logging)
-    
+
     Returns:
         list[str]: List of base64-encoded image data URLs
     """
     images_data = []
     for img_data in image_response.data:
         # Try to get b64_json first
-        if hasattr(img_data, 'b64_json') and img_data.b64_json:
+        if hasattr(img_data, "b64_json") and img_data.b64_json:
             b64_json = img_data.b64_json
             # Create base64 encoded data URL
             data_url = f"data:image/png;base64,{b64_json}"
             images_data.append(data_url)
         # Otherwise get URL and convert to data URL
-        elif hasattr(img_data, 'url') and img_data.url:
+        elif hasattr(img_data, "url") and img_data.url:
             data_url = await url_to_data_url(img_data.url, model_name)
             images_data.append(data_url)
         else:
             logger.error(f"[{model_name}] Image data has neither b64_json nor url")
-    
+
     return images_data
 
 
-async def process_streaming_image_response(stream_response: Any, model_name: str = "image_model") -> list[str]:
+async def process_streaming_image_response(
+    stream_response: Any, model_name: str = "image_model"
+) -> list[str]:
     """
     Process streaming image generation response.
     Collects all events and converts URLs to data URLs.
-    
+
     Args:
         stream_response: The streaming response from OpenAI images API
         model_name (str): Name of the model (for logging)
-    
+
     Returns:
         list[str]: List of base64-encoded image data URLs
     """
     images_data = []
     async for event in stream_response:
-        if hasattr(event, 'data'):
+        if hasattr(event, "data"):
             for img_data in event.data:
                 # Convert to data URL
-                if hasattr(img_data, 'b64_json') and img_data.b64_json:
+                if hasattr(img_data, "b64_json") and img_data.b64_json:
                     data_url = f"data:image/png;base64,{img_data.b64_json}"
                     images_data.append(data_url)
-                elif hasattr(img_data, 'url') and img_data.url:
+                elif hasattr(img_data, "url") and img_data.url:
                     # Fetch URL and convert to data URL
                     data_url = await url_to_data_url(img_data.url, model_name)
                     images_data.append(data_url)
-    
+
     return images_data

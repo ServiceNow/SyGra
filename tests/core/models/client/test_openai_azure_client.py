@@ -485,19 +485,23 @@ class TestOpenaiAzureClient(unittest.TestCase):
         # Setup mock
         mock_image_response = MagicMock()
         mock_async_azure_openai.return_value = MagicMock()
-        mock_async_azure_openai.return_value.images.generate = AsyncMock(return_value=mock_image_response)
+        mock_async_azure_openai.return_value.images.generate = AsyncMock(
+            return_value=mock_image_response
+        )
 
         # Create client
         client = OpenAIAzureClient(async_client=True, **self.valid_config)
 
         # Call create_image (await since it's async)
-        result = asyncio.run(client.create_image(
-            model="dall-e-3",
-            prompt="A serene mountain landscape",
-            size="1024x1024",
-            quality="hd",
-            n=1
-        ))
+        result = asyncio.run(
+            client.create_image(
+                model="dall-e-3",
+                prompt="A serene mountain landscape",
+                size="1024x1024",
+                quality="hd",
+                n=1,
+            )
+        )
 
         # Verify the call was made with correct parameters
         mock_async_azure_openai.return_value.images.generate.assert_called_once_with(
@@ -505,7 +509,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
             prompt="A serene mountain landscape",
             size="1024x1024",
             quality="hd",
-            n=1
+            n=1,
         )
         self.assertEqual(result, mock_image_response)
 
@@ -519,11 +523,8 @@ class TestOpenaiAzureClient(unittest.TestCase):
 
         # Verify ValueError is raised for sync client (need to await to get the error)
         with self.assertRaises(ValueError) as context:
-            asyncio.run(client.create_image(
-                model="dall-e-3",
-                prompt="A serene mountain landscape"
-            ))
-        
+            asyncio.run(client.create_image(model="dall-e-3", prompt="A serene mountain landscape"))
+
         self.assertIn("requires async client", str(context.exception))
 
     @patch("sygra.core.models.client.openai_azure_client.AsyncAzureOpenAI")
@@ -532,7 +533,9 @@ class TestOpenaiAzureClient(unittest.TestCase):
         # Setup mock
         mock_image_response = MagicMock()
         mock_async_azure_openai.return_value = MagicMock()
-        mock_async_azure_openai.return_value.images.edit = AsyncMock(return_value=mock_image_response)
+        mock_async_azure_openai.return_value.images.edit = AsyncMock(
+            return_value=mock_image_response
+        )
 
         # Create client
         client = OpenAIAzureClient(async_client=True, **self.valid_config)
@@ -541,13 +544,15 @@ class TestOpenaiAzureClient(unittest.TestCase):
         mock_image_file = MagicMock()
 
         # Call edit_image with single image (await since it's async)
-        result = asyncio.run(client.edit_image(
-            image=mock_image_file,
-            prompt="Remove the background",
-            model="dall-e-2",
-            n=1,
-            size="1024x1024"
-        ))
+        result = asyncio.run(
+            client.edit_image(
+                image=mock_image_file,
+                prompt="Remove the background",
+                model="dall-e-2",
+                n=1,
+                size="1024x1024",
+            )
+        )
 
         # Verify the call was made with correct parameters
         mock_async_azure_openai.return_value.images.edit.assert_called_once_with(
@@ -555,7 +560,7 @@ class TestOpenaiAzureClient(unittest.TestCase):
             prompt="Remove the background",
             model="dall-e-2",
             n=1,
-            size="1024x1024"
+            size="1024x1024",
         )
         self.assertEqual(result, mock_image_response)
 
@@ -565,7 +570,9 @@ class TestOpenaiAzureClient(unittest.TestCase):
         # Setup mock
         mock_image_response = MagicMock()
         mock_async_azure_openai.return_value = MagicMock()
-        mock_async_azure_openai.return_value.images.edit = AsyncMock(return_value=mock_image_response)
+        mock_async_azure_openai.return_value.images.edit = AsyncMock(
+            return_value=mock_image_response
+        )
 
         # Create client
         client = OpenAIAzureClient(async_client=True, **self.valid_config)
@@ -574,19 +581,15 @@ class TestOpenaiAzureClient(unittest.TestCase):
         mock_image_files = [MagicMock(), MagicMock(), MagicMock()]
 
         # Call edit_image with multiple images (await since it's async)
-        result = asyncio.run(client.edit_image(
-            image=mock_image_files,
-            prompt="Combine into a collage",
-            model="gpt-image-1",
-            n=2
-        ))
+        result = asyncio.run(
+            client.edit_image(
+                image=mock_image_files, prompt="Combine into a collage", model="gpt-image-1", n=2
+            )
+        )
 
         # Verify the call was made with correct parameters
         mock_async_azure_openai.return_value.images.edit.assert_called_once_with(
-            image=mock_image_files,
-            prompt="Combine into a collage",
-            model="gpt-image-1",
-            n=2
+            image=mock_image_files, prompt="Combine into a collage", model="gpt-image-1", n=2
         )
         self.assertEqual(result, mock_image_response)
 
@@ -603,11 +606,8 @@ class TestOpenaiAzureClient(unittest.TestCase):
 
         # Verify ValueError is raised for sync client (need to await to get the error)
         with self.assertRaises(ValueError) as context:
-            asyncio.run(client.edit_image(
-                image=mock_image_file,
-                prompt="Remove the background"
-            ))
-        
+            asyncio.run(client.edit_image(image=mock_image_file, prompt="Remove the background"))
+
         self.assertIn("requires async client", str(context.exception))
 
     @patch("sygra.core.models.client.openai_azure_client.AsyncAzureOpenAI")
@@ -616,7 +616,9 @@ class TestOpenaiAzureClient(unittest.TestCase):
         # Setup mock
         mock_image_response = MagicMock()
         mock_async_azure_openai.return_value = MagicMock()
-        mock_async_azure_openai.return_value.images.create_variation = AsyncMock(return_value=mock_image_response)
+        mock_async_azure_openai.return_value.images.create_variation = AsyncMock(
+            return_value=mock_image_response
+        )
 
         # Create client
         client = OpenAIAzureClient(async_client=True, **self.valid_config)
@@ -625,19 +627,15 @@ class TestOpenaiAzureClient(unittest.TestCase):
         mock_image_file = MagicMock()
 
         # Call create_image_variation (await since it's async)
-        result = asyncio.run(client.create_image_variation(
-            image=mock_image_file,
-            model="dall-e-2",
-            n=3,
-            size="512x512"
-        ))
+        result = asyncio.run(
+            client.create_image_variation(
+                image=mock_image_file, model="dall-e-2", n=3, size="512x512"
+            )
+        )
 
         # Verify the call was made with correct parameters
         mock_async_azure_openai.return_value.images.create_variation.assert_called_once_with(
-            image=mock_image_file,
-            model="dall-e-2",
-            n=3,
-            size="512x512"
+            image=mock_image_file, model="dall-e-2", n=3, size="512x512"
         )
         self.assertEqual(result, mock_image_response)
 
@@ -654,10 +652,8 @@ class TestOpenaiAzureClient(unittest.TestCase):
 
         # Verify ValueError is raised for sync client (need to await to get the error)
         with self.assertRaises(ValueError) as context:
-            asyncio.run(client.create_image_variation(
-                image=mock_image_file
-            ))
-        
+            asyncio.run(client.create_image_variation(image=mock_image_file))
+
         self.assertIn("requires async client", str(context.exception))
 
 

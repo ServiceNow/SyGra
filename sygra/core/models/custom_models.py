@@ -1238,13 +1238,11 @@ class CustomOpenAI(BaseCustomModel):
         model_url = model_params.url
 
         try:
-            from sygra.utils.image_utils import parse_image_data_url
-            import io
-            
+
             # Extract text and images from messages
             prompt_text = ""
             image_data_urls = []
-            
+
             for message in input.messages:
                 if hasattr(message, "content"):
                     if isinstance(message.content, str):
@@ -1286,14 +1284,20 @@ class CustomOpenAI(BaseCustomModel):
                 )
 
             has_images = len(image_data_urls) > 0
-            
+
             if has_images:
                 # Image editing
-                logger.debug(f"[{self.name()}] Detected {len(image_data_urls)} image(s) in input, using image edit API")
-                return await self._edit_image_with_data_urls(image_data_urls, prompt_text, model_url, model_params)
+                logger.debug(
+                    f"[{self.name()}] Detected {len(image_data_urls)} image(s) in input, using image edit API"
+                )
+                return await self._edit_image_with_data_urls(
+                    image_data_urls, prompt_text, model_url, model_params
+                )
             else:
                 # Text-to-image generation
-                logger.debug(f"[{self.name()}] No input images detected, using text-to-image generation API")
+                logger.debug(
+                    f"[{self.name()}] No input images detected, using text-to-image generation API"
+                )
                 return await self._generate_image_from_text(prompt_text, model_url, model_params)
 
         except ValueError as e:
@@ -1325,12 +1329,12 @@ class CustomOpenAI(BaseCustomModel):
     ) -> Tuple[str, int]:
         """
         Generate images from text prompts (text-to-image).
-        
+
         Args:
             prompt_text: Text prompt for image generation
             model_url: Model URL
             model_params: Model parameters
-            
+
         Returns:
             Tuple of (response_text, status_code)
         """
@@ -1347,9 +1351,7 @@ class CustomOpenAI(BaseCustomModel):
 
         openai_client = cast(OpenAIClient, self._client)
         image_response = await openai_client.create_image(
-            model=str(self.model_config.get("model")),
-            prompt=prompt_text,
-            **params
+            model=str(self.model_config.get("model")), prompt=prompt_text, **params
         )
 
         if is_streaming:
@@ -1368,6 +1370,7 @@ class CustomOpenAI(BaseCustomModel):
         Delegates to image_utils for processing.
         """
         from sygra.utils.image_utils import process_streaming_image_response
+
         return await process_streaming_image_response(stream_response, self.name())
 
     async def _process_image_response(self, image_response):
@@ -1376,6 +1379,7 @@ class CustomOpenAI(BaseCustomModel):
         Delegates to image_utils for processing.
         """
         from sygra.utils.image_utils import process_image_response
+
         return await process_image_response(image_response, self.name())
 
     async def _url_to_data_url(self, url: str) -> str:
@@ -1384,6 +1388,7 @@ class CustomOpenAI(BaseCustomModel):
         Delegates to image_utils for processing.
         """
         from sygra.utils.image_utils import url_to_data_url
+
         return await url_to_data_url(url, self.name())
 
     async def _edit_image_with_data_urls(
@@ -1393,19 +1398,20 @@ class CustomOpenAI(BaseCustomModel):
         Edit images using data URLs.
         - GPT-Image-1: Supports up to 16 images
         - DALL-E-2: Supports only 1 image
-        
+
         Args:
             image_data_urls: List of image data URLs
             prompt_text: Edit instruction
             model_url: Model URL
             model_params: Model parameters
-            
+
         Returns:
             Tuple of (response_text, status_code)
         """
-        from sygra.utils.image_utils import parse_image_data_url
         import io
-        
+
+        from sygra.utils.image_utils import parse_image_data_url
+
         if not prompt_text:
             logger.error(f"[{self.name()}] No prompt provided for image editing")
             return f"{constants.ERROR_PREFIX} No prompt provided for image editing", 400
@@ -1448,22 +1454,20 @@ class CustomOpenAI(BaseCustomModel):
                 img_file = io.BytesIO(img_bytes)
                 img_file.name = f"image_{idx}.png"
                 image_files.append(img_file)
-            
+
             image_param = image_files
         else:
             # Single image for DALL-E-2 or single image input
             _, _, image_bytes = parse_image_data_url(image_data_urls[0])
             image_file = io.BytesIO(image_bytes)
             image_file.name = "image.png"
-            
+
             image_param = image_file
 
         # Call the image edit API
         openai_client = cast(OpenAIClient, self._client)
         image_response = await openai_client.edit_image(
-            image=image_param,
-            prompt=prompt_text,
-            **params
+            image=image_param, prompt=prompt_text, **params
         )
 
         # Handle streaming response

@@ -254,14 +254,14 @@ class OpenAIClient(BaseClient):
             )
 
         client = cast(Any, self.client)
-        
+
         # Build the request parameters with all provided kwargs
         params: Dict[str, Any] = {
             "model": model,
             "prompt": prompt,
             **kwargs,  # Pass all additional parameters
         }
-        
+
         return await client.images.generate(**params)
 
     async def edit_image(
@@ -300,14 +300,14 @@ class OpenAIClient(BaseClient):
             )
 
         client = cast(Any, self.client)
-        
+
         # Build the request parameters with all provided kwargs
         params: Dict[str, Any] = {
             "image": image,
             "prompt": prompt,
             **kwargs,  # Pass all additional parameters
         }
-        
+
         return await client.images.edit(**params)
 
     async def create_image_variation(
@@ -341,13 +341,13 @@ class OpenAIClient(BaseClient):
             )
 
         client = cast(Any, self.client)
-        
+
         # Build the request parameters
         params: Dict[str, Any] = {
             "image": image,
             "n": n,
         }
-        
+
         # Add optional parameters if provided
         if model is not None:
             params["model"] = model
@@ -355,5 +355,5 @@ class OpenAIClient(BaseClient):
             params["size"] = size
         if response_format is not None:
             params["response_format"] = response_format
-        
+
         return await client.images.create_variation(**params)

@@ -46,7 +46,7 @@ class TestCustomOpenAI(unittest.TestCase):
                 "voice": "alloy",
                 "response_format": "mp3",
                 "speed": 1.0,
-            }
+            },
         }
 
         # Configuration with completions API
@@ -75,17 +75,11 @@ class TestCustomOpenAI(unittest.TestCase):
             "url": "https://api.openai.com/v1",
             "auth_token": "Bearer sk-test_key_123",
             "api_version": "2023-05-15",
-            "parameters": {
-                "size": "1024x1024",
-                "quality": "standard",
-                "style": "vivid"
-            }
+            "parameters": {"size": "1024x1024", "quality": "standard", "style": "vivid"},
         }
 
         # Mock messages for Image Generation
-        self.image_messages = [
-            HumanMessage(content="A serene mountain landscape at sunset")
-        ]
+        self.image_messages = [HumanMessage(content="A serene mountain landscape at sunset")]
         self.image_input = ChatPromptValue(messages=self.image_messages)
 
     def test_init(self):
@@ -475,9 +469,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(
-            self.image_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_image(self.image_input, model_params)
 
         # Verify results
         self.assertIn("data:image/png;base64,", resp_text)
@@ -521,9 +513,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(
-            self.image_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_image(self.image_input, model_params)
 
         # Verify results
         result = json.loads(resp_text)
@@ -605,9 +595,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(
-            self.image_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_image(self.image_input, model_params)
 
         # Verify results
         self.assertEqual(resp_status, 200)
@@ -680,9 +668,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(
-            empty_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_image(empty_input, model_params)
 
         # Verify error response
         self.assertIn("No prompt provided", resp_text)
@@ -709,9 +695,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(
-            self.image_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_image(self.image_input, model_params)
 
         # Verify error handling
         self.assertIn("Rate limit exceeded", resp_text)
@@ -738,9 +722,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(
-            self.image_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_image(self.image_input, model_params)
 
         # Verify error handling
         self.assertIn("Bad request", resp_text)
@@ -770,9 +752,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(
-            self.image_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_image(self.image_input, model_params)
 
         # Verify error handling
         self.assertIn("API error", resp_text)
@@ -831,10 +811,15 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Create input with image and text
         from langchain.schema import HumanMessage
-        messages_with_image = [HumanMessage(content=[
-            {"type": "image_url", "image_url": sample_image},
-            {"type": "text", "text": "Remove the background"}
-        ])]
+
+        messages_with_image = [
+            HumanMessage(
+                content=[
+                    {"type": "image_url", "image_url": sample_image},
+                    {"type": "text", "text": "Remove the background"},
+                ]
+            )
+        ]
         image_edit_input = ChatPromptValue(messages=messages_with_image)
 
         # Setup mock client
@@ -856,14 +841,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image (should auto-detect and route to editing)
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(
-            image_edit_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_image(image_edit_input, model_params)
 
         # Verify results
         self.assertIn("data:image/png;base64,", resp_text)
         self.assertEqual(resp_status, 200)
-        
+
         # Verify edit_image was called (not create_image)
         mock_client.edit_image.assert_called_once()
 
@@ -883,12 +866,17 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Create input with multiple images and text
         from langchain.schema import HumanMessage
-        messages_with_images = [HumanMessage(content=[
-            {"type": "image_url", "image_url": sample_image_1},
-            {"type": "image_url", "image_url": sample_image_2},
-            {"type": "image_url", "image_url": sample_image_3},
-            {"type": "text", "text": "Combine into a collage"}
-        ])]
+
+        messages_with_images = [
+            HumanMessage(
+                content=[
+                    {"type": "image_url", "image_url": sample_image_1},
+                    {"type": "image_url", "image_url": sample_image_2},
+                    {"type": "image_url", "image_url": sample_image_3},
+                    {"type": "text", "text": "Combine into a collage"},
+                ]
+            )
+        ]
         image_edit_input = ChatPromptValue(messages=messages_with_images)
 
         # Setup mock client
@@ -914,16 +902,14 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(
-            image_edit_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_image(image_edit_input, model_params)
 
         # Verify results - should return multiple images
         result = json.loads(resp_text)
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 2)
         self.assertEqual(resp_status, 200)
-        
+
         # Verify edit_image was called with list of images
         mock_client.edit_image.assert_called_once()
         call_args = mock_client.edit_image.call_args
@@ -940,9 +926,10 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Create 20 image data URLs
         sample_image = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
-        
+
         # Create input with 20 images
         from langchain.schema import HumanMessage
+
         image_items = [{"type": "image_url", "image_url": sample_image} for _ in range(20)]
         image_items.append({"type": "text", "text": "Create a grid"})
         messages_with_many_images = [HumanMessage(content=image_items)]
@@ -967,12 +954,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        
+
         with patch("sygra.core.models.custom_models.logger") as mock_logger:
             resp_text, resp_status = await custom_openai._generate_image(
                 image_edit_input, model_params
             )
-            
+
             # Verify warning was logged
             mock_logger.warning.assert_called_once()
             warning_msg = mock_logger.warning.call_args[0][0]
@@ -998,12 +985,17 @@ class TestCustomOpenAI(unittest.TestCase):
         sample_image_3 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAHgFPU/tQAAAABJRU5ErkJggg=="
 
         from langchain.schema import HumanMessage
-        messages_with_images = [HumanMessage(content=[
-            {"type": "image_url", "image_url": sample_image_1},
-            {"type": "image_url", "image_url": sample_image_2},
-            {"type": "image_url", "image_url": sample_image_3},
-            {"type": "text", "text": "Edit this"}
-        ])]
+
+        messages_with_images = [
+            HumanMessage(
+                content=[
+                    {"type": "image_url", "image_url": sample_image_1},
+                    {"type": "image_url", "image_url": sample_image_2},
+                    {"type": "image_url", "image_url": sample_image_3},
+                    {"type": "text", "text": "Edit this"},
+                ]
+            )
+        ]
         image_edit_input = ChatPromptValue(messages=messages_with_images)
 
         # Setup mock client
@@ -1025,12 +1017,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        
+
         with patch("sygra.core.models.custom_models.logger") as mock_logger:
             resp_text, resp_status = await custom_openai._generate_image(
                 image_edit_input, model_params
             )
-            
+
             # Verify warning was logged
             mock_logger.warning.assert_called_once()
             warning_msg = mock_logger.warning.call_args[0][0]
@@ -1052,10 +1044,11 @@ class TestCustomOpenAI(unittest.TestCase):
         sample_image = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
 
         from langchain.schema import HumanMessage
+
         # Only image, no text
-        messages_image_only = [HumanMessage(content=[
-            {"type": "image_url", "image_url": sample_image}
-        ])]
+        messages_image_only = [
+            HumanMessage(content=[{"type": "image_url", "image_url": sample_image}])
+        ]
         image_edit_input = ChatPromptValue(messages=messages_image_only)
 
         # Setup custom model
@@ -1064,9 +1057,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(
-            image_edit_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_image(image_edit_input, model_params)
 
         # Verify error response
         self.assertIn("###SERVER_ERROR###", resp_text)
@@ -1083,6 +1074,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Text prompt only, no images
         from langchain.schema import HumanMessage
+
         messages_text_only = [HumanMessage(content="Generate a sunset")]
         text_only_input = ChatPromptValue(messages=messages_text_only)
 
@@ -1108,9 +1100,7 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(
-            text_only_input, model_params
-        )
+        resp_text, resp_status = await custom_openai._generate_image(text_only_input, model_params)
 
         # Verify create_image was called (generation), NOT edit_image
         mock_client.create_image.assert_called_once()

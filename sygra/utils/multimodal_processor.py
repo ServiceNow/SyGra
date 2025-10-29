@@ -89,10 +89,11 @@ def process_record_multimodal_data(
         elif isinstance(value, list):
             return [process_value(item, field_name, idx) for idx, item in enumerate(value)]
 
-        elif isinstance(value, str) and value.startswith('['):
+        elif isinstance(value, str) and value.startswith("["):
             # Try to parse JSON arrays (for n>1 image generation)
             try:
                 import json
+
                 parsed = json.loads(value)
                 if isinstance(parsed, list):
                     # Recursively process the parsed list
@@ -120,7 +121,7 @@ def process_batch_multimodal_data(
     """
     Process a batch of records and save all multimodal data to files.
     Uses lazy directory creation - directories are created on-demand when saving files.
-    
+
     This eliminates the need for a pre-check scan, making processing ~50% faster
     while still preventing empty directories from being created.
 
@@ -146,5 +147,5 @@ def process_batch_multimodal_data(
         logger.info(f"Processed {len(records)} records, saved multimodal files to {output_dir}")
     else:
         logger.debug(f"Processed {len(records)} records, no multimodal data found")
-    
+
     return processed_records
