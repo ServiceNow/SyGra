@@ -198,3 +198,163 @@ class OpenAIAzureClient(BaseClient):
             response_format=response_format,
             speed=speed,
         )
+
+    async def create_image(
+        self,
+        model: str,
+        prompt: str,
+        size: Optional[str] = None,
+        quality: Optional[str] = None,
+        n: int = 1,
+        response_format: Optional[str] = None,
+        style: Optional[str] = None,
+    ) -> Any:
+        """
+        Generate images from text prompts using Azure OpenAI's image generation API.
+
+        Args:
+            model (str): The deployment name for the image model
+            prompt (str): The text description of the desired image(s)
+            size (str, optional): The size of generated images. Options depend on model:
+                - dall-e-2: "256x256", "512x512", "1024x1024" (default)
+                - dall-e-3/gpt-image-1: "1024x1024" (default), "1792x1024", "1024x1792"
+            quality (str, optional): Image quality - "standard" or "hd" (dall-e-3/gpt-image-1 only)
+            n (int, optional): Number of images to generate (1-10 for dall-e-2, only 1 for dall-e-3/gpt-image-1). Defaults to 1
+            response_format (str, optional): "url" or "b64_json". Only supported by dall-e models, not gpt-image-1
+            style (str, optional): Image style - "vivid" or "natural" (dall-e-3/gpt-image-1 only)
+
+        Returns:
+            Any: The image generation response from the API
+
+        Raises:
+            ValueError: If async_client is False (Image generation requires async client)
+        """
+        if not self.async_client:
+            raise ValueError(
+                "Image generation API requires async client. Please initialize with async_client=True"
+            )
+
+        client = cast(Any, self.client)
+        
+        # Build the request parameters
+        params: Dict[str, Any] = {
+            "model": model,
+            "prompt": prompt,
+            "n": n,
+        }
+        
+        # Add optional parameters if provided
+        if size is not None:
+            params["size"] = size
+        if quality is not None:
+            params["quality"] = quality
+        if response_format is not None:
+            params["response_format"] = response_format
+        if style is not None:
+            params["style"] = style
+        
+        return await client.images.generate(**params)
+
+    async def edit_image(
+        self,
+        image: Any,
+        prompt: str,
+        mask: Optional[Any] = None,
+        model: Optional[str] = None,
+        n: int = 1,
+        size: Optional[str] = None,
+        response_format: Optional[str] = None,
+    ) -> Any:
+        """
+        Edit an existing image based on a text prompt using Azure OpenAI.
+
+        Args:
+            image: The image to edit. Must be a valid PNG file, less than 4MB, and square.
+                   Can be a file path (str) or file-like object.
+            prompt (str): A text description of the desired edits
+            mask (optional): An additional image whose fully transparent areas indicate where
+                           the image should be edited. Must be same size as image.
+            model (str, optional): The deployment name for the model
+            n (int, optional): Number of images to generate (1-10). Defaults to 1
+            size (str, optional): Size of generated images: "256x256", "512x512", or "1024x1024"
+            response_format (str, optional): "url" or "b64_json"
+
+        Returns:
+            Any: The image edit response from the API
+
+        Raises:
+            ValueError: If async_client is False
+        """
+        if not self.async_client:
+            raise ValueError(
+                "Image edit API requires async client. Please initialize with async_client=True"
+            )
+
+        client = cast(Any, self.client)
+        
+        # Build the request parameters
+        params: Dict[str, Any] = {
+            "image": image,
+            "prompt": prompt,
+            "n": n,
+        }
+        
+        # Add optional parameters if provided
+        if mask is not None:
+            params["mask"] = mask
+        if model is not None:
+            params["model"] = model
+        if size is not None:
+            params["size"] = size
+        if response_format is not None:
+            params["response_format"] = response_format
+        
+        return await client.images.edit(**params)
+
+    async def create_image_variation(
+        self,
+        image: Any,
+        model: Optional[str] = None,
+        n: int = 1,
+        size: Optional[str] = None,
+        response_format: Optional[str] = None,
+    ) -> Any:
+        """
+        Create a variation of a given image using Azure OpenAI.
+
+        Args:
+            image: The image to use as the basis for variation(s). Must be a valid PNG file,
+                   less than 4MB, and square. Can be a file path (str) or file-like object.
+            model (str, optional): The deployment name for the model
+            n (int, optional): Number of variations to generate (1-10). Defaults to 1
+            size (str, optional): Size of generated images: "256x256", "512x512", or "1024x1024"
+            response_format (str, optional): "url" or "b64_json"
+
+        Returns:
+            Any: The image variation response from the API
+
+        Raises:
+            ValueError: If async_client is False
+        """
+        if not self.async_client:
+            raise ValueError(
+                "Image variation API requires async client. Please initialize with async_client=True"
+            )
+
+        client = cast(Any, self.client)
+        
+        # Build the request parameters
+        params: Dict[str, Any] = {
+            "image": image,
+            "n": n,
+        }
+        
+        # Add optional parameters if provided
+        if model is not None:
+            params["model"] = model
+        if size is not None:
+            params["size"] = size
+        if response_format is not None:
+            params["response_format"] = response_format
+        
+        return await client.images.create_variation(**params)

@@ -1061,9 +1061,16 @@ class CustomOpenAI(BaseCustomModel):
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
-        # Check if this is a TTS request based on output_type
-        if self.model_config.get("output_type") == "audio":
+        # Check the output type and route to appropriate method
+        output_type = self.model_config.get("output_type")
+        if output_type == "audio":
             return await self._generate_speech(input, model_params)
+        elif output_type == "image":
+            return await self._generate_image(input, model_params)
+        elif output_type == "image_edit":
+            return await self._generate_image_edit(input, model_params)
+        elif output_type == "image_variation":
+            return await self._generate_image_variation(input, model_params)
         else:
             return await self._generate_text(input, model_params)
 
@@ -1207,6 +1214,395 @@ class CustomOpenAI(BaseCustomModel):
             ret_code = getattr(e, "status_code", 500)
         except Exception as x:
             resp_text = f"{constants.ERROR_PREFIX} TTS request failed: {x}"
+            logger.error(f"[{self.name()}] {resp_text}")
+            rcode = self._get_status_from_body(x)
+            ret_code = rcode if rcode else 999
+
+        return resp_text, ret_code
+
+    async def _generate_image(
+        self, input: ChatPromptValue, model_params: ModelParams
+    ) -> Tuple[str, int]:
+        """
+        Generate images from text prompts using OpenAI/Azure OpenAI Image Generation API.
+        This method is called when output_type is 'image' in model config.
+
+        Args:
+            input: ChatPromptValue containing the text prompt for image generation
+            model_params: Model parameters including URL and auth token
+
+        Returns:
+            Tuple of (response_text, status_code)
+            - On success: returns base64 encoded image(s) as JSON and 200
+            - On error: returns error message and error code
+        """
+        ret_code = 200
+        model_url = model_params.url
+
+        try:
+            # Extract prompt from messages
+            prompt_text = ""
+            for message in input.messages:
+                if hasattr(message, "content"):
+                    prompt_text += str(message.content) + " "
+            prompt_text = prompt_text.strip()
+
+            if not prompt_text:
+                logger.error(f"[{self.name()}] No prompt provided for image generation")
+                return f"{constants.ERROR_PREFIX} No prompt provided for image generation", 400
+
+            # Validate prompt length (OpenAI limit is 4000 characters for dall-e-3)
+            if len(prompt_text) > 4000:
+                logger.warn(
+                    f"[{self.name()}] Prompt exceeds 4000 character limit: {len(prompt_text)} characters"
+                )
+
+            # Set up the OpenAI client
+            self._set_client(model_url, model_params.auth_token)
+
+            # Get image generation parameters from generation_params or model_config
+            size = self.generation_params.get("size", self.model_config.get("size", None))
+            quality = self.generation_params.get("quality", self.model_config.get("quality", None))
+            n = self.generation_params.get("n", self.model_config.get("n", 1))
+            response_format = self.generation_params.get(
+                "response_format", self.model_config.get("response_format", None)
+            )
+            style = self.generation_params.get("style", self.model_config.get("style", None))
+
+            # Validate n parameter
+            n = max(1, min(10, int(n)))  # Clamp between 1 and 10
+
+            logger.debug(
+                f"[{self.name()}] Image generation parameters - size: {size}, quality: {quality}, "
+                f"n: {n}, format: {response_format}, style: {style}"
+            )
+
+            # Prepare image generation request parameters
+            image_params = {
+                "prompt": prompt_text,
+                "size": size,
+                "quality": quality,
+                "n": n,
+                "response_format": response_format,
+                "style": style,
+            }
+
+            # Make the image generation API call
+            # Cast to OpenAIClient since BaseClient doesn't have create_image
+            openai_client = cast(OpenAIClient, self._client)
+            image_response = await openai_client.create_image(
+                model=str(self.model_config.get("model")), **image_params
+            )
+
+            # Process the response based on format
+            # Auto-detect format if not specified (for gpt-image-1)
+            images_data = []
+            for img_data in image_response.data:
+                # Try to get b64_json first (DALL-E format)
+                if hasattr(img_data, 'b64_json') and img_data.b64_json:
+                    b64_json = img_data.b64_json
+                    # Create base64 encoded data URL
+                    data_url = f"data:image/png;base64,{b64_json}"
+                    images_data.append(data_url)
+                # Otherwise get URL (GPT-Image-1 or url format)
+                elif hasattr(img_data, 'url') and img_data.url:
+                    images_data.append(img_data.url)
+                else:
+                    logger.error(f"[{self.name()}] Image data has neither b64_json nor url")
+
+            # Return as JSON string with all images or single image
+            if len(images_data) == 1:
+                resp_text = images_data[0]
+            else:
+                resp_text = json.dumps({"images": images_data})
+
+        except openai.RateLimitError as e:
+            logger.warning(f"[{self.name()}] OpenAI Image API request exceeded rate limit: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Rate limit exceeded: {e}"
+            ret_code = 429
+        except openai.BadRequestError as e:
+            logger.error(f"[{self.name()}] OpenAI Image API bad request: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Bad request: {e}"
+            ret_code = 400
+        except openai.APIError as e:
+            logger.error(f"[{self.name()}] OpenAI Image API error: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} API error: {e}"
+            ret_code = getattr(e, "status_code", 500)
+        except Exception as x:
+            resp_text = f"{constants.ERROR_PREFIX} Image generation failed: {x}"
+            logger.error(f"[{self.name()}] {resp_text}")
+            rcode = self._get_status_from_body(x)
+            ret_code = rcode if rcode else 999
+
+        return resp_text, ret_code
+
+    async def _generate_image_edit(
+        self, input: ChatPromptValue, model_params: ModelParams
+    ) -> Tuple[str, int]:
+        """
+        Edit images using OpenAI/Azure OpenAI Image Edit API.
+        Expects input messages with base64-encoded image data URLs and prompt.
+
+        Args:
+            input: ChatPromptValue containing image data URL and edit prompt
+            model_params: Model parameters including URL and auth token
+
+        Returns:
+            Tuple of (response_text, status_code)
+        """
+        ret_code = 200
+        model_url = model_params.url
+
+        try:
+            from sygra.utils.image_utils import parse_image_data_url
+            import io
+            
+            # Extract image data URL and prompt from messages
+            image_data_url = None
+            mask_data_url = None
+            prompt_text = ""
+            
+            for message in input.messages:
+                if hasattr(message, "content"):
+                    # Handle different message content formats
+                    if isinstance(message.content, str):
+                        content = message.content
+                        # Look for data URL (images are pre-converted to data URLs)
+                        if content.startswith("data:image/"):
+                            if not image_data_url:
+                                image_data_url = content
+                            elif not mask_data_url:
+                                mask_data_url = content  # Second image is mask
+                        else:
+                            # Text content is the prompt
+                            prompt_text += content + " "
+                    elif isinstance(message.content, list):
+                        # Handle multimodal content with text and images
+                        for item in message.content:
+                            if isinstance(item, dict):
+                                if item.get("type") == "text":
+                                    prompt_text += item.get("text", "") + " "
+                                elif item.get("type") == "image_url":
+                                    url = item.get("image_url", "")
+                                    if isinstance(url, dict):
+                                        url = url.get("url", "")
+                                    if url.startswith("data:image/"):
+                                        if not image_data_url:
+                                            image_data_url = url
+                                        elif not mask_data_url:
+                                            mask_data_url = url
+
+            prompt_text = prompt_text.strip()
+
+            if not image_data_url:
+                logger.error(f"[{self.name()}] No image data URL provided for image editing")
+                return f"{constants.ERROR_PREFIX} No image provided for editing", 400
+
+            if not prompt_text:
+                logger.error(f"[{self.name()}] No prompt provided for image editing")
+                return f"{constants.ERROR_PREFIX} No prompt provided for image editing", 400
+
+            # Set up the OpenAI client
+            self._set_client(model_url, model_params.auth_token)
+
+            # Get image edit parameters
+            n = self.generation_params.get("n", self.model_config.get("n", 1))
+            size = self.generation_params.get("size", self.model_config.get("size", None))
+            response_format = self.generation_params.get(
+                "response_format", self.model_config.get("response_format", None)
+            )
+
+            n = max(1, min(10, int(n)))
+
+            logger.debug(
+                f"[{self.name()}] Image edit parameters - n: {n}, size: {size}, format: {response_format}"
+            )
+
+            # Decode image data URL to bytes
+            _, _, image_bytes = parse_image_data_url(image_data_url)
+            image_file = io.BytesIO(image_bytes)
+            image_file.name = "image.png"  # Required by OpenAI API
+
+            # Prepare edit parameters
+            edit_params = {
+                "image": image_file,
+                "prompt": prompt_text,
+                "n": n,
+                "size": size,
+                "response_format": response_format,
+                "model": str(self.model_config.get("model")),
+            }
+
+            # Add mask if provided
+            if mask_data_url:
+                _, _, mask_bytes = parse_image_data_url(mask_data_url)
+                mask_file = io.BytesIO(mask_bytes)
+                mask_file.name = "mask.png"
+                edit_params["mask"] = mask_file
+
+            # Call the image edit API
+            openai_client = cast(OpenAIClient, self._client)
+            image_response = await openai_client.edit_image(**edit_params)
+
+            # Process response (same as _generate_image)
+            images_data = []
+            for img_data in image_response.data:
+                if hasattr(img_data, 'b64_json') and img_data.b64_json:
+                    b64_json = img_data.b64_json
+                    data_url = f"data:image/png;base64,{b64_json}"
+                    images_data.append(data_url)
+                elif hasattr(img_data, 'url') and img_data.url:
+                    images_data.append(img_data.url)
+                else:
+                    logger.error(f"[{self.name()}] Image data has neither b64_json nor url")
+
+            if len(images_data) == 1:
+                resp_text = images_data[0]
+            else:
+                resp_text = json.dumps({"images": images_data})
+
+        except ValueError as e:
+            logger.error(f"[{self.name()}] Invalid image data URL: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Invalid image data: {e}"
+            ret_code = 400
+        except openai.RateLimitError as e:
+            logger.warning(f"[{self.name()}] OpenAI Image Edit API rate limit: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Rate limit exceeded: {e}"
+            ret_code = 429
+        except openai.BadRequestError as e:
+            logger.error(f"[{self.name()}] OpenAI Image Edit API bad request: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Bad request: {e}"
+            ret_code = 400
+        except openai.APIError as e:
+            logger.error(f"[{self.name()}] OpenAI Image Edit API error: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} API error: {e}"
+            ret_code = getattr(e, "status_code", 500)
+        except Exception as x:
+            resp_text = f"{constants.ERROR_PREFIX} Image editing failed: {x}"
+            logger.error(f"[{self.name()}] {resp_text}")
+            rcode = self._get_status_from_body(x)
+            ret_code = rcode if rcode else 999
+
+        return resp_text, ret_code
+
+    async def _generate_image_variation(
+        self, input: ChatPromptValue, model_params: ModelParams
+    ) -> Tuple[str, int]:
+        """
+        Create image variations using OpenAI/Azure OpenAI Image Variation API.
+        Expects input messages with base64-encoded image data URLs.
+
+        Args:
+            input: ChatPromptValue containing image data URL
+            model_params: Model parameters including URL and auth token
+
+        Returns:
+            Tuple of (response_text, status_code)
+        """
+        ret_code = 200
+        model_url = model_params.url
+
+        try:
+            from sygra.utils.image_utils import parse_image_data_url
+            import io
+            
+            # Extract image data URL from messages
+            image_data_url = None
+            
+            for message in input.messages:
+                if hasattr(message, "content"):
+                    # Handle different message content formats
+                    if isinstance(message.content, str):
+                        content = message.content
+                        # Look for data URL (images are pre-converted to data URLs)
+                        if content.startswith("data:image/"):
+                            image_data_url = content
+                            break
+                    elif isinstance(message.content, list):
+                        # Handle multimodal content with images
+                        for item in message.content:
+                            if isinstance(item, dict):
+                                if item.get("type") == "image_url":
+                                    url = item.get("image_url", "")
+                                    if isinstance(url, dict):
+                                        url = url.get("url", "")
+                                    if url.startswith("data:image/"):
+                                        image_data_url = url
+                                        break
+
+            if not image_data_url:
+                logger.error(f"[{self.name()}] No image data URL provided for image variation")
+                return f"{constants.ERROR_PREFIX} No image provided for variation", 400
+
+            # Set up the OpenAI client
+            self._set_client(model_url, model_params.auth_token)
+
+            # Get image variation parameters
+            n = self.generation_params.get("n", self.model_config.get("n", 1))
+            size = self.generation_params.get("size", self.model_config.get("size", None))
+            response_format = self.generation_params.get(
+                "response_format", self.model_config.get("response_format", None)
+            )
+
+            n = max(1, min(10, int(n)))
+
+            logger.debug(
+                f"[{self.name()}] Image variation parameters - n: {n}, size: {size}, format: {response_format}"
+            )
+
+            # Decode image data URL to bytes
+            _, _, image_bytes = parse_image_data_url(image_data_url)
+            image_file = io.BytesIO(image_bytes)
+            image_file.name = "image.png"  # Required by OpenAI API
+
+            # Prepare variation parameters
+            variation_params = {
+                "image": image_file,
+                "n": n,
+                "size": size,
+                "response_format": response_format,
+                "model": str(self.model_config.get("model")),
+            }
+
+            # Call the image variation API
+            openai_client = cast(OpenAIClient, self._client)
+            image_response = await openai_client.create_image_variation(**variation_params)
+
+            # Process response (same as _generate_image)
+            images_data = []
+            for img_data in image_response.data:
+                if hasattr(img_data, 'b64_json') and img_data.b64_json:
+                    b64_json = img_data.b64_json
+                    data_url = f"data:image/png;base64,{b64_json}"
+                    images_data.append(data_url)
+                elif hasattr(img_data, 'url') and img_data.url:
+                    images_data.append(img_data.url)
+                else:
+                    logger.error(f"[{self.name()}] Image data has neither b64_json nor url")
+
+            if len(images_data) == 1:
+                resp_text = images_data[0]
+            else:
+                resp_text = json.dumps({"images": images_data})
+
+        except ValueError as e:
+            logger.error(f"[{self.name()}] Invalid image data URL: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Invalid image data: {e}"
+            ret_code = 400
+        except openai.RateLimitError as e:
+            logger.warning(f"[{self.name()}] OpenAI Image Variation API rate limit: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Rate limit exceeded: {e}"
+            ret_code = 429
+        except openai.BadRequestError as e:
+            logger.error(f"[{self.name()}] OpenAI Image Variation API bad request: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Bad request: {e}"
+            ret_code = 400
+        except openai.APIError as e:
+            logger.error(f"[{self.name()}] OpenAI Image Variation API error: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} API error: {e}"
+            ret_code = getattr(e, "status_code", 500)
+        except Exception as x:
+            resp_text = f"{constants.ERROR_PREFIX} Image variation failed: {x}"
             logger.error(f"[{self.name()}] {resp_text}")
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999

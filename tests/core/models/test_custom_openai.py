@@ -66,6 +66,27 @@ class TestCustomOpenAI(unittest.TestCase):
         self.tts_messages = [HumanMessage(content="Hello, this is a test of text to speech.")]
         self.tts_input = ChatPromptValue(messages=self.tts_messages)
 
+        # Configuration for Image Generation
+        self.image_config = {
+            "name": "dalle3_model",
+            "model": "dall-e-3",
+            "output_type": "image",
+            "parameters": {},
+            "url": "https://api.openai.com/v1",
+            "auth_token": "Bearer sk-test_key_123",
+            "api_version": "2023-05-15",
+            "size": "1024x1024",
+            "quality": "standard",
+            "style": "vivid",
+            "response_format": "b64_json",
+        }
+
+        # Mock messages for Image Generation
+        self.image_messages = [
+            HumanMessage(content="A serene mountain landscape at sunset")
+        ]
+        self.image_input = ChatPromptValue(messages=self.image_messages)
+
     def test_init(self):
         """Test initialization of CustomOpenAI"""
         custom_openai = CustomOpenAI(self.text_config)
@@ -427,6 +448,365 @@ class TestCustomOpenAI(unittest.TestCase):
         # Verify it called create_speech (TTS path)
         mock_client.create_speech.assert_awaited_once()
         self.assertEqual(resp_status, 200)
+
+    # ===================== Image Generation Tests =====================
+
+    async def _run_generate_image_success_single(self, mock_set_client):
+        """Test _generate_image successfully generates a single image"""
+        import base64
+
+        # Setup mock client
+        mock_client = MagicMock()
+        mock_image_data = b"fake_image_data_png"
+        mock_b64 = base64.b64encode(mock_image_data).decode("utf-8")
+
+        # Mock the response structure
+        mock_img = MagicMock()
+        mock_img.b64_json = mock_b64
+        mock_response = MagicMock()
+        mock_response.data = [mock_img]
+
+        mock_client.create_image = AsyncMock(return_value=mock_response)
+
+        # Setup custom model
+        custom_openai = CustomOpenAI(self.image_config)
+        custom_openai._client = mock_client
+
+        # Call _generate_image
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_image(
+            self.image_input, model_params
+        )
+
+        # Verify results
+        self.assertIn("data:image/png;base64,", resp_text)
+        self.assertIn(mock_b64, resp_text)
+        self.assertEqual(resp_status, 200)
+
+        # Verify method calls
+        mock_set_client.assert_called_once()
+        mock_client.create_image.assert_awaited_once()
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_image_success_single(self, mock_set_client):
+        asyncio.run(self._run_generate_image_success_single(mock_set_client))
+
+    async def _run_generate_image_success_multiple(self, mock_set_client):
+        """Test _generate_image successfully generates multiple images (DALL-E-2)"""
+        import base64
+        import json
+
+        # Setup mock client
+        mock_client = MagicMock()
+        mock_image_data1 = b"fake_image_data_1"
+        mock_image_data2 = b"fake_image_data_2"
+        mock_b64_1 = base64.b64encode(mock_image_data1).decode("utf-8")
+        mock_b64_2 = base64.b64encode(mock_image_data2).decode("utf-8")
+
+        # Mock the response structure with multiple images
+        mock_img1 = MagicMock()
+        mock_img1.b64_json = mock_b64_1
+        mock_img2 = MagicMock()
+        mock_img2.b64_json = mock_b64_2
+        mock_response = MagicMock()
+        mock_response.data = [mock_img1, mock_img2]
+
+        mock_client.create_image = AsyncMock(return_value=mock_response)
+
+        # Setup custom model with n=2
+        config = {**self.image_config, "n": 2, "model": "dall-e-2"}
+        custom_openai = CustomOpenAI(config)
+        custom_openai._client = mock_client
+
+        # Call _generate_image
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_image(
+            self.image_input, model_params
+        )
+
+        # Verify results
+        result = json.loads(resp_text)
+        self.assertIn("images", result)
+        self.assertEqual(len(result["images"]), 2)
+        self.assertIn("data:image/png;base64,", result["images"][0])
+        self.assertIn("data:image/png;base64,", result["images"][1])
+        self.assertEqual(resp_status, 200)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_image_success_multiple(self, mock_set_client):
+        asyncio.run(self._run_generate_image_success_multiple(mock_set_client))
+
+    async def _run_generate_image_with_different_sizes(self, mock_set_client):
+        """Test _generate_image with different size parameters"""
+        import base64
+
+        sizes = ["256x256", "512x512", "1024x1024", "1792x1024", "1024x1792"]
+
+        for size in sizes:
+            # Setup mock client
+            mock_client = MagicMock()
+            mock_image_data = b"fake_image_data"
+            mock_b64 = base64.b64encode(mock_image_data).decode("utf-8")
+
+            mock_img = MagicMock()
+            mock_img.b64_json = mock_b64
+            mock_response = MagicMock()
+            mock_response.data = [mock_img]
+
+            mock_client.create_image = AsyncMock(return_value=mock_response)
+
+            # Setup custom model with specific size
+            config = {**self.image_config, "size": size}
+            custom_openai = CustomOpenAI(config)
+            custom_openai._client = mock_client
+
+            # Call _generate_image
+            model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+            resp_text, resp_status = await custom_openai._generate_image(
+                self.image_input, model_params
+            )
+
+            # Verify results
+            self.assertIn("data:image/png;base64,", resp_text)
+            self.assertEqual(resp_status, 200)
+
+            # Verify create_image was called with the correct size
+            call_args = mock_client.create_image.call_args
+            self.assertEqual(call_args.kwargs["size"], size)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_image_with_different_sizes(self, mock_set_client):
+        asyncio.run(self._run_generate_image_with_different_sizes(mock_set_client))
+
+    async def _run_generate_image_with_quality_hd(self, mock_set_client):
+        """Test _generate_image with HD quality"""
+        import base64
+
+        # Setup mock client
+        mock_client = MagicMock()
+        mock_image_data = b"fake_hd_image_data"
+        mock_b64 = base64.b64encode(mock_image_data).decode("utf-8")
+
+        mock_img = MagicMock()
+        mock_img.b64_json = mock_b64
+        mock_response = MagicMock()
+        mock_response.data = [mock_img]
+
+        mock_client.create_image = AsyncMock(return_value=mock_response)
+
+        # Setup custom model with HD quality
+        config = {**self.image_config, "quality": "hd"}
+        custom_openai = CustomOpenAI(config)
+        custom_openai._client = mock_client
+
+        # Call _generate_image
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_image(
+            self.image_input, model_params
+        )
+
+        # Verify results
+        self.assertEqual(resp_status, 200)
+
+        # Verify create_image was called with HD quality
+        call_args = mock_client.create_image.call_args
+        self.assertEqual(call_args.kwargs["quality"], "hd")
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_image_with_quality_hd(self, mock_set_client):
+        asyncio.run(self._run_generate_image_with_quality_hd(mock_set_client))
+
+    async def _run_generate_image_with_different_styles(self, mock_set_client):
+        """Test _generate_image with different style parameters"""
+        import base64
+
+        styles = ["vivid", "natural"]
+
+        for style in styles:
+            # Setup mock client
+            mock_client = MagicMock()
+            mock_image_data = b"fake_image_data"
+            mock_b64 = base64.b64encode(mock_image_data).decode("utf-8")
+
+            mock_img = MagicMock()
+            mock_img.b64_json = mock_b64
+            mock_response = MagicMock()
+            mock_response.data = [mock_img]
+
+            mock_client.create_image = AsyncMock(return_value=mock_response)
+
+            # Setup custom model with specific style
+            config = {**self.image_config, "style": style}
+            custom_openai = CustomOpenAI(config)
+            custom_openai._client = mock_client
+
+            # Call _generate_image
+            model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+            resp_text, resp_status = await custom_openai._generate_image(
+                self.image_input, model_params
+            )
+
+            # Verify results
+            self.assertEqual(resp_status, 200)
+
+            # Verify create_image was called with the correct style
+            call_args = mock_client.create_image.call_args
+            self.assertEqual(call_args.kwargs["style"], style)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_image_with_different_styles(self, mock_set_client):
+        asyncio.run(self._run_generate_image_with_different_styles(mock_set_client))
+
+    async def _run_generate_image_empty_prompt(self, mock_set_client):
+        """Test _generate_image with empty prompt returns error"""
+        # Setup mock client
+        mock_client = MagicMock()
+
+        # Setup custom model
+        custom_openai = CustomOpenAI(self.image_config)
+        custom_openai._client = mock_client
+
+        # Create empty prompt
+        empty_messages = [HumanMessage(content="")]
+        empty_input = ChatPromptValue(messages=empty_messages)
+
+        # Call _generate_image
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_image(
+            empty_input, model_params
+        )
+
+        # Verify error response
+        self.assertIn("No prompt provided", resp_text)
+        self.assertEqual(resp_status, 400)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_image_empty_prompt(self, mock_set_client):
+        asyncio.run(self._run_generate_image_empty_prompt(mock_set_client))
+
+    async def _run_generate_image_rate_limit_error(self, mock_set_client):
+        """Test _generate_image handles rate limit errors"""
+        # Setup mock client
+        mock_client = MagicMock()
+        rate_limit_error = openai.RateLimitError(
+            "Rate limit exceeded",
+            response=MagicMock(status_code=429),
+            body=None,
+        )
+        mock_client.create_image = AsyncMock(side_effect=rate_limit_error)
+
+        # Setup custom model
+        custom_openai = CustomOpenAI(self.image_config)
+        custom_openai._client = mock_client
+
+        # Call _generate_image
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_image(
+            self.image_input, model_params
+        )
+
+        # Verify error handling
+        self.assertIn("Rate limit exceeded", resp_text)
+        self.assertEqual(resp_status, 429)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_image_rate_limit_error(self, mock_set_client):
+        asyncio.run(self._run_generate_image_rate_limit_error(mock_set_client))
+
+    async def _run_generate_image_bad_request_error(self, mock_set_client):
+        """Test _generate_image handles bad request errors"""
+        # Setup mock client
+        mock_client = MagicMock()
+        bad_request_error = openai.BadRequestError(
+            "Invalid size parameter",
+            response=MagicMock(status_code=400),
+            body=None,
+        )
+        mock_client.create_image = AsyncMock(side_effect=bad_request_error)
+
+        # Setup custom model
+        custom_openai = CustomOpenAI(self.image_config)
+        custom_openai._client = mock_client
+
+        # Call _generate_image
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_image(
+            self.image_input, model_params
+        )
+
+        # Verify error handling
+        self.assertIn("Bad request", resp_text)
+        self.assertEqual(resp_status, 400)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_image_bad_request_error(self, mock_set_client):
+        asyncio.run(self._run_generate_image_bad_request_error(mock_set_client))
+
+    async def _run_generate_image_api_error(self, mock_set_client):
+        """Test _generate_image handles API errors"""
+        # Setup mock client
+        mock_client = MagicMock()
+        mock_request = MagicMock()
+        mock_request.status_code = 500
+        api_error = openai.APIError(
+            "Internal server error",
+            request=mock_request,
+            body={"error": {"message": "Internal server error", "type": "api_error"}},
+        )
+        api_error.status_code = 500
+        mock_client.create_image = AsyncMock(side_effect=api_error)
+
+        # Setup custom model
+        custom_openai = CustomOpenAI(self.image_config)
+        custom_openai._client = mock_client
+
+        # Call _generate_image
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_image(
+            self.image_input, model_params
+        )
+
+        # Verify error handling
+        self.assertIn("API error", resp_text)
+        self.assertEqual(resp_status, 500)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_image_api_error(self, mock_set_client):
+        asyncio.run(self._run_generate_image_api_error(mock_set_client))
+
+    async def _run_generate_response_routes_to_image(self, mock_set_client):
+        """Test _generate_response correctly routes to _generate_image when output_type is 'image'"""
+        import base64
+
+        # Setup mock client
+        mock_client = MagicMock()
+        mock_image_data = b"fake_image_data"
+        mock_b64 = base64.b64encode(mock_image_data).decode("utf-8")
+
+        mock_img = MagicMock()
+        mock_img.b64_json = mock_b64
+        mock_response = MagicMock()
+        mock_response.data = [mock_img]
+
+        mock_client.create_image = AsyncMock(return_value=mock_response)
+
+        # Setup custom model with image output type
+        custom_openai = CustomOpenAI(self.image_config)
+        custom_openai._client = mock_client
+
+        # Call _generate_response (should route to _generate_image)
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_response(
+            self.image_input, model_params
+        )
+
+        # Verify it called create_image (image generation path)
+        mock_client.create_image.assert_awaited_once()
+        self.assertEqual(resp_status, 200)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_response_routes_to_image(self, mock_set_client):
+        asyncio.run(self._run_generate_response_routes_to_image(mock_set_client))
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_generate_response_routes_to_speech(self, mock_set_client):
