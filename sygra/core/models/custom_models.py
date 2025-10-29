@@ -1360,7 +1360,7 @@ class CustomOpenAI(BaseCustomModel):
         if len(images_data) == 1:
             return images_data[0], 200
         else:
-            return json.dumps({"images": images_data}), 200
+            return json.dumps(images_data), 200
 
     async def _process_streaming_image_response(self, stream_response):
         """
@@ -1476,7 +1476,7 @@ class CustomOpenAI(BaseCustomModel):
         if len(images_data) == 1:
             return images_data[0], 200
         else:
-            return json.dumps({"images": images_data}), 200
+            return json.dumps(images_data), 200
 
 
 class CustomOllama(BaseCustomModel):

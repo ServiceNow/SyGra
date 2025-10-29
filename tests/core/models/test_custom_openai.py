@@ -527,10 +527,10 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Verify results
         result = json.loads(resp_text)
-        self.assertIn("images", result)
-        self.assertEqual(len(result["images"]), 2)
-        self.assertIn("data:image/png;base64,", result["images"][0])
-        self.assertIn("data:image/png;base64,", result["images"][1])
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 2)
+        self.assertIn("data:image/png;base64,", result[0])
+        self.assertIn("data:image/png;base64,", result[1])
         self.assertEqual(resp_status, 200)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
@@ -920,8 +920,8 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Verify results - should return multiple images
         result = json.loads(resp_text)
-        self.assertIn("images", result)
-        self.assertEqual(len(result["images"]), 2)
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 2)
         self.assertEqual(resp_status, 200)
         
         # Verify edit_image was called with list of images

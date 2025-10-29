@@ -89,6 +89,19 @@ def process_record_multimodal_data(
         elif isinstance(value, list):
             return [process_value(item, field_name, idx) for idx, item in enumerate(value)]
 
+        elif isinstance(value, str) and value.startswith('['):
+            # Try to parse JSON arrays (for n>1 image generation)
+            try:
+                import json
+                parsed = json.loads(value)
+                if isinstance(parsed, list):
+                    # Recursively process the parsed list
+                    return process_value(parsed, field_name, index)
+            except (json.JSONDecodeError, ValueError):
+                # Not valid JSON, return as-is
+                pass
+            return value
+
         else:
             # Return value as-is if it's not a data URL, dict, or list
             return value

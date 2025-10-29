@@ -160,3 +160,36 @@ class TestProcessBatchMultimodalData:
         
         # Result should be empty list
         assert result == []
+
+    def test_json_array_of_data_urls(self):
+        """Test that JSON arrays of data URLs (n>1 images) are parsed and processed."""
+        import json
+        
+        # Sample 1x1 PNG as data URL
+        data_url1 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        data_url2 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+        
+        # Create a JSON string of the array (simulating n>1 image generation)
+        json_array = json.dumps([data_url1, data_url2])
+        
+        records = [
+            {"id": "1", "images": json_array},
+        ]
+        
+        output_dir = self.temp_dir / "multimodal_output"
+        
+        # Process records
+        result = process_batch_multimodal_data(records, output_dir)
+        
+        # Directory SHOULD be created because JSON array contains images
+        assert output_dir.exists()
+        assert (output_dir / "image").exists()
+        
+        # The JSON array should be parsed and replaced with a list of file paths
+        assert isinstance(result[0]["images"], list)
+        assert len(result[0]["images"]) == 2
+        # Both should be file paths now
+        for path in result[0]["images"]:
+            assert isinstance(path, str)
+            assert not path.startswith("data:")
+            assert "image" in path
