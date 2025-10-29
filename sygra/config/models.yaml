@@ -82,10 +82,21 @@ qwen3_1.7b:
 # TTS openai model
 tts_openai:
   model: tts
-  output_type: audio  # This triggers TTS functionality
-  model_type: azure_openai  # Use azure_openai or openai model type
+  output_type: audio
+  model_type: azure_openai
   api_version: 2025-03-01-preview
   # URL and api_key should be defined at .env file as SYGRA_TTS_OPENAI_URL and SYGRA_TTS_OPENAI_TOKEN
   parameters:
     voice: "alloy"
     response_format: "wav"
+
+# Image generation model
+gpt_image_1:
+  model: gpt-image-1
+  output_type: image
+  model_type: azure_openai
+  api_version: 2025-04-01-preview
+  # URL and api_key should be defined at .env file as SYGRA_GPT_IMAGE_1_URL and SYGRA_GPT_IMAGE_1_TOKEN
+  parameters:
+    size: "1024x1024"
+    quality: "high"
