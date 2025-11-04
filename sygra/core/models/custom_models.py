@@ -45,7 +45,7 @@ from sygra.core.models.structured_output.structured_output_config import (
     StructuredOutputConfig,
 )
 from sygra.logger.logger_config import logger
-from sygra.utils import utils
+from sygra.utils import utils, tool_utils
 
 
 class ModelParams:
@@ -434,7 +434,7 @@ class BaseCustomModel(ABC):
 
             # to handle cases where mixtral adds additional tags around the text. e.g. [ANS]....[/ANS].
             # we are currently handling only cases where we observe one occurrence of the tag to reduce false positives
-            pattern2 = re.compile("^\[([A-Z]+)\](.*?)\[/\\1\]", re.DOTALL)
+            pattern2 = re.compile(r"^\[([A-Z]+)\](.*?)\[/\1\]", re.DOTALL)
             res = re.findall(pattern2, text)
             if len(res) == 1:
                 text = res[0][1]
@@ -987,25 +987,6 @@ class CustomOpenAI(BaseCustomModel):
         if self.model_config.get("completions_api", False):
             logger.info(f"Model {self.name()} supports completion API.")
 
-    def _openai_to_langchain_toolcall(self, openai_tool_call):
-        """Convert an OpenAI-style tool call to a LangChain ToolCall."""
-        if "function" not in openai_tool_call:
-            raise ValueError("Expected 'function' key in OpenAI tool call")
-
-        fn = openai_tool_call["function"]
-        args = fn.get("arguments", "{}")
-        if isinstance(args, str):
-            try:
-                args = json.loads(args)
-            except json.JSONDecodeError:
-                args = {"raw_arguments": args}
-
-        return ToolCall(
-            id=openai_tool_call.get("id"),
-            name=fn.get("name"),
-            args=args,
-        )
-
     async def _generate_native_structured_output(
         self,
         input: ChatPromptValue,
@@ -1141,9 +1122,11 @@ class CustomOpenAI(BaseCustomModel):
                 resp_text = completion.choices[0].model_dump()["message"]["content"]
                 tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
                 # Convert to Langchain ToolCall
-                tool_calls = (
-                    [self._openai_to_langchain_toolcall(tc) for tc in tool_calls] if tool_calls else []
-                )
+                # tool_calls = (
+                #     [tool_utils.convert_openai_to_langchain_toolcall(tc) for tc in tool_calls]
+                #     if tool_calls
+                #     else []
+                # )
         except openai.RateLimitError as e:
             logger.warn(f"AzureOpenAI api request exceeded rate limit: {e}")
             resp_text = f"{constants.ERROR_PREFIX} Http request failed {e}"

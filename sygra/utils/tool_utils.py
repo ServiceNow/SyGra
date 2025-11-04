@@ -1,8 +1,10 @@
 import importlib
+import json
 from abc import ABC, abstractmethod
 from inspect import getmembers, isclass
 from typing import List
 
+from langchain_core.messages import ToolCall
 from langchain_core.tools import BaseTool
 
 from sygra.logger.logger_config import logger
@@ -143,3 +145,23 @@ def _extract_tools_from_class(cls) -> List[BaseTool]:
             tools.append(obj)
 
     return tools
+
+
+def convert_openai_to_langchain_toolcall(openai_tool_call: dict) -> ToolCall:
+    """Convert an OpenAI-style tool call to a LangChain ToolCall."""
+    if "function" not in openai_tool_call:
+        raise ValueError("Expected 'function' key in OpenAI tool call")
+
+    fn = openai_tool_call["function"]
+    args = fn.get("arguments", "{}")
+    if isinstance(args, str):
+        try:
+            args = json.loads(args)
+        except json.JSONDecodeError:
+            args = {"raw_arguments": args}
+
+    return ToolCall(
+        id=openai_tool_call.get("id"),
+        name=fn.get("name"),
+        args=args,
+    )

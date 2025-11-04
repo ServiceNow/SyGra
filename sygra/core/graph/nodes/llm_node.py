@@ -1,14 +1,15 @@
 from inspect import isclass
 from typing import Any
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_openai.chat_models.base import _convert_message_to_dict
 
 from sygra.core.graph.nodes.base_node import BaseNode
 from sygra.core.graph.sygra_message import SygraMessage
 from sygra.core.models.model_response import ModelResponse
 from sygra.logger.logger_config import logger
-from sygra.utils import constants, utils
+from sygra.utils import constants, utils, tool_utils
 from sygra.utils.audio_utils import expand_audio_item
 from sygra.utils.image_utils import expand_image_item
 
@@ -47,6 +48,7 @@ class LLMNode(BaseNode):
             "user": HumanMessage,
             "assistant": AIMessage,
             "system": SystemMessage,
+            "tool": ToolMessage,
         }
 
         self.pre_process = self._default_llm_pre_process
@@ -60,7 +62,7 @@ class LLMNode(BaseNode):
         self._initialize_model()
 
         self.task_name = utils.current_task
-        self.graph_properties = getattr(utils, "_current_graph_properties", {})
+        self.graph_properties = utils.get_graph_properties(self.task_name)
 
         # Currently we support direct passing of tools which have decorator @tool and of type Langgraph's BaseTool Class.
         tool_paths = self.node_config.get("tools", [])
@@ -110,20 +112,68 @@ class LLMNode(BaseNode):
         updated_msg_list = []
         chat_history = state.get(constants.VAR_CHAT_HISTORY, [])
 
-        # Only keep the last `window_size` turns
-        recent_history = chat_history[-window_size:]
+        # Only keep the last `window_size` turns, make sure to start from user turn in injected chat
+        if len(chat_history) > window_size:
+            trimmed_history = chat_history[-window_size:]
+            start_index = 0
+            for ch in trimmed_history:
+                if 'role' in ch:
+                    if ch['role'] == "user":
+                        break
+                start_index = start_index + 1
+            recent_history = trimmed_history[start_index:]
+        else:
+            recent_history = chat_history
 
         for entry in recent_history:
-            user_msg_content = entry[constants.KEY_REQUEST][-1]["content"]
-            assistant_msg_content = entry[constants.KEY_RESPONSE]
+            if 'role' in entry:
+                if entry['role'] == 'user':
+                    user_message = HumanMessage(content=entry['content'])
+                    updated_msg_list.append(user_message)
+                elif entry['role'] == 'assistant':
+                    tool_calls = []
+                    tool_calls_data = entry.get('tool_calls', {})
+                    # convert into aimessage format
+                    if isinstance(tool_calls_data, dict):
+                        tool_calls.append(tool_utils.convert_openai_to_langchain_toolcall(tool_calls_data))
+                    elif isinstance(tool_calls_data, list):
+                        for tc_entry in tool_calls_data:
+                            tool_calls.append(tool_utils.convert_openai_to_langchain_toolcall(tc_entry))
 
-            user_message = HumanMessage(content=user_msg_content)
-            assistant_message = AIMessage(content=assistant_msg_content)
+                    assistant_message = AIMessage(content=entry['content'], tool_calls=tool_calls)
+                    updated_msg_list.append(assistant_message)
+                elif entry['role'] == 'tool':
+                    content = str(entry['content'])
+                    extracted_status = "success" if "success" in content else "error"
+                    tool_message = ToolMessage(content=content, tool_call_id=entry["tool_call_id"],
+                                               status=extracted_status)
+                    updated_msg_list.append(tool_message)
+            else:
+                logger.debug(f"Invalid role in chat history {entry}")
 
-            updated_msg_list.extend([user_message, assistant_message])
+        cur_ind = -1
+        system_message = None
+        remaining_messages = []
+        for msg in msg_list:
+            cur_ind += 1
+            if isinstance(msg, SystemMessage):
+                system_message = msg
+            else:
+                remaining_messages.append(msg)
 
         # Append the incoming messages to the end
-        updated_msg_list.extend(msg_list)
+        if system_message:
+            injected_msg_lis = updated_msg_list
+            updated_msg_list = []
+            # first system message
+            updated_msg_list.append(system_message)
+            # injected history should be in the middle
+            updated_msg_list.extend(injected_msg_lis)
+            # remaining message should be appended later
+            updated_msg_list.extend(remaining_messages)
+        else:
+            updated_msg_list.extend(msg_list)
+
         return updated_msg_list
 
     def _inject_history_singleturn(self, state: dict[str, Any], msg_list, window_size: int = 5):
@@ -194,6 +244,7 @@ class LLMNode(BaseNode):
             message["content"] = expanded_contents
 
         messages = utils.convert_messages_from_chat_format_to_langchain(chat_frmt_messages)
+        # messages = [_convert_dict_to_message(chat_frmt_message) for chat_frmt_message in chat_frmt_messages]
         prompt = ChatPromptTemplate.from_messages(
             [*messages, MessagesPlaceholder(variable_name=self.input_key)],
         )
@@ -223,7 +274,10 @@ class LLMNode(BaseNode):
         prompt = self._inject_history(state, prompt)
 
         # convert the request into chat format to store for multi turn
-        request_msgs = graph_factory.convert_to_chat_format(prompt.to_messages())
+
+        # request_msgs = graph_factory.convert_to_chat_format(prompt.to_messages())
+        prompt_messages = prompt.to_messages()
+        request_msgs = [_convert_message_to_dict(msg) for msg in prompt_messages]
         # now call the llm server
         # Attach tools and tool_choice if tool_calls_enabled
         kwargs = (
@@ -239,9 +293,9 @@ class LLMNode(BaseNode):
         # Inject tool_calls to Sygra State
         if self.tool_calls_enabled:
             ai_message = (
-                AIMessage(response.llm_response, tool_calls=response.tool_calls)
+                AIMessage(response.llm_response)
                 if response.llm_response
-                else AIMessage("", tool_calls=response.tool_calls)
+                else AIMessage("")
             )
             state["tool_calls"] = response.tool_calls if response.tool_calls else []
         # Call post-processor with best effort: try (resp, state) then fallback to (resp)
