@@ -364,7 +364,7 @@ class BaseCustomModel(ABC):
 
     @abstractmethod
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         pass
 
@@ -604,6 +604,13 @@ class BaseCustomModel(ABC):
                 return int(status_code)
         except Exception:
             return None
+    def _update_generation_params_with_tool_config(self, **kwargs):
+        if kwargs.get("tools"):
+            tools = kwargs.get("tools", [])
+            formatted_tools = [convert_to_openai_tool(tool, strict=True) for tool in tools]
+            self.generation_params.update({"tools": formatted_tools})
+        if kwargs.get("tool_choice"):
+            self.generation_params.update({"tool_choice": kwargs.get("tool_choice")})
 
 
 class CustomTGI(BaseCustomModel):
@@ -931,10 +938,11 @@ class CustomVLLM(BaseCustomModel):
             )
 
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         ret_code = 200
         model_url = model_params.url
+        tool_calls = None
         try:
             # create vllm client for every request otherwise it starts failing set header to close connection
             # otherwise spurious event loop errors show up -
@@ -947,6 +955,7 @@ class CustomVLLM(BaseCustomModel):
                 payload = self._client.build_request(formatted_prompt=formatted_prompt)
             else:
                 payload = self._client.build_request(messages=input.messages)
+            self._update_generation_params_with_tool_config(**kwargs)
             completion = await self._client.send_request(
                 payload, self.model_serving_name, self.generation_params
             )
@@ -954,6 +963,7 @@ class CustomVLLM(BaseCustomModel):
                 resp_text = completion.choices[0].model_dump()["text"].strip()
             else:
                 resp_text = completion.choices[0].model_dump()["message"]["content"].strip()
+                tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
             # TODO: Test rate limit handling for vllm
         except openai.RateLimitError as e:
             logger.warn(f"vLLM api request exceeded rate limit: {e}")
@@ -971,7 +981,7 @@ class CustomVLLM(BaseCustomModel):
             else:
                 # for other cases, return 999, dont retry
                 ret_code = 999
-        return ModelResponse(llm_response=resp_text, response_code=ret_code)
+        return ModelResponse(llm_response=resp_text, response_code=ret_code, tool_calls=tool_calls)
 
 
 class CustomOpenAI(BaseCustomModel):
@@ -1107,12 +1117,7 @@ class CustomOpenAI(BaseCustomModel):
                 payload = self._client.build_request(formatted_prompt=formatted_prompt)
             else:
                 payload = self._client.build_request(messages=input.messages)
-            if kwargs.get("tools"):
-                tools = kwargs.get("tools", [])
-                formatted_tools = [convert_to_openai_tool(tool, strict=True) for tool in tools]
-                self.generation_params.update({"tools": formatted_tools})
-            if kwargs.get("tool_choice"):
-                self.generation_params.update({"tool_choice": kwargs.get("tool_choice")})
+            self._update_generation_params_with_tool_config(**kwargs)
             completion = await self._client.send_request(
                 payload, str(self.model_config.get("model")), self.generation_params
             )
