@@ -14,6 +14,7 @@ from sygra.core.graph.graph_config import GraphConfig
 from sygra.core.resumable_execution import ResumableExecutionManager
 from sygra.data_mapper.mapper import DataMapper
 from sygra.logger.logger_config import logger
+from sygra.metadata.metadata_collector import get_metadata_collector
 from sygra.utils import constants, graph_utils, multimodal_processor, utils
 from sygra.validators.schema_validator_base import SchemaValidator
 
@@ -199,6 +200,10 @@ class DatasetProcessor:
         # Check if execution had an error - don't mark as processed if it did
         if self.is_error_code_in_output(output):
             self.failed_records += 1
+            # Record failed record in metadata collector
+            collector = get_metadata_collector()
+            collector.record_processed_record(success=False)
+
             # For resumable execution, remove from in-process but don't mark as processed
             if self.resumable and self.resume_manager:
                 logger.warning(
@@ -237,6 +242,10 @@ class DatasetProcessor:
         # Add result to batch
         self.graph_results.append(output)
         self.num_records_processed += 1
+
+        # Record successful record in metadata collector
+        collector = get_metadata_collector()
+        collector.record_processed_record(success=True)
 
         # all the code below should refer total_records_with_error(not self.num_records_processed)
         total_records_with_error = self.num_records_processed + self.failed_records

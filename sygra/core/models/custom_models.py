@@ -10,16 +10,7 @@ import re
 import sys
 import time
 from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    DefaultDict,
-    Dict,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    cast,
-)
+from typing import Any, DefaultDict, Dict, Optional, Sequence, Tuple, Type, cast
 
 import openai
 from langchain_core.messages import AIMessage, BaseMessage
@@ -40,10 +31,9 @@ from sygra.core.models.client.base_client import BaseClient
 from sygra.core.models.client.client_factory import ClientFactory
 from sygra.core.models.client.http_client import HttpClient
 from sygra.core.models.client.openai_client import OpenAIClient
-from sygra.core.models.structured_output.structured_output_config import (
-    StructuredOutputConfig,
-)
+from sygra.core.models.structured_output.structured_output_config import StructuredOutputConfig
 from sygra.logger.logger_config import logger
+from sygra.metadata.metadata_integration import track_model_request
 from sygra.utils import utils
 
 
@@ -58,6 +48,8 @@ class BaseCustomModel(ABC):
         utils.validate_required_keys(["name", "parameters"], model_config, "model")
         self.model_config = model_config
         self._structured_output_lock: Optional[asyncio.Lock] = None
+        # Store last request token usage for metadata collection
+        self._last_request_usage: Optional[dict[str, int]] = None
 
         # Initialize structured output configuration
         structured_output_raw = model_config.get("structured_output")
@@ -111,6 +103,19 @@ class BaseCustomModel(ABC):
                 f"Model {self.name()} does not support completion API. "
                 f"Please set completions_api to False or remove completions_api from {self.name()} config in models.yaml"
             )
+
+    def _extract_token_usage(self, response: Any) -> None:
+        """
+        Extract and store token usage from API response for metadata collection.
+        """
+        if hasattr(response, "usage") and response.usage:
+            usage_dict = {
+                "prompt_tokens": getattr(response.usage, "prompt_tokens", 0),
+                "completion_tokens": getattr(response.usage, "completion_tokens", 0),
+                "total_tokens": getattr(response.usage, "total_tokens", 0),
+            }
+
+            self._last_request_usage = usage_dict
 
     def _set_chat_template(self):
         """
@@ -262,6 +267,14 @@ class BaseCustomModel(ABC):
     def name(self) -> str:
         return cast(str, self.model_config["name"])
 
+    def model_type(self) -> str:
+        """Return the model type based on the class name."""
+        class_name = self.__class__.__name__
+        # Remove 'Custom' prefix if present
+        if class_name.startswith("Custom"):
+            return class_name[6:]  # Remove 'Custom' prefix
+        return class_name
+
     def _get_model_params(self) -> ModelParams:
         url = self.model_config.get("url", "")
         auth_token = self.model_config.get("auth_token", "")
@@ -365,12 +378,13 @@ class BaseCustomModel(ABC):
             logger.info(f"[{self.name()}] Model Stats: {temp_model_stats}")
 
     @abstractmethod
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
         pass
 
-    def _ping_model(self, url, auth_token) -> int:
+    def _ping_model(self, url: str, auth_token: str) -> int:
         """
         Ping a single model
         Args:
@@ -382,7 +396,7 @@ class BaseCustomModel(ABC):
         # build parameters
         model_param = ModelParams(url=url, auth_token=auth_token)
         _, status = asyncio.run(self._generate_response(msg, model_param))
-        return status
+        return int(status)
 
     def ping(self) -> int:
         """
@@ -394,13 +408,13 @@ class BaseCustomModel(ABC):
         if isinstance(url_obj, list):
             for i, url in enumerate(url_obj):
                 token = auth_token[i] if isinstance(auth_token, list) else auth_token
-                status = self._ping_model(url=url, auth_token=token)
+                status = self._ping_model(url=str(url), auth_token=str(token))
                 if status != 200:
                     logger.error(f"Server({url}) responded with {status}")
                     return status
             return 200
         else:
-            return self._ping_model(url=self.model_config.get("url"), auth_token=auth_token)
+            return self._ping_model(url=str(url_obj), auth_token=str(auth_token))
 
     def get_chat_formatted_text(
         self, chat_format_object: Sequence[BaseMessage], **chat_template_params
@@ -469,6 +483,7 @@ class BaseCustomModel(ABC):
         Centralized retry method that delegates to either regular text generation
         or structured output handling based on the flag.
         """
+        result: Tuple[str, int] = (f"{constants.ERROR_PREFIX} All retry attempts failed", 999)
         try:
             async for attempt in AsyncRetrying(
                 retry=retry_if_result(self._is_retryable_error),
@@ -513,6 +528,8 @@ class BaseCustomModel(ABC):
                     attempt.retry_state.set_result(result)
         except RetryError:
             logger.error(f"[{self.name()}] Request failed after {self.retry_attempts} attempts")
+            # Return a default error response if all retries failed
+            result = (f"{constants.ERROR_PREFIX} All retry attempts failed", 999)
         return result
 
     async def _generate_response_with_retry(
@@ -695,6 +712,44 @@ class CustomTGI(BaseCustomModel):
                 input, model_params, pydantic_model, **kwargs
             )
 
+    def _extract_tgi_token_usage(self, response_data: dict) -> None:
+        """
+        Extract token usage from TGI response details.
+
+        TGI returns token statistics in the 'details' field when details=true:
+        - details.generated_tokens: completion tokens
+        - len(details.prefill): prompt tokens (if available)
+
+        Args:
+            response_data: Parsed JSON response from TGI
+        """
+        if "details" in response_data and response_data["details"]:
+            details = response_data["details"]
+
+            # Get completion tokens
+            completion_tokens = details.get("generated_tokens", 0)
+
+            # Get prompt tokens from prefill length
+            prompt_tokens = 0
+            if "prefill" in details and details["prefill"]:
+                prompt_tokens = len(details["prefill"])
+
+            # Calculate total
+            total_tokens = prompt_tokens + completion_tokens
+
+            # Store in the standard format
+            self._last_request_usage = {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": total_tokens,
+            }
+
+            logger.debug(
+                f"[{self.name()}] Extracted token usage from TGI: "
+                f"prompt={prompt_tokens}, completion={completion_tokens}, total={total_tokens}"
+            )
+
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
@@ -709,10 +764,16 @@ class CustomTGI(BaseCustomModel):
                 )
             }
             payload = client.build_request_with_payload(payload=payload)
+
+            # Merge generation params with details=true for token statistics
+            generation_params = {**(self.generation_params or {})}
+            if "parameters" not in generation_params:
+                generation_params["parameters"] = {}
+            # Enable details to get token statistics
+            generation_params["parameters"]["details"] = True
+
             # Send Request
-            resp = await client.async_send_request(
-                payload, generation_params=self.generation_params
-            )
+            resp = await client.async_send_request(payload, generation_params=generation_params)
 
             resp_text = resp.text
             if resp.status_code != 200:
@@ -727,7 +788,14 @@ class CustomTGI(BaseCustomModel):
                     # server down
                     resp.status = 503
             else:
-                resp_text = json.loads(resp_text)["generated_text"]
+                # Parse response to extract both text and token statistics
+                response_data = json.loads(resp_text)
+
+                # Extract token usage from details
+                self._extract_tgi_token_usage(response_data)
+
+                # Get generated text
+                resp_text = response_data["generated_text"]
         except Exception as x:
             resp_text = f"{constants.ERROR_PREFIX} Http request failed {x}"
             logger.error(resp_text)
@@ -755,6 +823,7 @@ class CustomAzure(BaseCustomModel):
         else:
             raise ValueError("auth_token must be a string or non-empty list of strings")
 
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
@@ -798,6 +867,7 @@ class CustomMistralAPI(BaseCustomModel):
     def __init__(self, model_config: dict[str, Any]) -> None:
         super().__init__(model_config)
 
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
@@ -814,6 +884,8 @@ class CustomMistralAPI(BaseCustomModel):
                 messages=messages,
                 **self.generation_params,
             )
+
+            self._extract_token_usage(chat_response)
             resp_text = chat_response.choices[0].message.content
         except Exception as x:
             resp_text = f"{constants.ERROR_PREFIX} Http request failed {x}"
@@ -923,6 +995,7 @@ class CustomVLLM(BaseCustomModel):
                 input, model_params, pydantic_model, **kwargs
             )
 
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
@@ -943,6 +1016,9 @@ class CustomVLLM(BaseCustomModel):
             completion = await self._client.send_request(
                 payload, self.model_serving_name, self.generation_params
             )
+
+            self._extract_token_usage(completion)
+
             if self.model_config.get("completions_api", False):
                 resp_text = completion.choices[0].model_dump()["text"].strip()
             else:
@@ -1058,6 +1134,7 @@ class CustomOpenAI(BaseCustomModel):
                 input, model_params, pydantic_model, **kwargs
             )
 
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
@@ -1097,6 +1174,9 @@ class CustomOpenAI(BaseCustomModel):
             completion = await self._client.send_request(
                 payload, str(self.model_config.get("model")), self.generation_params
             )
+
+            self._extract_token_usage(completion)
+
             if self.model_config.get("completions_api", False):
                 resp_text = completion.choices[0].model_dump()["text"].strip()
             else:
@@ -1300,6 +1380,7 @@ class CustomOllama(BaseCustomModel):
                 input, model_params, pydantic_model, **kwargs
             )
 
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:
@@ -1317,6 +1398,18 @@ class CustomOllama(BaseCustomModel):
             completion = await self._client.send_request(
                 payload, self.name(), self.generation_params
             )
+
+            # Extract token usage (Ollama uses different field names)
+            if isinstance(completion, dict) and (
+                "prompt_eval_count" in completion or "eval_count" in completion
+            ):
+                self._last_request_usage = {
+                    "prompt_tokens": completion.get("prompt_eval_count", 0),
+                    "completion_tokens": completion.get("eval_count", 0),
+                    "total_tokens": completion.get("prompt_eval_count", 0)
+                    + completion.get("eval_count", 0),
+                }
+
             if self.model_config.get("completions_api", False):
                 resp_text = completion["response"]
             else:
@@ -1437,6 +1530,7 @@ class CustomTriton(BaseCustomModel):
         self.model_config = model_config
         self.auth_token = str(model_config.get("auth_token")).replace("Bearer ", "")
 
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> Tuple[str, int]:

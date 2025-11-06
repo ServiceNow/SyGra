@@ -1,3 +1,4 @@
+import time
 from inspect import isclass
 from typing import Any
 
@@ -197,53 +198,79 @@ class LLMNode(BaseNode):
         Returns:
             None
         """
-        graph_factory = utils.get_graph_factory(constants.BACKEND)
-        # preprocessor - if it is a class, call apply method
-        state = (
-            self.pre_process().apply(state)
-            if isclass(self.pre_process)
-            else self.pre_process(state)
-        )
-        chat_history_enabled = self.node_config.get("chat_history", False)
-        prompt_tmpl = self._generate_prompt(state)
-        # get the prompt from template
-        prompt = prompt_tmpl.invoke(state)
-        prompt = self._inject_history(state, prompt)
+        start_time = time.time()
+        success = True
+        captured_tokens = {"prompt": 0, "completion": 0, "total": 0}
 
-        # convert the request into chat format to store for multi turn
-        request_msgs = graph_factory.convert_to_chat_format(prompt.to_messages())
-        # now call the llm server
-        response = await self.model.ainvoke(prompt)
-        # wrap the message to pass to the class - new implementation
-        responseMsg = SygraMessage(response)
-
-        # Call post-processor with best effort: try (resp, state) then fallback to (resp)
         try:
-            updated_state = (
-                self.post_process().apply(responseMsg, state)
-                if isclass(self.post_process)
-                else self.post_process(response, state)
+            graph_factory = utils.get_graph_factory(constants.BACKEND)
+            # preprocessor - if it is a class, call apply method
+            state = (
+                self.pre_process().apply(state)
+                if isclass(self.pre_process)
+                else self.pre_process(state)
             )
-        except TypeError:
-            updated_state = (
-                self.post_process().apply(responseMsg)
-                if isclass(self.post_process)
-                else self.post_process(response)  # type: ignore
-            )
+            chat_history_enabled = self.node_config.get("chat_history", False)
+            prompt_tmpl = self._generate_prompt(state)
+            # get the prompt from template
+            prompt = prompt_tmpl.invoke(state)
+            prompt = self._inject_history(state, prompt)
 
-        # Store chat history if enabled for this node
-        if chat_history_enabled:
-            if not updated_state.get(constants.VAR_CHAT_HISTORY):
-                updated_state[constants.VAR_CHAT_HISTORY] = []
-            updated_state[constants.VAR_CHAT_HISTORY].append(
-                {
-                    constants.KEY_NAME: self.name,
-                    constants.KEY_REQUEST: request_msgs,
-                    constants.KEY_RESPONSE: graph_factory.get_message_content(responseMsg),
-                }
-            )
+            # convert the request into chat format to store for multi turn
+            request_msgs = graph_factory.convert_to_chat_format(prompt.to_messages())
+            # now call the llm server
+            response = await self.model.ainvoke(prompt)
 
-        return updated_state
+            # Capture tokens after model call
+            captured_tokens = self._capture_token_usage(self.model)
+
+            # wrap the message to pass to the class - new implementation
+            responseMsg = SygraMessage(response)
+
+            # Check if model call failed by looking for error prefix in response
+            response_content = (
+                str(response.content) if hasattr(response, "content") else str(response)
+            )
+            if constants.ERROR_PREFIX in response_content:
+                success = False
+                logger.warning(
+                    f"[{self.name}] Model request failed (error in response). "
+                    f"Recording as node failure but continuing execution."
+                )
+
+            # Call post-processor with best effort: try (resp, state) then fallback to (resp)
+            try:
+                updated_state = (
+                    self.post_process().apply(responseMsg, state)
+                    if isclass(self.post_process)
+                    else self.post_process(response, state)
+                )
+            except TypeError:
+                updated_state = (
+                    self.post_process().apply(responseMsg)
+                    if isclass(self.post_process)
+                    else self.post_process(response)  # type: ignore
+                )
+
+            # Store chat history if enabled for this node
+            if chat_history_enabled:
+                if not updated_state.get(constants.VAR_CHAT_HISTORY):
+                    updated_state[constants.VAR_CHAT_HISTORY] = []
+                updated_state[constants.VAR_CHAT_HISTORY].append(
+                    {
+                        constants.KEY_NAME: self.name,
+                        constants.KEY_REQUEST: request_msgs,
+                        constants.KEY_RESPONSE: graph_factory.get_message_content(responseMsg),
+                    }
+                )
+
+            return updated_state
+
+        except Exception:
+            success = False
+            raise
+        finally:
+            self._record_execution_metadata(start_time, success, self.model, captured_tokens)
 
     def to_backend(self) -> Any:
         """

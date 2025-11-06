@@ -1,3 +1,4 @@
+import time
 from inspect import isclass, signature
 from typing import Any
 
@@ -6,7 +7,9 @@ from langgraph.prebuilt import create_react_agent
 
 from sygra.core.graph.nodes.llm_node import LLMNode
 from sygra.core.graph.sygra_message import SygraMessage
+from sygra.core.models.model_factory import ModelFactory
 from sygra.logger.logger_config import logger
+from sygra.metadata.langchain_callback import MetadataTrackingCallback
 from sygra.utils import constants, utils
 
 
@@ -39,86 +42,107 @@ class AgentNode(LLMNode):
         configuration from the node configuration.
         """
 
-        from sygra.core.models.model_factory import ModelFactory
-
         self.model = ModelFactory.create_model(self.node_config["model"], constants.BACKEND)
 
     async def _exec_wrapper(self, state: dict[str, Any]) -> dict[str, Any]:
-        graph_factory = utils.get_graph_factory(constants.BACKEND)
 
-        # Pre-processing
-        state = (
-            self.pre_process().apply(state)
-            if isclass(self.pre_process)
-            else self.pre_process(state)
-        )
-        chat_history_enabled = self.node_config.get("chat_history", False)
+        start_time = time.time()
+        success = True
+        # Capture tokens immediately after model call to avoid race conditions
+        captured_tokens = {"prompt": 0, "completion": 0, "total": 0}
 
-        # Generate and inject prompt
-        prompt_tmpl = self._generate_prompt(state)
-        prompt = prompt_tmpl.invoke(state)
-        prompt = self._inject_history(state, prompt)
+        try:
+            graph_factory = utils.get_graph_factory(constants.BACKEND)
 
-        request_msgs = graph_factory.convert_to_chat_format(prompt.to_messages())
-        chat_history = state.get(constants.VAR_CHAT_HISTORY, [])
-        logger.info(f"Chat history length: {len(chat_history)} at {self.name}")
+            # Pre-processing
+            state = (
+                self.pre_process().apply(state)
+                if isclass(self.pre_process)
+                else self.pre_process(state)
+            )
+            chat_history_enabled = self.node_config.get("chat_history", False)
 
-        # Construct system prompt
-        full_agent_prompt = self._compose_agent_prompt(state, prompt)
+            # Generate and inject prompt
+            prompt_tmpl = self._generate_prompt(state)
+            prompt = prompt_tmpl.invoke(state)
+            prompt = self._inject_history(state, prompt)
 
-        # Create the ReAct agent
-        agent = create_react_agent(
-            model=self.model,
-            tools=self.tools,
-            prompt=full_agent_prompt,
-            name=state.get("_agent_name"),
-        )
+            request_msgs = graph_factory.convert_to_chat_format(prompt.to_messages())
+            chat_history = state.get(constants.VAR_CHAT_HISTORY, [])
+            logger.info(f"Chat history length: {len(chat_history)} at {self.name}")
 
-        # Remove redundant system message at the beginning
-        if isinstance(prompt.messages[0], SystemMessage):
-            prompt.messages = prompt.messages[1:]
+            # Construct system prompt
+            full_agent_prompt = self._compose_agent_prompt(state, prompt)
 
-        # Run the agent
-        response = await agent.ainvoke({"messages": prompt.to_messages()})
-        ai_response = None
-        # pick the last AIMessage
-        for m in response["messages"]:
-            if isinstance(m, AIMessage):
-                ai_response = m
-        responseMsg = SygraMessage(ai_response)
+            callback = MetadataTrackingCallback(
+                model_name=self._get_model_name(self.model) or "unknown"
+            )
 
-        # Post-processing
-        post_process_sig = (
-            signature(self.post_process().apply)
-            if isclass(self.post_process)
-            else signature(self.post_process)
-        )
-        if len(post_process_sig.parameters) == 1:
-            updated_state = (
-                self.post_process().apply(responseMsg)
+            # Create the ReAct agent
+            agent = create_react_agent(
+                model=self.model,
+                tools=self.tools,
+                prompt=full_agent_prompt,
+                name=state.get("_agent_name"),
+            )
+
+            # Remove redundant system message at the beginning
+            if isinstance(prompt.messages[0], SystemMessage):
+                prompt.messages = prompt.messages[1:]
+
+            # Run the agent with callback to track LLM calls
+            response = await agent.ainvoke(
+                {"messages": prompt.to_messages()}, config={"callbacks": [callback]}  # type: ignore
+            )
+
+            # Capture tokens after agent execution
+            captured_tokens = self._capture_token_usage(self.model)
+
+            ai_response = None
+            # pick the last AIMessage
+            for m in response["messages"]:
+                if isinstance(m, AIMessage):
+                    ai_response = m
+            responseMsg = SygraMessage(ai_response)
+
+            # Post-processing
+            post_process_sig = (
+                signature(self.post_process().apply)
                 if isclass(self.post_process)
-                else self.post_process(ai_response)  # type: ignore
+                else signature(self.post_process)
             )
-        else:
-            updated_state = (
-                self.post_process().apply(responseMsg, state)
-                if isclass(self.post_process)
-                else self.post_process(ai_response, state)  # type: ignore
-            )
+            if len(post_process_sig.parameters) == 1:
+                updated_state = (
+                    self.post_process().apply(responseMsg)
+                    if isclass(self.post_process)
+                    else self.post_process(ai_response)  # type: ignore
+                )
+            else:
+                updated_state = (
+                    self.post_process().apply(responseMsg, state)
+                    if isclass(self.post_process)
+                    else self.post_process(ai_response, state)  # type: ignore
+                )
 
-        # Store chat history
-        if chat_history_enabled:
-            if not updated_state.get(constants.VAR_CHAT_HISTORY):
-                updated_state[constants.VAR_CHAT_HISTORY] = []
-            updated_state[constants.VAR_CHAT_HISTORY].append(
-                {
-                    constants.KEY_NAME: self.name,
-                    constants.KEY_REQUEST: request_msgs,
-                    constants.KEY_RESPONSE: graph_factory.get_message_content(responseMsg),
-                }
-            )
+            # Store chat history
+            if chat_history_enabled:
+                if not updated_state.get(constants.VAR_CHAT_HISTORY):
+                    updated_state[constants.VAR_CHAT_HISTORY] = []
+                updated_state[constants.VAR_CHAT_HISTORY].append(
+                    {
+                        constants.KEY_NAME: self.name,
+                        constants.KEY_REQUEST: request_msgs,
+                        constants.KEY_RESPONSE: graph_factory.get_message_content(responseMsg),
+                    }
+                )
 
-        return updated_state
+            return updated_state
+
+        except Exception:
+            success = False
+            raise
+        finally:
+            self._record_execution_metadata(start_time, success, self.model, captured_tokens)
 
     def _compose_agent_prompt(self, state: dict[str, Any], prompt) -> str:
         """

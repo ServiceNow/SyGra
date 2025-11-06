@@ -301,6 +301,7 @@ def get_model_info(model_name: str) -> dict[str, Any]:
 
 # Main exports
 __all__ = [
+    "__version__",
     # Main classes
     "Workflow",
     "create_graph",

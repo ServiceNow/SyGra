@@ -1,3 +1,4 @@
+import time
 from inspect import isclass
 from typing import Any
 
@@ -43,6 +44,35 @@ class MultiLLMNode(BaseNode):
         for model, messages in model_outputs.items():
             updated_model_outputs[model] = messages[self.output_key]
         return {self.output_key: [updated_model_outputs]}
+
+    async def _exec_wrapper(self, state: dict[str, Any]) -> dict[str, Any]:
+        """
+        Wrapper to track multi-llm node execution.
+
+        Args:
+            state: State of the node.
+
+        Returns:
+            Updated state
+        """
+
+        start_time = time.time()
+        success = True
+
+        try:
+            # Execute all LLM nodes (they will track themselves)
+            model_outputs = {}
+            for model_label, llm_node in self.llm_dict.items():
+                model_outputs[model_label] = await llm_node._exec_wrapper(state)
+
+            # Apply post-processing
+            result = self.multi_llm_post_process(model_outputs)
+            return result
+        except Exception:
+            success = False
+            raise
+        finally:
+            self._record_execution_metadata(start_time, success)
 
     def to_backend(self) -> Any:
         """
