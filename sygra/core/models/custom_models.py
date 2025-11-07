@@ -21,7 +21,7 @@ from typing import (
 )
 
 import openai
-from langchain_core.messages import BaseMessage, ToolCall
+from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.utils.function_calling import convert_to_openai_tool
@@ -250,7 +250,7 @@ class BaseCustomModel(ABC):
             parsed_output = parser.parse(model_response.llm_response)
             logger.info(f"[{self.name()}] Structured output parsed successfully")
             # Return the validated JSON string
-            return ModelResponse(llm_response=parsed_output.model_dump_json(), response_code=200)
+            return ModelResponse(llm_response=parsed_output.model_dump_json(), response_code=200, tool_calls=model_response.tool_calls)
         except Exception as e:
             logger.warning(f"[{self.name()}] Failed to parse structured output: {e}")
             logger.error(f"[{self.name()}] Returning unparsed response")
@@ -376,7 +376,8 @@ class BaseCustomModel(ABC):
             auth_token: auth token for the url
         """
         # hello message
-        msg = utils.backend_factory.get_test_message()
+        is_multi_modal = self.model_config.get("multi_modal", True)
+        msg = utils.backend_factory.get_test_message(is_multi_modal=is_multi_modal)
         # build parameters
         model_param = ModelParams(url=url, auth_token=auth_token)
         model_response: ModelResponse = asyncio.run(self._generate_response(msg, model_param))
@@ -604,13 +605,13 @@ class BaseCustomModel(ABC):
                 return int(status_code)
         except Exception:
             return None
-    def _update_generation_params_with_tool_config(self, **kwargs):
+
+    def _convert_tools_to_model_format(self, **kwargs):
+        formatted_tools = []
         if kwargs.get("tools"):
             tools = kwargs.get("tools", [])
             formatted_tools = [convert_to_openai_tool(tool, strict=True) for tool in tools]
-            self.generation_params.update({"tools": formatted_tools})
-        if kwargs.get("tool_choice"):
-            self.generation_params.update({"tool_choice": kwargs.get("tool_choice")})
+        return formatted_tools
 
 
 class CustomTGI(BaseCustomModel):
@@ -870,6 +871,7 @@ class CustomVLLM(BaseCustomModel):
         try:
             self._set_client(model_url, model_params.auth_token)
             client = cast(OpenAIClient, self._client)
+            tool_calls = []
 
             # Create JSON schema for guided generation
             json_schema = pydantic_model.model_json_schema()
@@ -882,6 +884,12 @@ class CustomVLLM(BaseCustomModel):
                 payload = client.build_request(formatted_prompt=formatted_prompt)
             else:
                 payload = client.build_request(messages=input.messages)
+
+            # Convert to model format tools
+            formatted_tools = self._convert_tools_to_model_format(**kwargs)
+            if formatted_tools:
+                self.generation_params.update(
+                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")})
 
             # Use vLLM's native guided generation
             extra_params = {**(self.generation_params or {}), "guided_json": json_schema}
@@ -904,10 +912,10 @@ class CustomVLLM(BaseCustomModel):
 
             # Extract response text based on API type
             if self.model_config.get("completions_api", False):
-                resp_text = completion.choices[0].model_dump()["text"].strip()
+                resp_text = completion.choices[0].model_dump()["text"]
             else:
-                resp_text = completion.choices[0].model_dump()["message"]["content"].strip()
-
+                resp_text = completion.choices[0].model_dump()["message"]["content"]
+                tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
             logger.info(f"[{self.name()}][{model_url}] RESPONSE: Native support call successful")
             logger.debug(f"[{self.name()}] Native structured output response: {resp_text}")
 
@@ -919,7 +927,7 @@ class CustomVLLM(BaseCustomModel):
                 # Return JSON string representation
                 logger.info(f"[{self.name()}] Native structured output generation succeeded")
                 return ModelResponse(
-                    llm_response=json.dumps(parsed_data), response_code=resp_status
+                    llm_response=json.dumps(parsed_data), response_code=resp_status, tool_calls=tool_calls
                 )
             except (json.JSONDecodeError, ValidationError) as e:
                 logger.error(f"[{self.name()}] Native structured output validation failed: {e}")
@@ -955,14 +963,20 @@ class CustomVLLM(BaseCustomModel):
                 payload = self._client.build_request(formatted_prompt=formatted_prompt)
             else:
                 payload = self._client.build_request(messages=input.messages)
-            self._update_generation_params_with_tool_config(**kwargs)
+
+            # Convert to model format tools
+            formatted_tools = self._convert_tools_to_model_format(**kwargs)
+            if formatted_tools:
+                self.generation_params.update(
+                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")})
+
             completion = await self._client.send_request(
                 payload, self.model_serving_name, self.generation_params
             )
             if self.model_config.get("completions_api", False):
-                resp_text = completion.choices[0].model_dump()["text"].strip()
+                resp_text = completion.choices[0].model_dump()["text"]
             else:
-                resp_text = completion.choices[0].model_dump()["message"]["content"].strip()
+                resp_text = completion.choices[0].model_dump()["message"]["content"]
                 tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
             # TODO: Test rate limit handling for vllm
         except openai.RateLimitError as e:
@@ -1019,6 +1033,12 @@ class CustomOpenAI(BaseCustomModel):
             else:
                 payload = self._client.build_request(messages=input.messages)
 
+            # Convert to model format tools
+            formatted_tools = self._convert_tools_to_model_format(**kwargs)
+            if formatted_tools:
+                self.generation_params.update(
+                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")})
+
             # Add pydantic_model to generation params
             all_params = {
                 **(self.generation_params or {}),
@@ -1045,13 +1065,14 @@ class CustomOpenAI(BaseCustomModel):
             # Extract response text based on API type
             if self.model_config.get("completions_api", False):
                 model_response: ModelResponse = ModelResponse(
-                    llm_response=completion.choices[0].model_dump()["text"].strip(),
+                    llm_response=completion.choices[0].model_dump()["text"],
                     response_code=resp_status,
                 )
             else:
                 model_response = ModelResponse(
-                    llm_response=completion.choices[0].model_dump()["message"]["content"].strip(),
+                    llm_response=completion.choices[0].model_dump()["message"]["content"],
                     response_code=resp_status,
+                    tool_calls=completion.choices[0].model_dump()["message"]["tool_calls"]
                 )
             logger.info(f"[{self.name()}][{model_url}] RESPONSE: Native support call successful")
             logger.debug(
@@ -1117,7 +1138,13 @@ class CustomOpenAI(BaseCustomModel):
                 payload = self._client.build_request(formatted_prompt=formatted_prompt)
             else:
                 payload = self._client.build_request(messages=input.messages)
-            self._update_generation_params_with_tool_config(**kwargs)
+
+            # Convert to model format tools
+            formatted_tools = self._convert_tools_to_model_format(**kwargs)
+            if formatted_tools:
+                self.generation_params.update(
+                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")})
+
             completion = await self._client.send_request(
                 payload, str(self.model_config.get("model")), self.generation_params
             )
@@ -1126,12 +1153,6 @@ class CustomOpenAI(BaseCustomModel):
             else:
                 resp_text = completion.choices[0].model_dump()["message"]["content"]
                 tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
-                # Convert to Langchain ToolCall
-                # tool_calls = (
-                #     [tool_utils.convert_openai_to_langchain_toolcall(tc) for tc in tool_calls]
-                #     if tool_calls
-                #     else []
-                # )
         except openai.RateLimitError as e:
             logger.warn(f"AzureOpenAI api request exceeded rate limit: {e}")
             resp_text = f"{constants.ERROR_PREFIX} Http request failed {e}"
