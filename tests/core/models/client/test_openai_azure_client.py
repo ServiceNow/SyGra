@@ -1,8 +1,9 @@
+import asyncio
 import json
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent.parent))
@@ -475,6 +476,185 @@ class TestOpenaiAzureClient(unittest.TestCase):
             messages=payload["messages"],
             response_format=SampleStructuredOutput,
         )
+
+    # ===== Image API Tests =====
+
+    @patch("sygra.core.models.client.openai_azure_client.AsyncAzureOpenAI")
+    def test_create_image_async(self, mock_async_azure_openai):
+        """Test create_image with async client"""
+        # Setup mock
+        mock_image_response = MagicMock()
+        mock_async_azure_openai.return_value = MagicMock()
+        mock_async_azure_openai.return_value.images.generate = AsyncMock(
+            return_value=mock_image_response
+        )
+
+        # Create client
+        client = OpenAIAzureClient(async_client=True, **self.valid_config)
+
+        # Call create_image (await since it's async)
+        result = asyncio.run(
+            client.create_image(
+                model="dall-e-3",
+                prompt="A serene mountain landscape",
+                size="1024x1024",
+                quality="hd",
+                n=1,
+            )
+        )
+
+        # Verify the call was made with correct parameters
+        mock_async_azure_openai.return_value.images.generate.assert_called_once_with(
+            model="dall-e-3",
+            prompt="A serene mountain landscape",
+            size="1024x1024",
+            quality="hd",
+            n=1,
+        )
+        self.assertEqual(result, mock_image_response)
+
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
+    def test_create_image_sync_raises_error(self, mock_azure_openai):
+        """Test that create_image raises ValueError with sync client"""
+        mock_azure_openai.return_value = MagicMock()
+
+        # Create sync client
+        client = OpenAIAzureClient(async_client=False, **self.valid_config)
+
+        # Verify ValueError is raised for sync client (need to await to get the error)
+        with self.assertRaises(ValueError) as context:
+            asyncio.run(client.create_image(model="dall-e-3", prompt="A serene mountain landscape"))
+
+        self.assertIn("requires async client", str(context.exception))
+
+    @patch("sygra.core.models.client.openai_azure_client.AsyncAzureOpenAI")
+    def test_edit_image_async_single(self, mock_async_azure_openai):
+        """Test edit_image with async client and single image"""
+        # Setup mock
+        mock_image_response = MagicMock()
+        mock_async_azure_openai.return_value = MagicMock()
+        mock_async_azure_openai.return_value.images.edit = AsyncMock(
+            return_value=mock_image_response
+        )
+
+        # Create client
+        client = OpenAIAzureClient(async_client=True, **self.valid_config)
+
+        # Mock image file
+        mock_image_file = MagicMock()
+
+        # Call edit_image with single image (await since it's async)
+        result = asyncio.run(
+            client.edit_image(
+                image=mock_image_file,
+                prompt="Remove the background",
+                model="dall-e-2",
+                n=1,
+                size="1024x1024",
+            )
+        )
+
+        # Verify the call was made with correct parameters
+        mock_async_azure_openai.return_value.images.edit.assert_called_once_with(
+            image=mock_image_file,
+            prompt="Remove the background",
+            model="dall-e-2",
+            n=1,
+            size="1024x1024",
+        )
+        self.assertEqual(result, mock_image_response)
+
+    @patch("sygra.core.models.client.openai_azure_client.AsyncAzureOpenAI")
+    def test_edit_image_async_multiple(self, mock_async_azure_openai):
+        """Test edit_image with async client and multiple images (GPT-Image-1)"""
+        # Setup mock
+        mock_image_response = MagicMock()
+        mock_async_azure_openai.return_value = MagicMock()
+        mock_async_azure_openai.return_value.images.edit = AsyncMock(
+            return_value=mock_image_response
+        )
+
+        # Create client
+        client = OpenAIAzureClient(async_client=True, **self.valid_config)
+
+        # Mock image files (list for multi-image)
+        mock_image_files = [MagicMock(), MagicMock(), MagicMock()]
+
+        # Call edit_image with multiple images (await since it's async)
+        result = asyncio.run(
+            client.edit_image(
+                image=mock_image_files, prompt="Combine into a collage", model="gpt-image-1", n=2
+            )
+        )
+
+        # Verify the call was made with correct parameters
+        mock_async_azure_openai.return_value.images.edit.assert_called_once_with(
+            image=mock_image_files, prompt="Combine into a collage", model="gpt-image-1", n=2
+        )
+        self.assertEqual(result, mock_image_response)
+
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
+    def test_edit_image_sync_raises_error(self, mock_azure_openai):
+        """Test that edit_image raises ValueError with sync client"""
+        mock_azure_openai.return_value = MagicMock()
+
+        # Create sync client
+        client = OpenAIAzureClient(async_client=False, **self.valid_config)
+
+        # Mock image file
+        mock_image_file = MagicMock()
+
+        # Verify ValueError is raised for sync client (need to await to get the error)
+        with self.assertRaises(ValueError) as context:
+            asyncio.run(client.edit_image(image=mock_image_file, prompt="Remove the background"))
+
+        self.assertIn("requires async client", str(context.exception))
+
+    @patch("sygra.core.models.client.openai_azure_client.AsyncAzureOpenAI")
+    def test_create_image_variation_async(self, mock_async_azure_openai):
+        """Test create_image_variation with async client"""
+        # Setup mock
+        mock_image_response = MagicMock()
+        mock_async_azure_openai.return_value = MagicMock()
+        mock_async_azure_openai.return_value.images.create_variation = AsyncMock(
+            return_value=mock_image_response
+        )
+
+        # Create client
+        client = OpenAIAzureClient(async_client=True, **self.valid_config)
+
+        # Mock image file
+        mock_image_file = MagicMock()
+
+        # Call create_image_variation (await since it's async)
+        result = asyncio.run(
+            client.create_image_variation(
+                image=mock_image_file, model="dall-e-2", n=3, size="512x512"
+            )
+        )
+
+        # Verify the call was made with correct parameters
+        mock_async_azure_openai.return_value.images.create_variation.assert_called_once_with(
+            image=mock_image_file, model="dall-e-2", n=3, size="512x512"
+        )
+        self.assertEqual(result, mock_image_response)
+
+    @patch("sygra.core.models.client.openai_azure_client.AzureOpenAI")
+    def test_create_image_variation_sync_raises_error(self, mock_azure_openai):
+        """Test that create_image_variation raises ValueError with sync client"""
+        mock_azure_openai.return_value = MagicMock()
+
+        # Create sync client
+        client = OpenAIAzureClient(async_client=False, **self.valid_config)
+
+        # Mock image file
+        mock_image_file = MagicMock()
+
+        # Verify ValueError is raised for sync client (need to await to get the error)
+        with self.assertRaises(ValueError) as context:
+            asyncio.run(client.create_image_variation(image=mock_image_file))
+
+        self.assertIn("requires async client", str(context.exception))
 
 
 if __name__ == "__main__":

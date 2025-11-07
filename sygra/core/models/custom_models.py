@@ -1117,9 +1117,12 @@ class CustomOpenAI(BaseCustomModel):
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
-        # Check if this is a TTS request based on output_type
-        if self.model_config.get("output_type") == "audio":
-            return await self._generate_speech(input, model_params, **kwargs)
+        # Check the output type and route to appropriate method
+        output_type = self.model_config.get("output_type")
+        if output_type == "audio":
+            return await self._generate_speech(input, model_params)
+        elif output_type == "image":
+            return await self._generate_image(input, model_params)
         else:
             return await self._generate_text(input, model_params, **kwargs)
 
@@ -1279,6 +1282,272 @@ class CustomOpenAI(BaseCustomModel):
             ret_code = rcode if rcode else 999
 
         return ModelResponse(llm_response=resp_text, response_code=ret_code)
+
+    async def _generate_image(
+        self, input: ChatPromptValue, model_params: ModelParams
+    ) -> Tuple[str, int]:
+        """
+        Generate or edit images using OpenAI/Azure OpenAI Image API.
+        Auto-detects whether to use generation or editing based on input content:
+        - If input contains images: uses edit_image() API (text+image-to-image)
+        - If input is text only: uses create_image() API (text-to-image)
+
+        Args:
+            input: ChatPromptValue containing text prompt and optionally images
+            model_params: Model parameters including URL and auth token
+
+        Returns:
+            Tuple of (response_text, status_code)
+            - On success: returns base64 encoded image(s) as JSON and 200
+            - On error: returns error message and error code
+        """
+        ret_code = 200
+        model_url = model_params.url
+
+        try:
+
+            # Extract text and images from messages
+            prompt_text = ""
+            image_data_urls = []
+
+            for message in input.messages:
+                if hasattr(message, "content"):
+                    if isinstance(message.content, str):
+                        content = message.content
+                        if content.startswith("data:image/"):
+                            image_data_urls.append(content)
+                        else:
+                            prompt_text += content + " "
+                    elif isinstance(message.content, list):
+                        for item in message.content:
+                            if isinstance(item, dict):
+                                if item.get("type") == "text":
+                                    prompt_text += item.get("text", "") + " "
+                                elif item.get("type") == "image_url":
+                                    url = item.get("image_url", "")
+                                    if isinstance(url, dict):
+                                        url = url.get("url", "")
+                                    if url.startswith("data:image/"):
+                                        image_data_urls.append(url)
+
+            prompt_text = prompt_text.strip()
+            if not prompt_text:
+                logger.error(f"[{self.name()}] No prompt provided for image generation")
+                return f"{constants.ERROR_PREFIX} No prompt provided for image generation", 400
+
+            if len(prompt_text) < 1000:
+                pass
+            elif self.model_config.get("model") == "dall-e-2" and len(prompt_text) > 1000:
+                logger.warn(
+                    f"[{self.name()}] Prompt exceeds 1000 character limit: {len(prompt_text)} characters"
+                )
+            elif self.model_config.get("model") == "dall-e-3" and len(prompt_text) > 4000:
+                logger.warn(
+                    f"[{self.name()}] Prompt exceeds 4000 character limit: {len(prompt_text)} characters"
+                )
+            elif self.model_config.get("model") == "gpt-image-1" and len(prompt_text) > 32000:
+                logger.warn(
+                    f"[Model {self.name()}] Prompt exceeds 32000 character limit: {len(prompt_text)} characters"
+                )
+
+            has_images = len(image_data_urls) > 0
+
+            if has_images:
+                # Image editing
+                logger.debug(
+                    f"[{self.name()}] Detected {len(image_data_urls)} image(s) in input, using image edit API"
+                )
+                return await self._edit_image_with_data_urls(
+                    image_data_urls, prompt_text, model_url, model_params
+                )
+            else:
+                # Text-to-image generation
+                logger.debug(
+                    f"[{self.name()}] No input images detected, using text-to-image generation API"
+                )
+                return await self._generate_image_from_text(prompt_text, model_url, model_params)
+
+        except ValueError as e:
+            logger.error(f"[{self.name()}] Invalid image data URL: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Invalid image data: {e}"
+            ret_code = 400
+        except openai.RateLimitError as e:
+            logger.warning(f"[{self.name()}] OpenAI Image API rate limit: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Rate limit exceeded: {e}"
+            ret_code = 429
+        except openai.BadRequestError as e:
+            logger.error(f"[{self.name()}] OpenAI Image API bad request: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Bad request: {e}"
+            ret_code = 400
+        except openai.APIError as e:
+            logger.error(f"[{self.name()}] OpenAI Image API error: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} API error: {e}"
+            ret_code = getattr(e, "status_code", 500)
+        except Exception as x:
+            resp_text = f"{constants.ERROR_PREFIX} Image operation failed: {x}"
+            logger.error(f"[{self.name()}] {resp_text}")
+            rcode = self._get_status_from_body(x)
+            ret_code = rcode if rcode else 999
+
+        return resp_text, ret_code
+
+    async def _generate_image_from_text(
+        self, prompt_text: str, model_url: str, model_params: ModelParams
+    ) -> Tuple[str, int]:
+        """
+        Generate images from text prompts (text-to-image).
+
+        Args:
+            prompt_text: Text prompt for image generation
+            model_url: Model URL
+            model_params: Model parameters
+
+        Returns:
+            Tuple of (response_text, status_code)
+        """
+        self._set_client(model_url, model_params.auth_token)
+
+        params = self.generation_params
+
+        # Check if streaming is enabled
+        is_streaming = params.get("stream", False)
+
+        logger.debug(
+            f"[{self.name()}] Image generation parameters - {params}, streaming: {is_streaming}"
+        )
+
+        openai_client = cast(OpenAIClient, self._client)
+        image_response = await openai_client.create_image(
+            model=str(self.model_config.get("model")), prompt=prompt_text, **params
+        )
+
+        if is_streaming:
+            images_data = await self._process_streaming_image_response(image_response)
+        else:
+            images_data = await self._process_image_response(image_response)
+
+        if len(images_data) == 1:
+            return images_data[0], 200
+        else:
+            return json.dumps(images_data), 200
+
+    async def _process_streaming_image_response(self, stream_response):
+        """
+        Process streaming image generation response.
+        Delegates to image_utils for processing.
+        """
+        from sygra.utils.image_utils import process_streaming_image_response
+
+        return await process_streaming_image_response(stream_response, self.name())
+
+    async def _process_image_response(self, image_response):
+        """
+        Process regular (non-streaming) image response.
+        Delegates to image_utils for processing.
+        """
+        from sygra.utils.image_utils import process_image_response
+
+        return await process_image_response(image_response, self.name())
+
+    async def _url_to_data_url(self, url: str) -> str:
+        """
+        Fetch an image from URL and convert to base64 data URL.
+        Delegates to image_utils for processing.
+        """
+        from sygra.utils.image_utils import url_to_data_url
+
+        return await url_to_data_url(url, self.name())
+
+    async def _edit_image_with_data_urls(
+        self, image_data_urls: list, prompt_text: str, model_url: str, model_params: ModelParams
+    ) -> Tuple[str, int]:
+        """
+        Edit images using data URLs.
+        - GPT-Image-1: Supports up to 16 images
+        - DALL-E-2: Supports only 1 image
+
+        Args:
+            image_data_urls: List of image data URLs
+            prompt_text: Edit instruction
+            model_url: Model URL
+            model_params: Model parameters
+
+        Returns:
+            Tuple of (response_text, status_code)
+        """
+        import io
+
+        from sygra.utils.image_utils import parse_image_data_url
+
+        if not prompt_text:
+            logger.error(f"[{self.name()}] No prompt provided for image editing")
+            return f"{constants.ERROR_PREFIX} No prompt provided for image editing", 400
+
+        # Set up the OpenAI client
+        self._set_client(model_url, model_params.auth_token)
+
+        model_name = str(self.model_config.get("model", "")).lower()
+        # only gpt-image-1 supports multiple images for editing
+        supports_multiple_images = "gpt-image-1" == model_name
+
+        num_images = len(image_data_urls)
+        if not supports_multiple_images and num_images > 1:
+            logger.warning(
+                f"[{self.name()}] Model {model_name} only supports single image editing. "
+                f"Using first image only. Additional {num_images - 1} image(s) will be ignored."
+            )
+        elif supports_multiple_images and num_images > 16:
+            logger.warning(
+                f"[{self.name()}] Model {model_name} supports max 16 images. "
+                f"Using first 16 images only. {num_images - 16} image(s) will be ignored."
+            )
+            image_data_urls = image_data_urls[:16]
+
+        params = self.generation_params
+
+        # Check if streaming is enabled
+        is_streaming = params.get("stream", False)
+
+        logger.debug(
+            f"[{self.name()}] Image edit parameters - images: {num_images}, params: {params}, streaming: {is_streaming}"
+        )
+
+        # Decode images
+        if supports_multiple_images and num_images > 1:
+            # Multiple images for GPT-Image-1
+            image_files = []
+            for idx, data_url in enumerate(image_data_urls):
+                _, _, img_bytes = parse_image_data_url(data_url)
+                img_file = io.BytesIO(img_bytes)
+                img_file.name = f"image_{idx}.png"
+                image_files.append(img_file)
+
+            image_param = image_files
+        else:
+            # Single image for DALL-E-2 or single image input
+            _, _, image_bytes = parse_image_data_url(image_data_urls[0])
+            image_file = io.BytesIO(image_bytes)
+            image_file.name = "image.png"
+
+            image_param = [image_file]
+
+        # Call the image edit API
+        openai_client = cast(OpenAIClient, self._client)
+        image_response = await openai_client.edit_image(
+            image=image_param, prompt=prompt_text, **params
+        )
+
+        # Handle streaming response
+        if is_streaming:
+            images_data = await self._process_streaming_image_response(image_response)
+        else:
+            # Process regular response - convert URLs to data URLs
+            images_data = await self._process_image_response(image_response)
+
+        if len(images_data) == 1:
+            return images_data[0], 200
+        else:
+            return json.dumps(images_data), 200
 
 
 class CustomOllama(BaseCustomModel):
