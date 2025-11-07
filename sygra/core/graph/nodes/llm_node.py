@@ -249,7 +249,6 @@ class LLMNode(BaseNode):
             message["content"] = expanded_contents
 
         messages = utils.convert_messages_from_chat_format_to_langchain(chat_frmt_messages)
-        # messages = [_convert_dict_to_message(chat_frmt_message) for chat_frmt_message in chat_frmt_messages]
         prompt = ChatPromptTemplate.from_messages(
             [*messages, MessagesPlaceholder(variable_name=self.input_key)],
         )
