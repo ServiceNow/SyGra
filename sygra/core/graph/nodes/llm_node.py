@@ -1,7 +1,7 @@
 from inspect import isclass
 from typing import Any
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai.chat_models.base import _convert_message_to_dict
 
@@ -9,7 +9,7 @@ from sygra.core.graph.nodes.base_node import BaseNode
 from sygra.core.graph.sygra_message import SygraMessage
 from sygra.core.models.model_response import ModelResponse
 from sygra.logger.logger_config import logger
-from sygra.utils import constants, utils, tool_utils
+from sygra.utils import constants, tool_utils, utils
 from sygra.utils.audio_utils import expand_audio_item
 from sygra.utils.image_utils import expand_image_item
 
@@ -109,7 +109,7 @@ class LLMNode(BaseNode):
         return self._generate_prompt_tmpl_from_msg(state, messages)
 
     def _inject_history_multiturn(self, state: dict[str, Any], msg_list, window_size: int = 5):
-        updated_msg_list = []
+        updated_msg_list: list[BaseMessage] = []
         chat_history = state.get(constants.VAR_CHAT_HISTORY, [])
 
         # Only keep the last `window_size` turns, make sure to start from user turn in injected chat
@@ -117,8 +117,8 @@ class LLMNode(BaseNode):
             trimmed_history = chat_history[-window_size:]
             start_index = 0
             for ch in trimmed_history:
-                if 'role' in ch:
-                    if ch['role'] == "user":
+                if "role" in ch:
+                    if ch["role"] == "user":
                         break
                 start_index = start_index + 1
             recent_history = trimmed_history[start_index:]
@@ -126,27 +126,32 @@ class LLMNode(BaseNode):
             recent_history = chat_history
 
         for entry in recent_history:
-            if 'role' in entry:
-                if entry['role'] == 'user':
-                    user_message = HumanMessage(content=entry['content'])
+            if "role" in entry:
+                if entry["role"] == "user":
+                    user_message = HumanMessage(content=entry["content"])
                     updated_msg_list.append(user_message)
-                elif entry['role'] == 'assistant':
+                elif entry["role"] == "assistant":
                     tool_calls = []
-                    tool_calls_data = entry.get('tool_calls', {})
+                    tool_calls_data = entry.get("tool_calls", {})
                     # convert into aimessage format
                     if isinstance(tool_calls_data, dict):
-                        tool_calls.append(tool_utils.convert_openai_to_langchain_toolcall(tool_calls_data))
+                        tool_calls.append(
+                            tool_utils.convert_openai_to_langchain_toolcall(tool_calls_data)
+                        )
                     elif isinstance(tool_calls_data, list):
                         for tc_entry in tool_calls_data:
-                            tool_calls.append(tool_utils.convert_openai_to_langchain_toolcall(tc_entry))
+                            tool_calls.append(
+                                tool_utils.convert_openai_to_langchain_toolcall(tc_entry)
+                            )
 
-                    assistant_message = AIMessage(content=entry['content'], tool_calls=tool_calls)
+                    assistant_message = AIMessage(content=entry["content"], tool_calls=tool_calls)
                     updated_msg_list.append(assistant_message)
-                elif entry['role'] == 'tool':
-                    content = str(entry['content'])
+                elif entry["role"] == "tool":
+                    content = str(entry["content"])
                     extracted_status = "success" if "success" in content else "error"
-                    tool_message = ToolMessage(content=content, tool_call_id=entry["tool_call_id"],
-                                               status=extracted_status)
+                    tool_message = ToolMessage(
+                        content=content, tool_call_id=entry["tool_call_id"], status=extracted_status
+                    )
                     updated_msg_list.append(tool_message)
             else:
                 logger.debug(f"Invalid role in chat history {entry}")
@@ -293,9 +298,7 @@ class LLMNode(BaseNode):
         # Inject tool_calls to Sygra State
         if self.tool_calls_enabled:
             ai_message = (
-                AIMessage(response.llm_response)
-                if response.llm_response
-                else AIMessage("")
+                AIMessage(response.llm_response) if response.llm_response else AIMessage("")
             )
             state["tool_calls"] = response.tool_calls if response.tool_calls else []
         # Call post-processor with best effort: try (resp, state) then fallback to (resp)

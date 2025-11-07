@@ -45,7 +45,7 @@ from sygra.core.models.structured_output.structured_output_config import (
     StructuredOutputConfig,
 )
 from sygra.logger.logger_config import logger
-from sygra.utils import utils, tool_utils
+from sygra.utils import utils
 
 
 class ModelParams:
@@ -247,10 +247,14 @@ class BaseCustomModel(ABC):
 
         # Try to parse the response to validate it's proper JSON
         try:
-            parsed_output = parser.parse(model_response.llm_response)
+            parsed_output = parser.parse(model_response.llm_response or "")
             logger.info(f"[{self.name()}] Structured output parsed successfully")
             # Return the validated JSON string
-            return ModelResponse(llm_response=parsed_output.model_dump_json(), response_code=200, tool_calls=model_response.tool_calls)
+            return ModelResponse(
+                llm_response=parsed_output.model_dump_json(),
+                response_code=200,
+                tool_calls=model_response.tool_calls,
+            )
         except Exception as e:
             logger.warning(f"[{self.name()}] Failed to parse structured output: {e}")
             logger.error(f"[{self.name()}] Returning unparsed response")
@@ -331,11 +335,13 @@ class BaseCustomModel(ABC):
         self.call_count += 1
         return return_url
 
-    def _update_model_stats(self, resp_text: str, resp_status: int) -> None:
+    def _update_model_stats(self, resp_text: Optional[str], resp_status: int) -> None:
         code_count = self.model_stats["resp_code_dist"].get(resp_status, 0)
         self.model_stats["resp_code_dist"][resp_status] = code_count + 1
         if resp_status != 200:
             # TODO: Right now the error messages are based on vllm; need to generalize for all models
+            if not resp_text:
+                resp_text = ""
             resp_text = resp_text.lower()
             if "timed out" in resp_text:
                 error_type = "timeout"
@@ -415,7 +421,7 @@ class BaseCustomModel(ABC):
         logger.debug(f"Chat formatted text: {chat_formatted_text}")
         return chat_formatted_text
 
-    def _replace_special_tokens(self, text: str) -> str:
+    def _replace_special_tokens(self, text: Optional[str]) -> str:
         if not text:
             return ""
         for token in self.model_config.get("special_tokens", []):
@@ -703,7 +709,7 @@ class CustomTGI(BaseCustomModel):
             )
 
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         try:
             # Set Client
@@ -766,7 +772,7 @@ class CustomAzure(BaseCustomModel):
             raise ValueError("auth_token must be a string or non-empty list of strings")
 
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         model_url = model_params.url
         try:
@@ -812,7 +818,7 @@ class CustomMistralAPI(BaseCustomModel):
         super().__init__(model_config)
 
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         ret_code = 200
         model_url = model_params.url
@@ -889,7 +895,8 @@ class CustomVLLM(BaseCustomModel):
             formatted_tools = self._convert_tools_to_model_format(**kwargs)
             if formatted_tools:
                 self.generation_params.update(
-                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")})
+                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")}
+                )
 
             # Use vLLM's native guided generation
             extra_params = {**(self.generation_params or {}), "guided_json": json_schema}
@@ -927,7 +934,9 @@ class CustomVLLM(BaseCustomModel):
                 # Return JSON string representation
                 logger.info(f"[{self.name()}] Native structured output generation succeeded")
                 return ModelResponse(
-                    llm_response=json.dumps(parsed_data), response_code=resp_status, tool_calls=tool_calls
+                    llm_response=json.dumps(parsed_data),
+                    response_code=resp_status,
+                    tool_calls=tool_calls,
                 )
             except (json.JSONDecodeError, ValidationError) as e:
                 logger.error(f"[{self.name()}] Native structured output validation failed: {e}")
@@ -968,7 +977,8 @@ class CustomVLLM(BaseCustomModel):
             formatted_tools = self._convert_tools_to_model_format(**kwargs)
             if formatted_tools:
                 self.generation_params.update(
-                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")})
+                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")}
+                )
 
             completion = await self._client.send_request(
                 payload, self.model_serving_name, self.generation_params
@@ -1037,7 +1047,8 @@ class CustomOpenAI(BaseCustomModel):
             formatted_tools = self._convert_tools_to_model_format(**kwargs)
             if formatted_tools:
                 self.generation_params.update(
-                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")})
+                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")}
+                )
 
             # Add pydantic_model to generation params
             all_params = {
@@ -1072,7 +1083,7 @@ class CustomOpenAI(BaseCustomModel):
                 model_response = ModelResponse(
                     llm_response=completion.choices[0].model_dump()["message"]["content"],
                     response_code=resp_status,
-                    tool_calls=completion.choices[0].model_dump()["message"]["tool_calls"]
+                    tool_calls=completion.choices[0].model_dump()["message"]["tool_calls"],
                 )
             logger.info(f"[{self.name()}][{model_url}] RESPONSE: Native support call successful")
             logger.debug(
@@ -1081,7 +1092,7 @@ class CustomOpenAI(BaseCustomModel):
 
             # Try to parse and validate the response
             try:
-                json_data = json.loads(model_response.llm_response)
+                json_data = json.loads(model_response.llm_response or "")
                 # Try to validate with pydantic model
                 logger.debug(f"[{self.name()}] Validating response against schema")
                 pydantic_model.model_validate(json_data)
@@ -1143,7 +1154,8 @@ class CustomOpenAI(BaseCustomModel):
             formatted_tools = self._convert_tools_to_model_format(**kwargs)
             if formatted_tools:
                 self.generation_params.update(
-                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")})
+                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")}
+                )
 
             completion = await self._client.send_request(
                 payload, str(self.model_config.get("model")), self.generation_params
@@ -1356,7 +1368,7 @@ class CustomOllama(BaseCustomModel):
             )
 
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         ret_code = 200
         model_url = model_params.url
@@ -1493,7 +1505,7 @@ class CustomTriton(BaseCustomModel):
         self.auth_token = str(model_config.get("auth_token")).replace("Bearer ", "")
 
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         ret_code = 200
         model_url = model_params.url

@@ -60,9 +60,12 @@ class CustomModel(BaseCustomModel):
 
 # Mock client for API responses
 class MockClient:
-    def __init__(self, response_text="", status_code=200):
+    def __init__(self, response_text="", status_code=200, tool_calls=None):
+        if tool_calls is None:
+            tool_calls = []
         self.response_text = response_text
         self.status_code = status_code
+        self.tool_calls = tool_calls
 
     def build_request(self, **kwargs):
         return kwargs
@@ -74,23 +77,27 @@ class MockClient:
         response = Mock()
         response.text = self.response_text
         response.status_code = self.status_code
+        response.tool_calls = self.tool_calls
         return response
 
     async def send_request(self, payload, model_name=None, extra_params=None, **kwargs):
         # Create a simple response object instead of using Mock
         class MockResponse:
-            def __init__(self, text, status_code):
+            def __init__(self, text, status_code, tool_calls):
                 self.text = text
                 self.status_code = status_code
+                self.tool_calls = tool_calls
                 self.choices = [Mock()]
-                self.choices[0].model_dump = lambda: {"message": {"content": text}}
+                self.choices[0].model_dump = lambda: {
+                    "message": {"content": text, "tool_calls": tool_calls}
+                }
 
             def __getattr__(self, name):
                 if name == "status_code":
                     return self.status_code
                 raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
-        return MockResponse(self.response_text, self.status_code)
+        return MockResponse(self.response_text, self.status_code, self.tool_calls)
 
 
 class TestSchemaConfigParser(unittest.TestCase):
@@ -307,7 +314,7 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
                 "model": "gpt-4",
             }
         )
-        model._client = MockClient(response_text=self.valid_json, status_code=200)
+        model._client = MockClient(response_text=self.valid_json, status_code=200, tool_calls=[])
 
         # Mock _set_client to prevent it from overwriting our mock client
         with (
@@ -356,7 +363,7 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
     async def test_vllm_native_structured_output_success(self, mock_parser, mock_utils):
         """Test VLLM native structured output success"""
         model = CustomVLLM({**self.test_config, "url": "test", "auth_token": "test"})
-        model._client = MockClient(response_text=self.valid_json, status_code=200)
+        model._client = MockClient(response_text=self.valid_json, status_code=200, tool_calls=[])
 
         # Mock _set_client to prevent it from overwriting our mock client
         with (

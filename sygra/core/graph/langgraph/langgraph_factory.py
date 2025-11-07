@@ -144,7 +144,7 @@ class LangGraphFactory(BackendFactory):
         """
         return utils.convert_messages_from_langchain_to_chat_format(msgs)
 
-    def get_test_message(self, is_multi_modal = True):
+    def get_test_message(self, is_multi_modal=True):
         """
         Return a test message to pass into model for the specific platform
         """

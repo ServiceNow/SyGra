@@ -329,8 +329,8 @@ def deep_update(target: dict, src: dict):
 
 def convert_messages_from_chat_format_to_langchain(
     messages: list[dict],
-) -> list[BaseMessagePromptTemplate]:
-    langchain_messages: list[BaseMessagePromptTemplate] = []
+) -> list[Union[BaseMessagePromptTemplate, ToolMessage]]:
+    langchain_messages: list[Union[BaseMessagePromptTemplate, ToolMessage]] = []
     for message in messages:
         role, content = message["role"], message["content"]
         if role == "user":
@@ -340,10 +340,11 @@ def convert_messages_from_chat_format_to_langchain(
         elif role == "system":
             langchain_messages.append(SystemMessagePromptTemplate.from_template(content))
         elif role == "tool":
-            toolmsg = ToolMessage(content=message.get("content", {})[0].get("content"), tool_call_id=message.get("content", {})[0].get("tool_call_id"))
-            langchain_messages.append(
-                toolmsg
+            toolmsg = ToolMessage(
+                content=message.get("content", {})[0].get("content"),
+                tool_call_id=message.get("content", {})[0].get("tool_call_id"),
             )
+            langchain_messages.append(toolmsg)
     return langchain_messages
 
 

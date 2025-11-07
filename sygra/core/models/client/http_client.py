@@ -25,7 +25,9 @@ class HttpClientConfig(BaseModel):
     max_retries: int = Field(default=3, description="Maximum number of retries for failed requests")
     ssl_verify: bool = Field(default=True, description="Verify SSL certificate")
     ssl_cert: Optional[str] = Field(default=None, description="Path to SSL certificate file")
-    json_payload: Optional[bool] = Field(default=False, description="Payload is sent as JSON data if true")
+    json_payload: Optional[bool] = Field(
+        default=False, description="Payload is sent as JSON data if true"
+    )
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -124,19 +126,25 @@ class HttpClient(BaseClient):
         try:
 
             if self.json_payload:
-                inference_args = {"json": payload, "headers": self.headers, "timeout": self.timeout,
-                                  "verify": self.verify_ssl, "cert": self.verify_cert}
+                inference_args = {
+                    "json": payload,
+                    "headers": self.headers,
+                    "timeout": self.timeout,
+                    "verify": self.verify_ssl,
+                    "cert": self.verify_cert,
+                }
             else:
                 # Convert payload to JSON string
                 json_data = json.dumps(payload).encode()
-                inference_args = {"data": json_data, "headers": self.headers, "timeout": self.timeout,
-                                  "verify": self.verify_ssl, "cert": self.verify_cert}
+                inference_args = {
+                    "data": json_data,
+                    "headers": self.headers,
+                    "timeout": self.timeout,
+                    "verify": self.verify_ssl,
+                    "cert": self.verify_cert,
+                }
 
-            response = requests.request(
-                "POST",
-                self.base_url,
-                **inference_args
-            )
+            response = requests.request("POST", self.base_url, **inference_args)
 
         except Exception as e:
             logger.error(f"Error sending request: {e}")
@@ -169,20 +177,25 @@ class HttpClient(BaseClient):
         try:
 
             if self.json_payload:
-                inference_args = {"json": payload, "headers": self.headers, "timeout": self.timeout,
-                                  "ssl": self.verify_ssl}
+                inference_args = {
+                    "json": payload,
+                    "headers": self.headers,
+                    "timeout": self.timeout,
+                    "ssl": self.verify_ssl,
+                }
             else:
                 # Convert payload to JSON string
                 json_data = json.dumps(payload).encode()
-                inference_args = {"data": json_data, "headers": self.headers, "timeout": self.timeout,
-                                  "ssl": self.verify_ssl}
+                inference_args = {
+                    "data": json_data,
+                    "headers": self.headers,
+                    "timeout": self.timeout,
+                    "ssl": self.verify_ssl,
+                }
 
             # Send request using aiohttp
             async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    self.base_url,
-                    **inference_args
-                ) as resp:
+                async with session.post(self.base_url, **inference_args) as resp:
                     # Read the body text to ensure the content is consumed before returning
                     body_text = await resp.text()
                     # Return a lightweight object mirroring requests.Response essentials

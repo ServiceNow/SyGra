@@ -113,7 +113,7 @@ class TestCustomVLLM(unittest.TestCase):
         # Setup mock completion response
         mock_choice = MagicMock()
         mock_choice.model_dump.return_value = {
-            "message": {"content": "Hello! I'm doing well, thank you!"}
+            "message": {"content": "Hello! I'm doing well, thank you!", "tool_calls": []}
         }
         mock_completion = MagicMock()
         mock_completion.choices = [mock_choice]
@@ -152,7 +152,7 @@ class TestCustomVLLM(unittest.TestCase):
 
         # Setup mock completion response for completions API
         mock_choice = MagicMock()
-        mock_choice.model_dump.return_value = {"text": "  Response text  "}
+        mock_choice.model_dump.return_value = {"text": "Response text"}
         mock_completion = MagicMock()
         mock_completion.choices = [mock_choice]
 
