@@ -1285,7 +1285,7 @@ class CustomOpenAI(BaseCustomModel):
 
     async def _generate_image(
         self, input: ChatPromptValue, model_params: ModelParams
-    ) -> Tuple[str, int]:
+    ) -> ModelResponse:
         """
         Generate or edit images using OpenAI/Azure OpenAI Image API.
         Auto-detects whether to use generation or editing based on input content:
@@ -1333,7 +1333,10 @@ class CustomOpenAI(BaseCustomModel):
             prompt_text = prompt_text.strip()
             if not prompt_text:
                 logger.error(f"[{self.name()}] No prompt provided for image generation")
-                return f"{constants.ERROR_PREFIX} No prompt provided for image generation", 400
+                return ModelResponse(
+                    llm_response=f"{constants.ERROR_PREFIX} No prompt provided for image generation",
+                    response_code=400,
+                )
 
             if len(prompt_text) < 1000:
                 pass
@@ -1389,11 +1392,11 @@ class CustomOpenAI(BaseCustomModel):
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
 
-        return resp_text, ret_code
+        return ModelResponse(llm_response=resp_text, response_code=ret_code)
 
     async def _generate_image_from_text(
         self, prompt_text: str, model_url: str, model_params: ModelParams
-    ) -> Tuple[str, int]:
+    ) -> ModelResponse:
         """
         Generate images from text prompts (text-to-image).
 
@@ -1403,7 +1406,7 @@ class CustomOpenAI(BaseCustomModel):
             model_params: Model parameters
 
         Returns:
-            Tuple of (response_text, status_code)
+            Model Response object
         """
         self._set_client(model_url, model_params.auth_token)
 
@@ -1427,9 +1430,9 @@ class CustomOpenAI(BaseCustomModel):
             images_data = await self._process_image_response(image_response)
 
         if len(images_data) == 1:
-            return images_data[0], 200
+            return ModelResponse(llm_response=images_data[0], response_code=200)
         else:
-            return json.dumps(images_data), 200
+            return ModelResponse(llm_response=json.dumps(images_data), response_code=200)
 
     async def _process_streaming_image_response(self, stream_response):
         """
@@ -1460,7 +1463,7 @@ class CustomOpenAI(BaseCustomModel):
 
     async def _edit_image_with_data_urls(
         self, image_data_urls: list, prompt_text: str, model_url: str, model_params: ModelParams
-    ) -> Tuple[str, int]:
+    ) -> ModelResponse:
         """
         Edit images using data URLs.
         - GPT-Image-1: Supports up to 16 images
@@ -1473,7 +1476,7 @@ class CustomOpenAI(BaseCustomModel):
             model_params: Model parameters
 
         Returns:
-            Tuple of (response_text, status_code)
+            Model Response object
         """
         import io
 
@@ -1481,7 +1484,10 @@ class CustomOpenAI(BaseCustomModel):
 
         if not prompt_text:
             logger.error(f"[{self.name()}] No prompt provided for image editing")
-            return f"{constants.ERROR_PREFIX} No prompt provided for image editing", 400
+            return ModelResponse(
+                llm_response=f"{constants.ERROR_PREFIX} No prompt provided for image editing",
+                response_code=400,
+            )
 
         # Set up the OpenAI client
         self._set_client(model_url, model_params.auth_token)
@@ -1545,9 +1551,9 @@ class CustomOpenAI(BaseCustomModel):
             images_data = await self._process_image_response(image_response)
 
         if len(images_data) == 1:
-            return images_data[0], 200
+            return ModelResponse(llm_response=images_data[0], response_code=200)
         else:
-            return json.dumps(images_data), 200
+            return ModelResponse(llm_response=json.dumps(images_data), response_code=200)
 
 
 class CustomOllama(BaseCustomModel):

@@ -467,12 +467,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(self.image_input, model_params)
+        model_response = await custom_openai._generate_image(self.image_input, model_params)
 
         # Verify results
-        self.assertIn("data:image/png;base64,", resp_text)
-        self.assertIn(mock_b64, resp_text)
-        self.assertEqual(resp_status, 200)
+        self.assertIn("data:image/png;base64,", model_response.llm_response)
+        self.assertIn(mock_b64, model_response.llm_response)
+        self.assertEqual(model_response.response_code, 200)
 
         # Verify method calls
         mock_set_client.assert_called_once()
@@ -511,15 +511,15 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(self.image_input, model_params)
+        model_response = await custom_openai._generate_image(self.image_input, model_params)
 
         # Verify results
-        result = json.loads(resp_text)
+        result = json.loads(model_response.llm_response)
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 2)
         self.assertIn("data:image/png;base64,", result[0])
         self.assertIn("data:image/png;base64,", result[1])
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.response_code, 200)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_generate_image_success_multiple(self, mock_set_client):
@@ -551,13 +551,11 @@ class TestCustomOpenAI(unittest.TestCase):
 
             # Call _generate_image
             model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-            resp_text, resp_status = await custom_openai._generate_image(
-                self.image_input, model_params
-            )
+            model_response = await custom_openai._generate_image(self.image_input, model_params)
 
             # Verify results
-            self.assertIn("data:image/png;base64,", resp_text)
-            self.assertEqual(resp_status, 200)
+            self.assertIn("data:image/png;base64,", model_response.llm_response)
+            self.assertEqual(model_response.response_code, 200)
 
             # Verify create_image was called and size was passed via kwargs
             mock_client.create_image.assert_called_once()
@@ -593,10 +591,10 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(self.image_input, model_params)
+        model_response = await custom_openai._generate_image(self.image_input, model_params)
 
         # Verify results
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.response_code, 200)
 
         # Verify create_image was called with HD quality
         mock_client.create_image.assert_called_once()
@@ -634,12 +632,10 @@ class TestCustomOpenAI(unittest.TestCase):
 
             # Call _generate_image
             model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-            resp_text, resp_status = await custom_openai._generate_image(
-                self.image_input, model_params
-            )
+            model_response = await custom_openai._generate_image(self.image_input, model_params)
 
             # Verify results
-            self.assertEqual(resp_status, 200)
+            self.assertEqual(model_response.response_code, 200)
 
             # Verify create_image was called with the correct style
             mock_client.create_image.assert_called_once()
@@ -666,11 +662,11 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(empty_input, model_params)
+        model_response = await custom_openai._generate_image(empty_input, model_params)
 
         # Verify error response
-        self.assertIn("No prompt provided", resp_text)
-        self.assertEqual(resp_status, 400)
+        self.assertIn("No prompt provided", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 400)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_generate_image_empty_prompt(self, mock_set_client):
@@ -693,11 +689,11 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(self.image_input, model_params)
+        model_response = await custom_openai._generate_image(self.image_input, model_params)
 
         # Verify error handling
-        self.assertIn("Rate limit exceeded", resp_text)
-        self.assertEqual(resp_status, 429)
+        self.assertIn("Rate limit exceeded", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 429)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_generate_image_rate_limit_error(self, mock_set_client):
@@ -720,11 +716,11 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(self.image_input, model_params)
+        model_response = await custom_openai._generate_image(self.image_input, model_params)
 
         # Verify error handling
-        self.assertIn("Bad request", resp_text)
-        self.assertEqual(resp_status, 400)
+        self.assertIn("Bad request", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 400)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_generate_image_bad_request_error(self, mock_set_client):
@@ -750,11 +746,11 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(self.image_input, model_params)
+        model_response = await custom_openai._generate_image(self.image_input, model_params)
 
         # Verify error handling
-        self.assertIn("API error", resp_text)
-        self.assertEqual(resp_status, 500)
+        self.assertIn("API error", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 500)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_generate_image_api_error(self, mock_set_client):
@@ -782,13 +778,11 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_response (should route to _generate_image)
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_response(
-            self.image_input, model_params
-        )
+        model_response = await custom_openai._generate_response(self.image_input, model_params)
 
         # Verify it called create_image (image generation path)
         mock_client.create_image.assert_awaited_once()
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.response_code, 200)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_generate_response_routes_to_image(self, mock_set_client):
@@ -839,11 +833,11 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image (should auto-detect and route to editing)
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(image_edit_input, model_params)
+        model_response = await custom_openai._generate_image(image_edit_input, model_params)
 
         # Verify results
-        self.assertIn("data:image/png;base64,", resp_text)
-        self.assertEqual(resp_status, 200)
+        self.assertIn("data:image/png;base64,", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 200)
 
         # Verify edit_image was called (not create_image)
         mock_client.edit_image.assert_called_once()
@@ -900,13 +894,13 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(image_edit_input, model_params)
+        model_response = await custom_openai._generate_image(image_edit_input, model_params)
 
         # Verify results - should return multiple images
-        result = json.loads(resp_text)
+        result = json.loads(model_response.llm_response)
         self.assertIsInstance(result, list)
         self.assertEqual(len(result), 2)
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.response_code, 200)
 
         # Verify edit_image was called with list of images
         mock_client.edit_image.assert_called_once()
@@ -954,9 +948,7 @@ class TestCustomOpenAI(unittest.TestCase):
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
 
         with patch("sygra.core.models.custom_models.logger") as mock_logger:
-            resp_text, resp_status = await custom_openai._generate_image(
-                image_edit_input, model_params
-            )
+            model_response = await custom_openai._generate_image(image_edit_input, model_params)
 
             # Verify warning was logged
             mock_logger.warning.assert_called_once()
@@ -967,7 +959,7 @@ class TestCustomOpenAI(unittest.TestCase):
         # Verify only 16 images were passed to API
         call_args = mock_client.edit_image.call_args
         self.assertEqual(len(call_args.kwargs["image"]), 16)
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.response_code, 200)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_edit_image_more_than_16_images(self, mock_set_client):
@@ -1017,9 +1009,7 @@ class TestCustomOpenAI(unittest.TestCase):
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
 
         with patch("sygra.core.models.custom_models.logger") as mock_logger:
-            resp_text, resp_status = await custom_openai._generate_image(
-                image_edit_input, model_params
-            )
+            model_response = await custom_openai._generate_image(image_edit_input, model_params)
 
             # Verify warning was logged
             mock_logger.warning.assert_called_once()
@@ -1027,7 +1017,7 @@ class TestCustomOpenAI(unittest.TestCase):
             self.assertIn("only supports single image editing", warning_msg)
             self.assertIn("2 image(s) will be ignored", warning_msg)
 
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.response_code, 200)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_edit_image_multiple_with_dalle2_warns(self, mock_set_client):
@@ -1052,12 +1042,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(image_edit_input, model_params)
+        model_response = await custom_openai._generate_image(image_edit_input, model_params)
 
         # Verify error response
-        self.assertIn("###SERVER_ERROR###", resp_text)
-        self.assertIn("No prompt provided", resp_text)
-        self.assertEqual(resp_status, 400)
+        self.assertIn("###SERVER_ERROR###", model_response.llm_response)
+        self.assertIn("No prompt provided", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 400)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_edit_image_empty_prompt(self, mock_set_client):
@@ -1095,12 +1085,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_image
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_image(text_only_input, model_params)
+        model_response = await custom_openai._generate_image(text_only_input, model_params)
 
         # Verify create_image was called (generation), NOT edit_image
         mock_client.create_image.assert_called_once()
         mock_client.edit_image.assert_not_called()
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.response_code, 200)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_edit_image_no_images_routes_to_generation(self, mock_set_client):
