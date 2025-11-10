@@ -137,6 +137,64 @@ class TestCustomVLLM(unittest.TestCase):
         mock_client.build_request.assert_called_once_with(messages=self.messages)
         mock_client.send_request.assert_awaited_once()
 
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_generate_response_chat_api_with_tools_success(self, mock_set_client):
+        asyncio.run(self._run_generate_response_chat_api_success(mock_set_client))
+
+    async def _run_generate_response_chat_api_with_tools_success(self, mock_set_client):
+        """Test _generate_response with chat API (non-completions)"""
+        # Setup mock client
+        mock_client = MagicMock()
+        mock_client.build_request.return_value = {
+            "messages": [{"role": "user", "content": "Get me latest business news"}]
+        }
+
+        # Setup mock completion response
+        mock_choice = MagicMock()
+        sample_tool_call = {
+            "id": "call_12xyz",
+            "function": {
+                "arguments": '{"query":"Latest business news"}',
+                # A JSON string of the arguments for the function
+                "name": "new_search",  # The name of the function to be called
+            },
+            "type": "function",
+        }
+        mock_choice.model_dump.return_value = {
+            "message": {"content": None, "tool_calls": [sample_tool_call]},
+        }
+        mock_completion = MagicMock()
+        mock_completion.choices = [mock_choice]
+
+        mock_client.send_request = AsyncMock(return_value=mock_completion)
+
+        # Setup custom model
+        custom_vllm = CustomVLLM(self.base_config)
+        custom_vllm._client = mock_client
+
+        # Call _generate_response
+        model_params = ModelParams(url="http://vllm-test.com", auth_token="test_token")
+        model_response = await custom_vllm._generate_response(self.chat_input, model_params)
+
+        # Verify results
+        self.assertEqual(model_response.llm_response, None)
+        self.assertEqual(model_response.response_code, 200)
+        self.assertEqual(model_response.tool_calls[0]["id"], sample_tool_call.get("id"))
+        self.assertEqual(
+            model_response.tool_calls[0]["function"]["arguments"],
+            sample_tool_call.get("function").get("arguments"),
+        )
+        self.assertEqual(
+            model_response.tool_calls[0]["function"]["name"],
+            sample_tool_call.get("function").get("name"),
+        )
+        self.assertEqual(model_response.tool_calls[0]["type"], sample_tool_call.get("type"))
+
+        # Verify method calls
+        mock_set_client.assert_called_once_with("http://vllm-test.com", "test_token")
+        mock_client.build_request.assert_called_once_with(messages=self.messages)
+        mock_client.send_request.assert_awaited_once()
+
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_generate_response_completions_api_success(self, mock_set_client, mock_tokenizer):

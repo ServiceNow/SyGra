@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from langchain_core.messages import ToolMessage
 
 from sygra.utils import constants, utils
 
@@ -53,6 +54,28 @@ class TestToolUtils(unittest.TestCase):
         ]
         omsg = utils.convert_messages_from_chat_format_to_langchain(msg)
         assert len(omsg) == 3
+
+    def test_convert_messages_with_tool_from_chat_format_to_langchain(self):
+        msg = [
+            {"role": "system", "content": "test system msg"},
+            {"role": "user", "content": "test user msg"},
+            {"role": "assistant", "content": "test assistant msg"},
+            {
+                "role": "tool",
+                "content": [
+                    {
+                        "tool_call_id": "tool_call_id",
+                        "content": "test tool msg",
+                        "name": "test_tool",
+                    }
+                ],
+            },
+        ]
+        langchain_messages = utils.convert_messages_from_chat_format_to_langchain(msg)
+        assert len(langchain_messages) == 4
+        assert isinstance(langchain_messages[3], ToolMessage)
+        assert langchain_messages[3].tool_call_id == "tool_call_id"
+        assert langchain_messages[3].content == "test tool msg"
 
     def test_convert_messages_from_config_to_chat_format(self):
         msg = [

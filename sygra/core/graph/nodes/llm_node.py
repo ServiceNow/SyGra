@@ -278,8 +278,6 @@ class LLMNode(BaseNode):
         prompt = self._inject_history(state, prompt)
 
         # convert the request into chat format to store for multi turn
-
-        # request_msgs = graph_factory.convert_to_chat_format(prompt.to_messages())
         prompt_messages = prompt.to_messages()
         request_msgs = [_convert_message_to_dict(msg) for msg in prompt_messages]
         # now call the llm server

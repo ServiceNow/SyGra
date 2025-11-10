@@ -1177,9 +1177,7 @@ class CustomOpenAI(BaseCustomModel):
             logger.error(resp_text)
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
-        return ModelResponse(
-            llm_response=resp_text or "", response_code=ret_code, tool_calls=tool_calls
-        )
+        return ModelResponse(llm_response=resp_text, response_code=ret_code, tool_calls=tool_calls)
 
     async def _generate_speech(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
