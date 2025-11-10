@@ -28,7 +28,6 @@ class TestLangGraphFactory(unittest.TestCase):
         factory = LangGraphFactory()
         chat_prompt = factory.get_test_message(is_multi_modal=False)
 
-
         self.assertIsInstance(chat_prompt, ChatPromptValue)
         messages = chat_prompt.messages
         self.assertIsInstance(messages, list)
