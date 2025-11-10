@@ -12,3 +12,4 @@ poetry.lock
 site/
 build/
 dist/
+**/web_agents/*

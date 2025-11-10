@@ -1,0 +1,53 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: "tasks/examples/web_agent_demo/tasks.jsonl"
+
+graph_config:
+  nodes:
+    web_agent:
+      node_type: web_agent
+      model: gpt-4o
+      max_steps: 20  # Agent can stop early when goal is achieved
+      headless: false  # Set to true for faster execution
+      use_screenshot: true
+      use_som: true  # Set-of-Mark overlays for precise interaction
+      use_html: true
+      temperature: 0.3
+      viewport_width: 1380
+      viewport_height: 820
+      slow_mo: 600
+      enable_chat: true  # Allow agent to signal task completion
+      enable_goal_eval: true  # Enable automatic LLM-based goal evaluation
+      eval_frequency: 2  # Evaluate every 2 steps
+      eval_start_step: 3  # Start evaluating after step 3
+      eval_use_vision: true  # Use screenshots for goal evaluation (more accurate)
+
+  edges:
+    - from: START
+      to: web_agent
+    - from: web_agent
+      to: END
+
+output_config:
+  generator: tasks.examples.web_agent_demo.task_executor.WebAgentOutputGenerator
+
+  output_map:
+    id:
+      from: "id"
+    goal:
+      from: "goal"
+    url:
+      from: "url"
+    task_name:
+      from: "task_name"
+    task_type:
+      from: "task_type"
+    agent_result:
+      from: "agent_result"
+    trajectory:
+      from: "trajectory"
+    screenshots:
+      from: "screenshots"
+    exp_dir:
+      from: "exp_dir"

@@ -171,7 +171,7 @@ class HttpClient(BaseClient):
                     self.base_url,
                     data=json_data,
                     headers=self.headers,
-                    timeout=self.timeout,
+                    timeout=aiohttp.ClientTimeout(total=self.timeout),
                     ssl=self.verify_ssl,
                 ) as resp:
                     # Read the body text to ensure the content is consumed before returning

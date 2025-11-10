@@ -48,6 +48,12 @@ nav:
           - Output Record Generator: concepts/processors/output_record_generator/README.md
       - Schema Validator: concepts/schema_validator/README.md
       - Structured Output: concepts/structured_output/README.md
+  - Integrations:
+      - Overview: integrations/index.md
+      - AgentLab:
+          - Overview: integrations/agentlab/index.md
+          - Complete Guide: integrations/agentlab/documentation.md
+          - Quick Reference: integrations/agentlab/quick_reference.md
   - Tutorials:
       - Agent Simulation: tutorials/agent_simulation_tutorial.md
       - Agent Simulation with Tools: tutorials/agent_tool_simulation_tutorial.md

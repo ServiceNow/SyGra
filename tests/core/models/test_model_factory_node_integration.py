@@ -6,8 +6,6 @@ from unittest.mock import MagicMock, patch
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
-from sygra.core.models.custom_models import CustomVLLM
-from sygra.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
 from sygra.core.models.model_factory import ModelFactory
 
 
@@ -91,16 +89,38 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
         mock_load_model_config.return_value = self.base_model_config
 
         # Test default backend uses standard model
-        with patch.object(CustomVLLM, "__init__", return_value=None) as mock_default:
+        # Patch the MODEL_TYPE_MAP to use a mock class for default backend
+        mock_default_instance = MagicMock()
+        mock_default_class = MagicMock(return_value=mock_default_instance)
+
+        with patch.dict(
+            "sygra.core.models.model_factory.ModelFactory.MODEL_TYPE_MAP",
+            {"default": {"vllm": mock_default_class}},
+        ):
             model_config = {"name": "test_model", "model_type": "vllm"}
-            ModelFactory.create_model(model_config, "default")
-            mock_default.assert_called_once()
+            result = ModelFactory.create_model(model_config, "default")
+
+            # Verify the class was instantiated
+            mock_default_class.assert_called_once()
+            # Verify the result is our mock instance
+            self.assertEqual(result, mock_default_instance)
 
         # Test langgraph backend uses chat models
-        with patch.object(CustomVLLMChatModel, "__init__", return_value=None) as mock_langgraph:
+        # Patch the MODEL_TYPE_MAP to use a mock class for langgraph backend
+        mock_langgraph_instance = MagicMock()
+        mock_langgraph_class = MagicMock(return_value=mock_langgraph_instance)
+
+        with patch.dict(
+            "sygra.core.models.model_factory.ModelFactory.MODEL_TYPE_MAP",
+            {"langgraph": {"vllm": mock_langgraph_class}},
+        ):
             model_config = {"name": "test_model", "model_type": "vllm"}
-            ModelFactory.create_model(model_config, "langgraph")
-            mock_langgraph.assert_called_once()
+            result = ModelFactory.create_model(model_config, "langgraph")
+
+            # Verify the class was instantiated
+            mock_langgraph_class.assert_called_once()
+            # Verify the result is our mock instance
+            self.assertEqual(result, mock_langgraph_instance)
 
     @patch("sygra.utils.utils.load_model_config")
     @patch("sygra.utils.utils.get_graph_factory")
@@ -110,7 +130,6 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
         self, mock_get_func, mock_get_props, mock_graph_factory, mock_load_model_config
     ):
         """Test that AgentNode ensures using a model extended from BaseChatModel via ModelFactory.get_model"""
-        from langchain_core.language_models import BaseChatModel
 
         from sygra.core.graph.nodes.agent_node import AgentNode
 
@@ -124,10 +143,8 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
 
             # Create a mock for get_model since that's what AgentNode actually uses
             with patch.object(ModelFactory, "create_model") as mock_get_model:
-                # Set up a mock for the model that is returned
-                mock_model = MagicMock(spec=CustomVLLMChatModel)
-                # Ensure the model mock has the BaseChatModel interface
-                mock_model.__class__.__bases__ = (BaseChatModel,)
+                # Set up a mock for the model that is returned - simple mock without corruption
+                mock_model = MagicMock()
                 mock_get_model.return_value = mock_model
 
                 # Initialize an Agent node
@@ -144,9 +161,8 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
                     {"name": "test_model", "model_type": "vllm"}, "langgraph"
                 )
 
-                # Verify the model in the node is our mock with BaseChatModel interface
-                self.assertIsInstance(node.model, MagicMock)
-                self.assertTrue(issubclass(node.model.__class__.__bases__[0], BaseChatModel))
+                # Verify the model in the node is our mock
+                self.assertIs(node.model, mock_model)
 
     @patch("sygra.utils.utils.load_model_config")
     def test_incompatible_model_for_agent_node(self, mock_load_model_config):

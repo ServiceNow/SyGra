@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import pytest
 
 # Add the parent directory to sys.path to import the necessary modules
@@ -186,7 +187,8 @@ class TestHttpClient(unittest.TestCase):
         mock_post.assert_called_once()
         call_kwargs = mock_post.call_args.kwargs
         self.assertEqual(call_kwargs["headers"], self.headers)
-        self.assertEqual(call_kwargs["timeout"], 30)
+        self.assertIsInstance(call_kwargs["timeout"], aiohttp.ClientTimeout)
+        self.assertEqual(call_kwargs["timeout"].total, 30)
         self.assertEqual(call_kwargs["ssl"], True)
         self.assertEqual(json.loads(call_kwargs["data"].decode()), payload)
 

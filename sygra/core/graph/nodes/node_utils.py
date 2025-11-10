@@ -1,4 +1,4 @@
-from typing import Any, Type, cast
+from typing import Any, Callable, Optional, Type, cast
 
 from sygra.core.graph.nodes.agent_node import AgentNode
 from sygra.core.graph.nodes.base_node import BaseNode, NodeType
@@ -8,6 +8,17 @@ from sygra.core.graph.nodes.llm_node import LLMNode
 from sygra.core.graph.nodes.multi_llm_node import MultiLLMNode
 from sygra.core.graph.nodes.special_node import SpecialNode
 from sygra.core.graph.nodes.weighted_sampler_node import WeightedSamplerNode
+
+# Import AgentLab integration if available
+create_web_agent_node: Optional[Callable[[str, dict[Any, Any]], Any]] = None
+
+try:
+    from sygra.integrations.agentlab import AGENTLAB_AVAILABLE
+
+    if AGENTLAB_AVAILABLE:
+        from sygra.integrations.agentlab import create_web_agent_node  # type: ignore[assignment]
+except ImportError:
+    AGENTLAB_AVAILABLE = False
 
 
 def get_node(node_name: str, node_config: dict[str, Any]) -> BaseNode:
@@ -30,6 +41,15 @@ def get_node(node_name: str, node_config: dict[str, Any]) -> BaseNode:
         NodeType.SPECIAL.value: SpecialNode,
         NodeType.CONNECTOR.value: ConnectorNode,
     }
+
+    # Handle AgentLab agent node types
+    if node_type in ("web_agent"):
+        if AGENTLAB_AVAILABLE and create_web_agent_node is not None:
+            return cast(BaseNode, create_web_agent_node(node_name, node_config))
+        else:
+            raise NotImplementedError(
+                "AgentLab integration not available. Install with: poetry install --with agentlab"
+            )
 
     if node_type not in node_mapping:
         raise NotImplementedError(f"Node type '{node_type}' is not implemented.")
