@@ -149,11 +149,12 @@ class LangGraphFactory(BackendFactory):
         Return a test message to pass into model for the specific platform
         """
         if is_multi_modal:
-            # build the ChatPrompt for model inference
+            # build the Multi Modal ChatPrompt for model inference
             messages = utils.convert_messages_from_chat_format_to_langchain(
                 [{"role": "user", "content": [{"type": "text", "text": "hello"}]}]
             )
         else:
+            # build the ChatPrompt for model inference
             messages = utils.convert_messages_from_chat_format_to_langchain(
                 [{"role": "user", "content": "hello"}]
             )
