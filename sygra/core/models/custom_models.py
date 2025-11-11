@@ -1295,9 +1295,7 @@ class CustomOpenAI(BaseCustomModel):
             model_params: Model parameters including URL and auth token
 
         Returns:
-            Tuple of (response_text, status_code)
-            - On success: returns base64 encoded image(s) as JSON and 200
-            - On error: returns error message and error code
+            Model Response
         """
         ret_code = 200
         model_url = model_params.url

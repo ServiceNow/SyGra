@@ -86,3 +86,7 @@ paraphrase_question:
 
   Make sure all the necessary tools are decorated with `@tool` from `langchain_core.tools`
   Refer to the [Example Task](https://github.com/ServiceNow/SyGra/tree/main/tasks/examples/llm_node_tool_simulation) with tools attached to LLM Node.
+    
+  ![Note](https://img.shields.io/badge/Note-important-yellow)
+  > We currently support `openai`, `azure_openai`, `vllm` model types for tool calls.
+
