@@ -179,16 +179,9 @@ class ExperimentRunner:
         # For now, pass the parent so task knows where to write
         os.environ["BROWSERGYM_EXP_DIR_PARENT"] = str(exp_dir_parent)
 
-        # Configure display environment to prevent scaling interference
-        # NOTE: Disabled as Qt/GTK env vars can interfere with browser startup
-        # The SOM overlay patching below handles coordinate fixes without env vars
-        # from ..display.coordinator import setup_display_environment
-        # setup_display_environment()
-
-        # Apply SOM overlay coordinate fix for high-DPI displays
-        from ..display.overlay_fix import patch_som_overlay
-
-        patch_som_overlay()
+        # Use AgentLab's native retina display handling
+        # This is more reliable than our custom patches and integrates better
+        ExperimentRunner._setup_retina_handling()
 
         env_args = ExperimentRunner._create_env_args(config, EnvArgs)
 
@@ -256,3 +249,43 @@ class ExperimentRunner:
                 logger.info(f"Steps completed: {summary.get('n_steps', 0)}")
             except Exception:
                 pass
+
+    @staticmethod
+    def _setup_retina_handling():
+        """Setup AgentLab's native retina display handling.
+
+        Uses AGENTLAB_USE_RETINA environment variable which AgentLab uses
+        internally to scale coordinates for high-DPI displays.
+        """
+        import os
+        import platform
+
+        # Check if already set by user
+        if "AGENTLAB_USE_RETINA" in os.environ:
+            return
+
+        # Auto-detect retina displays on macOS
+        if platform.system() == "Darwin":
+            try:
+                # Try to detect retina display using system_profiler
+                import subprocess
+
+                result = subprocess.run(
+                    ["system_profiler", "SPDisplaysDataType"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                if "Retina" in result.stdout or "5K" in result.stdout or "4K" in result.stdout:
+                    os.environ["AGENTLAB_USE_RETINA"] = "1"
+                    from sygra.logger.logger_config import logger
+
+                    logger.info("Detected Retina display, enabling AGENTLAB_USE_RETINA")
+            except Exception:
+                # Fallback: enable for all macOS since most have high-DPI displays
+                os.environ["AGENTLAB_USE_RETINA"] = "1"
+                from sygra.logger.logger_config import logger
+
+                logger.info("Enabling AGENTLAB_USE_RETINA for macOS (fallback)")
+
+        # For other platforms, user can manually set AGENTLAB_USE_RETINA=1 if needed
