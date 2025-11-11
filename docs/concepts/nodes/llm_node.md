@@ -78,15 +78,15 @@ paraphrase_question:
 - `output_role`: This defines the role of the message returned by the LLM. It can be `system`, `user`, or `assistant`.
   If not specified, the default role (`assistant`) will be used.
 
-- `tools`: This is an optional field to specify the tools to be used by the LLM. 
-  The following tools are currently supported:
-  -  `tasks.examples.llm_node_tool_simulation.tools_from_module.tool_method` Single tool method with annotation @tool
-  -  `tasks.examples.llm_node_tool_simulation.tools_from_module` All valid tools from a module.
-  -  `tasks.examples.llm_node_tool_simulation.tools_from_module.MyToolClass` All valid tools from a class.
+  - `tools`: This is an optional field to specify the tools to be used by the LLM. 
+    The following tools are currently supported:
+      -  `tasks.examples.llm_node_tool_simulation.tools_from_module.tool_method` Single tool method with annotation @tool
+      -  `tasks.examples.llm_node_tool_simulation.tools_from_module` All valid tools from a module.
+      -  `tasks.examples.llm_node_tool_simulation.tools_from_module.MyToolClass` All valid tools from a class.
 
-  Make sure all the necessary tools are decorated with `@tool` from `langchain_core.tools`
-  Refer to the [Example Task](https://github.com/ServiceNow/SyGra/tree/main/tasks/examples/llm_node_tool_simulation) with tools attached to LLM Node.
+    Make sure all the necessary tools are decorated with `@tool` from `langchain_core.tools`
+    Refer to the [Example Task](https://github.com/ServiceNow/SyGra/tree/main/tasks/examples/llm_node_tool_simulation) with tools attached to LLM Node.
     
-  ![Note](https://img.shields.io/badge/Note-important-yellow)
-  > We currently support `openai`, `azure_openai`, `vllm` model types for tool calls.
+    ![Note](https://img.shields.io/badge/Note-important-yellow)
+  >   We currently support `openai`, `azure_openai`, `vllm` model types for tool calls.
 
