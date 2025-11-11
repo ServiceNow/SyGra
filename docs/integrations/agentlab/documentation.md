@@ -380,15 +380,6 @@ LLM Response:
 → Task terminates successfully
 ```
 
-### Text-Only vs Vision-Enabled
-
-| Mode | Accuracy | Cost | Use Case |
-|------|----------|------|----------|
-| **Text-Only** (`eval_use_vision=false`) | Lower | Lower | Simple tasks, URL/text-based confirmation |
-| **Vision-Enabled** (`eval_use_vision=true`) | Higher | Higher | Visual confirmation required (order pages, modals) |
-
-**Recommendation**: Use `eval_use_vision=true` for production tasks where accuracy matters.
-
 ### Results
 
 Completion information is stored in results:
@@ -493,30 +484,6 @@ Create tasks in JSONL format:
 ---
 
 ## Output Structure
-
-### Directory Layout
-
-After running a workflow, outputs are organized as:
-
-```
-tasks/my_task/
-├── graph_config.yaml           # Workflow configuration
-├── tasks.jsonl                 # Input tasks
-├── output_2025-*.json          # Results summary
-└── web_agents/                 # Experiment artifacts
-    └── 2025-11-09_*_custom.demo/
-        ├── complete_output.json    # Full trajectory with coordinates
-        ├── summary_info.json       # Metrics (steps, cost, time)
-        ├── completion_info.json    # Completion details
-        ├── experiment.log          # Detailed logs
-        ├── step_00000/             # Per-step artifacts
-        │   ├── action.txt
-        │   ├── thoughts.txt
-        │   ├── screenshot.png
-        │   └── screenshot_som.png
-        ├── step_00001/
-        └── ...
-```
 
 ### Output JSON Structure
 
@@ -746,7 +713,7 @@ workflow.run()
 ### Example 4: Export Training Data
 
 ```python
-from sygra.integrations.agentlab.utils import (
+from sygra.integrations.agentlab.utils.utils import (
     export_trajectories_to_dataset,
     extract_successful_trajectories
 )
@@ -775,7 +742,7 @@ export_trajectories_to_dataset(
 Use `AgentConfigBuilder` for advanced agent setup:
 
 ```python
-from sygra.integrations.agentlab.agent_config import AgentConfigBuilder
+from sygra.integrations.agentlab.agents.config import AgentConfigBuilder
 
 agent_args = AgentConfigBuilder.build(
     model="gpt-4o",
@@ -799,7 +766,7 @@ node = WebAgentNode(
 The integration automatically maps SyGra environment variables:
 
 ```python
-from sygra.integrations.agentlab.env_setup import EnvironmentMapper
+from sygra.integrations.agentlab.experiments.env_setup import EnvironmentMapper
 
 # Manual setup (usually automatic)
 EnvironmentMapper.setup(model_name="gpt-4o")
@@ -817,7 +784,7 @@ Experiments run in isolated subprocesses for:
 - **Timeout Control**: Can terminate hung experiments
 
 ```python
-from sygra.integrations.agentlab.experiment_runner import (
+from sygra.integrations.agentlab.experiments.runner import (
     ExperimentConfig,
     ExperimentRunner
 )
@@ -843,7 +810,7 @@ result = ExperimentRunner.run(config)
 Load experiment results from disk:
 
 ```python
-from sygra.integrations.agentlab.result_loader import ResultLoader
+from sygra.integrations.agentlab.evaluation.result_loader import ResultLoader
 
 result = ResultLoader.load(
     exp_dir="/path/to/experiment",
@@ -853,6 +820,21 @@ result = ResultLoader.load(
 print(f"Steps: {result['num_steps']}")
 print(f"Success: {result['success']}")
 print(f"Completion: {result['completion_reason']}")
+```
+
+### High-DPI Display Support
+
+The integration automatically handles coordinate scaling issues on high-DPI displays (like Retina displays) where browser coordinates are reported at 2x scale while screenshots are captured at 1x resolution.
+
+**Automatic Detection**: The system automatically detects when coordinate scaling is needed and applies 0.5x scaling to normalize coordinates.
+
+**Cross-Platform**: Works on macOS (Retina), Linux (high-DPI), and Windows (system DPI scaling).
+
+**No Configuration Required**: The fix is applied automatically when using AgentLab integration.
+
+If you experience SOM marker misalignment, check logs for coordinate scaling messages:
+```
+INFO - Applied coordinate scaling (0.5x) for high-DPI display compatibility
 ```
 
 ---

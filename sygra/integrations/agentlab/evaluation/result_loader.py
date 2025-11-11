@@ -72,6 +72,9 @@ class ResultLoader:
             elif completion_reason != "unknown":
                 logger.info(f"Task completion: {completion_reason}")
 
+            # Extract current page URL from the final step
+            current_url = ResultLoader._extract_current_url(exp_path, n_steps)
+
             return {
                 "trajectory": trajectory,
                 "screenshots": screenshots,
@@ -87,6 +90,7 @@ class ResultLoader:
                 "agent_message": agent_message,
                 "eval_confidence": eval_confidence,
                 "eval_reasoning": eval_reasoning,
+                "current_url": current_url,
             }
 
         except Exception as e:
@@ -102,6 +106,7 @@ class ResultLoader:
             "success": False,
             "trajectory": [],
             "screenshots": [],
+            "current_url": "",
         }
 
     @staticmethod
@@ -261,6 +266,10 @@ class ResultLoader:
                 if coordinates:
                     trajectory_entry["coordinates"] = coordinates
 
+                # Add current URL for this step
+                step_url = ResultLoader._extract_current_url(exp_path, step_num)
+                trajectory_entry["current_url"] = step_url
+
                 trajectory.append(trajectory_entry)
 
             if som_data:
@@ -397,3 +406,72 @@ class ResultLoader:
             "clickable": element.get("clickable", False),
             "visibility": element.get("visibility", 0.0),
         }
+
+    @staticmethod
+    def _extract_current_url(exp_path: Path, n_steps: int) -> str:
+        """Extract the current page URL from the final step data.
+
+        Args:
+            exp_path: Path to experiment directory
+            n_steps: Number of steps completed
+
+        Returns:
+            Current page URL, or empty string if not found
+        """
+        try:
+            import gzip
+            import pickle
+
+            # Try to load the final step data
+            final_step_file = exp_path / f"step_{n_steps}.pkl.gz"
+            if final_step_file.exists():
+                with gzip.open(final_step_file, "rb") as f:
+                    step_data = pickle.load(f)
+
+                # Handle browsergym StepInfo object (newer format)
+                if hasattr(step_data, "obs"):
+                    obs = step_data.obs
+                    if isinstance(obs, dict):
+                        # Try different possible URL keys
+                        for url_key in ["url", "page_url", "current_url"]:
+                            if url_key in obs:
+                                return str(obs[url_key])
+
+                        # Check if there's nested page info
+                        if "page" in obs and isinstance(obs["page"], dict):
+                            for url_key in ["url", "page_url", "current_url"]:
+                                if url_key in obs["page"]:
+                                    return str(obs["page"][url_key])
+
+                    # If obs is not a dict, it might be a browsergym observation object
+                    if hasattr(obs, "url"):
+                        return str(obs.url)
+                    elif hasattr(obs, "page_url"):
+                        return str(obs.page_url)
+
+                # Fallback: handle tuple format (older format)
+                elif isinstance(step_data, tuple) and len(step_data) >= 1:
+                    obs = step_data[0]  # observation is typically the first element
+                    if isinstance(obs, dict):
+                        # Try different possible URL keys
+                        for url_key in ["url", "page_url", "current_url"]:
+                            if url_key in obs:
+                                return str(obs[url_key])
+
+                        # Check if there's nested page info
+                        if "page" in obs and isinstance(obs["page"], dict):
+                            for url_key in ["url", "page_url", "current_url"]:
+                                if url_key in obs["page"]:
+                                    return str(obs["page"][url_key])
+
+                    # If obs is not a dict, it might be a browsergym observation object
+                    if hasattr(obs, "url"):
+                        return str(obs.url)
+                    elif hasattr(obs, "page_url"):
+                        return str(obs.page_url)
+
+        except Exception:
+            # Silently ignore errors - URL extraction is not critical
+            pass
+
+        return ""

@@ -236,7 +236,7 @@ Examples:
 
     def _get_model_args(self):
         """Get model configuration for evaluation."""
-        from agentlab.llm.llm_configs import AzureModelArgs
+        from agentlab.llm.llm_configs import AzureModelArgs  # type: ignore[import-untyped]
 
         return AzureModelArgs(
             model_name=self.model_name,

@@ -13,7 +13,7 @@ The AgentLab integration extends SyGra with vision-enabled web automation capabi
 
 ### Key Capabilities
 
-**Visual Understanding**: Uses screenshots with Set-of-Mark (SOM) overlays for precise element identification
+**Visual Understanding**: Uses screenshots with Set-of-Mark (SOM) overlays for precise element identification with automatic coordinate fixing for high-DPI displays
 
 **Browser ID Actions**: Generates BID-based actions (`click('285')`, `fill('42', 'text')`) for reliable interaction and coordinate extraction
 
@@ -694,3 +694,11 @@ Check experiment logs:
 ```bash
 cat tasks/my_task/web_agents/*/experiment.log
 ```
+
+---
+
+## Documentation
+
+- **[Complete Documentation](documentation.md)** - Comprehensive guide with examples
+- **[Quick Reference](quick_reference.md)** - Fast lookup for common tasks  
+- **[Architecture](architecture.md)** - Module organization and design patterns

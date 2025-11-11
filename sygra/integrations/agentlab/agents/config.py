@@ -3,7 +3,7 @@
 Provides a clean interface to build AgentLab AgentArgs from simple parameters.
 """
 
-from agentlab.agents.agent_args import AgentArgs
+from agentlab.agents.agent_args import AgentArgs  # type: ignore[import-untyped]
 
 __all__ = ["AgentConfigBuilder"]
 
@@ -48,11 +48,15 @@ class AgentConfigBuilder:
             - When enable_chat=True, agent can use send_msg_to_user() to signal task completion.
               This is essential for openended tasks to allow the agent to stop when done.
         """
-        import agentlab.agents.dynamic_prompting as dp
-        from agentlab.agents.generic_agent.generic_agent import GenericAgentArgs
-        from agentlab.agents.generic_agent.generic_agent_prompt import GenericPromptFlags
-        from agentlab.llm.llm_configs import AzureModelArgs
-        from bgym import HighLevelActionSetArgs
+        import agentlab.agents.dynamic_prompting as dp  # type: ignore[import-untyped]
+        from agentlab.agents.generic_agent.generic_agent import (  # type: ignore[import-untyped]
+            GenericAgentArgs,
+        )
+        from agentlab.agents.generic_agent.generic_agent_prompt import (  # type: ignore[import-untyped]
+            GenericPromptFlags,
+        )
+        from agentlab.llm.llm_configs import AzureModelArgs  # type: ignore[import-untyped]
+        from bgym import HighLevelActionSetArgs  # type: ignore[import-untyped]
 
         vision_enabled = model in AgentConfigBuilder.VISION_MODELS
 

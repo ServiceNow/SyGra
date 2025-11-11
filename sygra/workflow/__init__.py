@@ -35,6 +35,11 @@ except ImportError:
     CORE_AVAILABLE = False
     from sygra.logger.logger_config import logger
 
+    # Fallback types for when core is not available
+    NodePreProcessor = Any  # type: ignore[misc, assignment]
+    NodePostProcessor = Any  # type: ignore[misc, assignment]
+    NodePostProcessorWithState = Any  # type: ignore[misc, assignment]
+
 from sygra.exceptions import ConfigurationError, ExecutionError, GraSPError
 from sygra.models import ModelConfigBuilder
 

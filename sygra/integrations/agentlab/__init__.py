@@ -29,9 +29,13 @@ try:
 
     AGENTLAB_AVAILABLE = True
 
-    # Core components
+    # Core components - updated imports for organized structure
     # Custom task creation
-    from sygra.integrations.agentlab.custom_tasks import (
+    from sygra.integrations.agentlab.agents.web_agent_node import (
+        WebAgentNode,
+        create_web_agent_node,
+    )
+    from sygra.integrations.agentlab.tasks.custom_tasks import (
         CustomWebTask,
         create_custom_task,
         create_custom_tasks,
@@ -40,7 +44,6 @@ try:
         create_search_task,
         create_web_navigation_task,
     )
-    from sygra.integrations.agentlab.web_agent_node import WebAgentNode, create_web_agent_node
 
 except ImportError:
     AGENTLAB_AVAILABLE = False

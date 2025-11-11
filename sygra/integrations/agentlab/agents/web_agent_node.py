@@ -24,9 +24,7 @@ from sygra.core.graph.nodes.base_node import BaseNode, NodeState
 from sygra.core.graph.sygra_state import SygraState
 from sygra.logger.logger_config import logger
 
-from .agent_config import AgentConfigBuilder
-from .experiment_runner import ExperimentConfig, ExperimentRunner
-from .result_loader import ResultLoader
+from .config import AgentConfigBuilder
 
 __all__ = ["WebAgentNode", "create_web_agent_node"]
 
@@ -97,7 +95,13 @@ class WebAgentNode(BaseNode):
 
         # Register state variables for LangGraph
         # Default state variables (always included)
-        self.state_variables = ["agent_result", "trajectory", "screenshots", "exp_dir"]
+        self.state_variables = [
+            "agent_result",
+            "trajectory",
+            "screenshots",
+            "exp_dir",
+            "current_url",
+        ]
 
         # If output_keys are specified in config, add them as additional state variables
         if self.node_config and "output_keys" in self.node_config:
@@ -171,6 +175,10 @@ class WebAgentNode(BaseNode):
             Updated state with agent results
         """
         try:
+            # Lazy import to avoid early browsergym loading
+            from ..evaluation.result_loader import ResultLoader
+            from ..experiments.runner import ExperimentConfig, ExperimentRunner
+
             task_info = self._extract_task_info(state)
             self._log_task_info(task_info)
 
@@ -330,6 +338,7 @@ class WebAgentNode(BaseNode):
             "id": state.get("id", task_info["task_name"].replace("custom.", "")),
             "goal": task_info["goal"],
             "url": task_info["url"],
+            "current_url": agent_result.get("current_url", ""),
             "task_name": task_info["task_name"],
             "task_type": task_info["task_type"],
             "num_steps": agent_result.get("num_steps", 0),
@@ -377,6 +386,8 @@ class WebAgentNode(BaseNode):
             updates["trajectory"] = agent_result["trajectory"]
         if "screenshots" in agent_result:
             updates["screenshots"] = agent_result["screenshots"]
+        if "current_url" in agent_result:
+            updates["current_url"] = agent_result["current_url"]
 
         logger.info(
             f"[{task_name}] Completed: {agent_result.get('num_steps', 0)} steps, "

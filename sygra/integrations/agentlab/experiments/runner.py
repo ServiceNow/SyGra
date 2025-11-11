@@ -14,7 +14,7 @@ from agentlab.agents.agent_args import AgentArgs  # type: ignore[import-untyped]
 from sygra.logger.logger_config import logger
 
 # IMPORTANT: Patch tasks BEFORE any other browsergym imports
-from . import patch_tasks  # noqa: F401 - Must be first
+# from ..tasks import patch_tasks  # noqa: F401 - Must be first
 from .env_setup import EnvironmentMapper
 
 # NOTE: browsergym.experiments is imported INSIDE functions to allow
@@ -134,7 +134,7 @@ class ExperimentRunner:
         try:
             # Configure goal evaluation BEFORE any browsergym code runs
             # This ensures the task class reads the correct configuration
-            from sygra.integrations.agentlab.custom_openended_task import configure_goal_evaluation
+            from sygra.integrations.agentlab.tasks.openended_task import configure_goal_evaluation
 
             configure_goal_evaluation(
                 enable=config_dict.get("enable_goal_eval", False),
@@ -163,20 +163,32 @@ class ExperimentRunner:
         """
         EnvironmentMapper.setup(config["model_name"])
 
-        # Import browsergym AFTER goal evaluation is configured
-        from browsergym.experiments import EnvArgs, ExpArgs  # type: ignore[import-untyped]
+        # Apply task patches FIRST before any browsergym operations
+        from ..tasks import patch_tasks
 
-        # Note: Goal evaluation is already configured in _subprocess_target
-        # Note: OpenEndedTask patching happens at module import time
-        logger.debug("Using patched OpenEndedTask with completion detection")
+        patch_tasks()
 
+        # Import browsergym AFTER patching is done
         # Set exp_dir env var so task can save completion info
         import os
+
+        from browsergym.experiments import EnvArgs, ExpArgs  # type: ignore[import-untyped]
 
         exp_dir_parent = Path(config["exp_dir"])
         # Browse gym will create a timestamped subdirectory, but we'll update this later
         # For now, pass the parent so task knows where to write
         os.environ["BROWSERGYM_EXP_DIR_PARENT"] = str(exp_dir_parent)
+
+        # Configure display environment to prevent scaling interference
+        # NOTE: Disabled as Qt/GTK env vars can interfere with browser startup
+        # The SOM overlay patching below handles coordinate fixes without env vars
+        # from ..display.coordinator import setup_display_environment
+        # setup_display_environment()
+
+        # Apply SOM overlay coordinate fix for high-DPI displays
+        from ..display.overlay_fix import patch_som_overlay
+
+        patch_som_overlay()
 
         env_args = ExperimentRunner._create_env_args(config, EnvArgs)
 

@@ -214,7 +214,7 @@ for step in data['trajectory']:
 ## Export Training Data
 
 ```python
-from sygra.integrations.agentlab.utils import export_trajectories_to_dataset
+from sygra.integrations.agentlab.utils.utils import export_trajectories_to_dataset
 
 # Load results
 results = json.load(open("output.json"))

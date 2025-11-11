@@ -10,7 +10,6 @@ achieved, even if the agent doesn't explicitly signal completion.
 from typing import Any, Optional, Tuple
 
 import playwright.sync_api
-from browsergym.core.task import OpenEndedTask  # type: ignore
 
 from sygra.logger.logger_config import logger
 
@@ -38,7 +37,7 @@ def configure_goal_evaluation(
     )
 
 
-class OpenEndedTaskWithCompletion(OpenEndedTask):
+class OpenEndedTaskWithCompletion:
     """OpenEnded task that detects agent completion signals.
 
     This task extends the base OpenEndedTask to allow the agent to signal
@@ -140,11 +139,19 @@ class OpenEndedTaskWithCompletion(OpenEndedTask):
                 self._completion_detected = True
                 break
 
-        # Check if agent signaled completion (explicit signaling)
-        # Similar to how WebArena/VisualWebArena handle completion
+        # Check if agent signaled completion via send_msg_to_user
+        # Only messages that start with "Goal completed:" or contain completion signals
         if not done and chat_messages:
             last_message = chat_messages[-1]
-            if last_message["role"] == "assistant":
+            if (
+                last_message["role"] == "assistant"
+                and last_message["message"]
+                and (
+                    "Goal completed:" in last_message["message"]
+                    or "Task completed:" in last_message["message"]
+                    or "send_msg_to_user" in str(last_message.get("action", ""))
+                )
+            ):
                 done = True
                 msg = f"Agent signaled completion: {last_message['message']}"
                 info["agent_message"] = last_message["message"]
@@ -182,7 +189,7 @@ class OpenEndedTaskWithCompletion(OpenEndedTask):
                     )
                     logger.debug(f"Evaluation reasoning: {reasoning[:150]}")
 
-                    if is_complete and confidence > 0.7:
+                    if is_complete and confidence > 0.9:
                         done = True
                         msg = f"Goal evaluation: {reasoning}"
                         info["completion_reason"] = "auto_eval"
@@ -253,7 +260,7 @@ class OpenEndedTaskWithCompletion(OpenEndedTask):
 
         # Lazy import and initialization
         if self._goal_evaluator is None:
-            from .goal_evaluator import GoalEvaluator
+            from ..evaluation.goal_evaluator import GoalEvaluator
 
             self._goal_evaluator = GoalEvaluator(use_vision=use_vision)
             logger.debug(f"Initialized goal evaluator (vision={use_vision})")
@@ -320,5 +327,5 @@ def get_task_class_for_type(task_type: str) -> type:
         env = gym.make(f"browsergym/{task_type}")
         return env.unwrapped.task.__class__  # type: ignore[no-any-return, attr-defined]
     except Exception:
-        # Fallback to default OpenEndedTask
-        return OpenEndedTask  # type: ignore[no-any-return]
+        # Fallback to default OpenEndedTaskWithCompletion
+        return OpenEndedTaskWithCompletion  # type: ignore[no-any-return]

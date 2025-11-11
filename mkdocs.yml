@@ -54,6 +54,7 @@ nav:
           - Overview: integrations/agentlab/index.md
           - Complete Guide: integrations/agentlab/documentation.md
           - Quick Reference: integrations/agentlab/quick_reference.md
+          - Architecture: integrations/agentlab/architecture.md
   - Tutorials:
       - Agent Simulation: tutorials/agent_simulation_tutorial.md
       - Agent Simulation with Tools: tutorials/agent_tool_simulation_tutorial.md
