@@ -59,8 +59,8 @@ SYGRA_MIXTRAL_8X7B_CHAT_TEMPLATE={% for m in messages %} ... {% endfor %}
 | `chat_template_params`      | *(Optional)* Chat template parameters (e.g. `reasoning_effort` for `gpt-oss-120b`) <br/> when `completions_api` is enabled |
 | `ssl_verify`                | *(Optional)* Verify SSL certificate (default: true)                                                                        |
 | `ssl_cert`                  | *(Optional)* Path to SSL certificate file                                                                                  |
-| `json_payload`              | *(Optional)* Boolean: use JSON payload instead of JSON string for `http_client` based models (default: false)                |
-| `headers`                   | *(Optional)* Dictionary of headers to be sent with the request for `http_client` based models                                |
+| `json_payload`              | *(Optional)* Boolean: use JSON payload instead of JSON string for `http client` based models (default: false)              |
+| `headers`                   | *(Optional)* Dictionary of headers to be sent with the request for `http client` based models                              |
 ![Note](https://img.shields.io/badge/Note-important-yellow)  
 > - Do **not** include `url`, `auth_token`, or `api_key` in your YAML config. These are sourced from environment variables as described above.<br>
 > - If you want to set **ssl_verify** to **false** globally, you can set `ssl_verify:false` under `model_config` section in config/configuration.yaml
