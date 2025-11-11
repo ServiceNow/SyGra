@@ -51,6 +51,7 @@ SYGRA_MIXTRAL_8X7B_CHAT_TEMPLATE={% for m in messages %} ... {% endfor %}
 | `model_name`                | Model name for your deployments (for Azure/Azure OpenAI)                                                                   |
 | `api_version`               | API version for Azure or Azure OpenAI                                                                                      |
 | `hf_chat_template_model_id` | Hugging Face model ID                                                                                                      |
+| `multi_modal`               | *(Optional)* Boolean: Set this to false if the model is not multi-modal (default: true)                                    |
 | `completions_api`           | *(Optional)* Boolean: use completions API instead of chat completions API (default: false)                                 |
 | `modify_tokenizer`          | *(Optional)* Boolean: apply custom chat template and modify the base model tokenizer (default: false)                      |
 | `special_tokens`            | *(Optional)* List of special stop tokens used in generation                                                                |
