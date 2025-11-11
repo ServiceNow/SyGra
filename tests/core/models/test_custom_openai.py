@@ -1108,6 +1108,461 @@ class TestCustomOpenAI(unittest.TestCase):
     def test_edit_image_no_images_routes_to_generation(self, mock_set_client):
         asyncio.run(self._run_edit_image_no_images_routes_to_generation(mock_set_client))
 
+    # ============ GPT-4O-AUDIO TESTS ============
+
+    async def _run_audio_chat_text_to_text(self, mock_set_client):
+        """Test gpt-4o-audio with text input, text output"""
+        import base64
+
+        # Setup config for gpt-4o-audio
+        audio_chat_config = {
+            "name": "gpt4o_audio_model",
+            "model": "gpt-4o-audio-preview",
+            "url": "https://api.openai.com/v1",
+            "auth_token": "Bearer sk-test_key_123",
+            "api_version": "2023-05-15",
+            "parameters": {"temperature": 0.7},
+        }
+
+        # Mock messages - text only
+        messages = [HumanMessage(content="Hello, how are you?")]
+        chat_input = ChatPromptValue(messages=messages)
+
+        # Setup mock client
+        mock_client = MagicMock()
+        mock_choice = MagicMock()
+        mock_choice.model_dump.return_value = {
+            "message": {"content": "I'm doing well, thank you!"}
+        }
+        mock_completion = MagicMock()
+        mock_completion.choices = [mock_choice]
+
+        mock_client.send_request = AsyncMock(return_value=mock_completion)
+
+        # Create custom model
+        custom_openai = CustomOpenAI(audio_chat_config)
+        custom_openai._client = mock_client
+
+        # Call _generate_response
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_response(chat_input, model_params)
+
+        # Verify it routed to audio chat completion
+        self.assertEqual(resp_status, 200)
+        self.assertEqual(resp_text, "I'm doing well, thank you!")
+        mock_client.send_request.assert_called_once()
+
+        # Verify payload structure
+        call_args = mock_client.send_request.call_args
+        payload = call_args[0][0]
+        self.assertIn("messages", payload)
+        self.assertEqual(len(payload["messages"]), 1)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_audio_chat_text_to_text(self, mock_set_client):
+        """Test gpt-4o-audio routes correctly and handles text-to-text"""
+        asyncio.run(self._run_audio_chat_text_to_text(mock_set_client))
+
+    async def _run_audio_chat_text_to_audio(self, mock_set_client):
+        """Test gpt-4o-audio with text input, audio output"""
+        import base64
+
+        # Setup config for gpt-4o-audio with audio output
+        audio_chat_config = {
+            "name": "gpt4o_audio_model",
+            "model": "gpt-4o-audio-preview",
+            "output_type": "audio",
+            "url": "https://api.openai.com/v1",
+            "auth_token": "Bearer sk-test_key_123",
+            "api_version": "2023-05-15",
+            "parameters": {
+                "voice": "alloy",
+                "response_format": "wav",
+            },
+        }
+
+        # Mock messages - text only
+        messages = [HumanMessage(content="Say hello")]
+        chat_input = ChatPromptValue(messages=messages)
+
+        # Setup mock client with audio response
+        mock_client = MagicMock()
+        fake_audio_data = b"fake_audio_bytes"
+        audio_base64 = base64.b64encode(fake_audio_data).decode("utf-8")
+
+        mock_choice = MagicMock()
+        mock_choice.model_dump.return_value = {
+            "message": {
+                "content": "Hello there!",
+                "audio": {"data": audio_base64, "format": "wav"},
+            }
+        }
+        mock_completion = MagicMock()
+        mock_completion.choices = [mock_choice]
+
+        mock_client.send_request = AsyncMock(return_value=mock_completion)
+
+        # Create custom model
+        custom_openai = CustomOpenAI(audio_chat_config)
+        custom_openai._client = mock_client
+
+        # Call _generate_response
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_response(chat_input, model_params)
+
+        # Verify audio data URL was returned
+        self.assertEqual(resp_status, 200)
+        self.assertTrue(resp_text.startswith("data:audio/wav;base64,"))
+        self.assertIn(audio_base64, resp_text)
+
+        # Verify payload included modalities and audio params
+        call_args = mock_client.send_request.call_args
+        payload = call_args[0][0]
+        self.assertIn("modalities", payload)
+        self.assertIn("audio", payload["modalities"])
+        self.assertIn("audio", payload)
+        self.assertEqual(payload["audio"]["voice"], "alloy")
+        self.assertEqual(payload["audio"]["format"], "wav")
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_audio_chat_text_to_audio(self, mock_set_client):
+        """Test gpt-4o-audio text-to-audio generation"""
+        asyncio.run(self._run_audio_chat_text_to_audio(mock_set_client))
+
+    async def _run_audio_chat_audio_to_text(self, mock_set_client):
+        """Test gpt-4o-audio with audio input, text output (transcription)"""
+        import base64
+
+        # Setup config for gpt-4o-audio
+        audio_chat_config = {
+            "name": "gpt4o_audio_model",
+            "model": "gpt-4o-audio-preview",
+            "input_type": "audio",
+            "url": "https://api.openai.com/v1",
+            "auth_token": "Bearer sk-test_key_123",
+            "api_version": "2023-05-15",
+            "parameters": {},
+        }
+
+        # Create mock audio data URL
+        fake_audio = b"fake_wav_audio_data"
+        audio_b64 = base64.b64encode(fake_audio).decode("utf-8")
+        audio_data_url = f"data:audio/wav;base64,{audio_b64}"
+
+        # Mock messages with audio input
+        messages = [
+            HumanMessage(
+                content=[
+                    {"type": "audio_url", "audio_url": {"url": audio_data_url}},
+                    {"type": "text", "text": "Transcribe this audio"},
+                ]
+            )
+        ]
+        chat_input = ChatPromptValue(messages=messages)
+
+        # Setup mock client
+        mock_client = MagicMock()
+        mock_choice = MagicMock()
+        mock_choice.model_dump.return_value = {
+            "message": {"content": "This is the transcribed text."}
+        }
+        mock_completion = MagicMock()
+        mock_completion.choices = [mock_choice]
+
+        mock_client.send_request = AsyncMock(return_value=mock_completion)
+
+        # Create custom model
+        custom_openai = CustomOpenAI(audio_chat_config)
+        custom_openai._client = mock_client
+
+        # Call _generate_response
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_response(chat_input, model_params)
+
+        # Verify transcription returned
+        self.assertEqual(resp_status, 200)
+        self.assertEqual(resp_text, "This is the transcribed text.")
+
+        # Verify audio was converted to input_audio format
+        call_args = mock_client.send_request.call_args
+        payload = call_args[0][0]
+        messages_sent = payload["messages"]
+        self.assertEqual(len(messages_sent), 1)
+
+        # Check that audio_url was converted to input_audio
+        content = messages_sent[0]["content"]
+        self.assertTrue(any(item.get("type") == "input_audio" for item in content))
+
+        # Find the input_audio item
+        audio_item = next(item for item in content if item.get("type") == "input_audio")
+        self.assertIn("input_audio", audio_item)
+        self.assertIn("data", audio_item["input_audio"])
+        self.assertIn("format", audio_item["input_audio"])
+        self.assertEqual(audio_item["input_audio"]["format"], "wav")
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_audio_chat_audio_to_text(self, mock_set_client):
+        """Test gpt-4o-audio audio-to-text (transcription)"""
+        asyncio.run(self._run_audio_chat_audio_to_text(mock_set_client))
+
+    async def _run_audio_chat_audio_to_audio(self, mock_set_client):
+        """Test gpt-4o-audio with audio input, audio output"""
+        import base64
+
+        # Setup config for gpt-4o-audio with audio I/O
+        audio_chat_config = {
+            "name": "gpt4o_audio_model",
+            "model": "gpt-4o-audio-preview",
+            "input_type": "audio",
+            "output_type": "audio",
+            "url": "https://api.openai.com/v1",
+            "auth_token": "Bearer sk-test_key_123",
+            "api_version": "2023-05-15",
+            "parameters": {
+                "voice": "nova",
+                "response_format": "mp3",
+            },
+        }
+
+        # Create mock audio input
+        fake_input_audio = b"fake_input_wav"
+        input_audio_b64 = base64.b64encode(fake_input_audio).decode("utf-8")
+        input_audio_url = f"data:audio/wav;base64,{input_audio_b64}"
+
+        # Mock messages with audio input
+        messages = [
+            HumanMessage(
+                content=[
+                    {"type": "audio_url", "audio_url": {"url": input_audio_url}},
+                    {"type": "text", "text": "Translate this to English"},
+                ]
+            )
+        ]
+        chat_input = ChatPromptValue(messages=messages)
+
+        # Setup mock client with audio response
+        mock_client = MagicMock()
+        fake_output_audio = b"fake_output_mp3"
+        output_audio_b64 = base64.b64encode(fake_output_audio).decode("utf-8")
+
+        mock_choice = MagicMock()
+        mock_choice.model_dump.return_value = {
+            "message": {
+                "content": "Translated text",
+                "audio": {"data": output_audio_b64, "format": "mp3"},
+            }
+        }
+        mock_completion = MagicMock()
+        mock_completion.choices = [mock_choice]
+
+        mock_client.send_request = AsyncMock(return_value=mock_completion)
+
+        # Create custom model
+        custom_openai = CustomOpenAI(audio_chat_config)
+        custom_openai._client = mock_client
+
+        # Call _generate_response
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_response(chat_input, model_params)
+
+        # Verify audio output returned
+        self.assertEqual(resp_status, 200)
+        # MP3 format uses audio/mpeg MIME type
+        self.assertTrue(resp_text.startswith("data:audio/mpeg;base64,"))
+        self.assertIn(output_audio_b64, resp_text)
+
+        # Verify payload included modalities for audio output
+        call_args = mock_client.send_request.call_args
+        payload = call_args[0][0]
+        self.assertIn("modalities", payload)
+        self.assertIn("audio", payload["modalities"])
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_audio_chat_audio_to_audio(self, mock_set_client):
+        """Test gpt-4o-audio audio-to-audio (translation/transformation)"""
+        asyncio.run(self._run_audio_chat_audio_to_audio(mock_set_client))
+
+    async def _run_audio_chat_rate_limit_error(self, mock_set_client):
+        """Test gpt-4o-audio handles rate limit errors"""
+        # Setup config
+        audio_chat_config = {
+            "name": "gpt4o_audio_model",
+            "model": "gpt-4o-audio-preview",
+            "url": "https://api.openai.com/v1",
+            "auth_token": "Bearer sk-test_key_123",
+            "api_version": "2023-05-15",
+            "parameters": {},
+        }
+
+        messages = [HumanMessage(content="Test message")]
+        chat_input = ChatPromptValue(messages=messages)
+
+        # Setup mock client to raise rate limit error
+        mock_client = MagicMock()
+        rate_limit_error = openai.RateLimitError(
+            "Rate limit exceeded",
+            response=MagicMock(status_code=429),
+            body=None,
+        )
+        mock_client.send_request = AsyncMock(side_effect=rate_limit_error)
+
+        custom_openai = CustomOpenAI(audio_chat_config)
+        custom_openai._client = mock_client
+
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_response(chat_input, model_params)
+
+        # Verify error handling
+        self.assertEqual(resp_status, 429)
+        self.assertIn("###SERVER_ERROR###", resp_text)
+        self.assertIn("Rate limit exceeded", resp_text)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_audio_chat_rate_limit_error(self, mock_set_client):
+        """Test gpt-4o-audio rate limit error handling"""
+        asyncio.run(self._run_audio_chat_rate_limit_error(mock_set_client))
+
+    async def _run_audio_chat_bad_request_error(self, mock_set_client):
+        """Test gpt-4o-audio handles bad request errors"""
+        audio_chat_config = {
+            "name": "gpt4o_audio_model",
+            "model": "gpt-4o-audio-preview",
+            "url": "https://api.openai.com/v1",
+            "auth_token": "Bearer sk-test_key_123",
+            "api_version": "2023-05-15",
+            "parameters": {},
+        }
+
+        messages = [HumanMessage(content="Test")]
+        chat_input = ChatPromptValue(messages=messages)
+
+        # Setup mock client to raise bad request error
+        mock_client = MagicMock()
+        bad_request_error = openai.BadRequestError(
+            "Invalid audio format",
+            response=MagicMock(status_code=400),
+            body=None,
+        )
+        mock_client.send_request = AsyncMock(side_effect=bad_request_error)
+
+        custom_openai = CustomOpenAI(audio_chat_config)
+        custom_openai._client = mock_client
+
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_response(chat_input, model_params)
+
+        # Verify error handling
+        self.assertEqual(resp_status, 400)
+        self.assertIn("###SERVER_ERROR###", resp_text)
+        self.assertIn("Bad request", resp_text)
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_audio_chat_bad_request_error(self, mock_set_client):
+        """Test gpt-4o-audio bad request error handling"""
+        asyncio.run(self._run_audio_chat_bad_request_error(mock_set_client))
+
+    async def _run_audio_chat_model_detection(self, mock_set_client):
+        """Test that gpt-4o-audio model is correctly detected and routed"""
+        # Test various model name variations
+        model_names = [
+            "gpt-4o-audio-preview",
+            "gpt-4o-audio-preview-2024-10-01",
+            "GPT-4O-AUDIO-PREVIEW",  # Case insensitive
+        ]
+
+        for model_name in model_names:
+            audio_chat_config = {
+                "name": "test_model",
+                "model": model_name,
+                "url": "https://api.openai.com/v1",
+                "auth_token": "Bearer sk-test_key_123",
+                "api_version": "2023-05-15",
+                "parameters": {},
+            }
+
+            messages = [HumanMessage(content="Test")]
+            chat_input = ChatPromptValue(messages=messages)
+
+            # Setup mock client
+            mock_client = MagicMock()
+            mock_choice = MagicMock()
+            mock_choice.model_dump.return_value = {"message": {"content": "Response"}}
+            mock_completion = MagicMock()
+            mock_completion.choices = [mock_choice]
+            mock_client.send_request = AsyncMock(return_value=mock_completion)
+
+            custom_openai = CustomOpenAI(audio_chat_config)
+            custom_openai._client = mock_client
+
+            model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+            resp_text, resp_status = await custom_openai._generate_response(
+                chat_input, model_params
+            )
+
+            # Verify it was routed to audio chat completion
+            self.assertEqual(resp_status, 200, f"Failed for model: {model_name}")
+            mock_client.send_request.assert_called()
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_audio_chat_model_detection(self, mock_set_client):
+        """Test gpt-4o-audio model name detection (case insensitive)"""
+        asyncio.run(self._run_audio_chat_model_detection(mock_set_client))
+
+    async def _run_audio_chat_role_mapping(self, mock_set_client):
+        """Test that LangChain message types are correctly mapped to OpenAI roles"""
+        audio_chat_config = {
+            "name": "gpt4o_audio_model",
+            "model": "gpt-4o-audio-preview",
+            "url": "https://api.openai.com/v1",
+            "auth_token": "Bearer sk-test_key_123",
+            "api_version": "2023-05-15",
+            "parameters": {},
+        }
+
+        # Create messages with different LangChain types
+        from langchain_core.messages import AIMessage
+
+        messages = [
+            SystemMessage(content="You are helpful"),  # type='system'
+            HumanMessage(content="Hello"),  # type='human'
+            AIMessage(content="Hi there"),  # type='ai'
+        ]
+        chat_input = ChatPromptValue(messages=messages)
+
+        # Setup mock client
+        mock_client = MagicMock()
+        mock_choice = MagicMock()
+        mock_choice.model_dump.return_value = {"message": {"content": "Response"}}
+        mock_completion = MagicMock()
+        mock_completion.choices = [mock_choice]
+        mock_client.send_request = AsyncMock(return_value=mock_completion)
+
+        custom_openai = CustomOpenAI(audio_chat_config)
+        custom_openai._client = mock_client
+
+        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
+        resp_text, resp_status = await custom_openai._generate_response(chat_input, model_params)
+
+        # Verify the call was made
+        self.assertEqual(resp_status, 200)
+        mock_client.send_request.assert_called_once()
+
+        # Verify role mapping in the payload
+        call_args = mock_client.send_request.call_args
+        payload = call_args[0][0]
+        messages_sent = payload["messages"]
+
+        # Check that roles are correctly mapped
+        self.assertEqual(len(messages_sent), 3)
+        self.assertEqual(messages_sent[0]["role"], "system")  # system -> system
+        self.assertEqual(messages_sent[1]["role"], "user")  # human -> user
+        self.assertEqual(messages_sent[2]["role"], "assistant")  # ai -> assistant
+
+    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
+    def test_audio_chat_role_mapping(self, mock_set_client):
+        """Test LangChain to OpenAI role mapping"""
+        asyncio.run(self._run_audio_chat_role_mapping(mock_set_client))
+
 
 if __name__ == "__main__":
     unittest.main()
