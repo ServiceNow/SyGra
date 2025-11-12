@@ -354,7 +354,6 @@ class LLMNode(BaseNode):
         finally:
             self._record_execution_metadata(start_time, success, self.model, captured_tokens)
 
-
     def to_backend(self) -> Any:
         """
         Convert the Node object to backend platform specific Runnable object.
@@ -363,7 +362,6 @@ class LLMNode(BaseNode):
              Any: platform specific runnable object like Runnable in LangGraph.
         """
         return utils.backend_factory.create_llm_runnable(self._exec_wrapper)
-
 
     def validate_node(self):
         """

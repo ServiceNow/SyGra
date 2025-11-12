@@ -499,7 +499,9 @@ class BaseCustomModel(ABC):
         Centralized retry method that delegates to either regular text generation
         or structured output handling based on the flag.
         """
-        result: ModelResponse = ModelResponse(llm_response=f"{constants.ERROR_PREFIX} All retry attempts failed", response_code=999)
+        result: ModelResponse = ModelResponse(
+            llm_response=f"{constants.ERROR_PREFIX} All retry attempts failed", response_code=999
+        )
         try:
             async for attempt in AsyncRetrying(
                 retry=retry_if_result(self._is_retryable_error),
@@ -542,7 +544,10 @@ class BaseCustomModel(ABC):
         except RetryError:
             logger.error(f"[{self.name()}] Request failed after {self.retry_attempts} attempts")
             # Return a default error response if all retries failed
-            result = ModelResponse(llm_response=f"{constants.ERROR_PREFIX} All retry attempts failed", response_code=999)
+            result = ModelResponse(
+                llm_response=f"{constants.ERROR_PREFIX} All retry attempts failed",
+                response_code=999,
+            )
         return result
 
     async def _generate_response_with_retry(
