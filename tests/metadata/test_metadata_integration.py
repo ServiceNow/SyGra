@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 import pytest
 
+from sygra.core.models.model_response import ModelResponse
 from sygra.metadata.metadata_collector import get_metadata_collector
 from sygra.metadata.metadata_integration import track_model_request
 
@@ -41,7 +42,7 @@ class MockModel:
             "completion_tokens": 50,
             "total_tokens": 150,
         }
-        return "Generated response", 200
+        return ModelResponse(llm_response="Generated response", response_code=200)
 
     @track_model_request
     def sync_generate(self, prompt):
@@ -52,7 +53,7 @@ class MockModel:
             "completion_tokens": 50,
             "total_tokens": 150,
         }
-        return "Generated response", 200
+        return ModelResponse(llm_response="Generated response", response_code=200)
 
     @track_model_request
     async def async_generate_with_error(self, prompt):
@@ -80,10 +81,10 @@ class TestTrackModelRequestDecorator:
         model = MockModel(model_name="gpt-4o", model_type="OpenAI")
         collector = get_metadata_collector()
 
-        response, status = await model.async_generate("test prompt")
+        model_response: ModelResponse = await model.async_generate("test prompt")
 
-        assert response == "Generated response"
-        assert status == 200
+        assert model_response.llm_response == "Generated response"
+        assert model_response.response_code == 200
 
         # Check metadata was recorded
         assert "gpt-4o" in collector.model_metrics
@@ -98,10 +99,10 @@ class TestTrackModelRequestDecorator:
         model = MockModel(model_name="gpt-4o", model_type="OpenAI")
         collector = get_metadata_collector()
 
-        response, status = model.sync_generate("test prompt")
+        model_response: ModelResponse = model.sync_generate("test prompt")
 
-        assert response == "Generated response"
-        assert status == 200
+        assert model_response.llm_response == "Generated response"
+        assert model_response.response_code == 200
 
         # Check metadata was recorded
         assert "gpt-4o" in collector.model_metrics
@@ -198,7 +199,7 @@ class TestTrackModelRequestDecorator:
             @track_model_request
             async def async_generate(self, prompt):
                 # Don't set _last_request_usage
-                return "Generated response", 200
+                return ModelResponse(llm_response="Generated response", response_code=200)
 
         model = ModelWithoutTokens(model_name="gpt-4o")
         collector = get_metadata_collector()
@@ -258,7 +259,7 @@ class TestTrackModelRequestDecorator:
                     "completion_tokens": 50,
                     "total_tokens": 150,
                 }
-                return "response", 200
+                return ModelResponse(llm_response="response", response_code=200)
 
         model = ModelWithAPIVersion()
         collector = get_metadata_collector()
@@ -290,7 +291,7 @@ class TestDecoratorEdgeCases:
 
             @track_model_request
             async def async_generate(self, prompt):
-                return "response", 200
+                return ModelResponse(llm_response="response", response_code=200)
 
         model = ModelWithoutName()
         collector = get_metadata_collector()
@@ -316,7 +317,7 @@ class TestDecoratorEdgeCases:
 
             @track_model_request
             async def async_generate(self, prompt):
-                return "response", 200
+                return ModelResponse(llm_response="response", response_code=200)
 
         model = ModelWithCallableType()
         collector = get_metadata_collector()
@@ -340,7 +341,7 @@ class TestDecoratorEdgeCases:
 
             @track_model_request
             async def async_generate(self, prompt):
-                return "response", 200
+                return ModelResponse(llm_response="response", response_code=200)
 
         model = ModelWithBadConfig()
         collector = get_metadata_collector()
@@ -364,7 +365,7 @@ class TestDecoratorEdgeCases:
             async def async_generate(self, prompt):
                 # Only set some token fields
                 self._last_request_usage = {"prompt_tokens": 100}
-                return "response", 200
+                return ModelResponse(llm_response="response", response_code=200)
 
         model = ModelWithPartialTokens()
         collector = get_metadata_collector()

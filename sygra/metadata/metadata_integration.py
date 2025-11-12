@@ -3,6 +3,7 @@ import time
 from functools import wraps
 from typing import Callable
 
+from sygra.core.models.model_response import ModelResponse
 from sygra.metadata.langchain_callback import calculate_cost
 from sygra.metadata.metadata_collector import get_metadata_collector
 
@@ -27,7 +28,7 @@ def track_model_request(func: Callable) -> Callable:
 
         try:
             # Call original function
-            response, status_code = await func(self, *args, **kwargs)
+            model_response: ModelResponse = await func(self, *args, **kwargs)
             latency = time.time() - start_time
 
             # Extract model name and config
@@ -71,7 +72,7 @@ def track_model_request(func: Callable) -> Callable:
             collector.record_model_request(
                 model_name=model_name,
                 latency=latency,
-                response_code=status_code,
+                response_code=model_response.response_code,
                 prompt_tokens=prompt_tokens,
                 completion_tokens=completion_tokens,
                 total_tokens=total_tokens,
@@ -80,7 +81,7 @@ def track_model_request(func: Callable) -> Callable:
                 cost_usd=cost_usd,
             )
 
-            return response, status_code
+            return model_response
 
         except Exception:
             latency = time.time() - start_time
@@ -102,7 +103,7 @@ def track_model_request(func: Callable) -> Callable:
 
         try:
             # Call original function
-            response, status_code = func(self, *args, **kwargs)
+            model_response: ModelResponse = func(self, *args, **kwargs)
             latency = time.time() - start_time
 
             # Extract model name and config
@@ -146,7 +147,7 @@ def track_model_request(func: Callable) -> Callable:
             collector.record_model_request(
                 model_name=model_name,
                 latency=latency,
-                response_code=status_code,
+                response_code=model_response.response_code,
                 prompt_tokens=prompt_tokens,
                 completion_tokens=completion_tokens,
                 total_tokens=total_tokens,
@@ -155,7 +156,7 @@ def track_model_request(func: Callable) -> Callable:
                 cost_usd=cost_usd,
             )
 
-            return response, status_code
+            return model_response
 
         except Exception:
             latency = time.time() - start_time
