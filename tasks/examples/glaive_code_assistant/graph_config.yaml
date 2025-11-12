@@ -18,40 +18,21 @@ graph_config:
       node_type: llm
       prompt:
         - system: |
-            You are an assistant tasked with solving coding problems. 
-            If the user provides critique, respond with a revised answer of your previous attempts. Do NOT generate any conversational text or apologize if your previous answer was incorrect. Respond only with the answer for the question.
+            You are a skilled writer who is very good at paraphrasing or writing similar content to a another piece of text given to you.
+
+            You will write a very well and detailed rephrasing of the given content, without missing any key information.
         - user: |
-            {question}
+            Content: {question}
       model:
         name: gpt-4o
         parameters:
           temperature: 0.1
-    critique_answer:
-      pre_process: tasks.examples.glaive_code_assistant.task_executor.CritiqueAnsNodePreProcessor
-      node_type: llm
-      prompt:
-        - system: |              
-            You are a teacher grading a solution to a coding problem. Generate critique and recommendations for the user's submission by using the reference solution as a guide. It is not mandatory for the user solution to match exactly with the reference solution as long as it is logical and leads to the right solution.
-            If the answer, including all the steps, is correct, respond with 'NO MORE FEEDBACK'. Respond with 'NO MORE FEEDBACK' only after the user has corrected all the steps. Address the user in second person using 'you' and 'your'.
-            
-            QUESTION: {question}
-            REFERENCE SOLUTION: {answer}
-      model:
-        name: gpt-4o
-        parameters:
-          temperature: 0.1
-      post_process: tasks.examples.glaive_code_assistant.task_executor.CritiqueAnsNodePostProcessor
 
   edges:
     - from: START
       to: generate_answer
     - from: generate_answer
-      to: critique_answer
-    - from: critique_answer
-      condition: tasks.examples.glaive_code_assistant.task_executor.ShouldContinueCondition
-      path_map:
-        END: END
-        generate_answer: generate_answer
+      to: END
 
 output_config:
   generator: tasks.examples.glaive_code_assistant.task_executor.CodeGenOutputGenerator

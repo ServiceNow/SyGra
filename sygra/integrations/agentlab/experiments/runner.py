@@ -179,9 +179,14 @@ class ExperimentRunner:
         # For now, pass the parent so task knows where to write
         os.environ["BROWSERGYM_EXP_DIR_PARENT"] = str(exp_dir_parent)
 
-        # Use AgentLab's native retina display handling
-        # This is more reliable than our custom patches and integrates better
-        ExperimentRunner._setup_retina_handling()
+        # Apply SOM overlay retina fix to ensure consistent coordinate scaling
+        # This gives SOM overlays the same coordinate scaling as action overlays
+        from ..display.overlay_fix import patch_som_overlay
+
+        patch_som_overlay()
+
+        # Use AgentLab's native retina display handling (but don't disable our SOM patches)
+        ExperimentRunner._setup_retina_handling(disable_som_patches=False)
 
         env_args = ExperimentRunner._create_env_args(config, EnvArgs)
 
@@ -251,17 +256,24 @@ class ExperimentRunner:
                 pass
 
     @staticmethod
-    def _setup_retina_handling():
+    def _setup_retina_handling(disable_som_patches: bool = True):
         """Setup AgentLab's native retina display handling.
 
         Uses AGENTLAB_USE_RETINA environment variable which AgentLab uses
         internally to scale coordinates for high-DPI displays.
+
+        Args:
+            disable_som_patches: Whether to disable custom SOM patches. Set to False
+                               when using our new AgentLab-compatible SOM overlay fix.
         """
         import os
         import platform
 
         # Check if already set by user
         if "AGENTLAB_USE_RETINA" in os.environ:
+            # User has manually set this, conditionally disable old patches
+            if disable_som_patches:
+                ExperimentRunner._disable_custom_som_patches()
             return
 
         # Auto-detect retina displays on macOS
@@ -280,12 +292,67 @@ class ExperimentRunner:
                     os.environ["AGENTLAB_USE_RETINA"] = "1"
                     from sygra.logger.logger_config import logger
 
-                    logger.info("Detected Retina display, enabling AGENTLAB_USE_RETINA")
+                    logger.info("🖥️  Detected Retina display, enabling AGENTLAB_USE_RETINA")
+                    # Only disable custom patches if requested (for compatibility)
+                    if disable_som_patches:
+                        ExperimentRunner._disable_custom_som_patches()
             except Exception:
                 # Fallback: enable for all macOS since most have high-DPI displays
                 os.environ["AGENTLAB_USE_RETINA"] = "1"
                 from sygra.logger.logger_config import logger
 
-                logger.info("Enabling AGENTLAB_USE_RETINA for macOS (fallback)")
+                logger.info("🖥️  Enabling AGENTLAB_USE_RETINA for macOS (fallback)")
+                # Only disable custom patches if requested (for compatibility)
+                if disable_som_patches:
+                    ExperimentRunner._disable_custom_som_patches()
 
         # For other platforms, user can manually set AGENTLAB_USE_RETINA=1 if needed
+
+    @staticmethod
+    def _disable_custom_som_patches():
+        """Disable our custom SOM overlay patches to prevent double scaling.
+
+        This method restores the original overlay_som function in all modules
+        that may have been patched by our custom implementation.
+        """
+        try:
+            from sygra.logger.logger_config import logger
+
+            logger.info("🛑 _disable_custom_som_patches called - disabling SOM patches")
+
+            # Set a flag to prevent our overlay patches from applying coordinate scaling
+            import os
+
+            os.environ["SYGRA_DISABLE_SOM_PATCHES"] = "1"
+
+            # Try to restore original overlay_som function if it was patched
+            try:
+                from ..display.overlay_fix import _original_overlay_som
+
+                if _original_overlay_som is not None:
+                    # Restore original function in browsergym.utils.obs
+                    try:
+                        import browsergym.utils.obs as obs_module  # type: ignore[import-untyped]
+
+                        obs_module.overlay_som = _original_overlay_som  # type: ignore[attr-defined]
+                    except ImportError:
+                        pass
+
+                    # Restore in sys.modules
+                    import sys
+
+                    if "browsergym.utils.obs" in sys.modules:
+                        sys.modules["browsergym.utils.obs"].overlay_som = _original_overlay_som  # type: ignore[attr-defined]
+
+                    logger.info(
+                        "Disabled custom SOM overlay patches to prevent double scaling with AGENTLAB_USE_RETINA"
+                    )
+
+            except ImportError:
+                # overlay_fix module not available, nothing to disable
+                pass
+
+        except Exception as e:
+            from sygra.logger.logger_config import logger
+
+            logger.warning(f"Failed to disable custom SOM patches: {e}")
