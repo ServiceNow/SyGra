@@ -750,6 +750,53 @@ class TestClientFactory(unittest.TestCase):
             model_config, model_url, model_auth_token, True, False
         )
 
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_create_http_client_json_payload_true(self, mock_validate):
+        """Test that json_payload flag is propagated to HttpClient"""
+        model_url = "http://azure-test.com"
+        model_auth_token = "test-token"
+        model_config = {
+            "model_type": "azure",
+            "url": model_url,
+            "auth_token": model_auth_token,
+            "timeout": 75,
+            "json_payload": True,
+        }
+        http_client = ClientFactory._create_http_client(model_config, model_url, model_auth_token)
+        # validate called with required keys
+        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
+        # json_payload is set
+        self.assertTrue(http_client.json_payload)
+        # default headers still applied and auth header injected
+        self.assertEqual(http_client.headers["Content-Type"], "application/json")
+        self.assertEqual(http_client.headers["Authorization"], "Bearer test-token")
+
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_create_http_client_headers_config_injection(self, mock_validate):
+        """Test that headers from config are merged and override defaults"""
+        model_url = "http://azure-test.com"
+        model_auth_token = "test-token"
+        headers_cfg = {
+            "X-Test": "abc",
+        }
+        model_config = {
+            "model_type": "azure",
+            "url": model_url,
+            "auth_token": model_auth_token,
+            "headers": headers_cfg,
+            "timeout": 75,
+            "json_payload": False,
+        }
+        http_client = ClientFactory._create_http_client(model_config, model_url, model_auth_token)
+        # validate called with required keys
+        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
+        # custom headers override defaults and are merged
+        self.assertEqual(http_client.headers["X-Test"], "abc")
+        # Authorization from token overrides any provided in headers
+        self.assertEqual(http_client.headers["Authorization"], "Bearer test-token")
+        # json_payload remains False if not set to True
+        self.assertFalse(http_client.json_payload)
+
 
 if __name__ == "__main__":
     unittest.main()

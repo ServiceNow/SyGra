@@ -152,13 +152,11 @@ class TestCustomAzure(unittest.TestCase):
         model_params = ModelParams(
             url="https://azure-test.openai.azure.com", auth_token="test_token"
         )
-        resp_text, resp_status = await custom_azure._generate_response(
-            self.chat_input, model_params
-        )
+        model_response = await custom_azure._generate_response(self.chat_input, model_params)
 
         # Verify results
-        self.assertEqual(resp_text, "Hello! I'm doing well, thank you!")
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.llm_response, "Hello! I'm doing well, thank you!")
+        self.assertEqual(model_response.response_code, 200)
 
         # Verify method calls
         mock_set_client.assert_called_once()
@@ -199,13 +197,11 @@ class TestCustomAzure(unittest.TestCase):
         model_params = ModelParams(
             url="https://azure-test.openai.azure.com", auth_token="test_token"
         )
-        resp_text, resp_status = await custom_azure._generate_response(
-            self.chat_input, model_params
-        )
+        model_response = await custom_azure._generate_response(self.chat_input, model_params)
 
         # Verify results - should return content filter message with code 444
-        self.assertEqual(resp_text, "Blocked by azure content filter")
-        self.assertEqual(resp_status, 444)
+        self.assertEqual(model_response.llm_response, "Blocked by azure content filter")
+        self.assertEqual(model_response.response_code, 444)
 
     @patch("sygra.core.models.custom_models.logger")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
@@ -242,13 +238,11 @@ class TestCustomAzure(unittest.TestCase):
         model_params = ModelParams(
             url="https://azure-test.openai.azure.com", auth_token="test_token"
         )
-        resp_text, resp_status = await custom_azure._generate_response(
-            self.chat_input, model_params
-        )
+        model_response = await custom_azure._generate_response(self.chat_input, model_params)
 
         # Verify results - should return empty string with error status
-        self.assertEqual(resp_text, "")
-        self.assertEqual(resp_status, 429)
+        self.assertEqual(model_response.llm_response, "")
+        self.assertEqual(model_response.response_code, 429)
 
         # Verify error logging
         mock_logger.error.assert_called()
@@ -280,14 +274,12 @@ class TestCustomAzure(unittest.TestCase):
         model_params = ModelParams(
             url="https://azure-test.openai.azure.com", auth_token="test_token"
         )
-        resp_text, resp_status = await custom_azure._generate_response(
-            self.chat_input, model_params
-        )
+        model_response = await custom_azure._generate_response(self.chat_input, model_params)
 
         # Verify results
-        self.assertIn("Http request failed", resp_text)
-        self.assertIn("Connection timeout", resp_text)
-        self.assertEqual(resp_status, 999)
+        self.assertIn("Http request failed", model_response.llm_response)
+        self.assertIn("Connection timeout", model_response.llm_response)
+        self.assertEqual(model_response.response_code, 999)
 
         # Verify error logging
         mock_logger.error.assert_called()
@@ -319,12 +311,10 @@ class TestCustomAzure(unittest.TestCase):
         model_params = ModelParams(
             url="https://azure-test.openai.azure.com", auth_token="test_token"
         )
-        resp_text, resp_status = await custom_azure._generate_response(
-            self.chat_input, model_params
-        )
+        model_response = await custom_azure._generate_response(self.chat_input, model_params)
 
         # Verify extracted status code is used
-        self.assertEqual(resp_status, 503)
+        self.assertEqual(model_response.response_code, 503)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.utils")

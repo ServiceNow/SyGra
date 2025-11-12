@@ -17,6 +17,8 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+from sygra.core.models.model_response import ModelResponse
+
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
@@ -49,7 +51,7 @@ class UserSchema(BaseModel):
 class CustomModel(BaseCustomModel):
     @pytest.mark.asyncio
     async def _generate_response(self, input, model_params):
-        return "test response", 200
+        return ModelResponse(llm_response="test response", response_code=200)
 
     def _supports_native_structured_output(self):
         # Override to return True for testing
@@ -58,9 +60,12 @@ class CustomModel(BaseCustomModel):
 
 # Mock client for API responses
 class MockClient:
-    def __init__(self, response_text="", status_code=200):
+    def __init__(self, response_text="", status_code=200, tool_calls=None):
+        if tool_calls is None:
+            tool_calls = []
         self.response_text = response_text
         self.status_code = status_code
+        self.tool_calls = tool_calls
 
     def build_request(self, **kwargs):
         return kwargs
@@ -72,23 +77,27 @@ class MockClient:
         response = Mock()
         response.text = self.response_text
         response.status_code = self.status_code
+        response.tool_calls = self.tool_calls
         return response
 
     async def send_request(self, payload, model_name=None, extra_params=None, **kwargs):
         # Create a simple response object instead of using Mock
         class MockResponse:
-            def __init__(self, text, status_code):
+            def __init__(self, text, status_code, tool_calls):
                 self.text = text
                 self.status_code = status_code
+                self.tool_calls = tool_calls
                 self.choices = [Mock()]
-                self.choices[0].model_dump = lambda: {"message": {"content": text}}
+                self.choices[0].model_dump = lambda: {
+                    "message": {"content": text, "tool_calls": tool_calls}
+                }
 
             def __getattr__(self, name):
                 if name == "status_code":
                     return self.status_code
                 raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
-        return MockResponse(self.response_text, self.status_code)
+        return MockResponse(self.response_text, self.status_code, self.tool_calls)
 
 
 class TestSchemaConfigParser(unittest.TestCase):
@@ -276,14 +285,18 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         mock_output_parser.return_value = mock_parser_instance
 
         model = CustomModel(self.test_config)
-        model._generate_response_with_retry = AsyncMock(return_value=(self.valid_json, 200))
+        model._generate_response_with_retry = AsyncMock(
+            return_value=ModelResponse(llm_response=self.valid_json, response_code=200)
+        )
 
         # Execute
-        resp_text, resp_status = await model._generate_fallback_structured_output(
+        model_response = await model._generate_fallback_structured_output(
             self.test_input, self.test_params, UserSchema
         )
 
         # Verify
+        resp_status = model_response.response_code
+        resp_text = model_response.llm_response
         self.assertEqual(resp_status, 200)
         parsed_data = json.loads(resp_text)
         self.assertEqual(parsed_data["name"], "Test")
@@ -301,7 +314,7 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
                 "model": "gpt-4",
             }
         )
-        model._client = MockClient(response_text=self.valid_json, status_code=200)
+        model._client = MockClient(response_text=self.valid_json, status_code=200, tool_calls=[])
 
         # Mock _set_client to prevent it from overwriting our mock client
         with (
@@ -311,10 +324,11 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
                 return_value=UserSchema(name="Test", age=30, email="test@example.com"),
             ),
         ):
-            resp_text, resp_status = await model._generate_native_structured_output(
+            model_response: ModelResponse = await model._generate_native_structured_output(
                 self.test_input, self.test_params, UserSchema
             )
-
+            resp_status = model_response.response_code
+            resp_text = model_response.llm_response
             self.assertEqual(resp_status, 200)
             self.assertIn("Test", resp_text)
 
@@ -349,7 +363,7 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
     async def test_vllm_native_structured_output_success(self, mock_parser, mock_utils):
         """Test VLLM native structured output success"""
         model = CustomVLLM({**self.test_config, "url": "test", "auth_token": "test"})
-        model._client = MockClient(response_text=self.valid_json, status_code=200)
+        model._client = MockClient(response_text=self.valid_json, status_code=200, tool_calls=[])
 
         # Mock _set_client to prevent it from overwriting our mock client
         with (
@@ -359,11 +373,13 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
                 return_value=UserSchema(name="Test", age=30, email="test@example.com"),
             ),
         ):
-            resp_text, resp_status = await model._generate_native_structured_output(
+            model_response: ModelResponse = await model._generate_native_structured_output(
                 self.test_input, self.test_params, UserSchema
             )
-
+            resp_status = model_response.response_code
+            resp_text = model_response.llm_response
             self.assertEqual(resp_status, 200)
+            self.assertIn("Test", resp_text)
 
     @patch("sygra.utils.utils.validate_required_keys")
     @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
@@ -420,10 +436,11 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
                 return_value=UserSchema(name="Test", age=30, email="test@example.com"),
             ),
         ):
-            resp_text, resp_status = await model._generate_native_structured_output(
+            model_response: ModelResponse = await model._generate_native_structured_output(
                 self.test_input, self.test_params, UserSchema
             )
-
+            resp_status = model_response.response_code
+            resp_text = model_response.llm_response
             self.assertEqual(resp_status, 200)
             # TGI returns parsed dictionary, not JSON string
             self.assertEqual(resp_text, self.valid_json)
@@ -549,14 +566,18 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
         mock_output_parser.return_value = mock_parser_instance
 
         model = CustomModel(self.test_config)
-        model._generate_response_with_retry = AsyncMock(return_value=("Invalid JSON", 200))
+        model._generate_response_with_retry = AsyncMock(
+            return_value=ModelResponse(llm_response="Invalid JSON", response_code=200)
+        )
 
         # Execute
-        resp_text, resp_status = await model._generate_fallback_structured_output(
+        model_response: ModelResponse = await model._generate_fallback_structured_output(
             self.test_input, self.test_params, UserSchema
         )
 
         # Should return unparsed response when parsing fails
+        resp_text = model_response.llm_response
+        resp_status = model_response.response_code
         self.assertEqual(resp_text, "Invalid JSON")
         self.assertEqual(resp_status, 200)
 
@@ -589,11 +610,13 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
                 return_value=UserSchema(name="Test", age=30, email="test@example.com"),
             ),
         ):
-            resp_text, resp_status = await model._generate_native_structured_output(
+            model_response: ModelResponse = await model._generate_native_structured_output(
                 self.test_input, self.test_params, UserSchema
             )
 
-            # Verify the response tuple
+            # Verify the response
+            resp_text = model_response.llm_response
+            resp_status = model_response.response_code
             self.assertEqual(resp_text, self.valid_json)
             self.assertEqual(resp_status, 200)
 
@@ -620,11 +643,13 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
                 return_value=UserSchema(name="Test", age=30, email="test@example.com"),
             ),
         ):
-            resp_text, resp_status = await model._generate_native_structured_output(
+            model_response: ModelResponse = await model._generate_native_structured_output(
                 self.test_input, self.test_params, UserSchema
             )
 
-            # Verify the response tuple
+            # Verify the response
+            resp_text = model_response.llm_response
+            resp_status = model_response.response_code
             self.assertEqual(resp_text, self.valid_json)
             self.assertEqual(resp_status, 200)
 
@@ -641,10 +666,11 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
 
         # Mock _set_client to prevent it from overwriting our mock client
         with patch.object(model, "_set_client"):
-            resp_text, resp_status = await model._generate_response(
+            model_response: ModelResponse = await model._generate_response(
                 self.test_input, self.test_params
             )
-
+            resp_text = model_response.llm_response
+            resp_status = model_response.response_code
             self.assertEqual(resp_text, "Generated text response")
             self.assertEqual(resp_status, 200)
 
@@ -656,10 +682,11 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
 
         # Mock _set_client to raise an exception
         with patch.object(model, "_set_client", side_effect=Exception("Connection failed")):
-            resp_text, resp_status = await model._generate_response(
+            model_response: ModelResponse = await model._generate_response(
                 self.test_input, self.test_params
             )
-
+            resp_text = model_response.llm_response
+            resp_status = model_response.response_code
             self.assertIn("ERROR", resp_text)
             self.assertIn("Connection failed", resp_text)
             self.assertEqual(resp_status, 999)
