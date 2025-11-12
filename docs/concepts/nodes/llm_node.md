@@ -34,7 +34,7 @@ paraphrase_question:
 - `prompt`: This is the prompt that will be sent to the LLM. It should contain the system prompt and the user prompt.
   The system prompt defines the instructions for the LLM, and the user prompt provides the user query.
 
-- `post_process`: This is the function class of `type NodePostProcessor`, used to post-process the output from the LLM. 
+- `post_process`: This is the function class of `type NodePostProcessor`, used to post-process the output from the LLM.
   The class need to define `apply()` method with parameter `SygraMessage`. `SygraMessage` is just a wrapper on the actual LangGraph message object(`AIMessage`, `UserMessage`, etc).
   Please note, if the variables returned by the above method are required as state variables, they should be defined in the `output_vars` field for the node.
   This also has backward compatibility, you can set a direct method to `post_process` with the above signature.
@@ -54,14 +54,14 @@ paraphrase_question:
 
 - `pre_process`: This is an optional functional class of type `NodePreProcessor`, used to preprocess the input before sending it to the LLM. If not
   provided, the default preprocessor is used. This class need to define `apply` method with `SygraState` as a parameter.
-  
+
   Example code:
   ```python
   class CritiqueAnsNodePreProcessor(NodePreProcessor):
       def apply(self, state:SygraState):
           if not state["messages"]:
               state["messages"] = []
-  
+
           # We need to convert user turns to assistant and vice versa
           cls_map = {"ai": HumanMessage, "human": AIMessage}
           translated = [cls_map[msg.type](content=msg.content) for msg in state["messages"]]
@@ -78,7 +78,7 @@ paraphrase_question:
 - `output_role`: This defines the role of the message returned by the LLM. It can be `system`, `user`, or `assistant`.
   If not specified, the default role (`assistant`) will be used.
 
-  - `tools`: This is an optional field to specify the tools to be used by the LLM. 
+  - `tools`: This is an optional field to specify the tools to be used by the LLM.
     The following tools are currently supported:
       -  `tasks.examples.llm_node_tool_simulation.tools_from_module.tool_method` Single tool method with annotation @tool
       -  `tasks.examples.llm_node_tool_simulation.tools_from_module` All valid tools from a module.
@@ -86,7 +86,6 @@ paraphrase_question:
 
     Make sure all the necessary tools are decorated with `@tool` from `langchain_core.tools`
     Refer to the [Example Task](https://github.com/ServiceNow/SyGra/tree/main/tasks/examples/llm_node_tool_simulation) with tools attached to LLM Node.
-    
+
     ![Note](https://img.shields.io/badge/Note-important-yellow)
   >   We currently support `openai`, `azure_openai`, `vllm` model types for tool calls.
-

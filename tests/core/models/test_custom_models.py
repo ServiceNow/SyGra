@@ -7,12 +7,7 @@ from unittest.mock import call, patch
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
 import sygra.utils.constants as constants
-from sygra.core.models.custom_models import (
-    BaseCustomModel,
-    CustomOllama,
-    CustomOpenAI,
-    CustomVLLM,
-)
+from sygra.core.models.custom_models import BaseCustomModel, CustomOllama, CustomOpenAI, CustomVLLM
 
 
 class TestValidateCompletionApiSupport(unittest.TestCase):

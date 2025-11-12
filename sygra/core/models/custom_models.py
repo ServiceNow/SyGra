@@ -10,15 +10,7 @@ import re
 import sys
 import time
 from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    DefaultDict,
-    Dict,
-    Optional,
-    Sequence,
-    Type,
-    cast,
-)
+from typing import Any, DefaultDict, Dict, Optional, Sequence, Type, cast
 
 import openai
 from langchain_core.messages import BaseMessage
@@ -41,9 +33,7 @@ from sygra.core.models.client.client_factory import ClientFactory
 from sygra.core.models.client.http_client import HttpClient
 from sygra.core.models.client.openai_client import OpenAIClient
 from sygra.core.models.model_response import ModelResponse
-from sygra.core.models.structured_output.structured_output_config import (
-    StructuredOutputConfig,
-)
+from sygra.core.models.structured_output.structured_output_config import StructuredOutputConfig
 from sygra.logger.logger_config import logger
 from sygra.utils import utils
 

@@ -31,7 +31,7 @@ For `mixtral_8x7b` and `gpt4`, set:
 You should use a `.env` file at the project root or set these in your shell environment.
 
 **Note:**
-If you want to define a list of URLs for any model, you can use pipe (`|`) as a separator. For example, if you have a model called `mixtral_8x7b` with URLs `https://myserver/models/mixtral-8x7b` and `https://myserver/models/mixtral-8x7b-2`, you can set the following environment variables as shown in examples below. 
+If you want to define a list of URLs for any model, you can use pipe (`|`) as a separator. For example, if you have a model called `mixtral_8x7b` with URLs `https://myserver/models/mixtral-8x7b` and `https://myserver/models/mixtral-8x7b-2`, you can set the following environment variables as shown in examples below.
 
 ### Example `.env`:
 
@@ -148,7 +148,7 @@ qwen3-32b-triton:
   hf_chat_template_model_id: Qwen/Qwen3-32B
   post_process: sygra.core.models.model_postprocessor.RemoveThinkData
   model_type: triton
-  payload_key: default 
+  payload_key: default
   # Uses default payload format defined in config/payload_cfg.json.
   # Add/Update the payload_cfg.json if you need to use a different payload format with new key.
   parameters:
