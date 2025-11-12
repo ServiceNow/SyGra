@@ -107,7 +107,7 @@ class BackendFactory(ABC):
         pass
 
     @abstractmethod
-    def get_test_message(self):
+    def get_test_message(self, is_multi_modal=True):
         """
         Return a test message to pass into model for the specific platform
         """

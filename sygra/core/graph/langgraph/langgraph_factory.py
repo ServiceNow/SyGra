@@ -143,14 +143,20 @@ class LangGraphFactory(BackendFactory):
         """
         return utils.convert_messages_from_langchain_to_chat_format(msgs)
 
-    def get_test_message(self):
+    def get_test_message(self, is_multi_modal=True):
         """
         Return a test message to pass into model for the specific platform
         """
-        # build the ChatPrompt for model inference
-        messages = utils.convert_messages_from_chat_format_to_langchain(
-            [{"role": "user", "content": "hello"}]
-        )
+        if is_multi_modal:
+            # build the Multi Modal ChatPrompt for model inference
+            messages = utils.convert_messages_from_chat_format_to_langchain(
+                [{"role": "user", "content": [{"type": "text", "text": "hello"}]}]
+            )
+        else:
+            # build the ChatPrompt for model inference
+            messages = utils.convert_messages_from_chat_format_to_langchain(
+                [{"role": "user", "content": "hello"}]
+            )
         prompt = ChatPromptTemplate.from_messages(
             [*messages],
         )

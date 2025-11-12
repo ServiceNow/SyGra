@@ -11,6 +11,7 @@ from sygra.utils import utils
 from sygra.utils.tool_utils import (
     _extract_tools_from_class,
     _extract_tools_from_module,
+    convert_openai_to_langchain_toolcall,
     load_tools,
 )
 
@@ -98,6 +99,54 @@ class TestToolUtils(unittest.TestCase):
 
         # Should log a warning
         mock_logger.error.assert_called()
+
+    def test_convert_openai_to_langchain_toolcall_parses_json_arguments(self):
+        """Ensure JSON string arguments are parsed into a dict."""
+        openai_tool_call = {
+            "id": "call_123",
+            "function": {
+                "name": "get_weather",
+                "arguments": '{"location": "Boston, MA", "unit": "celsius"}',
+            },
+        }
+        result = convert_openai_to_langchain_toolcall(openai_tool_call)
+        self.assertEqual(result.get("id"), "call_123")
+        self.assertEqual(result.get("name"), "get_weather")
+        self.assertEqual(result.get("args"), {"location": "Boston, MA", "unit": "celsius"})
+
+    def test_convert_openai_to_langchain_toolcall_handles_nonjson_arguments(self):
+        """Non-JSON argument strings should be wrapped under 'raw_arguments'."""
+        openai_tool_call = {
+            "id": "call_456",
+            "function": {
+                "name": "parse_query",
+                "arguments": "query=foo&limit=10",
+            },
+        }
+        result = convert_openai_to_langchain_toolcall(openai_tool_call)
+        self.assertEqual(result.get("id"), "call_456")
+        self.assertEqual(result.get("name"), "parse_query")
+        self.assertEqual(result.get("args"), {"raw_arguments": "query=foo&limit=10"})
+
+    def test_convert_openai_to_langchain_toolcall_accepts_dict_arguments(self):
+        """Dict arguments should pass through unchanged."""
+        openai_tool_call = {
+            "id": "call_789",
+            "function": {
+                "name": "sum",
+                "arguments": {"a": 1, "b": 2},
+            },
+        }
+        result = convert_openai_to_langchain_toolcall(openai_tool_call)
+        self.assertEqual(result.get("id"), "call_789")
+        self.assertEqual(result.get("name"), "sum")
+        self.assertEqual(result.get("args"), {"a": 1, "b": 2})
+
+    def test_convert_openai_to_langchain_toolcall_missing_function_raises(self):
+        """Missing 'function' key should raise ValueError."""
+        with self.assertRaises(ValueError) as cm:
+            convert_openai_to_langchain_toolcall({"id": "no_func"})
+        self.assertIn("Expected 'function' key", str(cm.exception))
 
 
 if __name__ == "__main__":
