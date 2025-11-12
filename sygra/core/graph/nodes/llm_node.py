@@ -37,12 +37,12 @@ class LLMNode(BaseNode):
         self.output_keys = self.node_config.get(constants.GRAPH_OUTPUT_KEY, "messages")
         self.output_role = self.node_config.get("output_role", "assistant")
         assert (
-                self.node_config.get("output_vars") is None
+            self.node_config.get("output_vars") is None
         ), f"output_vars is not supported, use {constants.GRAPH_OUTPUT_KEY}."
 
         if self.output_keys and isinstance(self.output_keys, list):
             assert (
-                    "post_process" in self.node_config
+                "post_process" in self.node_config
             ), "Post processor is needed for multiple output keys."
 
         self.role_cls_map = {
@@ -91,7 +91,7 @@ class LLMNode(BaseNode):
         return state
 
     def _default_llm_post_process(
-            self, response: AIMessage, state: dict[str, Any]
+        self, response: AIMessage, state: dict[str, Any]
     ) -> dict[str, Any]:
         # only if post processor is not defined
         output_dict: dict[str, Any] = {}
@@ -224,7 +224,7 @@ class LLMNode(BaseNode):
         return prompt
 
     def _generate_prompt_tmpl_from_msg(
-            self, state: dict[str, Any], chat_frmt_messages
+        self, state: dict[str, Any], chat_frmt_messages
     ) -> ChatPromptTemplate:
         """
         Build a ChatPromptTemplate from message config and expand list-based image_url variables.
@@ -300,7 +300,9 @@ class LLMNode(BaseNode):
             captured_tokens = self._capture_token_usage(self.model)
 
             # Extract AIMessage from ModelResponse
-            ai_message = AIMessage(response.llm_response) if response.llm_response else AIMessage("")
+            ai_message = (
+                AIMessage(response.llm_response) if response.llm_response else AIMessage("")
+            )
             # wrap the message to pass to the class - new implementation
             responseMsg = SygraMessage(ai_message)
             # Inject tool_calls to Sygra State
@@ -310,7 +312,8 @@ class LLMNode(BaseNode):
                 )
                 state["tool_calls"] = response.tool_calls if response.tool_calls else []
             # Check if model call failed by looking for error prefix in response
-            if constants.ERROR_PREFIX in response.llm_response:
+            response_content: str = response.llm_response or ""
+            if constants.ERROR_PREFIX in response_content:
                 success = False
                 logger.warning(
                     f"[{self.name}] Model request failed (error in response). "
@@ -322,13 +325,13 @@ class LLMNode(BaseNode):
                 updated_state = (
                     self.post_process().apply(responseMsg, state)
                     if isclass(self.post_process)
-                    else self.post_process(response, state)
+                    else self.post_process(ai_message, state)
                 )
             except TypeError:
                 updated_state = (
                     self.post_process().apply(responseMsg)
                     if isclass(self.post_process)
-                    else self.post_process(response)  # type: ignore
+                    else self.post_process(ai_message)  # type: ignore
                 )
 
             # Store chat history if enabled for this node
@@ -352,23 +355,23 @@ class LLMNode(BaseNode):
             self._record_execution_metadata(start_time, success, self.model, captured_tokens)
 
 
-def to_backend(self) -> Any:
-    """
-    Convert the Node object to backend platform specific Runnable object.
+    def to_backend(self) -> Any:
+        """
+        Convert the Node object to backend platform specific Runnable object.
 
-    Returns:
-         Any: platform specific runnable object like Runnable in LangGraph.
-    """
-    return utils.backend_factory.create_llm_runnable(self._exec_wrapper)
+        Returns:
+             Any: platform specific runnable object like Runnable in LangGraph.
+        """
+        return utils.backend_factory.create_llm_runnable(self._exec_wrapper)
 
 
-def validate_node(self):
-    """
-    Override the method to add required validation for this Node type
-    It throws Exception
-    Returns:
-        None
-    """
+    def validate_node(self):
+        """
+        Override the method to add required validation for this Node type
+        It throws Exception
+        Returns:
+            None
+        """
 
-    # validate the required keys
-    self.validate_config_keys(self.REQUIRED_KEYS, self.node_type, self.node_config)
+        # validate the required keys
+        self.validate_config_keys(self.REQUIRED_KEYS, self.node_type, self.node_config)

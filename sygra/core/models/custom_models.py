@@ -40,8 +40,8 @@ from sygra.core.models.client.base_client import BaseClient
 from sygra.core.models.client.client_factory import ClientFactory
 from sygra.core.models.client.http_client import HttpClient
 from sygra.core.models.client.openai_client import OpenAIClient
-from sygra.core.models.structured_output.structured_output_config import StructuredOutputConfig
 from sygra.core.models.model_response import ModelResponse
+from sygra.core.models.structured_output.structured_output_config import StructuredOutputConfig
 from sygra.logger.logger_config import logger
 from sygra.metadata.metadata_integration import track_model_request
 from sygra.utils import utils
@@ -499,7 +499,7 @@ class BaseCustomModel(ABC):
         Centralized retry method that delegates to either regular text generation
         or structured output handling based on the flag.
         """
-        result: Tuple[str, int] = (f"{constants.ERROR_PREFIX} All retry attempts failed", 999)
+        result: ModelResponse = ModelResponse(llm_response=f"{constants.ERROR_PREFIX} All retry attempts failed", response_code=999)
         try:
             async for attempt in AsyncRetrying(
                 retry=retry_if_result(self._is_retryable_error),
@@ -534,8 +534,6 @@ class BaseCustomModel(ABC):
                     post_proc = self._get_post_processor()
                     if post_proc is not None:
                         result.llm_response = post_proc().apply(result.llm_response)
-                        # IMPORTANT: add more items if needed in future
-                        # result = (resp_str, resp_code)
                 if (
                     attempt.retry_state.outcome is not None
                     and not attempt.retry_state.outcome.failed
@@ -544,7 +542,7 @@ class BaseCustomModel(ABC):
         except RetryError:
             logger.error(f"[{self.name()}] Request failed after {self.retry_attempts} attempts")
             # Return a default error response if all retries failed
-            result = (f"{constants.ERROR_PREFIX} All retry attempts failed", 999)
+            result = ModelResponse(llm_response=f"{constants.ERROR_PREFIX} All retry attempts failed", response_code=999)
         return result
 
     async def _generate_response_with_retry(
