@@ -1305,7 +1305,7 @@ class CustomOpenAI(BaseCustomModel):
             model_params: Model parameters including URL and auth token
 
         Returns:
-            Tuple of (response_text, status_code)
+            Model Response
             - For audio output: returns base64 encoded audio data URL
             - For text output: returns text response
             - On error: returns error message and error code
@@ -1314,7 +1314,6 @@ class CustomOpenAI(BaseCustomModel):
         model_url = model_params.url
 
         try:
-            # Set up the OpenAI client
             self._set_client(model_url, model_params.auth_token)
 
             # Map LangChain message types to OpenAI role names
@@ -1354,7 +1353,12 @@ class CustomOpenAI(BaseCustomModel):
                                             if len(mime_parts) == 2:
                                                 format_part = mime_parts[1].replace("audio/", "")
                                                 base64_data = parts[1]
-                                                
+
+                                                mime_format_map = {
+                                                    "mpeg": "mp3"
+                                                }
+                                                if format_part in mime_format_map:
+                                                    format_part = mime_format_map[format_part]
                                                 # Convert to input_audio format expected by gpt-4o-audio
                                                 processed_content.append({
                                                     "type": "input_audio",
@@ -1380,7 +1384,6 @@ class CustomOpenAI(BaseCustomModel):
                             "content": processed_content
                         })
                     else:
-                        # Simple text content
                         processed_messages.append({
                             "role": role_mapping.get(message.type, "user"),
                             "content": str(content)
@@ -1388,48 +1391,36 @@ class CustomOpenAI(BaseCustomModel):
 
             # Determine modalities and audio settings
             output_type = self.model_config.get("output_type")
-            input_type = self.model_config.get("input_type")
-            
-            # Determine if audio is involved (input or output)
-            # gpt-4o-audio requires audio in modalities if either input or output involves audio
-            has_audio_input = input_type == "audio"
+
+            # gpt-4o-audio requires audio in modalities if output involves audio
             has_audio_output = output_type == "audio"
             
             # Check if there's actual audio in the processed messages
-            has_input_audio_content = any(
+            has_audio_input = any(
                 isinstance(msg.get("content"), list) and 
                 any(item.get("type") == "input_audio" for item in msg.get("content", []))
                 for msg in processed_messages
             )
             
-            # Special case: if input_type is audio but no actual audio content (e.g., during ping),
-            # default to audio output to satisfy API requirement
-            # This allows ping to work without sending actual audio
-            if has_audio_input and not has_input_audio_content:
-                logger.debug(
-                    f"[{self.name()}] input_type is audio but no audio content found. "
-                    "Defaulting to audio output for API compatibility (ping scenario)."
-                )
-                has_audio_output = True
-            
             # Build modalities list
             modalities = ["text"]
             
-            # Add audio modality if audio is involved in input or output
-            if has_audio_output or has_audio_input or has_input_audio_content:
+            if has_audio_output:
                 if "audio" not in modalities:
+                    # modality = ["text", "audio"] is required for audio output
                     modalities.append("audio")
+
+            if not has_audio_input:
+                has_audio_output = True
+                modalities = ["text", "audio"]
             
             audio_params = {}
             if has_audio_output:
-                voice = self.generation_params.get("voice", self.model_config.get("voice", "alloy"))
-                response_format = self.generation_params.get(
-                    "response_format", self.model_config.get("response_format", "wav")
-                )
-                audio_params = {
-                    "voice": voice,
-                    "format": response_format
-                }
+                if "audio" in self.generation_params and type(self.generation_params["audio"]) is dict:
+                    pass
+                else:
+                    logger.info("Audio generation params not found, using default audio params, voice: alloy, format: wav")
+                    self.generation_params["audio"] = {"voice": "alloy", "format": "wav"}
 
             logger.debug(
                 f"[{self.name()}] Audio chat completion - modalities: {modalities}, audio params: {audio_params}"
@@ -1439,14 +1430,8 @@ class CustomOpenAI(BaseCustomModel):
             
             if "audio" in modalities:
                 payload["modalities"] = modalities
-            
-            if audio_params:
-                payload["audio"] = audio_params
 
             gen_params = {**self.generation_params}
-            # Remove audio-specific params that are already in payload
-            gen_params.pop("voice", None)
-            gen_params.pop("response_format", None)
 
             completion = await self._client.send_request(
                 payload, str(self.model_config.get("model")), gen_params
@@ -1460,7 +1445,7 @@ class CustomOpenAI(BaseCustomModel):
                 
                 if isinstance(audio_data, dict):
                     audio_base64 = audio_data.get("data", "")
-                    audio_format = audio_data.get("format", response_format)
+                    audio_format = self.generation_params.get("audio").get("format")
                     
                     mime_types = {
                         "mp3": "audio/mpeg",
