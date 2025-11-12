@@ -21,10 +21,12 @@ from typing import (
 )
 
 import openai
-from langchain_core.messages import BaseMessage
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import BaseMessage, convert_to_messages
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.prompt_values import ChatPromptValue
+from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_openai.chat_models.base import _convert_message_to_dict
 from pydantic import BaseModel, ValidationError
 from tenacity import (
     AsyncRetrying,
@@ -618,6 +620,45 @@ class BaseCustomModel(ABC):
             tools = kwargs.get("tools", [])
             formatted_tools = [convert_to_openai_tool(tool, strict=True) for tool in tools]
         return formatted_tools
+
+    @staticmethod
+    def _convert_input(model_input: LanguageModelInput) -> PromptValue:
+        """
+        Convert the input to a PromptValue.
+
+        This method takes in a LanguageModelInput, which can be a PromptValue,
+        a str, or a list of BaseMessages, and returns a PromptValue.
+
+        If the input is already a PromptValue, it is simply returned.
+        If the input is a str, it is converted to a StringPromptValue.
+        If the input is a list of BaseMessages, it is converted to a ChatPromptValue.
+        Otherwise, a ValueError is raised.
+
+        Args:
+            model_input (LanguageModelInput): The input to convert.
+
+        Returns:
+            PromptValue: The converted input.
+
+        Raises:
+            ValueError: If the input is not a PromptValue, str, or list of BaseMessages.
+        """
+        if isinstance(model_input, PromptValue):
+            return model_input
+        if isinstance(model_input, str):
+            return StringPromptValue(text=model_input)
+        if isinstance(model_input, Sequence):
+            return ChatPromptValue(messages=convert_to_messages(model_input))
+        msg = (
+            f"Invalid input type {type(model_input)}. "
+            "Must be a PromptValue, str, or list of BaseMessages."
+        )
+        raise ValueError(msg)
+
+    def _get_messages(self, input: ChatPromptValue) -> list[dict[str, Any]]:
+        messages = self._convert_input(input.messages).to_messages()
+        messages = [_convert_message_to_dict(m) for m in messages]
+        return messages
 
 
 class CustomTGI(BaseCustomModel):
