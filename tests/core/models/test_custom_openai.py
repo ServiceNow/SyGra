@@ -1176,6 +1176,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Setup mock client
         mock_client = MagicMock()
+        
+        # Mock build_request to return properly formatted messages
+        mock_client.build_request = MagicMock(return_value={
+            "messages": [{"role": "user", "content": "Hello, how are you?"}]
+        })
+        
         mock_choice = MagicMock()
         mock_choice.model_dump.return_value = {
             "message": {"content": "I'm doing well, thank you!"}
@@ -1235,6 +1241,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Setup mock client with audio response
         mock_client = MagicMock()
+        
+        # Mock build_request to return properly formatted messages
+        mock_client.build_request = MagicMock(return_value={
+            "messages": [{"role": "user", "content": "Say hello"}]
+        })
+        
         fake_audio_data = b"fake_audio_bytes"
         audio_base64 = base64.b64encode(fake_audio_data).decode("utf-8")
 
@@ -1313,6 +1325,20 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Setup mock client
         mock_client = MagicMock()
+        
+        # Mock build_request to return properly formatted messages
+        mock_client.build_request = MagicMock(return_value={
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "audio_url", "audio_url": {"url": audio_data_url}},
+                        {"type": "text", "text": "Transcribe this audio"},
+                    ]
+                }
+            ]
+        })
+        
         mock_choice = MagicMock()
         mock_choice.model_dump.return_value = {
             "message": {"content": "This is the transcribed text."}
@@ -1395,6 +1421,20 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Setup mock client with audio response
         mock_client = MagicMock()
+        
+        # Mock build_request to return properly formatted messages
+        mock_client.build_request = MagicMock(return_value={
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "audio_url", "audio_url": {"url": input_audio_url}},
+                        {"type": "text", "text": "Translate this to English"},
+                    ]
+                }
+            ]
+        })
+        
         fake_output_audio = b"fake_output_mp3"
         output_audio_b64 = base64.b64encode(fake_output_audio).decode("utf-8")
 
@@ -1452,6 +1492,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Setup mock client to raise rate limit error
         mock_client = MagicMock()
+        
+        # Mock build_request to return properly formatted messages
+        mock_client.build_request = MagicMock(return_value={
+            "messages": [{"role": "user", "content": "Test message"}]
+        })
+        
         rate_limit_error = openai.RateLimitError(
             "Rate limit exceeded",
             response=MagicMock(status_code=429),
@@ -1491,6 +1537,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Setup mock client to raise bad request error
         mock_client = MagicMock()
+        
+        # Mock build_request to return properly formatted messages
+        mock_client.build_request = MagicMock(return_value={
+            "messages": [{"role": "user", "content": "Test"}]
+        })
+        
         bad_request_error = openai.BadRequestError(
             "Invalid audio format",
             response=MagicMock(status_code=400),
@@ -1538,6 +1590,12 @@ class TestCustomOpenAI(unittest.TestCase):
 
             # Setup mock client
             mock_client = MagicMock()
+            
+            # Mock build_request to return properly formatted messages
+            mock_client.build_request = MagicMock(return_value={
+                "messages": [{"role": "user", "content": "Test"}]
+            })
+            
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {"message": {"content": "Response"}}
             mock_completion = MagicMock()
@@ -1584,6 +1642,16 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Setup mock client
         mock_client = MagicMock()
+        
+        # Mock build_request to return properly formatted messages with correct role mapping
+        mock_client.build_request = MagicMock(return_value={
+            "messages": [
+                {"role": "system", "content": "You are helpful"},
+                {"role": "user", "content": "Hello"},
+                {"role": "assistant", "content": "Hi there"},
+            ]
+        })
+        
         mock_choice = MagicMock()
         mock_choice.model_dump.return_value = {"message": {"content": "Response"}}
         mock_completion = MagicMock()

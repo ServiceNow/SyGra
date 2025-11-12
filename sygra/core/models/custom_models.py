@@ -1316,95 +1316,70 @@ class CustomOpenAI(BaseCustomModel):
         try:
             self._set_client(model_url, model_params.auth_token)
 
-            # Map LangChain message types to OpenAI role names
-            role_mapping = {
-                "human": "user",
-                "ai": "assistant",
-                "system": "system",
-                "user": "user",  # Already correct
-                "assistant": "assistant",  # Already correct
-            }
+            payload = self._client.build_request(messages=input.messages)
+            processed_messages = payload["messages"]
+            
+            # Process messages to convert audio_url -> input_audio format for gpt-4o-audio
+            for message_dict in processed_messages:
+                # Handle audio_url -> input_audio conversion for multimodal content
+                if isinstance(message_dict.get("content"), list):
+                    processed_content = []
+                    for item in message_dict["content"]:
+                        if isinstance(item, dict) and item.get("type") == "audio_url":
+                            # Extract audio URL
+                            audio_url = item.get("audio_url", {})
+                            if isinstance(audio_url, dict):
+                                data_url = audio_url.get("url", "")
+                            else:
+                                data_url = audio_url
+                            
+                            # Extract base64 data and format from data URL
+                            if data_url.startswith("data:audio/"):
+                                # Parse: data:audio/<format>;base64,<data>
+                                parts = data_url.split(";base64,")
+                                if len(parts) == 2:
+                                    mime_parts = parts[0].split(":")
+                                    if len(mime_parts) == 2:
+                                        format_part = mime_parts[1].replace("audio/", "")
+                                        base64_data = parts[1]
 
-            # Process messages to handle audio input
-            processed_messages = []
-            for message in input.messages:
-                if hasattr(message, "content"):
-                    content = message.content
-                    
-                    # Handle multimodal content (list of text/audio items)
-                    if isinstance(content, list):
-                        processed_content = []
-                        for item in content:
-                            if isinstance(item, dict):
-                                # Handle audio_url type - convert to input_audio format
-                                if item.get("type") == "audio_url":
-                                    audio_url = item.get("audio_url", {})
-                                    if isinstance(audio_url, dict):
-                                        data_url = audio_url.get("url", "")
-                                    else:
-                                        data_url = audio_url
-                                    
-                                    # Extract base64 data and format from data URL
-                                    if data_url.startswith("data:audio/"):
-                                        # Parse: data:audio/<format>;base64,<data>
-                                        parts = data_url.split(";base64,")
-                                        if len(parts) == 2:
-                                            mime_parts = parts[0].split(":")
-                                            if len(mime_parts) == 2:
-                                                format_part = mime_parts[1].replace("audio/", "")
-                                                base64_data = parts[1]
-
-                                                mime_format_map = {
-                                                    "mpeg": "mp3"
-                                                }
-                                                if format_part in mime_format_map:
-                                                    format_part = mime_format_map[format_part]
-                                                # Convert to input_audio format expected by gpt-4o-audio
-                                                processed_content.append({
-                                                    "type": "input_audio",
-                                                    "input_audio": {
-                                                        "data": base64_data,
-                                                        "format": format_part
-                                                    }
-                                                })
-                                            else:
-                                                processed_content.append(item)
-                                        else:
-                                            processed_content.append(item)
+                                        # Map MIME types to OpenAI format names
+                                        mime_format_map = {"mpeg": "mp3"}
+                                        if format_part in mime_format_map:
+                                            format_part = mime_format_map[format_part]
+                                        
+                                        # Convert to input_audio format expected by gpt-4o-audio
+                                        processed_content.append({
+                                            "type": "input_audio",
+                                            "input_audio": {
+                                                "data": base64_data,
+                                                "format": format_part
+                                            }
+                                        })
                                     else:
                                         processed_content.append(item)
                                 else:
-                                    # Keep other types as-is (text, image_url, etc.)
                                     processed_content.append(item)
                             else:
                                 processed_content.append(item)
-                        
-                        processed_messages.append({
-                            "role": role_mapping.get(message.type, "user"),
-                            "content": processed_content
-                        })
-                    else:
-                        processed_messages.append({
-                            "role": role_mapping.get(message.type, "user"),
-                            "content": str(content)
-                        })
+                        else:
+                            # Keep other types as-is (text, image_url, etc.)
+                            processed_content.append(item)
+                    
+                    message_dict["content"] = processed_content
 
-            # Determine modalities and audio settings
             output_type = self.model_config.get("output_type")
 
             # gpt-4o-audio requires audio in modalities if output involves audio
             has_audio_output = output_type == "audio"
             
-            # Check if there's actual audio in the processed messages
             has_audio_input = any(
                 isinstance(msg.get("content"), list) and 
                 any(item.get("type") == "input_audio" for item in msg.get("content", []))
                 for msg in processed_messages
             )
             
-            # Build modalities list
             modalities = ["text"]
-            
             if has_audio_output:
                 if "audio" not in modalities:
                     # modality = ["text", "audio"] is required for audio output
@@ -1457,10 +1432,9 @@ class CustomOpenAI(BaseCustomModel):
                     }
                     mime_type = mime_types.get(audio_format, "audio/wav")
                     
-                    # Create data URL
                     resp_text = f"data:{mime_type};base64,{audio_base64}"
                     
-                    # Also include transcript if available
+                    # Include transcript if available
                     if message.get("content"):
                         logger.debug(f"[{self.name()}] Transcript: {message['content']}")
                 else:
