@@ -162,6 +162,38 @@ class TestHttpClient(unittest.TestCase):
         # Verify empty response is returned on exception
         self.assertEqual(response, "")
 
+    @patch("requests.request")
+    def test_send_request_json_payload_true(self, mock_request):
+        """Test send_request uses json= when json_payload is True"""
+        # Setup mock response
+        mock_response = MagicMock()
+        mock_response.text = '{"result": "Success"}'
+        mock_request.return_value = mock_response
+
+        client = HttpClient(
+            base_url=self.base_url,
+            headers=self.headers,
+            timeout=30,
+            max_retries=2,
+            verify_ssl=True,
+            verify_cert=None,
+            json_payload=True,
+        )
+
+        payload = {"prompt": "Test prompt"}
+        response = client.send_request(payload)
+
+        mock_request.assert_called_once_with(
+            "POST",
+            self.base_url,
+            headers=self.headers,
+            json=payload,
+            timeout=30,
+            verify=True,
+            cert=None,
+        )
+        self.assertEqual(response, mock_response)
+
     @patch("aiohttp.ClientSession.post")
     def test_async_send_request(self, mock_post):
         asyncio.run(self._run_async_send_request(mock_post))
@@ -191,6 +223,46 @@ class TestHttpClient(unittest.TestCase):
         self.assertEqual(call_kwargs["timeout"].total, 30)
         self.assertEqual(call_kwargs["ssl"], True)
         self.assertEqual(json.loads(call_kwargs["data"].decode()), payload)
+
+    @patch("aiohttp.ClientSession.post")
+    def test_async_send_request_json_payload_true(self, mock_post):
+        asyncio.run(self._run_async_send_request_json_payload_true(mock_post))
+
+    async def _run_async_send_request_json_payload_true(self, mock_post):
+        """Test async_send_request uses json= when json_payload is True"""
+        # --- Setup mock response ---
+        mock_response = AsyncMock()
+        mock_response.text = AsyncMock(return_value='{"result": "Success"}')
+        mock_response.status = 200
+        mock_response.headers = {"x-test": "true"}
+        mock_response.__aenter__.return_value = mock_response
+        mock_response.__aexit__.return_value = None
+
+        mock_post.return_value = mock_response
+
+        # --- Run the actual client method ---
+        client = HttpClient(
+            base_url=self.base_url,
+            headers=self.headers,
+            timeout=30,
+            max_retries=2,
+            verify_ssl=True,
+            verify_cert=None,
+            json_payload=True,
+        )
+        payload = {"prompt": "Test prompt"}
+        await client.async_send_request(payload)
+
+        # --- Verify the request used json= and not data= ---
+        mock_post.assert_called_once()
+        call_kwargs = mock_post.call_args.kwargs
+        self.assertEqual(call_kwargs["headers"], self.headers)
+        # Timeout should be a ClientTimeout object, not an integer
+        self.assertEqual(call_kwargs["timeout"].total, 30)
+        self.assertEqual(call_kwargs["ssl"], True)
+        self.assertIn("json", call_kwargs)
+        self.assertEqual(call_kwargs["json"], payload)
+        self.assertNotIn("data", call_kwargs)
 
     @patch("aiohttp.ClientSession.post")
     def test_async_send_request_with_generation_params(self, mock_post):

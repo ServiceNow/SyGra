@@ -1,7 +1,7 @@
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
@@ -184,6 +184,51 @@ class TestValidateCompletionApiSupport(unittest.TestCase):
 
         # Verify that logger.info was not called
         mock_logger.info.assert_not_called()
+
+
+class TestConvertToolsToModelFormat(unittest.TestCase):
+    """Unit tests for _convert_tools_to_model_format in BaseCustomModel"""
+
+    class DummyModel(BaseCustomModel):
+        async def _generate_response(self, *args, **kwargs):
+            pass
+
+    def setUp(self):
+        self.model = self.DummyModel({"name": "test_model", "parameters": {}})
+
+    def test_no_tools_key_returns_empty_list(self):
+        """When tools key is missing, should return an empty list"""
+        result = self.model._convert_tools_to_model_format()
+        self.assertEqual(result, [])
+
+    @patch("sygra.core.models.custom_models.convert_to_openai_tool")
+    def test_empty_tools_list_returns_empty_and_no_conversion(self, mock_convert):
+        """When tools=[], should return [] and not call convert_to_openai_tool"""
+        result = self.model._convert_tools_to_model_format(tools=[])
+        self.assertEqual(result, [])
+        mock_convert.assert_not_called()
+
+    @patch("sygra.core.models.custom_models.convert_to_openai_tool")
+    def test_tools_list_converts_using_convert_to_openai_tool(self, mock_convert):
+        """Verify each tool is converted with strict=True and results propagated"""
+        tool1, tool2 = object(), object()
+
+        def _side_effect(tool, strict):
+            return {"tool_id": id(tool), "strict": strict}
+
+        mock_convert.side_effect = _side_effect
+
+        result = self.model._convert_tools_to_model_format(tools=[tool1, tool2])
+
+        # Verify output contains the converted results with strict=True
+        expected = [
+            {"tool_id": id(tool1), "strict": True},
+            {"tool_id": id(tool2), "strict": True},
+        ]
+        self.assertEqual(result, expected)
+
+        # Ensure convert_to_openai_tool called correctly for each tool
+        mock_convert.assert_has_calls([call(tool1, strict=True), call(tool2, strict=True)])
 
 
 if __name__ == "__main__":

@@ -4,6 +4,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from sygra.core.models.model_response import ModelResponse
+
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
@@ -92,13 +94,11 @@ class TestCustomOllama(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://localhost:11434", auth_token=None)
-        resp_text, resp_status = await custom_ollama._generate_response(
-            self.chat_input, model_params
-        )
+        model_response = await custom_ollama._generate_response(self.chat_input, model_params)
 
         # Verify results
-        self.assertEqual(resp_text, "Hello there!")
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.llm_response, "Hello there!")
+        self.assertEqual(model_response.response_code, 200)
 
         # Verify client calls
         mock_client.build_request.assert_called_once_with(messages=self.messages)
@@ -141,13 +141,11 @@ class TestCustomOllama(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://localhost:11434", auth_token=None)
-        resp_text, resp_status = await custom_ollama._generate_response(
-            self.chat_input, model_params
-        )
+        model_response = await custom_ollama._generate_response(self.chat_input, model_params)
 
         # Verify results
-        self.assertEqual(resp_text, "I'm doing well, thank you!")
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.llm_response, "I'm doing well, thank you!")
+        self.assertEqual(model_response.response_code, 200)
 
         # Verify client calls
         mock_client.build_request.assert_called_once_with(formatted_prompt="Hello, how are you?")
@@ -184,13 +182,15 @@ class TestCustomOllama(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://localhost:11434", auth_token=None)
-        resp_text, resp_status = await custom_ollama._generate_response(
-            self.chat_input, model_params
-        )
+        model_response = await custom_ollama._generate_response(self.chat_input, model_params)
 
         # Verify error handling
-        self.assertTrue(resp_text.startswith(f"{constants.ERROR_PREFIX} Ollama request failed"))
-        self.assertEqual(resp_status, 999)
+        self.assertTrue(
+            model_response.llm_response.startswith(
+                f"{constants.ERROR_PREFIX} Ollama request failed"
+            )
+        )
+        self.assertEqual(model_response.response_code, 999)
 
     @patch("sygra.core.models.custom_models.ClientFactory")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
@@ -236,7 +236,7 @@ class TestCustomOllama(unittest.TestCase):
 
         # Call _generate_native_structured_output
         model_params = ModelParams(url="http://localhost:11434", auth_token=None)
-        resp_text, resp_status = await custom_ollama._generate_native_structured_output(
+        await custom_ollama._generate_native_structured_output(
             self.chat_input, model_params, TestPerson
         )
 
@@ -284,7 +284,9 @@ class TestCustomOllama(unittest.TestCase):
         mock_client.send_request = AsyncMock(side_effect=Exception("Test error"))
 
         # Setup fallback mock
-        mock_fallback.return_value = ('{"name": "John", "age": 30}', 200)
+        mock_fallback.return_value = ModelResponse(
+            llm_response='{"name": "John", "age": 30}', response_code=200
+        )
 
         # Setup custom model with mock client
         custom_ollama = CustomOllama(self.structured_config)
@@ -292,7 +294,7 @@ class TestCustomOllama(unittest.TestCase):
 
         # Call _generate_native_structured_output
         model_params = ModelParams(url="http://localhost:11434", auth_token=None)
-        resp_text, resp_status = await custom_ollama._generate_native_structured_output(
+        model_response = await custom_ollama._generate_native_structured_output(
             self.chat_input, model_params, TestPerson
         )
 
@@ -300,7 +302,7 @@ class TestCustomOllama(unittest.TestCase):
         mock_fallback.assert_awaited_once_with(self.chat_input, model_params, TestPerson)
 
         # Verify result is the fallback result
-        self.assertEqual(resp_text, '{"name": "John", "age": 30}')
+        self.assertEqual(model_response.llm_response, '{"name": "John", "age": 30}')
 
     @patch("sygra.core.models.custom_models.ClientFactory.create_client")
     def test_set_client(self, mock_create_client):

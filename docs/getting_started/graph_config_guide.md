@@ -33,6 +33,9 @@ output_config:
 schema_config:
   # Output schema validation 
 
+graph_post_process:
+  # Graph post processing
+
 
 ```
 
@@ -755,3 +758,34 @@ By default, the Data Quality tagging is **disabled**. To enable it, add the foll
 --quality True
 ```
 You can refer to [Data Quality Tagging](../concepts/data_quality/README.md) for more details on how to configure the Data Quality tagging.
+
+# Graph Post Processing
+
+Graph post processing is a feature that allows users to perform additional processing on the generated data after the graph has been executed. These tasks can be used to perform additional processing on the generated data, such as Metric calculations, Stats collection etc.
+By default, the Graph Post Processing is **disabled**. To enable it, add the following in `graph_config`:
+
+```yaml
+graph_post_process:
+  - tasks.task_with_stats_collection.task_executor.StatsCollatorPostProcessor
+```
+Here is how we define `StatsCollatorPostProcessor` in task_executor
+
+```python
+class StatsCollatorPostProcessor(GraphPostProcessor):
+    """
+    Post-processor that collects stats on the output data.
+    """
+
+    def process(self, data: list, metadata: dict) -> list:
+        """
+        Process the data and return the processed data.
+        """
+        # Get output file path from metadata
+        output_file = metadata.get("output_file")
+        # Fetch time stamp from file name to persist in Stats output for reference
+        # Do stats collection
+        return data
+```
+Each post processor persists the the processed data into file with name prefixed with the name of the post processor.
+For example Stats file name for `StatsCollatorPostProcessor` mentioned above will be prefixed with `StatsCollatorPostProcessor_.*`
+

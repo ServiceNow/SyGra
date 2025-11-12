@@ -262,13 +262,11 @@ class TestCustomTriton(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://triton-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_triton._generate_response(
-            self.chat_input, model_params
-        )
+        model_response = await custom_triton._generate_response(self.chat_input, model_params)
 
         # Verify results
-        self.assertEqual(resp_text, "Hello there!")
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(model_response.llm_response, "Hello there!")
+        self.assertEqual(model_response.response_code, 200)
 
         # Verify method calls
         mock_set_client.assert_called_once()
@@ -320,13 +318,11 @@ class TestCustomTriton(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://triton-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_triton._generate_response(
-            self.chat_input, model_params
-        )
+        model_response = await custom_triton._generate_response(self.chat_input, model_params)
 
         # Verify results
-        self.assertEqual(resp_text, "")
-        self.assertEqual(resp_status, 500)
+        self.assertEqual(model_response.llm_response, "")
+        self.assertEqual(model_response.response_code, 500)
 
         # Verify error logging
         mock_logger.error.assert_called_with(
@@ -351,13 +347,11 @@ class TestCustomTriton(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="http://triton-test.com", auth_token="test_token")
-        resp_text, resp_status = await custom_triton._generate_response(
-            self.chat_input, model_params
-        )
+        model_response = await custom_triton._generate_response(self.chat_input, model_params)
 
         # Verify results
-        self.assertEqual(resp_text, "Http request failed Test error")
-        self.assertEqual(resp_status, 999)
+        self.assertEqual(model_response.llm_response, "Http request failed Test error")
+        self.assertEqual(model_response.response_code, 999)
 
         # Verify error logging
         mock_logger.error.assert_called_with("Http request failed Test error")

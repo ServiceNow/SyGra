@@ -13,8 +13,6 @@ from agentlab.agents.agent_args import AgentArgs  # type: ignore[import-untyped]
 
 from sygra.logger.logger_config import logger
 
-# IMPORTANT: Patch tasks BEFORE any other browsergym imports
-# from ..tasks import patch_tasks  # noqa: F401 - Must be first
 from .env_setup import EnvironmentMapper
 
 # NOTE: browsergym.experiments is imported INSIDE functions to allow
@@ -292,7 +290,7 @@ class ExperimentRunner:
                     os.environ["AGENTLAB_USE_RETINA"] = "1"
                     from sygra.logger.logger_config import logger
 
-                    logger.info("🖥️  Detected Retina display, enabling AGENTLAB_USE_RETINA")
+                    logger.info("Detected Retina display, enabling AGENTLAB_USE_RETINA")
                     # Only disable custom patches if requested (for compatibility)
                     if disable_som_patches:
                         ExperimentRunner._disable_custom_som_patches()
@@ -301,7 +299,7 @@ class ExperimentRunner:
                 os.environ["AGENTLAB_USE_RETINA"] = "1"
                 from sygra.logger.logger_config import logger
 
-                logger.info("🖥️  Enabling AGENTLAB_USE_RETINA for macOS (fallback)")
+                logger.info("Enabling AGENTLAB_USE_RETINA for macOS (fallback)")
                 # Only disable custom patches if requested (for compatibility)
                 if disable_som_patches:
                     ExperimentRunner._disable_custom_som_patches()
@@ -318,7 +316,7 @@ class ExperimentRunner:
         try:
             from sygra.logger.logger_config import logger
 
-            logger.info("🛑 _disable_custom_som_patches called - disabling SOM patches")
+            logger.info("_disable_custom_som_patches called - disabling SOM patches")
 
             # Set a flag to prevent our overlay patches from applying coordinate scaling
             import os

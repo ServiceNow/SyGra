@@ -21,14 +21,6 @@ class AgentNode(LLMNode):
     def __init__(self, node_name: str, config: dict):
         super().__init__(node_name, config)
 
-        # Currently we support direct passing of tools which have decorator @tool and of type Langgraph's BaseTool Class.
-        self.tools = []
-        tool_paths = self.node_config.get("tools", [])
-        if tool_paths:
-            from sygra.utils.tool_utils import load_tools
-
-            self.tools = load_tools(tool_paths)
-
         self.inject_system_messages = self.node_config.get("inject_system_messages", [])
 
     def _initialize_model(self):

@@ -16,15 +16,15 @@ from typing import (
     Dict,
     Optional,
     Sequence,
-    Tuple,
     Type,
     cast,
 )
 
 import openai
-from langchain_core.messages import AIMessage, BaseMessage
+from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompt_values import ChatPromptValue
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel, ValidationError
 from tenacity import (
     AsyncRetrying,
@@ -40,6 +40,7 @@ from sygra.core.models.client.base_client import BaseClient
 from sygra.core.models.client.client_factory import ClientFactory
 from sygra.core.models.client.http_client import HttpClient
 from sygra.core.models.client.openai_client import OpenAIClient
+from sygra.core.models.model_response import ModelResponse
 from sygra.core.models.structured_output.structured_output_config import (
     StructuredOutputConfig,
 )
@@ -144,23 +145,23 @@ class BaseCustomModel(ABC):
         logger.debug(
             f"[{self.name()}][{model_url}] REQUEST: {utils.convert_messages_from_langchain_to_chat_format(input.messages)}"
         )
-        resp_text, resp_status = await self._call_with_retry(
+        model_response: ModelResponse = await self._call_with_retry(
             input, model_params, use_structured_output, **kwargs
         )
 
         # Apply common finalization logic
-        return self._finalize_response(resp_text, resp_status, model_url)
+        return self._finalize_response(model_response, model_url)
 
-    def _finalize_response(self, resp_text: str, resp_status: int, model_url: str) -> AIMessage:
+    def _finalize_response(self, model_response: ModelResponse, model_url: str) -> ModelResponse:
         """Common response finalization logic"""
-        self._update_model_stats(resp_text, resp_status)
-        self._handle_server_down(resp_status)
+        self._update_model_stats(model_response.llm_response, model_response.response_code)
+        self._handle_server_down(model_response.response_code)
         # reduce the count of requests for the url to handle least_requests load balancing
         self.url_reqs_count[model_url] -= 1
-        logger.debug(f"[{self.name()}][{model_url}] RESPONSE: {resp_text}")
-        resp_text = self._replace_special_tokens(resp_text)
-        resp_text = self._post_process_for_model(resp_text)
-        return AIMessage(resp_text)
+        logger.debug(f"[{self.name()}][{model_url}] RESPONSE: {model_response.llm_response}")
+        model_response.llm_response = self._replace_special_tokens(model_response.llm_response)
+        model_response.llm_response = self._post_process_for_model(model_response.llm_response)
+        return model_response
 
     async def _get_lock(self) -> asyncio.Lock:
         if self._structured_output_lock is None:
@@ -169,7 +170,7 @@ class BaseCustomModel(ABC):
 
     async def _handle_structured_output(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
-    ) -> Optional[Tuple[str, int]]:
+    ) -> Optional[ModelResponse]:
         """Handle structured output generation"""
         lock = await self._get_lock()
         # Re-entry prevention using asyncio locking
@@ -191,13 +192,10 @@ class BaseCustomModel(ABC):
             else:
                 logger.info(f"Using fallback structured output for {self.name()}")
                 # Get response from fallback method
-                (
-                    resp_text,
-                    resp_status,
-                ) = await self._generate_fallback_structured_output(
+                model_response: ModelResponse = await self._generate_fallback_structured_output(
                     input, model_params, pydantic_model, **kwargs
                 )
-                return resp_text, resp_status
+                return model_response
 
     def _supports_native_structured_output(self) -> bool:
         """Check if the model supports native structured output"""
@@ -210,7 +208,7 @@ class BaseCustomModel(ABC):
         model_params: ModelParams,
         pydantic_model: Type[BaseModel],
         **kwargs: Any,
-    ) -> Tuple[str, int]:
+    ) -> ModelResponse:
         """Generate structured output using native model support"""
         # This will be implemented in specific model classes
         raise NotImplementedError("Native structured output not implemented for this model")
@@ -221,7 +219,7 @@ class BaseCustomModel(ABC):
         model_params: ModelParams,
         pydantic_model: Type[BaseModel],
         **kwargs: Any,
-    ) -> Tuple[str, int]:
+    ) -> ModelResponse:
         """Generate structured output using instruction-based fallback"""
         logger.info("Generating fallback structured output")
         parser = PydanticOutputParser(pydantic_object=pydantic_model)
@@ -237,27 +235,31 @@ class BaseCustomModel(ABC):
         modified_input = ChatPromptValue(messages=modified_messages)
 
         # Generate the text with retry (uses our centralized retry logic)
-        resp_text, resp_status = await self._generate_response_with_retry(
+        model_response: ModelResponse = await self._generate_response_with_retry(
             modified_input, model_params, **kwargs
         )
 
-        if resp_status != 200:
+        if model_response.response_code != 200:
             logger.error(
-                f"[{self.name()}] Failed to generate fallback structured output: Status {resp_status}"
+                f"[{self.name()}] Failed to generate fallback structured output: Status {model_response.response_code}"
             )
-            return resp_text, resp_status
+            return model_response
 
         # Try to parse the response to validate it's proper JSON
         try:
-            parsed_output = parser.parse(resp_text)
+            parsed_output = parser.parse(model_response.llm_response or "")
             logger.info(f"[{self.name()}] Structured output parsed successfully")
             # Return the validated JSON string
-            return parsed_output.model_dump_json(), 200
+            return ModelResponse(
+                llm_response=parsed_output.model_dump_json(),
+                response_code=200,
+                tool_calls=model_response.tool_calls,
+            )
         except Exception as e:
             logger.warning(f"[{self.name()}] Failed to parse structured output: {e}")
             logger.error(f"[{self.name()}] Returning unparsed response")
             # Return the original response text with status code 200
-            return resp_text, 200
+            return model_response
 
     def name(self) -> str:
         return cast(str, self.model_config["name"])
@@ -333,11 +335,13 @@ class BaseCustomModel(ABC):
         self.call_count += 1
         return return_url
 
-    def _update_model_stats(self, resp_text: str, resp_status: int) -> None:
+    def _update_model_stats(self, resp_text: Optional[str], resp_status: int) -> None:
         code_count = self.model_stats["resp_code_dist"].get(resp_status, 0)
         self.model_stats["resp_code_dist"][resp_status] = code_count + 1
         if resp_status != 200:
             # TODO: Right now the error messages are based on vllm; need to generalize for all models
+            if not resp_text:
+                resp_text = ""
             resp_text = resp_text.lower()
             if "timed out" in resp_text:
                 error_type = "timeout"
@@ -366,8 +370,8 @@ class BaseCustomModel(ABC):
 
     @abstractmethod
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
-    ) -> Tuple[str, int]:
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
         pass
 
     def _ping_model(self, url, auth_token) -> int:
@@ -378,11 +382,12 @@ class BaseCustomModel(ABC):
             auth_token: auth token for the url
         """
         # hello message
-        msg = utils.backend_factory.get_test_message()
+        is_multi_modal = self.model_config.get("multi_modal", True)
+        msg = utils.backend_factory.get_test_message(is_multi_modal=is_multi_modal)
         # build parameters
         model_param = ModelParams(url=url, auth_token=auth_token)
-        _, status = asyncio.run(self._generate_response(msg, model_param))
-        return status
+        model_response: ModelResponse = asyncio.run(self._generate_response(msg, model_param))
+        return model_response.response_code
 
     def ping(self) -> int:
         """
@@ -416,7 +421,9 @@ class BaseCustomModel(ABC):
         logger.debug(f"Chat formatted text: {chat_formatted_text}")
         return chat_formatted_text
 
-    def _replace_special_tokens(self, text: str) -> str:
+    def _replace_special_tokens(self, text: Optional[str]) -> str:
+        if not text:
+            return ""
         for token in self.model_config.get("special_tokens", []):
             text = text.replace(token, "")
         return text.strip()
@@ -434,7 +441,7 @@ class BaseCustomModel(ABC):
 
             # to handle cases where mixtral adds additional tags around the text. e.g. [ANS]....[/ANS].
             # we are currently handling only cases where we observe one occurrence of the tag to reduce false positives
-            pattern2 = re.compile("^\[([A-Z]+)\](.*?)\[/\\1\]", re.DOTALL)
+            pattern2 = re.compile(r"^\[([A-Z]+)\](.*?)\[/\1\]", re.DOTALL)
             res = re.findall(pattern2, text)
             if len(res) == 1:
                 text = res[0][1]
@@ -443,16 +450,16 @@ class BaseCustomModel(ABC):
             text = text.replace("begin{align*}", "").replace("end{align*}", "").strip()
         return text
 
-    def _is_retryable_error(self, result):
+    def _is_retryable_error(self, result: ModelResponse):
         """check if the error is a rate limit error by checking response code"""
         # currently retrying for too many requests error(429)
         # and APIConnectionError(599) returned by OpenAI intermittently
         # and 444 = Blocked by azure content filter
-        return len(result) == 2 and result[1] in constants.RETRYABLE_HTTP_ERROR
+        return result.response_code in constants.RETRYABLE_HTTP_ERROR
 
     def _log_before_retry(self, retry_state):
         """log retry attempt"""
-        resp_code = retry_state.outcome.result()[1]
+        resp_code = retry_state.outcome.result().response_code
         logger.warning(
             f"[{self.name()}] Retrying the request in {retry_state.next_action.sleep} seconds as it returned"
             f" {resp_code} code"
@@ -464,7 +471,7 @@ class BaseCustomModel(ABC):
         model_params: ModelParams,
         use_structured_output: bool = False,
         **kwargs: Any,
-    ) -> Tuple[str, int]:
+    ) -> ModelResponse:
         """
         Centralized retry method that delegates to either regular text generation
         or structured output handling based on the flag.
@@ -502,10 +509,9 @@ class BaseCustomModel(ABC):
                     # Apply post-processing if defined
                     post_proc = self._get_post_processor()
                     if post_proc is not None:
-                        resp_str = post_proc().apply(result[0])
-                        resp_code = result[1]
+                        result.llm_response = post_proc().apply(result.llm_response)
                         # IMPORTANT: add more items if needed in future
-                        result = (resp_str, resp_code)
+                        # result = (resp_str, resp_code)
                 if (
                     attempt.retry_state.outcome is not None
                     and not attempt.retry_state.outcome.failed
@@ -517,7 +523,7 @@ class BaseCustomModel(ABC):
 
     async def _generate_response_with_retry(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
-    ) -> Tuple[str, int]:
+    ) -> ModelResponse:
         """
         Backward compatibility method that uses the centralized _call_with_retry.
         Retry text generation with model with exponential backoff and random jitter.
@@ -606,6 +612,13 @@ class BaseCustomModel(ABC):
         except Exception:
             return None
 
+    def _convert_tools_to_model_format(self, **kwargs):
+        formatted_tools = []
+        if kwargs.get("tools"):
+            tools = kwargs.get("tools", [])
+            formatted_tools = [convert_to_openai_tool(tool, strict=True) for tool in tools]
+        return formatted_tools
+
 
 class CustomTGI(BaseCustomModel):
     def __init__(self, model_config: dict[str, Any]) -> None:
@@ -620,7 +633,7 @@ class CustomTGI(BaseCustomModel):
         model_params: ModelParams,
         pydantic_model: Type[BaseModel],
         **kwargs: Any,
-    ) -> Tuple[str, int]:
+    ) -> ModelResponse:
         """Generate structured output using TGI's native support"""
         logger.info(f"[{self.name()}] Attempting native structured output generation")
         model_url = model_params.url
@@ -678,7 +691,7 @@ class CustomTGI(BaseCustomModel):
                 pydantic_model.model_validate(resp_text)
                 # If validation succeeds, return the validated JSON
                 logger.info(f"[{self.name()}] Native structured output generation succeeded")
-                return json.dumps(resp_text), resp_status
+                return ModelResponse(llm_response=json.dumps(resp_text), response_code=resp_status)
             except (json.JSONDecodeError, ValidationError) as e:
                 logger.error(f"[{self.name()}] Native structured output validation failed: {e}")
                 logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
@@ -696,8 +709,8 @@ class CustomTGI(BaseCustomModel):
             )
 
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
-    ) -> Tuple[str, int]:
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
         try:
             # Set Client
             self._set_client(model_params.url, model_params.auth_token)
@@ -715,7 +728,8 @@ class CustomTGI(BaseCustomModel):
             )
 
             resp_text = resp.text
-            if resp.status_code != 200:
+            ret_code = resp.status_code
+            if ret_code != 200:
                 logger.error(
                     f"HTTP request failed with code: {resp.status_code} and error: {resp_text}"
                 )
@@ -725,7 +739,9 @@ class CustomTGI(BaseCustomModel):
                     or constants.CONNECTION_ERROR in resp_text
                 ):
                     # server down
-                    resp.status = 503
+                    ret_code = 503
+                else:
+                    ret_code = resp.status_code
             else:
                 resp_text = json.loads(resp_text)["generated_text"]
         except Exception as x:
@@ -733,8 +749,8 @@ class CustomTGI(BaseCustomModel):
             logger.error(resp_text)
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
-            return resp_text, ret_code
-        return resp_text, resp.status_code
+            return ModelResponse(llm_response=resp_text, response_code=ret_code)
+        return ModelResponse(llm_response=resp_text, response_code=ret_code)
 
 
 class CustomAzure(BaseCustomModel):
@@ -756,8 +772,8 @@ class CustomAzure(BaseCustomModel):
             raise ValueError("auth_token must be a string or non-empty list of strings")
 
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
-    ) -> Tuple[str, int]:
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
         model_url = model_params.url
         try:
             # Set Client
@@ -775,23 +791,26 @@ class CustomAzure(BaseCustomModel):
             logger.debug(f"[{self.name()}]\n[{model_url}] \n REQUEST DATA: {payload}")
 
             resp_text = resp.text
-            if resp.status_code != 200:
+            ret_code = resp.status_code
+            if ret_code != 200:
                 logger.error(
-                    f"[{self.name()}] HTTP request failed with code: {resp.status_code} and error: {resp_text}"
+                    f"[{self.name()}] HTTP request failed with code: {ret_code} and error: {resp_text}"
                 )
                 resp_text = ""
             else:
                 result = json.loads(resp_text)
                 if result["choices"][0]["finish_reason"] == "content_filter":
-                    return "Blocked by azure content filter", 444
+                    return ModelResponse(
+                        llm_response="Blocked by azure content filter", response_code=444
+                    )
                 resp_text = result["choices"][0]["message"]["content"]
         except Exception as x:
             resp_text = f"Http request failed {x}"
             logger.error(resp_text)
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
-            return resp_text, ret_code
-        return resp_text, resp.status_code
+            return ModelResponse(llm_response=resp_text, response_code=ret_code)
+        return ModelResponse(llm_response=resp_text, response_code=ret_code)
 
 
 class CustomMistralAPI(BaseCustomModel):
@@ -799,8 +818,8 @@ class CustomMistralAPI(BaseCustomModel):
         super().__init__(model_config)
 
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
-    ) -> Tuple[str, int]:
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
         ret_code = 200
         model_url = model_params.url
         try:
@@ -830,7 +849,7 @@ class CustomMistralAPI(BaseCustomModel):
             else:
                 # for other cases, return 999, dont retry
                 ret_code = 999
-        return resp_text, ret_code
+        return ModelResponse(llm_response=resp_text, response_code=ret_code)
 
 
 class CustomVLLM(BaseCustomModel):
@@ -851,13 +870,14 @@ class CustomVLLM(BaseCustomModel):
         model_params: ModelParams,
         pydantic_model: Type[BaseModel],
         **kwargs: Any,
-    ) -> Tuple[str, int]:
+    ) -> ModelResponse:
         """Generate structured output using vLLM's guided generation"""
         logger.info(f"[{self.name()}] Attempting native structured output generation")
         model_url = model_params.url
         try:
             self._set_client(model_url, model_params.auth_token)
             client = cast(OpenAIClient, self._client)
+            tool_calls = []
 
             # Create JSON schema for guided generation
             json_schema = pydantic_model.model_json_schema()
@@ -870,6 +890,13 @@ class CustomVLLM(BaseCustomModel):
                 payload = client.build_request(formatted_prompt=formatted_prompt)
             else:
                 payload = client.build_request(messages=input.messages)
+
+            # Convert to model format tools
+            formatted_tools = self._convert_tools_to_model_format(**kwargs)
+            if formatted_tools:
+                self.generation_params.update(
+                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")}
+                )
 
             # Use vLLM's native guided generation
             extra_params = {**(self.generation_params or {}), "guided_json": json_schema}
@@ -892,10 +919,10 @@ class CustomVLLM(BaseCustomModel):
 
             # Extract response text based on API type
             if self.model_config.get("completions_api", False):
-                resp_text = completion.choices[0].model_dump()["text"].strip()
+                resp_text = completion.choices[0].model_dump()["text"]
             else:
-                resp_text = completion.choices[0].model_dump()["message"]["content"].strip()
-
+                resp_text = completion.choices[0].model_dump()["message"]["content"]
+                tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
             logger.info(f"[{self.name()}][{model_url}] RESPONSE: Native support call successful")
             logger.debug(f"[{self.name()}] Native structured output response: {resp_text}")
 
@@ -906,7 +933,11 @@ class CustomVLLM(BaseCustomModel):
                 pydantic_model(**parsed_data)
                 # Return JSON string representation
                 logger.info(f"[{self.name()}] Native structured output generation succeeded")
-                return json.dumps(parsed_data), resp_status
+                return ModelResponse(
+                    llm_response=json.dumps(parsed_data),
+                    response_code=resp_status,
+                    tool_calls=tool_calls,
+                )
             except (json.JSONDecodeError, ValidationError) as e:
                 logger.error(f"[{self.name()}] Native structured output validation failed: {e}")
                 logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
@@ -924,10 +955,11 @@ class CustomVLLM(BaseCustomModel):
             )
 
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
-    ) -> Tuple[str, int]:
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
         ret_code = 200
         model_url = model_params.url
+        tool_calls = None
         try:
             # create vllm client for every request otherwise it starts failing set header to close connection
             # otherwise spurious event loop errors show up -
@@ -940,13 +972,22 @@ class CustomVLLM(BaseCustomModel):
                 payload = self._client.build_request(formatted_prompt=formatted_prompt)
             else:
                 payload = self._client.build_request(messages=input.messages)
+
+            # Convert to model format tools
+            formatted_tools = self._convert_tools_to_model_format(**kwargs)
+            if formatted_tools:
+                self.generation_params.update(
+                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")}
+                )
+
             completion = await self._client.send_request(
                 payload, self.model_serving_name, self.generation_params
             )
             if self.model_config.get("completions_api", False):
-                resp_text = completion.choices[0].model_dump()["text"].strip()
+                resp_text = completion.choices[0].model_dump()["text"]
             else:
-                resp_text = completion.choices[0].model_dump()["message"]["content"].strip()
+                resp_text = completion.choices[0].model_dump()["message"]["content"]
+                tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
             # TODO: Test rate limit handling for vllm
         except openai.RateLimitError as e:
             logger.warn(f"vLLM api request exceeded rate limit: {e}")
@@ -964,7 +1005,7 @@ class CustomVLLM(BaseCustomModel):
             else:
                 # for other cases, return 999, dont retry
                 ret_code = 999
-        return resp_text, ret_code
+        return ModelResponse(llm_response=resp_text, response_code=ret_code, tool_calls=tool_calls)
 
 
 class CustomOpenAI(BaseCustomModel):
@@ -986,7 +1027,7 @@ class CustomOpenAI(BaseCustomModel):
         model_params: ModelParams,
         pydantic_model: Type[BaseModel],
         **kwargs: Any,
-    ) -> Tuple[str, int]:
+    ) -> ModelResponse:
         """Generate structured output using OpenAI's native support"""
         logger.info(f"[{self.name()}] Attempting native structured output generation")
         model_url = model_params.url
@@ -1001,6 +1042,13 @@ class CustomOpenAI(BaseCustomModel):
                 payload = self._client.build_request(formatted_prompt=formatted_prompt)
             else:
                 payload = self._client.build_request(messages=input.messages)
+
+            # Convert to model format tools
+            formatted_tools = self._convert_tools_to_model_format(**kwargs)
+            if formatted_tools:
+                self.generation_params.update(
+                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")}
+                )
 
             # Add pydantic_model to generation params
             all_params = {
@@ -1027,21 +1075,29 @@ class CustomOpenAI(BaseCustomModel):
 
             # Extract response text based on API type
             if self.model_config.get("completions_api", False):
-                resp_text = completion.choices[0].model_dump()["text"].strip()
+                model_response: ModelResponse = ModelResponse(
+                    llm_response=completion.choices[0].model_dump()["text"],
+                    response_code=resp_status,
+                )
             else:
-                resp_text = completion.choices[0].model_dump()["message"]["content"].strip()
-
+                model_response = ModelResponse(
+                    llm_response=completion.choices[0].model_dump()["message"]["content"],
+                    response_code=resp_status,
+                    tool_calls=completion.choices[0].model_dump()["message"]["tool_calls"],
+                )
             logger.info(f"[{self.name()}][{model_url}] RESPONSE: Native support call successful")
-            logger.debug(f"[{self.name()}] Native structured output response: {resp_text}")
+            logger.debug(
+                f"[{self.name()}] Native structured output response: {model_response.llm_response}"
+            )
 
             # Try to parse and validate the response
             try:
-                json_data = json.loads(resp_text)
+                json_data = json.loads(model_response.llm_response or "")
                 # Try to validate with pydantic model
                 logger.debug(f"[{self.name()}] Validating response against schema")
                 pydantic_model.model_validate(json_data)
                 logger.info(f"[{self.name()}] Native structured output generation succeeded")
-                return resp_text, resp_status
+                return model_response
             except (json.JSONDecodeError, ValidationError) as e:
                 logger.error(f"[{self.name()}] Native structured output validation failed: {e}")
                 logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
@@ -1059,8 +1115,8 @@ class CustomOpenAI(BaseCustomModel):
             )
 
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
-    ) -> Tuple[str, int]:
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
         # Check the output type and route to appropriate method
         output_type = self.model_config.get("output_type")
         if output_type == "audio":
@@ -1068,11 +1124,11 @@ class CustomOpenAI(BaseCustomModel):
         elif output_type == "image":
             return await self._generate_image(input, model_params)
         else:
-            return await self._generate_text(input, model_params)
+            return await self._generate_text(input, model_params, **kwargs)
 
     async def _generate_text(
-        self, input: ChatPromptValue, model_params: ModelParams
-    ) -> Tuple[str, int]:
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
         """
         Generate text using OpenAI/Azure OpenAI Chat or Completions API.
         This method is called when output_type is 'text' or not specified in model config.
@@ -1080,12 +1136,11 @@ class CustomOpenAI(BaseCustomModel):
             input: ChatPromptValue containing the messages for chat completion
             model_params: Model parameters including URL and auth token
         Returns:
-            Tuple of (response_text, status_code)
-            - On success: returns generated text and 200
-            - On error: returns error message and error code
+            Model Response
         """
         ret_code = 200
         model_url = model_params.url
+        tool_calls = None
         try:
             # create azure openai client for every request otherwise it starts failing
             # set header to close connection otherwise spurious event loop errors show up - https://github.com/encode/httpx/discussions/2959#discussioncomment-7665278
@@ -1097,13 +1152,22 @@ class CustomOpenAI(BaseCustomModel):
                 payload = self._client.build_request(formatted_prompt=formatted_prompt)
             else:
                 payload = self._client.build_request(messages=input.messages)
+
+            # Convert to model format tools
+            formatted_tools = self._convert_tools_to_model_format(**kwargs)
+            if formatted_tools:
+                self.generation_params.update(
+                    {"tools": formatted_tools, "tool_choice": kwargs.get("tool_choice", "auto")}
+                )
+
             completion = await self._client.send_request(
                 payload, str(self.model_config.get("model")), self.generation_params
             )
             if self.model_config.get("completions_api", False):
-                resp_text = completion.choices[0].model_dump()["text"].strip()
+                resp_text = completion.choices[0].model_dump()["text"]
             else:
-                resp_text = completion.choices[0].model_dump()["message"]["content"].strip()
+                resp_text = completion.choices[0].model_dump()["message"]["content"]
+                tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
         except openai.RateLimitError as e:
             logger.warn(f"AzureOpenAI api request exceeded rate limit: {e}")
             resp_text = f"{constants.ERROR_PREFIX} Http request failed {e}"
@@ -1113,11 +1177,11 @@ class CustomOpenAI(BaseCustomModel):
             logger.error(resp_text)
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
-        return resp_text, ret_code
+        return ModelResponse(llm_response=resp_text, response_code=ret_code, tool_calls=tool_calls)
 
     async def _generate_speech(
-        self, input: ChatPromptValue, model_params: ModelParams
-    ) -> Tuple[str, int]:
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
         """
         Generate speech from text using OpenAI/Azure OpenAI TTS API.
         This method is called when output_type is 'audio' in model config.
@@ -1127,9 +1191,7 @@ class CustomOpenAI(BaseCustomModel):
             model_params: Model parameters including URL and auth token
 
         Returns:
-            Tuple of (response_text, status_code)
-            - On success: returns base64 encoded audio and 200
-            - On error: returns error message and error code
+            Model Response
         """
         ret_code = 200
         model_url = model_params.url
@@ -1144,7 +1206,10 @@ class CustomOpenAI(BaseCustomModel):
 
             if not text_to_speak:
                 logger.error(f"[{self.name()}] No text provided for TTS conversion")
-                return f"{constants.ERROR_PREFIX} No text provided for TTS conversion", 400
+                return ModelResponse(
+                    llm_response=f"{constants.ERROR_PREFIX} No text provided for TTS conversion",
+                    response_code=400,
+                )
 
             # Validate text length (OpenAI TTS limit is 4096 characters)
             if len(text_to_speak) > 4096:
@@ -1214,11 +1279,11 @@ class CustomOpenAI(BaseCustomModel):
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
 
-        return resp_text, ret_code
+        return ModelResponse(llm_response=resp_text, response_code=ret_code)
 
     async def _generate_image(
         self, input: ChatPromptValue, model_params: ModelParams
-    ) -> Tuple[str, int]:
+    ) -> ModelResponse:
         """
         Generate or edit images using OpenAI/Azure OpenAI Image API.
         Auto-detects whether to use generation or editing based on input content:
@@ -1230,9 +1295,7 @@ class CustomOpenAI(BaseCustomModel):
             model_params: Model parameters including URL and auth token
 
         Returns:
-            Tuple of (response_text, status_code)
-            - On success: returns base64 encoded image(s) as JSON and 200
-            - On error: returns error message and error code
+            Model Response
         """
         ret_code = 200
         model_url = model_params.url
@@ -1266,7 +1329,10 @@ class CustomOpenAI(BaseCustomModel):
             prompt_text = prompt_text.strip()
             if not prompt_text:
                 logger.error(f"[{self.name()}] No prompt provided for image generation")
-                return f"{constants.ERROR_PREFIX} No prompt provided for image generation", 400
+                return ModelResponse(
+                    llm_response=f"{constants.ERROR_PREFIX} No prompt provided for image generation",
+                    response_code=400,
+                )
 
             if len(prompt_text) < 1000:
                 pass
@@ -1322,11 +1388,11 @@ class CustomOpenAI(BaseCustomModel):
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
 
-        return resp_text, ret_code
+        return ModelResponse(llm_response=resp_text, response_code=ret_code)
 
     async def _generate_image_from_text(
         self, prompt_text: str, model_url: str, model_params: ModelParams
-    ) -> Tuple[str, int]:
+    ) -> ModelResponse:
         """
         Generate images from text prompts (text-to-image).
 
@@ -1336,7 +1402,7 @@ class CustomOpenAI(BaseCustomModel):
             model_params: Model parameters
 
         Returns:
-            Tuple of (response_text, status_code)
+            Model Response object
         """
         self._set_client(model_url, model_params.auth_token)
 
@@ -1360,9 +1426,9 @@ class CustomOpenAI(BaseCustomModel):
             images_data = await self._process_image_response(image_response)
 
         if len(images_data) == 1:
-            return images_data[0], 200
+            return ModelResponse(llm_response=images_data[0], response_code=200)
         else:
-            return json.dumps(images_data), 200
+            return ModelResponse(llm_response=json.dumps(images_data), response_code=200)
 
     async def _process_streaming_image_response(self, stream_response):
         """
@@ -1393,7 +1459,7 @@ class CustomOpenAI(BaseCustomModel):
 
     async def _edit_image_with_data_urls(
         self, image_data_urls: list, prompt_text: str, model_url: str, model_params: ModelParams
-    ) -> Tuple[str, int]:
+    ) -> ModelResponse:
         """
         Edit images using data URLs.
         - GPT-Image-1: Supports up to 16 images
@@ -1406,7 +1472,7 @@ class CustomOpenAI(BaseCustomModel):
             model_params: Model parameters
 
         Returns:
-            Tuple of (response_text, status_code)
+            Model Response object
         """
         import io
 
@@ -1414,7 +1480,10 @@ class CustomOpenAI(BaseCustomModel):
 
         if not prompt_text:
             logger.error(f"[{self.name()}] No prompt provided for image editing")
-            return f"{constants.ERROR_PREFIX} No prompt provided for image editing", 400
+            return ModelResponse(
+                llm_response=f"{constants.ERROR_PREFIX} No prompt provided for image editing",
+                response_code=400,
+            )
 
         # Set up the OpenAI client
         self._set_client(model_url, model_params.auth_token)
@@ -1478,9 +1547,9 @@ class CustomOpenAI(BaseCustomModel):
             images_data = await self._process_image_response(image_response)
 
         if len(images_data) == 1:
-            return images_data[0], 200
+            return ModelResponse(llm_response=images_data[0], response_code=200)
         else:
-            return json.dumps(images_data), 200
+            return ModelResponse(llm_response=json.dumps(images_data), response_code=200)
 
 
 class CustomOllama(BaseCustomModel):
@@ -1498,7 +1567,7 @@ class CustomOllama(BaseCustomModel):
         model_params: ModelParams,
         pydantic_model: Type[BaseModel],
         **kwargs: Any,
-    ) -> Tuple[str, int]:
+    ) -> ModelResponse:
         """Generate structured output using Ollama's format parameter"""
         logger.info(f"[{self.name()}] Attempting native structured output generation")
         model_url = model_params.url
@@ -1552,7 +1621,7 @@ class CustomOllama(BaseCustomModel):
                 logger.debug(f"[{self.name()}] Validating response against schema")
                 pydantic_model(**parsed_data)
                 logger.info(f"[{self.name()}] Native structured output generation succeeded")
-                return resp_text, resp_status
+                return ModelResponse(llm_response=resp_text, response_code=resp_status)
             except (json.JSONDecodeError, ValidationError) as e:
                 logger.error(f"[{self.name()}] Native structured output validation failed: {e}")
                 logger.info(f"[{self.name()}] Falling back to instruction-based structured output")
@@ -1570,8 +1639,8 @@ class CustomOllama(BaseCustomModel):
             )
 
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
-    ) -> Tuple[str, int]:
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
         ret_code = 200
         model_url = model_params.url
         try:
@@ -1595,7 +1664,7 @@ class CustomOllama(BaseCustomModel):
             logger.error(resp_text)
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
-        return resp_text, ret_code
+        return ModelResponse(llm_response=resp_text, response_code=ret_code)
 
 
 class CustomTriton(BaseCustomModel):
@@ -1707,8 +1776,8 @@ class CustomTriton(BaseCustomModel):
         self.auth_token = str(model_config.get("auth_token")).replace("Bearer ", "")
 
     async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams
-    ) -> Tuple[str, int]:
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
         ret_code = 200
         model_url = model_params.url
         try:
@@ -1748,4 +1817,4 @@ class CustomTriton(BaseCustomModel):
             logger.error(resp_text)
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
-        return resp_text, ret_code
+        return ModelResponse(llm_response=resp_text, response_code=ret_code)
