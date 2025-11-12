@@ -1290,8 +1290,8 @@ class CustomOpenAI(BaseCustomModel):
         return ModelResponse(llm_response=resp_text, response_code=ret_code)
 
     async def _generate_audio_chat_completion(
-        self, input: ChatPromptValue, model_params: ModelParams
-    ) -> Tuple[str, int]:
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
         """
         Generate response using gpt-4o-audio model with chat completions API.
         This model supports:
@@ -1501,7 +1501,7 @@ class CustomOpenAI(BaseCustomModel):
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
 
-        return resp_text, ret_code
+        return ModelResponse(llm_response=resp_text, response_code=ret_code)
 
     async def _generate_image(
         self, input: ChatPromptValue, model_params: ModelParams
