@@ -1120,11 +1120,11 @@ class CustomOpenAI(BaseCustomModel):
         # Check if this is gpt-4o-audio model which uses chat completions with audio
         model_name = str(self.model_config.get("model", ""))
         is_audio_chat_model = "gpt-4o-audio" in model_name.lower()
-        
+
         # For gpt-4o-audio, route to audio chat completion regardless of output_type
         if is_audio_chat_model:
             return await self._generate_audio_chat_completion(input, model_params)
-       
+
         # Check the output type and route to appropriate method
         output_type = self.model_config.get("output_type")
         if output_type == "audio":
@@ -1318,7 +1318,7 @@ class CustomOpenAI(BaseCustomModel):
 
             payload = self._client.build_request(messages=input.messages)
             processed_messages = payload["messages"]
-            
+
             # Process messages to convert audio_url -> input_audio format for gpt-4o-audio
             for message_dict in processed_messages:
                 # Handle audio_url -> input_audio conversion for multimodal content
@@ -1332,7 +1332,7 @@ class CustomOpenAI(BaseCustomModel):
                                 data_url = audio_url.get("url", "")
                             else:
                                 data_url = audio_url
-                            
+
                             # Extract base64 data and format from data URL
                             if data_url.startswith("data:audio/"):
                                 # Parse: data:audio/<format>;base64,<data>
@@ -1347,15 +1347,17 @@ class CustomOpenAI(BaseCustomModel):
                                         mime_format_map = {"mpeg": "mp3"}
                                         if format_part in mime_format_map:
                                             format_part = mime_format_map[format_part]
-                                        
+
                                         # Convert to input_audio format expected by gpt-4o-audio
-                                        processed_content.append({
-                                            "type": "input_audio",
-                                            "input_audio": {
-                                                "data": base64_data,
-                                                "format": format_part
+                                        processed_content.append(
+                                            {
+                                                "type": "input_audio",
+                                                "input_audio": {
+                                                    "data": base64_data,
+                                                    "format": format_part,
+                                                },
                                             }
-                                        })
+                                        )
                                     else:
                                         processed_content.append(item)
                                 else:
@@ -1365,20 +1367,20 @@ class CustomOpenAI(BaseCustomModel):
                         else:
                             # Keep other types as-is (text, image_url, etc.)
                             processed_content.append(item)
-                    
+
                     message_dict["content"] = processed_content
 
             output_type = self.model_config.get("output_type")
 
             # gpt-4o-audio requires audio in modalities if output involves audio
             has_audio_output = output_type == "audio"
-            
+
             has_audio_input = any(
-                isinstance(msg.get("content"), list) and 
-                any(item.get("type") == "input_audio" for item in msg.get("content", []))
+                isinstance(msg.get("content"), list)
+                and any(item.get("type") == "input_audio" for item in msg.get("content", []))
                 for msg in processed_messages
             )
-            
+
             modalities = ["text"]
             if has_audio_output:
                 if "audio" not in modalities:
@@ -1388,13 +1390,18 @@ class CustomOpenAI(BaseCustomModel):
             if not has_audio_input:
                 has_audio_output = True
                 modalities = ["text", "audio"]
-            
+
             audio_params = {}
             if has_audio_output:
-                if "audio" in self.generation_params and type(self.generation_params["audio"]) is dict:
+                if (
+                    "audio" in self.generation_params
+                    and type(self.generation_params["audio"]) is dict
+                ):
                     pass
                 else:
-                    logger.info("Audio generation params not found, using default audio params, voice: alloy, format: wav")
+                    logger.info(
+                        "Audio generation params not found, using default audio params, voice: alloy, format: wav"
+                    )
                     self.generation_params["audio"] = {"voice": "alloy", "format": "wav"}
 
             logger.debug(
@@ -1402,7 +1409,7 @@ class CustomOpenAI(BaseCustomModel):
             )
 
             payload = {"messages": processed_messages}
-            
+
             if "audio" in modalities:
                 payload["modalities"] = modalities
 
@@ -1414,14 +1421,14 @@ class CustomOpenAI(BaseCustomModel):
 
             choice = completion.choices[0]
             message = choice.model_dump()["message"]
-            
+
             if "audio" in modalities and message.get("audio"):
                 audio_data = message["audio"]
-                
+
                 if isinstance(audio_data, dict):
                     audio_base64 = audio_data.get("data", "")
                     audio_format = self.generation_params.get("audio").get("format")
-                    
+
                     mime_types = {
                         "mp3": "audio/mpeg",
                         "opus": "audio/opus",
@@ -1431,9 +1438,9 @@ class CustomOpenAI(BaseCustomModel):
                         "pcm": "audio/pcm",
                     }
                     mime_type = mime_types.get(audio_format, "audio/wav")
-                    
+
                     resp_text = f"data:{mime_type};base64,{audio_base64}"
-                    
+
                     # Include transcript if available
                     if message.get("content"):
                         logger.debug(f"[{self.name()}] Transcript: {message['content']}")
