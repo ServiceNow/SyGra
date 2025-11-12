@@ -294,15 +294,18 @@ class ClientFactory:
         utils.validate_required_keys(["url", "auth_token"], model_config, "model")
         ssl_verify = bool(model_config.get("ssl_verify", True))
         ssl_cert = model_config.get("ssl_cert")
-        if auth_token is None:
-            # Should be validated by create_client for these model types, but keep a safe check here
-            raise ValueError("Auth token/API key is required for HTTP client creation.")
-        auth_token = auth_token.replace("Bearer ", "")
+        json_payload = model_config.get("json_payload", False)
+        headers_config = model_config.get("headers", {})
 
         headers = {
-            "Authorization": f"Bearer {auth_token}",
             "Content-Type": "application/json",
         }
+        # Update headers with config provided for the model
+        headers.update(headers_config)
+
+        if auth_token and len(auth_token) > 0:
+            auth_token = auth_token.replace("Bearer ", "")
+            headers["Authorization"] = f"Bearer {auth_token}"
 
         timeout = model_config.get("timeout", constants.DEFAULT_TIMEOUT)
         max_retries = model_config.get("max_retries", 3)
@@ -315,6 +318,7 @@ class ClientFactory:
             max_retries=max_retries,
             ssl_verify=ssl_verify,
             ssl_cert=ssl_cert,
+            json_payload=json_payload,
         )
 
     @staticmethod
