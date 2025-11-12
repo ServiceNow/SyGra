@@ -1391,22 +1391,23 @@ class CustomOpenAI(BaseCustomModel):
                 has_audio_output = True
                 modalities = ["text", "audio"]
 
-            audio_params = {}
+            audio_params: dict[str, Any] = {}
             if has_audio_output:
                 if (
                     "audio" in self.generation_params
                     and type(self.generation_params["audio"]) is dict
                 ):
-                    pass
+                    audio_params = self.generation_params["audio"]
                 else:
                     logger.info(
                         "Audio generation params not found, using default audio params, voice: alloy, format: wav"
                     )
-                    self.generation_params["audio"] = {"voice": "alloy", "format": "wav"}
+                    audio_params = {"voice": "alloy", "format": "wav"}
+                    self.generation_params["audio"] = audio_params
 
-            logger.debug(
-                f"[{self.name()}] Audio chat completion - modalities: {modalities}, audio params: {audio_params}"
-            )
+                logger.debug(
+                    f"[{self.name()}] Audio chat completion - modalities: {modalities}, audio params: {audio_params}"
+                )
 
             payload = {"messages": processed_messages}
 
@@ -1427,7 +1428,7 @@ class CustomOpenAI(BaseCustomModel):
 
                 if isinstance(audio_data, dict):
                     audio_base64 = audio_data.get("data", "")
-                    audio_format = self.generation_params.get("audio").get("format")
+                    audio_format = audio_params.get("format", "wav")
 
                     mime_types = {
                         "mp3": "audio/mpeg",

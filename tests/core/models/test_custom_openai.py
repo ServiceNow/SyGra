@@ -1158,7 +1158,6 @@ class TestCustomOpenAI(unittest.TestCase):
 
     async def _run_audio_chat_text_to_text(self, mock_set_client):
         """Test gpt-4o-audio with text input, text output"""
-        import base64
 
         # Setup config for gpt-4o-audio
         audio_chat_config = {
