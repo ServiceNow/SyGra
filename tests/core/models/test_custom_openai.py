@@ -1191,11 +1191,11 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_response(chat_input, model_params)
+        response = await custom_openai._generate_response(chat_input, model_params)
 
         # Verify it routed to audio chat completion
-        self.assertEqual(resp_status, 200)
-        self.assertEqual(resp_text, "I'm doing well, thank you!")
+        self.assertEqual(response.response_code, 200)
+        self.assertEqual(response.llm_response, "I'm doing well, thank you!")
         mock_client.send_request.assert_called_once()
 
         # Verify payload structure
@@ -1222,8 +1222,10 @@ class TestCustomOpenAI(unittest.TestCase):
             "auth_token": "Bearer sk-test_key_123",
             "api_version": "2023-05-15",
             "parameters": {
-                "voice": "alloy",
-                "response_format": "wav",
+                "audio": {
+                    "voice": "alloy",
+                    "format": "wav",
+                }
             },
         }
 
@@ -1254,21 +1256,24 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_response(chat_input, model_params)
+        response = await custom_openai._generate_response(chat_input, model_params)
 
         # Verify audio data URL was returned
-        self.assertEqual(resp_status, 200)
-        self.assertTrue(resp_text.startswith("data:audio/wav;base64,"))
-        self.assertIn(audio_base64, resp_text)
+        self.assertEqual(response.response_code, 200)
+        self.assertTrue(response.llm_response.startswith("data:audio/wav;base64,"))
+        self.assertIn(audio_base64, response.llm_response)
 
-        # Verify payload included modalities and audio params
+        # Verify payload included modalities
         call_args = mock_client.send_request.call_args
         payload = call_args[0][0]
         self.assertIn("modalities", payload)
         self.assertIn("audio", payload["modalities"])
-        self.assertIn("audio", payload)
-        self.assertEqual(payload["audio"]["voice"], "alloy")
-        self.assertEqual(payload["audio"]["format"], "wav")
+        
+        # Verify audio params are in gen_params (3rd argument to send_request)
+        gen_params = call_args[0][2]
+        self.assertIn("audio", gen_params)
+        self.assertEqual(gen_params["audio"]["voice"], "alloy")
+        self.assertEqual(gen_params["audio"]["format"], "wav")
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_audio_chat_text_to_audio(self, mock_set_client):
@@ -1323,11 +1328,11 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_response(chat_input, model_params)
+        response = await custom_openai._generate_response(chat_input, model_params)
 
         # Verify transcription returned
-        self.assertEqual(resp_status, 200)
-        self.assertEqual(resp_text, "This is the transcribed text.")
+        self.assertEqual(response.response_code, 200)
+        self.assertEqual(response.llm_response, "This is the transcribed text.")
 
         # Verify audio was converted to input_audio format
         call_args = mock_client.send_request.call_args
@@ -1365,8 +1370,10 @@ class TestCustomOpenAI(unittest.TestCase):
             "auth_token": "Bearer sk-test_key_123",
             "api_version": "2023-05-15",
             "parameters": {
-                "voice": "nova",
-                "response_format": "mp3",
+                "audio": {
+                    "voice": "nova",
+                    "format": "mp3",
+                }
             },
         }
 
@@ -1409,13 +1416,13 @@ class TestCustomOpenAI(unittest.TestCase):
 
         # Call _generate_response
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_response(chat_input, model_params)
+        response = await custom_openai._generate_response(chat_input, model_params)
 
         # Verify audio output returned
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(response.response_code, 200)
         # MP3 format uses audio/mpeg MIME type
-        self.assertTrue(resp_text.startswith("data:audio/mpeg;base64,"))
-        self.assertIn(output_audio_b64, resp_text)
+        self.assertTrue(response.llm_response.startswith("data:audio/mpeg;base64,"))
+        self.assertIn(output_audio_b64, response.llm_response)
 
         # Verify payload included modalities for audio output
         call_args = mock_client.send_request.call_args
@@ -1456,12 +1463,12 @@ class TestCustomOpenAI(unittest.TestCase):
         custom_openai._client = mock_client
 
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_response(chat_input, model_params)
+        response = await custom_openai._generate_response(chat_input, model_params)
 
         # Verify error handling
-        self.assertEqual(resp_status, 429)
-        self.assertIn("###SERVER_ERROR###", resp_text)
-        self.assertIn("Rate limit exceeded", resp_text)
+        self.assertEqual(response.response_code, 429)
+        self.assertIn("###SERVER_ERROR###", response.llm_response)
+        self.assertIn("Rate limit exceeded", response.llm_response)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_audio_chat_rate_limit_error(self, mock_set_client):
@@ -1495,12 +1502,12 @@ class TestCustomOpenAI(unittest.TestCase):
         custom_openai._client = mock_client
 
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_response(chat_input, model_params)
+        response = await custom_openai._generate_response(chat_input, model_params)
 
         # Verify error handling
-        self.assertEqual(resp_status, 400)
-        self.assertIn("###SERVER_ERROR###", resp_text)
-        self.assertIn("Bad request", resp_text)
+        self.assertEqual(response.response_code, 400)
+        self.assertIn("###SERVER_ERROR###", response.llm_response)
+        self.assertIn("Bad request", response.llm_response)
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_audio_chat_bad_request_error(self, mock_set_client):
@@ -1541,12 +1548,12 @@ class TestCustomOpenAI(unittest.TestCase):
             custom_openai._client = mock_client
 
             model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-            resp_text, resp_status = await custom_openai._generate_response(
+            response = await custom_openai._generate_response(
                 chat_input, model_params
             )
 
             # Verify it was routed to audio chat completion
-            self.assertEqual(resp_status, 200, f"Failed for model: {model_name}")
+            self.assertEqual(response.response_code, 200, f"Failed for model: {model_name}")
             mock_client.send_request.assert_called()
 
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
@@ -1587,10 +1594,10 @@ class TestCustomOpenAI(unittest.TestCase):
         custom_openai._client = mock_client
 
         model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        resp_text, resp_status = await custom_openai._generate_response(chat_input, model_params)
+        response = await custom_openai._generate_response(chat_input, model_params)
 
         # Verify the call was made
-        self.assertEqual(resp_status, 200)
+        self.assertEqual(response.response_code, 200)
         mock_client.send_request.assert_called_once()
 
         # Verify role mapping in the payload
