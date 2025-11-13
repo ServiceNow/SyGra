@@ -1,3 +1,4 @@
+import time
 from inspect import isclass
 from typing import Any
 
@@ -23,6 +24,28 @@ class LambdaNode(BaseNode):
         if isclass(self.func_to_execute):
             self.func_to_execute = self.func_to_execute.apply
 
+    async def _exec_wrapper(self, state: dict[str, Any]) -> dict[str, Any]:
+        """
+        Wrapper to track lambda node execution.
+
+        Args:
+            state: State of the node.
+
+        Returns:
+            Updated state
+        """
+        start_time = time.time()
+        success = True
+
+        try:
+            result: dict[str, Any] = self.func_to_execute(state)
+            return result
+        except Exception:
+            success = False
+            raise
+        finally:
+            self._record_execution_metadata(start_time, success)
+
     def to_backend(self) -> Any:
         """
         Convert the Node object to backend platform specific Runnable object.
@@ -30,7 +53,7 @@ class LambdaNode(BaseNode):
         Returns:
              Any: platform specific runnable object like Runnable in LangGraph.
         """
-        return utils.backend_factory.create_lambda_runnable(self.func_to_execute, self.node_config)
+        return utils.backend_factory.create_lambda_runnable(self._exec_wrapper, self.node_config)
 
     def validate_node(self):
         """

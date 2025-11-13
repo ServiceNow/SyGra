@@ -51,13 +51,12 @@ class BackendFactory(ABC):
         pass
 
     @abstractmethod
-    def create_weighted_sampler_runnable(self, weighted_sampler_function, attr_config):
+    def create_weighted_sampler_runnable(self, exec_wrapper):
         """
         Abstract method to create weighted sampler runnable.
 
         Args:
-            weighted_sampler_function: Weighted sampler function
-            attr_config: attributes from the weighted sampler node
+            exec_wrapper: Async function wrapper to execute
 
         Returns:
             Any: backend specific runnable object like Runnable for backend=Langgraph
