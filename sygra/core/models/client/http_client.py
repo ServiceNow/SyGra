@@ -124,9 +124,8 @@ class HttpClient(BaseClient):
             payload.update(generation_params)
 
         try:
-
             if self.json_payload:
-                inference_args = {
+                inference_args: dict[str, Any] = {
                     "json": payload,
                     "headers": self.headers,
                     "timeout": self.timeout,
@@ -175,9 +174,8 @@ class HttpClient(BaseClient):
             payload.update(generation_params)
 
         try:
-
             if self.json_payload:
-                inference_args = {
+                inference_args: dict[str, Any] = {
                     "json": payload,
                     "headers": self.headers,
                     "timeout": self.timeout,

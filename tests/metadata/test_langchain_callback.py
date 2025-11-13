@@ -10,7 +10,7 @@ import pytest
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 
-from sygra.metadata.langchain_callback import MetadataTrackingCallback
+from sygra.core.graph.langgraph.langchain_callback import MetadataTrackingCallback
 from sygra.metadata.metadata_collector import get_metadata_collector
 
 

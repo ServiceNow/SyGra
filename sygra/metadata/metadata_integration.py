@@ -3,8 +3,8 @@ import time
 from functools import wraps
 from typing import Callable
 
+from sygra.core.graph.langgraph.langchain_callback import calculate_cost
 from sygra.core.models.model_response import ModelResponse
-from sygra.metadata.langchain_callback import calculate_cost
 from sygra.metadata.metadata_collector import get_metadata_collector
 
 

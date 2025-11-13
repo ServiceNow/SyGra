@@ -426,8 +426,9 @@ The `@track_model_request` decorator automatically captures:
 - Retry attempts and failures
 
 **For LangChain Agents:**
+
 ```python
-from sygra.metadata.langchain_callback import MetadataTrackingCallback
+from sygra.core.graph.langgraph.langchain_callback import MetadataTrackingCallback
 
 callback = MetadataTrackingCallback(model_name="gpt-4o")
 response = await agent.ainvoke(input, config={"callbacks": [callback]})

@@ -5,11 +5,11 @@ from typing import Any
 from langchain_core.messages import AIMessage, SystemMessage
 from langgraph.prebuilt import create_react_agent
 
+from sygra.core.graph.langgraph.langchain_callback import MetadataTrackingCallback
 from sygra.core.graph.nodes.llm_node import LLMNode
 from sygra.core.graph.sygra_message import SygraMessage
 from sygra.core.models.model_factory import ModelFactory
 from sygra.logger.logger_config import logger
-from sygra.metadata.langchain_callback import MetadataTrackingCallback
 from sygra.utils import constants, utils
 
 
