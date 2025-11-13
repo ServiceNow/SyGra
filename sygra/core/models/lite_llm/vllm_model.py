@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import (
     Any,
     Type,
@@ -8,15 +9,17 @@ from typing import (
 
 import litellm
 import openai
-
-from sygra.core.models.custom_models import BaseCustomModel, ModelParams
 from langchain_core.prompt_values import ChatPromptValue
 from pydantic import BaseModel, ValidationError
 
 import sygra.utils.constants as constants
+from sygra.core.models.custom_models import BaseCustomModel, ModelParams
 from sygra.core.models.model_response import ModelResponse
 from sygra.logger.logger_config import logger
 from sygra.utils import utils
+
+logging.getLogger("LiteLLM").setLevel(logging.WARNING)
+
 
 class CustomVLLM(BaseCustomModel):
     def __init__(self, model_config: dict[str, Any]) -> None:
@@ -29,6 +32,9 @@ class CustomVLLM(BaseCustomModel):
     def _validate_completions_api_support(self) -> None:
         if self.model_config.get("completions_api", False):
             logger.info(f"Model {self.name()} supports completion API.")
+
+    def _get_lite_llm_model_name(self) -> str:
+        return f"hosted_vllm/{self.model_serving_name}"
 
     async def _generate_native_structured_output(
         self,
@@ -63,7 +69,7 @@ class CustomVLLM(BaseCustomModel):
                 )
                 # Send the request using the litellm
                 completion = await litellm.atext_completion(
-                    model=f"hosted_vllm/{self.model_serving_name}",
+                    model=self._get_lite_llm_model_name(),
                     prompt=formatted_prompt,
                     api_base=model_url,
                     api_key=model_params.auth_token,
@@ -75,9 +81,9 @@ class CustomVLLM(BaseCustomModel):
                 messages = self._get_messages(input)
                 # Send the request using the litellm
                 completion = await litellm.acompletion(
-                    model=f"hosted_vllm/{self.model_serving_name}",
+                    model=self._get_lite_llm_model_name(),
                     messages=messages,
-                    base_url=model_url,
+                    api_base=model_url,
                     api_key=model_params.auth_token,
                     **extra_params,
                 )
@@ -147,7 +153,7 @@ class CustomVLLM(BaseCustomModel):
                 )
                 # Send the request using the litellm
                 completion = await litellm.atext_completion(
-                    model=f"hosted_vllm/{self.model_serving_name}",
+                    model=self._get_lite_llm_model_name(),
                     prompt=formatted_prompt,
                     api_base=model_url,
                     api_key=model_params.auth_token,
@@ -159,9 +165,9 @@ class CustomVLLM(BaseCustomModel):
                 messages = self._get_messages(input)
                 # Send the request using the litellm
                 completion = await litellm.acompletion(
-                    model=f"hosted_vllm/{self.model_serving_name}",
+                    model=self._get_lite_llm_model_name(),
                     messages=messages,
-                    base_url=model_url,
+                    api_base=model_url,
                     api_key=model_params.auth_token,
                     **self.generation_params,
                 )

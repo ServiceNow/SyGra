@@ -23,16 +23,17 @@ from sygra.utils import utils
 logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 
 
-class CustomOpenAI(BaseCustomModel):
+class CustomAzureOpenAI(BaseCustomModel):
 
     def __init__(self, model_config: dict[str, Any]) -> None:
         super().__init__(model_config)
-        utils.validate_required_keys(["url", "auth_token"], model_config, "model")
+        utils.validate_required_keys(["url", "auth_token", "api_version"], model_config, "model")
         self.model_config = model_config
         self.model_name = self.model_config.get("model", self.name())
+        self.api_version = self.model_config.get("api_version")
 
-    def _get_lite_llm_model_name(self) -> Any:
-        return self.model_name
+    def _get_lite_llm_model_name(self) -> str:
+        return f"azure/{self.model_name}"
 
     async def _generate_native_structured_output(
         self,
@@ -64,8 +65,9 @@ class CustomOpenAI(BaseCustomModel):
             completion = await litellm.acompletion(
                 model=self._get_lite_llm_model_name(),
                 messages=messages,
-                base_url=model_url,
+                api_base=model_url,
                 api_key=model_params.auth_token,
+                api_version=self.api_version,
                 **all_params,
             )
             resp_text = completion.choices[0].model_dump()["message"]["content"]
@@ -153,8 +155,9 @@ class CustomOpenAI(BaseCustomModel):
             completion = await litellm.acompletion(
                 model=self._get_lite_llm_model_name(),
                 messages=messages,
-                base_url=model_params.url,
+                api_base=model_params.url,
                 api_key=model_params.auth_token,
+                api_version=self.api_version,
                 **self.generation_params,
             )
             resp_text = completion.choices[0].model_dump()["message"]["content"]
@@ -232,8 +235,9 @@ class CustomOpenAI(BaseCustomModel):
             # Make the TTS API call
             audio_response = await aspeech(
                 model=self._get_lite_llm_model_name(),
-                base_url=model_params.url,
+                api_base=model_params.url,
                 api_key=model_params.auth_token,
+                api_version=self.api_version,
                 **tts_params,
             )
 
@@ -403,8 +407,9 @@ class CustomOpenAI(BaseCustomModel):
 
         image_response = await aimage_generation(
             model=self._get_lite_llm_model_name(),
-            base_url=model_params.url,
+            api_base=model_params.url,
             api_key=model_params.auth_token,
+            api_version=self.api_version,
             prompt=prompt_text,
             **params,
         )
@@ -522,8 +527,9 @@ class CustomOpenAI(BaseCustomModel):
         # Call the image edit API
         image_response = await aimage_edit(
             model=self._get_lite_llm_model_name(),
-            base_url=model_params.url,
+            api_base=model_params.url,
             api_key=model_params.auth_token,
+            api_version=self.api_version,
             image=image_param,
             prompt=prompt_text,
             **params,

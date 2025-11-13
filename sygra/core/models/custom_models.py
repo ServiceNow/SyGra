@@ -201,8 +201,10 @@ class BaseCustomModel(ABC):
 
     def _supports_native_structured_output(self) -> bool:
         """Check if the model supports native structured output"""
-        # OpenAI and vLLM support native structured output
-        return isinstance(self, (CustomOpenAI, CustomVLLM, CustomTGI, CustomOllama))
+        return (
+            type(self)._generate_native_structured_output
+            is not BaseCustomModel._generate_native_structured_output
+        )
 
     async def _generate_native_structured_output(
         self,
