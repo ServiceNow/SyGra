@@ -15,13 +15,7 @@ from datasets import Dataset, IterableDataset, concatenate_datasets
 from datasets import config as ds_config
 from datasets import load_dataset
 from datasets.utils.metadata import MetadataConfigs  # type: ignore[import-untyped]
-from huggingface_hub import (
-    CommitOperationAdd,
-    DatasetCard,
-    DatasetCardData,
-    HfApi,
-    HfFileSystem,
-)
+from huggingface_hub import CommitOperationAdd, DatasetCard, DatasetCardData, HfApi, HfFileSystem
 
 from sygra.core.dataset.data_handler_base import DataHandler
 from sygra.core.dataset.dataset_config import DataSourceConfig, OutputConfig
@@ -245,6 +239,28 @@ class HuggingFaceHandler(DataHandler):
             df = pd.read_parquet(io.BytesIO(f.read()))
         return cast(list[dict[str, Any]], df.to_dict(orient="records"))
 
+    def _store_dataset_metadata(self, dataset: Dataset) -> None:
+        """Store dataset metadata as instance variables for later retrieval."""
+        try:
+            self.dataset_version = None
+            self.dataset_hash = None
+
+            # Extract version from dataset info
+            if hasattr(dataset, "info") and dataset.info:
+                version_obj = getattr(dataset.info, "version", None)
+                if version_obj:
+                    self.dataset_version = str(version_obj)
+
+            # Extract fingerprint/hash
+            if hasattr(dataset, "_fingerprint"):
+                self.dataset_hash = dataset._fingerprint
+
+            logger.debug(
+                f"Stored dataset metadata: version={self.dataset_version}, hash={self.dataset_hash}"
+            )
+        except Exception as e:
+            logger.debug(f"Could not store dataset metadata: {e}")
+
     def _load_dataset_by_split(self, split) -> Union[Dataset, IterableDataset]:
         """Load dataset for a specific split."""
         if not self.source_config:
@@ -279,6 +295,8 @@ class HuggingFaceHandler(DataHandler):
                 return cast(Iterator[dict[str, Any]], ds)
             else:
                 ds_concrete = cast(Dataset, ds)
+                # Store dataset metadata before converting to list (which loses metadata)
+                self._store_dataset_metadata(ds_concrete)
                 return cast(list[dict[str, Any]], ds_concrete.to_pandas().to_dict(orient="records"))
 
         except Exception as e:

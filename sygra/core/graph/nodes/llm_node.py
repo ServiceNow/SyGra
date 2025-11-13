@@ -1,3 +1,4 @@
+import time
 from inspect import isclass
 from typing import Any
 
@@ -264,67 +265,94 @@ class LLMNode(BaseNode):
         Returns:
             None
         """
-        graph_factory = utils.get_graph_factory(constants.BACKEND)
-        # preprocessor - if it is a class, call apply method
-        state = (
-            self.pre_process().apply(state)
-            if isclass(self.pre_process)
-            else self.pre_process(state)
-        )
-        chat_history_enabled = self.node_config.get("chat_history", False)
-        prompt_tmpl = self._generate_prompt(state)
-        # get the prompt from template
-        prompt = prompt_tmpl.invoke(state)
-        prompt = self._inject_history(state, prompt)
 
-        # convert the request into chat format to store for multi turn
-        prompt_messages = prompt.to_messages()
-        request_msgs = [_convert_message_to_dict(msg) for msg in prompt_messages]
-        # now call the llm server
-        # Attach tools and tool_choice if tool_calls_enabled
-        kwargs = (
-            {"tools": self.tools, "tool_choice": self.node_config.get("tool_choice", "auto")}
-            if self.tool_calls_enabled
-            else {}
-        )
-        response: ModelResponse = await self.model.ainvoke(prompt, **kwargs)
-        # Extract AIMessage from ModelResponse
-        ai_message = AIMessage(response.llm_response) if response.llm_response else AIMessage("")
-        # wrap the message to pass to the class - new implementation
-        responseMsg = SygraMessage(ai_message)
-        # Inject tool_calls to Sygra State
-        if self.tool_calls_enabled:
+        start_time = time.time()
+        success = True
+        captured_tokens = {"prompt": 0, "completion": 0, "total": 0}
+
+        try:
+            graph_factory = utils.get_graph_factory(constants.BACKEND)
+            # preprocessor - if it is a class, call apply method
+            state = (
+                self.pre_process().apply(state)
+                if isclass(self.pre_process)
+                else self.pre_process(state)
+            )
+            chat_history_enabled = self.node_config.get("chat_history", False)
+            prompt_tmpl = self._generate_prompt(state)
+            # get the prompt from template
+            prompt = prompt_tmpl.invoke(state)
+            prompt = self._inject_history(state, prompt)
+
+            # convert the request into chat format to store for multi turn
+            prompt_messages = prompt.to_messages()
+            request_msgs = [_convert_message_to_dict(msg) for msg in prompt_messages]
+            # now call the llm server
+            # Attach tools and tool_choice if tool_calls_enabled
+            kwargs = (
+                {"tools": self.tools, "tool_choice": self.node_config.get("tool_choice", "auto")}
+                if self.tool_calls_enabled
+                else {}
+            )
+            response: ModelResponse = await self.model.ainvoke(prompt, **kwargs)
+
+            # Capture tokens after model call
+            captured_tokens = self._capture_token_usage(self.model)
+
+            # Extract AIMessage from ModelResponse
             ai_message = (
                 AIMessage(response.llm_response) if response.llm_response else AIMessage("")
             )
-            state["tool_calls"] = response.tool_calls if response.tool_calls else []
-        # Call post-processor with best effort: try (resp, state) then fallback to (resp)
-        try:
-            updated_state = (
-                self.post_process().apply(responseMsg, state)
-                if isclass(self.post_process)
-                else self.post_process(ai_message, state)
-            )
-        except TypeError:
-            updated_state = (
-                self.post_process().apply(responseMsg)
-                if isclass(self.post_process)
-                else self.post_process(ai_message)  # type: ignore
-            )
+            # wrap the message to pass to the class - new implementation
+            responseMsg = SygraMessage(ai_message)
+            # Inject tool_calls to Sygra State
+            if self.tool_calls_enabled:
+                ai_message = (
+                    AIMessage(response.llm_response) if response.llm_response else AIMessage("")
+                )
+                state["tool_calls"] = response.tool_calls if response.tool_calls else []
+            # Check if model call failed by looking for error prefix in response
+            response_content: str = response.llm_response or ""
+            if constants.ERROR_PREFIX in response_content:
+                success = False
+                logger.warning(
+                    f"[{self.name}] Model request failed (error in response). "
+                    f"Recording as node failure but continuing execution."
+                )
 
-        # Store chat history if enabled for this node
-        if chat_history_enabled:
-            if not updated_state.get(constants.VAR_CHAT_HISTORY):
-                updated_state[constants.VAR_CHAT_HISTORY] = []
-            updated_state[constants.VAR_CHAT_HISTORY].append(
-                {
-                    constants.KEY_NAME: self.name,
-                    constants.KEY_REQUEST: request_msgs,
-                    constants.KEY_RESPONSE: graph_factory.get_message_content(responseMsg),
-                }
-            )
+            # Call post-processor with the best effort: try (resp, state) then fallback to (resp)
+            try:
+                updated_state = (
+                    self.post_process().apply(responseMsg, state)
+                    if isclass(self.post_process)
+                    else self.post_process(ai_message, state)
+                )
+            except TypeError:
+                updated_state = (
+                    self.post_process().apply(responseMsg)
+                    if isclass(self.post_process)
+                    else self.post_process(ai_message)  # type: ignore
+                )
 
-        return updated_state
+            # Store chat history if enabled for this node
+            if chat_history_enabled:
+                if not updated_state.get(constants.VAR_CHAT_HISTORY):
+                    updated_state[constants.VAR_CHAT_HISTORY] = []
+                updated_state[constants.VAR_CHAT_HISTORY].append(
+                    {
+                        constants.KEY_NAME: self.name,
+                        constants.KEY_REQUEST: request_msgs,
+                        constants.KEY_RESPONSE: graph_factory.get_message_content(responseMsg),
+                    }
+                )
+
+            return updated_state
+
+        except Exception:
+            success = False
+            raise
+        finally:
+            self._record_execution_metadata(start_time, success, self.model, captured_tokens)
 
     def to_backend(self) -> Any:
         """

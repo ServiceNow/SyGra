@@ -190,7 +190,7 @@ ensure_newline_before_comments = true
 skip_gitignore = true
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
@@ -203,10 +203,12 @@ exclude = [
     "sygra/recipes/",
     "sygra/internal/",
     "tasks/",
+    ".*/site-packages/.*",
+    ".*/virtualenvs/.*",
+    ".*/lib/python.*/site-packages/.*",
 ]
 
 [[tool.mypy.overrides]]
 module = ["tests.*"]
 disallow_untyped_defs = false
 check_untyped_defs = false
-

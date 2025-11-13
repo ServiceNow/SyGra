@@ -1,4 +1,5 @@
 import random
+import time
 from typing import Any
 
 from sygra.core.graph.nodes.base_node import BaseNode
@@ -72,6 +73,28 @@ class WeightedSamplerNode(BaseNode):
                     f"'attributes' must be a dictionary, but got {type(attributes).__name__}"
                 )
 
+    async def _exec_wrapper(self, state: dict[str, Any]) -> dict[str, Any]:
+        """
+        Wrapper to track weighted sampler node execution.
+
+        Args:
+            state: State of the node.
+
+        Returns:
+            Updated state with sampled values
+        """
+        start_time = time.time()
+        success = True
+
+        try:
+            sampled_values = self._weighted_sampler(self.node_config["attributes"], state)
+            return {**state, **sampled_values}
+        except Exception:
+            success = False
+            raise
+        finally:
+            self._record_execution_metadata(start_time, success)
+
     def to_backend(self) -> Any:
         """
         Convert the Node object to backend platform specific Runnable object.
@@ -79,9 +102,7 @@ class WeightedSamplerNode(BaseNode):
         Returns:
              Any: platform specific runnable object like Runnable in LangGraph.
         """
-        return utils.backend_factory.create_weighted_sampler_runnable(
-            self._weighted_sampler, self.node_config["attributes"]
-        )
+        return utils.backend_factory.create_weighted_sampler_runnable(self._exec_wrapper)
 
     def validate_node(self):
         """
