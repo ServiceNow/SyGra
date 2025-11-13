@@ -7,9 +7,9 @@ from typing import (
     Type,
 )
 
-import litellm
 import openai
 from langchain_core.prompt_values import ChatPromptValue
+from litellm import acompletion, atext_completion
 from pydantic import BaseModel, ValidationError
 
 import sygra.utils.constants as constants
@@ -47,7 +47,7 @@ class CustomVLLM(BaseCustomModel):
         logger.info(f"[{self.name()}] Attempting native structured output generation")
         model_url = model_params.url
         try:
-            tool_calls = []
+            tool_calls = None
 
             # Create JSON schema for guided generation
             json_schema = pydantic_model.model_json_schema()
@@ -68,7 +68,7 @@ class CustomVLLM(BaseCustomModel):
                     input.messages, **(self.chat_template_params or {})
                 )
                 # Send the request using the litellm
-                completion = await litellm.atext_completion(
+                completion = await atext_completion(
                     model=self._get_lite_llm_model_name(),
                     prompt=formatted_prompt,
                     api_base=model_url,
@@ -80,7 +80,7 @@ class CustomVLLM(BaseCustomModel):
                 # Convert input to messages
                 messages = self._get_messages(input)
                 # Send the request using the litellm
-                completion = await litellm.acompletion(
+                completion = await acompletion(
                     model=self._get_lite_llm_model_name(),
                     messages=messages,
                     api_base=model_url,
@@ -152,7 +152,7 @@ class CustomVLLM(BaseCustomModel):
                     input.messages, **(self.chat_template_params or {})
                 )
                 # Send the request using the litellm
-                completion = await litellm.atext_completion(
+                completion = await atext_completion(
                     model=self._get_lite_llm_model_name(),
                     prompt=formatted_prompt,
                     api_base=model_url,
@@ -164,7 +164,7 @@ class CustomVLLM(BaseCustomModel):
                 # Convert input to messages
                 messages = self._get_messages(input)
                 # Send the request using the litellm
-                completion = await litellm.acompletion(
+                completion = await acompletion(
                     model=self._get_lite_llm_model_name(),
                     messages=messages,
                     api_base=model_url,
