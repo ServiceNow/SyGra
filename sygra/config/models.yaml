@@ -79,7 +79,7 @@ qwen3_1.7b:
   parameters:
     temperature: 0.8
 
-gpt-4o-audio-preview:
+gpt-audio:
   model_type: azure_openai
   model: gpt-4o-audio-preview
   input_type: audio  # Indicate audio input support

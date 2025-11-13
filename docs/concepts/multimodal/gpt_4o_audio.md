@@ -279,7 +279,7 @@ task_dir/
 
 ## See Also
 
+- [Working example](https://github.com/ServiceNow/SyGra/tree/main/tasks/examples/gpt_4o_audio) - Complete example with graph config and input data
 - [Text to Speech](./text_to_speech.md) - Traditional TTS models (tts-1, tts-1-hd)
 - [Audio to Text](./audio_to_text.md) - Whisper and other speech recognition models
-- [Image Generation](./image_generation.md) - Text-to-image and image editing
 - [OpenAI Audio API Documentation](https://platform.openai.com/docs/guides/audio) - Official OpenAI Audio API reference
