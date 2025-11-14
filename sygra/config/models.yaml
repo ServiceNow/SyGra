@@ -79,6 +79,16 @@ qwen3_1.7b:
   parameters:
     temperature: 0.8
 
+gpt-audio:
+  model_type: azure_openai
+  model: gpt-4o-audio-preview
+  input_type: audio  # Indicate audio input support
+  # URL and auth_token should be defined at .env file as SYGRA_GPT-4O-AUDIO-PREVIEW_URL and SYGRA_GPT-4O-AUDIO-PREVIEW_TOKEN
+  api_version: 2025-01-01-preview
+  parameters:
+    max_tokens: 1000
+    temperature: 1.0
+
 # TTS openai model
 tts_openai:
   model: tts
