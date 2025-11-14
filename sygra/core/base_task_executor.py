@@ -25,6 +25,7 @@ from sygra.core.graph.graph_config import GraphConfig
 from sygra.core.graph.langgraph.graph_builder import LangGraphBuilder
 from sygra.core.graph.sygra_state import SygraState
 from sygra.logger.logger_config import logger
+from sygra.metadata.metadata_collector import get_metadata_collector
 from sygra.processors.output_record_generator import BaseOutputGenerator
 from sygra.tools.toolkits.data_quality.processor import DataQuality
 from sygra.utils import constants, utils
@@ -60,6 +61,55 @@ class BaseTaskExecutor(ABC):
             graph_properties=graph_props,
         )
         self.output_generator: Optional[BaseOutputGenerator] = self._init_output_generator()
+        self._init_metadata_collector(args)
+
+    def _init_metadata_collector(self, args):
+        """Initialize metadata collection for this execution."""
+        collector = get_metadata_collector()
+
+        # Check if metadata collection should be disabled
+        disable_metadata = getattr(args, "disable_metadata", False)
+        if disable_metadata:
+            collector.set_enabled(False)
+            logger.info("Metadata collection disabled via --disable_metadata flag")
+            return
+
+        # Reset collector to clear any data from health checks or previous runs
+        collector.reset()
+        collector.set_execution_context(
+            task_name=self.task_name,
+            run_name=getattr(args, "run_name", None),
+            output_dir=getattr(args, "output_dir", None),
+            batch_size=getattr(args, "batch_size", 50),
+            checkpoint_interval=getattr(args, "checkpoint_interval", 100),
+            resumable=getattr(args, "resume", False),
+            debug=getattr(args, "debug", False),
+        )
+
+        # Set dataset metadata if available
+        if self.source_config is not None:
+            source_path = None
+            # Try to get source path from repo_id (HuggingFace) or file_path (local files)
+            if self.source_config.repo_id:
+                source_path = self.source_config.repo_id
+            elif self.source_config.file_path:
+                source_path = self.source_config.file_path
+
+            # Use captured dataset version and hash (captured before transformations)
+            dataset_version = getattr(self, "_dataset_version", None)
+            dataset_hash = getattr(self, "_dataset_hash", None)
+
+            collector.set_dataset_metadata(
+                source_type=(
+                    str(self.source_config.type.value)
+                    if hasattr(self.source_config.type, "value")
+                    else str(self.source_config.type)
+                ),
+                source_path=source_path,
+                start_index=getattr(args, "start_index", 0),
+                dataset_version=dataset_version,
+                dataset_hash=dataset_hash,
+            )
 
     @staticmethod
     def _configure_resume_behavior(args: Any, config_resumable: bool) -> bool:
@@ -328,6 +378,9 @@ class BaseTaskExecutor(ABC):
         reader = self._get_data_reader()
         full_data = self._read_data(reader)
 
+        # Capture dataset metadata from reader (which stores it before conversion)
+        self._capture_dataset_metadata(full_data, reader)
+
         # Apply transformations to the dataset
         full_data = self.apply_transforms(self.source_config, full_data)
 
@@ -339,6 +392,43 @@ class BaseTaskExecutor(ABC):
             )
 
         return full_data
+
+    def _capture_dataset_metadata(self, dataset: Any, reader: Any) -> None:
+        """Capture dataset version and hash before transformations."""
+        try:
+            # First try to get from reader (HuggingFaceHandler stores it before conversion)
+            if hasattr(reader, "dataset_version") and hasattr(reader, "dataset_hash"):
+                self._dataset_version = reader.dataset_version
+                self._dataset_hash = reader.dataset_hash
+                logger.debug(
+                    f"Captured dataset metadata from reader: version={self._dataset_version}, hash={self._dataset_hash}"
+                )
+                return
+
+            # Fallback: try to extract from dataset object directly
+            import datasets
+
+            if isinstance(dataset, (datasets.Dataset, datasets.IterableDataset)):
+                self._dataset_version = None
+                self._dataset_hash = None
+
+                # Try to get version info
+                if hasattr(dataset, "info") and dataset.info:
+                    version_obj = getattr(dataset.info, "version", None)
+                    if version_obj:
+                        self._dataset_version = str(version_obj)
+
+                # Try to get fingerprint/hash
+                if hasattr(dataset, "_fingerprint"):
+                    self._dataset_hash = dataset._fingerprint
+                elif hasattr(dataset, "n_shards"):
+                    self._dataset_hash = f"iterable_{dataset.n_shards}_shards"
+
+                logger.debug(
+                    f"Captured dataset metadata from dataset: version={self._dataset_version}, hash={self._dataset_hash}"
+                )
+        except Exception as e:
+            logger.debug(f"Could not capture dataset metadata: {e}")
 
     def _generate_empty_dataset(self) -> list[dict]:
         """Generate empty dataset with specified number of records"""
@@ -533,11 +623,14 @@ class BaseTaskExecutor(ABC):
         logger.info("Graph compiled successfully")
         logger.info("\n" + compiled_graph.get_graph().draw_ascii())
 
-        ts_suffix = (
-            ""
-            if not self.args.output_with_ts
-            else "_" + str(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
-        )
+        # Create timestamp for output file
+        run_timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        ts_suffix = "" if not self.args.output_with_ts else "_" + run_timestamp
+
+        # Update metadata collector with the run timestamp so metadata filename matches output filename
+        if self.args.output_with_ts:
+            collector = get_metadata_collector()
+            collector.execution_context.run_timestamp = run_timestamp
 
         num_records_total = self.args.num_records
         if isinstance(self.dataset, list):
@@ -656,6 +749,27 @@ class BaseTaskExecutor(ABC):
 
         if dataset_processor.resume_manager:
             dataset_processor.resume_manager.force_save_state(is_final=True)
+
+        self._save_metadata(dataset_processor)
+
+    def _save_metadata(self, dataset_processor=None):
+        """Finalize and save execution metadata."""
+        try:
+            from sygra.metadata.metadata_collector import get_metadata_collector
+
+            collector = get_metadata_collector()
+
+            # Update dataset metadata with actual processed count
+            if dataset_processor:
+                collector.dataset_metadata.num_records_processed = (
+                    dataset_processor.num_records_processed + dataset_processor.failed_records
+                )
+
+            collector.finalize_execution()
+            metadata_path = collector.save_metadata()
+            logger.info(f"Run metadata saved to: {metadata_path}")
+        except Exception as e:
+            logger.warning(f"Failed to save metadata: {e}")
 
 
 class DefaultTaskExecutor(BaseTaskExecutor):

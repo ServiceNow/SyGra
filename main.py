@@ -146,6 +146,14 @@ if __name__ == "__main__":
         default=False,
     )
 
+    parser.add_argument(
+        "--disable_metadata",
+        "-dm",
+        type=ast.literal_eval,
+        default=False,
+        help="Disable metadata collection (default: False)",
+    )
+
     args = parser.parse_args()
 
     start = time.time()

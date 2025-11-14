@@ -1,7 +1,9 @@
+import time
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, List, Optional
 
+from sygra.metadata.metadata_collector import get_metadata_collector
 from sygra.utils import utils
 
 
@@ -169,6 +171,112 @@ class BaseNode(ABC):
 
     def validate_config_keys(self, required_keys: list[str], config_name: str, node_config: dict):
         utils.validate_required_keys(required_keys, node_config, config_name)
+
+    def _get_model_name(self, model: Any) -> Optional[str]:
+        """
+        Extract model name from a model instance.
+
+        Handles wrapped models (RunnableLambda, etc.) and various model types.
+
+        Args:
+            model: The model instance to extract name from
+
+        Returns:
+            Model name as string, or None if not found
+        """
+        # Unwrap if model is wrapped
+        actual_model = model
+        if hasattr(model, "afunc"):
+            actual_model = model.afunc
+        elif hasattr(model, "bound"):
+            actual_model = model.bound
+
+        # Try different ways to get the name
+        if hasattr(actual_model, "_get_name"):
+            return str(actual_model._get_name())
+        elif hasattr(actual_model, "model_name"):
+            return str(actual_model.model_name)
+        elif hasattr(actual_model, "name"):
+            name = actual_model.name() if callable(actual_model.name) else actual_model.name
+            return str(name) if name is not None else None
+        return None
+
+    def _capture_token_usage(self, model: Any) -> dict[str, int]:
+        """
+        Capture token usage from a model's last request.
+
+        Args:
+            model: The model instance to capture tokens from
+
+        Returns:
+            Dictionary with prompt, completion, and total tokens
+        """
+        tokens = {"prompt": 0, "completion": 0, "total": 0}
+
+        # Unwrap if model is wrapped
+        actual_model = model
+        if hasattr(model, "afunc"):
+            actual_model = model.afunc
+        elif hasattr(model, "bound"):
+            actual_model = model.bound
+
+        # Capture tokens if available
+        if hasattr(actual_model, "_last_request_usage") and actual_model._last_request_usage:
+            tokens["prompt"] = actual_model._last_request_usage.get("prompt_tokens", 0)
+            tokens["completion"] = actual_model._last_request_usage.get("completion_tokens", 0)
+            tokens["total"] = actual_model._last_request_usage.get("total_tokens", 0)
+
+        return tokens
+
+    def _record_execution_metadata(
+        self,
+        start_time: float,
+        success: bool,
+        model: Optional[Any] = None,
+        captured_tokens: Optional[dict[str, int]] = None,
+    ) -> None:
+        """
+        Record node execution metrics to metadata collector.
+
+        Args:
+            start_time: Execution start time from time.time()
+            success: Whether execution was successful
+            model: Optional model instance for extracting model name
+            captured_tokens: Optional pre-captured token usage dict
+        """
+        latency = time.time() - start_time
+        collector = get_metadata_collector()
+
+        # Get model name if model is provided
+        model_name = None
+        cost_usd = 0.0
+        if model is not None:
+            model_name = self._get_model_name(model)
+
+            # Calculate cost if model has cost calculation capability
+            if hasattr(model, "calculate_cost") and captured_tokens:
+                try:
+                    cost_usd = model.calculate_cost(
+                        captured_tokens.get("prompt", 0), captured_tokens.get("completion", 0)
+                    )
+                except Exception:
+                    # If cost calculation fails, default to 0
+                    cost_usd = 0.0
+
+        # Use provided tokens or default to zero
+        tokens = captured_tokens or {"prompt": 0, "completion": 0, "total": 0}
+
+        collector.record_node_execution(
+            node_name=self.name,
+            node_type=self.node_type,
+            latency=latency,
+            success=success,
+            model_name=model_name,
+            prompt_tokens=tokens["prompt"],
+            completion_tokens=tokens["completion"],
+            total_tokens=tokens["total"],
+            cost_usd=cost_usd,
+        )
 
     @abstractmethod
     def to_backend(self) -> Any:

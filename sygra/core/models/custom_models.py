@@ -43,10 +43,9 @@ from sygra.core.models.client.client_factory import ClientFactory
 from sygra.core.models.client.http_client import HttpClient
 from sygra.core.models.client.openai_client import OpenAIClient
 from sygra.core.models.model_response import ModelResponse
-from sygra.core.models.structured_output.structured_output_config import (
-    StructuredOutputConfig,
-)
+from sygra.core.models.structured_output.structured_output_config import StructuredOutputConfig
 from sygra.logger.logger_config import logger
+from sygra.metadata.metadata_integration import track_model_request
 from sygra.utils import utils
 
 
@@ -61,6 +60,8 @@ class BaseCustomModel(ABC):
         utils.validate_required_keys(["name", "parameters"], model_config, "model")
         self.model_config = model_config
         self._structured_output_lock: Optional[asyncio.Lock] = None
+        # Store last request token usage for metadata collection
+        self._last_request_usage: Optional[dict[str, int]] = None
 
         # Initialize structured output configuration
         structured_output_raw = model_config.get("structured_output")
@@ -141,6 +142,19 @@ class BaseCustomModel(ABC):
                     f"Setting completions_api to False."
                 )
                 self.model_config["completions_api"] = False
+
+    def _extract_token_usage(self, response: Any) -> None:
+        """
+        Extract and store token usage from API response for metadata collection.
+        """
+        if hasattr(response, "usage") and response.usage:
+            usage_dict = {
+                "prompt_tokens": getattr(response.usage, "prompt_tokens", 0),
+                "completion_tokens": getattr(response.usage, "completion_tokens", 0),
+                "total_tokens": getattr(response.usage, "total_tokens", 0),
+            }
+
+            self._last_request_usage = usage_dict
 
     def _set_chat_template(self):
         """
@@ -295,6 +309,14 @@ class BaseCustomModel(ABC):
     def name(self) -> str:
         return cast(str, self.model_config["name"])
 
+    def model_type(self) -> str:
+        """Return the model type based on the class name."""
+        class_name = self.__class__.__name__
+        # Remove 'Custom' prefix if present
+        if class_name.startswith("Custom"):
+            return class_name[6:]  # Remove 'Custom' prefix
+        return class_name
+
     def _get_model_params(self) -> ModelParams:
         url = self.model_config.get("url", "")
         auth_token = self.model_config.get("auth_token", "")
@@ -400,12 +422,13 @@ class BaseCustomModel(ABC):
             logger.info(f"[{self.name()}] Model Stats: {temp_model_stats}")
 
     @abstractmethod
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         pass
 
-    def _ping_model(self, url, auth_token) -> int:
+    def _ping_model(self, url: str, auth_token: str) -> int:
         """
         Ping a single model
         Args:
@@ -430,13 +453,13 @@ class BaseCustomModel(ABC):
         if isinstance(url_obj, list):
             for i, url in enumerate(url_obj):
                 token = auth_token[i] if isinstance(auth_token, list) else auth_token
-                status = self._ping_model(url=url, auth_token=token)
+                status = self._ping_model(url=str(url), auth_token=str(token))
                 if status != 200:
                     logger.error(f"Server({url}) responded with {status}")
                     return status
             return 200
         else:
-            return self._ping_model(url=self.model_config.get("url"), auth_token=auth_token)
+            return self._ping_model(url=str(url_obj), auth_token=str(auth_token))
 
     def get_chat_formatted_text(
         self, chat_format_object: Sequence[BaseMessage], **chat_template_params
@@ -507,6 +530,9 @@ class BaseCustomModel(ABC):
         Centralized retry method that delegates to either regular text generation
         or structured output handling based on the flag.
         """
+        result: ModelResponse = ModelResponse(
+            llm_response=f"{constants.ERROR_PREFIX} All retry attempts failed", response_code=999
+        )
         try:
             async for attempt in AsyncRetrying(
                 retry=retry_if_result(self._is_retryable_error),
@@ -541,8 +567,6 @@ class BaseCustomModel(ABC):
                     post_proc = self._get_post_processor()
                     if post_proc is not None:
                         result.llm_response = post_proc().apply(result.llm_response)
-                        # IMPORTANT: add more items if needed in future
-                        # result = (resp_str, resp_code)
                 if (
                     attempt.retry_state.outcome is not None
                     and not attempt.retry_state.outcome.failed
@@ -550,6 +574,11 @@ class BaseCustomModel(ABC):
                     attempt.retry_state.set_result(result)
         except RetryError:
             logger.error(f"[{self.name()}] Request failed after {self.retry_attempts} attempts")
+            # Return a default error response if all retries failed
+            result = ModelResponse(
+                llm_response=f"{constants.ERROR_PREFIX} All retry attempts failed",
+                response_code=999,
+            )
         return result
 
     async def _generate_response_with_retry(
@@ -807,6 +836,44 @@ class CustomTGI(BaseCustomModel):
                 input, model_params, pydantic_model, **kwargs
             )
 
+    def _extract_tgi_token_usage(self, response_data: dict) -> None:
+        """
+        Extract token usage from TGI response details.
+
+        TGI returns token statistics in the 'details' field when details=true:
+        - details.generated_tokens: completion tokens
+        - len(details.prefill): prompt tokens (if available)
+
+        Args:
+            response_data: Parsed JSON response from TGI
+        """
+        if "details" in response_data and response_data["details"]:
+            details = response_data["details"]
+
+            # Get completion tokens
+            completion_tokens = details.get("generated_tokens", 0)
+
+            # Get prompt tokens from prefill length
+            prompt_tokens = 0
+            if "prefill" in details and details["prefill"]:
+                prompt_tokens = len(details["prefill"])
+
+            # Calculate total
+            total_tokens = prompt_tokens + completion_tokens
+
+            # Store in the standard format
+            self._last_request_usage = {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": total_tokens,
+            }
+
+            logger.debug(
+                f"[{self.name()}] Extracted token usage from TGI: "
+                f"prompt={prompt_tokens}, completion={completion_tokens}, total={total_tokens}"
+            )
+
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
@@ -821,10 +888,16 @@ class CustomTGI(BaseCustomModel):
                 )
             }
             payload = client.build_request_with_payload(payload=payload)
+
+            # Merge generation params with details=true for token statistics
+            generation_params = {**(self.generation_params or {})}
+            if "parameters" not in generation_params:
+                generation_params["parameters"] = {}
+            # Enable details to get token statistics
+            generation_params["parameters"]["details"] = True
+
             # Send Request
-            resp = await client.async_send_request(
-                payload, generation_params=self.generation_params
-            )
+            resp = await client.async_send_request(payload, generation_params=generation_params)
 
             resp_text = resp.text
             ret_code = resp.status_code
@@ -842,7 +915,14 @@ class CustomTGI(BaseCustomModel):
                 else:
                     ret_code = resp.status_code
             else:
-                resp_text = json.loads(resp_text)["generated_text"]
+                # Parse response to extract both text and token statistics
+                response_data = json.loads(resp_text)
+
+                # Extract token usage from details
+                self._extract_tgi_token_usage(response_data)
+
+                # Get generated text
+                resp_text = response_data["generated_text"]
         except Exception as x:
             resp_text = f"{constants.ERROR_PREFIX} Http request failed {x}"
             logger.error(resp_text)
@@ -870,6 +950,7 @@ class CustomAzure(BaseCustomModel):
         else:
             raise ValueError("auth_token must be a string or non-empty list of strings")
 
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
@@ -916,6 +997,7 @@ class CustomMistralAPI(BaseCustomModel):
     def __init__(self, model_config: dict[str, Any]) -> None:
         super().__init__(model_config)
 
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
@@ -932,6 +1014,8 @@ class CustomMistralAPI(BaseCustomModel):
                 messages=messages,
                 **self.generation_params,
             )
+
+            self._extract_token_usage(chat_response)
             resp_text = chat_response.choices[0].message.content
         except Exception as x:
             resp_text = f"{constants.ERROR_PREFIX} Http request failed {x}"
@@ -1052,6 +1136,7 @@ class CustomVLLM(BaseCustomModel):
                 input, model_params, pydantic_model, **kwargs
             )
 
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
@@ -1081,6 +1166,9 @@ class CustomVLLM(BaseCustomModel):
             completion = await self._client.send_request(
                 payload, self.model_serving_name, self.generation_params
             )
+
+            self._extract_token_usage(completion)
+
             if self.model_config.get("completions_api", False):
                 resp_text = completion.choices[0].model_dump()["text"]
             else:
@@ -1208,9 +1296,18 @@ class CustomOpenAI(BaseCustomModel):
                 input, model_params, pydantic_model, **kwargs
             )
 
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
+        # Check if this is gpt-4o-audio model which uses chat completions with audio
+        model_name = str(self.model_config.get("model", ""))
+        is_audio_chat_model = "gpt-4o-audio" in model_name.lower()
+
+        # For gpt-4o-audio, route to audio chat completion regardless of output_type
+        if is_audio_chat_model:
+            return await self._generate_audio_chat_completion(input, model_params)
+
         # Check the output type and route to appropriate method
         output_type = self.model_config.get("output_type")
         if output_type == "audio":
@@ -1257,6 +1354,9 @@ class CustomOpenAI(BaseCustomModel):
             completion = await self._client.send_request(
                 payload, str(self.model_config.get("model")), self.generation_params
             )
+
+            self._extract_token_usage(completion)
+
             if self.model_config.get("completions_api", False):
                 resp_text = completion.choices[0].model_dump()["text"]
             else:
@@ -1369,6 +1469,187 @@ class CustomOpenAI(BaseCustomModel):
             ret_code = getattr(e, "status_code", 500)
         except Exception as x:
             resp_text = f"{constants.ERROR_PREFIX} TTS request failed: {x}"
+            logger.error(f"[{self.name()}] {resp_text}")
+            rcode = self._get_status_from_body(x)
+            ret_code = rcode if rcode else 999
+
+        return ModelResponse(llm_response=resp_text, response_code=ret_code)
+
+    async def _generate_audio_chat_completion(
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
+        """
+        Generate response using gpt-4o-audio model with chat completions API.
+        This model supports:
+        - Audio input (via input_audio in messages)
+        - Audio output (via modalities parameter)
+        - Text input/output
+        - Combined text+audio input/output
+
+        Args:
+            input: ChatPromptValue containing messages (can include audio)
+            model_params: Model parameters including URL and auth token
+
+        Returns:
+            Model Response
+            - For audio output: returns base64 encoded audio data URL
+            - For text output: returns text response
+            - On error: returns error message and error code
+        """
+        ret_code = 200
+        model_url = model_params.url
+
+        try:
+            self._set_client(model_url, model_params.auth_token)
+
+            payload = self._client.build_request(messages=input.messages)
+            processed_messages = payload["messages"]
+
+            # Process messages to convert audio_url -> input_audio format for gpt-4o-audio
+            for message_dict in processed_messages:
+                # Handle audio_url -> input_audio conversion for multimodal content
+                if isinstance(message_dict.get("content"), list):
+                    processed_content = []
+                    for item in message_dict["content"]:
+                        if isinstance(item, dict) and item.get("type") == "audio_url":
+                            # Extract audio URL
+                            audio_url = item.get("audio_url", {})
+                            if isinstance(audio_url, dict):
+                                data_url = audio_url.get("url", "")
+                            else:
+                                data_url = audio_url
+
+                            # Extract base64 data and format from data URL
+                            if data_url.startswith("data:audio/"):
+                                # Parse: data:audio/<format>;base64,<data>
+                                parts = data_url.split(";base64,")
+                                if len(parts) == 2:
+                                    mime_parts = parts[0].split(":")
+                                    if len(mime_parts) == 2:
+                                        format_part = mime_parts[1].replace("audio/", "")
+                                        base64_data = parts[1]
+
+                                        # Map MIME types to OpenAI format names
+                                        mime_format_map = {"mpeg": "mp3"}
+                                        if format_part in mime_format_map:
+                                            format_part = mime_format_map[format_part]
+
+                                        # Convert to input_audio format expected by gpt-4o-audio
+                                        processed_content.append(
+                                            {
+                                                "type": "input_audio",
+                                                "input_audio": {
+                                                    "data": base64_data,
+                                                    "format": format_part,
+                                                },
+                                            }
+                                        )
+                                    else:
+                                        processed_content.append(item)
+                                else:
+                                    processed_content.append(item)
+                            else:
+                                processed_content.append(item)
+                        else:
+                            # Keep other types as-is (text, image_url, etc.)
+                            processed_content.append(item)
+
+                    message_dict["content"] = processed_content
+
+            output_type = self.model_config.get("output_type")
+
+            # gpt-4o-audio requires audio in modalities if output involves audio
+            has_audio_output = output_type == "audio"
+
+            has_audio_input = any(
+                isinstance(msg.get("content"), list)
+                and any(item.get("type") == "input_audio" for item in msg.get("content", []))
+                for msg in processed_messages
+            )
+
+            modalities = ["text"]
+            if has_audio_output:
+                if "audio" not in modalities:
+                    # modality = ["text", "audio"] is required for audio output
+                    modalities.append("audio")
+
+            if not has_audio_input:
+                has_audio_output = True
+                modalities = ["text", "audio"]
+
+            audio_params: dict[str, Any] = {}
+            if has_audio_output:
+                if (
+                    "audio" in self.generation_params
+                    and type(self.generation_params["audio"]) is dict
+                ):
+                    audio_params = self.generation_params["audio"]
+                else:
+                    logger.info(
+                        "Audio generation params not found, using default audio params, voice: alloy, format: wav"
+                    )
+                    audio_params = {"voice": "alloy", "format": "wav"}
+                    self.generation_params["audio"] = audio_params
+
+                logger.debug(
+                    f"[{self.name()}] Audio chat completion - modalities: {modalities}, audio params: {audio_params}"
+                )
+
+            payload = {"messages": processed_messages}
+
+            if "audio" in modalities:
+                payload["modalities"] = modalities
+
+            gen_params = {**self.generation_params}
+
+            completion = await self._client.send_request(
+                payload, str(self.model_config.get("model")), gen_params
+            )
+
+            choice = completion.choices[0]
+            message = choice.model_dump()["message"]
+
+            if "audio" in modalities and message.get("audio"):
+                audio_data = message["audio"]
+
+                if isinstance(audio_data, dict):
+                    audio_base64 = audio_data.get("data", "")
+                    audio_format = audio_params.get("format", "wav")
+
+                    mime_types = {
+                        "mp3": "audio/mpeg",
+                        "opus": "audio/opus",
+                        "aac": "audio/aac",
+                        "flac": "audio/flac",
+                        "wav": "audio/wav",
+                        "pcm": "audio/pcm",
+                    }
+                    mime_type = mime_types.get(audio_format, "audio/wav")
+
+                    resp_text = f"data:{mime_type};base64,{audio_base64}"
+
+                    # Include transcript if available
+                    if message.get("content"):
+                        logger.debug(f"[{self.name()}] Transcript: {message['content']}")
+                else:
+                    resp_text = message.get("content", "").strip()
+            else:
+                resp_text = message.get("content", "").strip()
+
+        except openai.RateLimitError as e:
+            logger.warning(f"[{self.name()}] OpenAI audio chat API rate limit: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Rate limit exceeded: {e}"
+            ret_code = 429
+        except openai.BadRequestError as e:
+            logger.error(f"[{self.name()}] OpenAI audio chat API bad request: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Bad request: {e}"
+            ret_code = 400
+        except openai.APIError as e:
+            logger.error(f"[{self.name()}] OpenAI audio chat API error: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} API error: {e}"
+            ret_code = getattr(e, "status_code", 500)
+        except Exception as x:
+            resp_text = f"{constants.ERROR_PREFIX} Audio chat request failed: {x}"
             logger.error(f"[{self.name()}] {resp_text}")
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
@@ -1731,6 +2012,7 @@ class CustomOllama(BaseCustomModel):
                 input, model_params, pydantic_model, **kwargs
             )
 
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
@@ -1748,6 +2030,18 @@ class CustomOllama(BaseCustomModel):
             completion = await self._client.send_request(
                 payload, self.name(), self.generation_params
             )
+
+            # Extract token usage (Ollama uses different field names)
+            if isinstance(completion, dict) and (
+                "prompt_eval_count" in completion or "eval_count" in completion
+            ):
+                self._last_request_usage = {
+                    "prompt_tokens": completion.get("prompt_eval_count", 0),
+                    "completion_tokens": completion.get("eval_count", 0),
+                    "total_tokens": completion.get("prompt_eval_count", 0)
+                    + completion.get("eval_count", 0),
+                }
+
             if self.model_config.get("completions_api", False):
                 resp_text = completion["response"]
             else:
@@ -1868,6 +2162,7 @@ class CustomTriton(BaseCustomModel):
         self.model_config = model_config
         self.auth_token = str(model_config.get("auth_token")).replace("Bearer ", "")
 
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:

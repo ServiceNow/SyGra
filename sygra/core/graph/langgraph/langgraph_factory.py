@@ -58,18 +58,17 @@ class LangGraphFactory(BackendFactory):
         runnable_inputs = {k: v.to_backend() for k, v in llm_dict.items()}
         return RunnableParallel(**runnable_inputs) | RunnableLambda(post_process)
 
-    def create_weighted_sampler_runnable(self, weighted_sampler_function, attr_config):
+    def create_weighted_sampler_runnable(self, exec_wrapper):
         """
-        Abstract method to create weighted sampler runnable.
+        Create weighted sampler runnable.
 
         Args:
-            weighted_sampler_function: Weighted sampler function
-            attr_config: attributes from the weighted sampler node
+            exec_wrapper: Async function wrapper to execute
 
         Returns:
             Any: backend specific runnable object like Runnable for backend=Langgraph
         """
-        return RunnableLambda(partial(weighted_sampler_function, attr_config))
+        return RunnableLambda(exec_wrapper)
 
     def create_connector_runnable(self):
         """
