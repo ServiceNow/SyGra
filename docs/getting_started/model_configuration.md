@@ -45,23 +45,24 @@ SYGRA_MIXTRAL_8X7B_CHAT_TEMPLATE={% for m in messages %} ... {% endfor %}
 ### Configuration Properties
 
 
-| Key                         | Description                                                                                                                |
-|-----------------------------|----------------------------------------------------------------------------------------------------------------------------|
-| `model_type`                | Type of backend server (`tgi`, `vllm`, `openai`, `azure_openai`, `azure`, `mistralai`, `ollama`, `triton`)                 |
-| `model_name`                | Model name for your deployments (for Azure/Azure OpenAI)                                                                   |
-| `api_version`               | API version for Azure or Azure OpenAI                                                                                      |
-| `hf_chat_template_model_id` | Hugging Face model ID                                                                                                      |
-| `multi_modal`               | *(Optional)* Boolean: Set this to false if the model is not multi-modal (default: true)                                    |
-| `completions_api`           | *(Optional)* Boolean: use completions API instead of chat completions API (default: false)                                 |
-| `modify_tokenizer`          | *(Optional)* Boolean: apply custom chat template and modify the base model tokenizer (default: false)                      |
-| `special_tokens`            | *(Optional)* List of special stop tokens used in generation                                                                |
-| `post_process`              | *(Optional)* Post processor after model inference (e.g. `models.model_postprocessor.RemoveThinkData`)                      |
-| `parameters`                | *(Optional)* Generation parameters (see below)                                                                             |
-| `chat_template_params`      | *(Optional)* Chat template parameters (e.g. `reasoning_effort` for `gpt-oss-120b`) <br/> when `completions_api` is enabled |
-| `ssl_verify`                | *(Optional)* Verify SSL certificate (default: true)                                                                        |
-| `ssl_cert`                  | *(Optional)* Path to SSL certificate file                                                                                  |
-| `json_payload`              | *(Optional)* Boolean: use JSON payload instead of JSON string for `http client` based models (default: false)              |
-| `headers`                   | *(Optional)* Dictionary of headers to be sent with the request for `http client` based models                              |
+| Key                         | Description                                                                                                                                |
+|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| `model_type`                | Type of backend server (`tgi`, `vllm`, `openai`, `azure_openai`, `azure`, `mistralai`, `ollama`, `triton`)                                 |
+| `model_name`                | Model name for your deployments (for Azure/Azure OpenAI)                                                                                   |
+| `api_version`               | API version for Azure or Azure OpenAI                                                                                                      |
+| `multi_modal`               | *(Optional)* Boolean: Set this to false if the model is not multi-modal (default: true)                                                    |
+| `backend`                   | *(Optional)* Backend for the model (default: `litellm` for litellm supported models, `default` for other models) Supported values: `litellm`, `default`              |
+| `completions_api`           | *(Optional)* Boolean: use completions API instead of chat completions API (default: false) <br/> Supported models: `tgi`, `vllm`, `ollama` |
+| `hf_chat_template_model_id` | *(Optional)* Hugging Face model ID. Make sure to set this when completions_api is set to `true`                                            |
+| `modify_tokenizer`          | *(Optional)* Boolean: apply custom chat template and modify the base model tokenizer (default: false)                                      |
+| `special_tokens`            | *(Optional)* List of special stop tokens used in generation                                                                                |
+| `post_process`              | *(Optional)* Post processor after model inference (e.g. `models.model_postprocessor.RemoveThinkData`)                                      |
+| `parameters`                | *(Optional)* Generation parameters (see below)                                                                                             |
+| `chat_template_params`      | *(Optional)* Chat template parameters (e.g. `reasoning_effort` for `gpt-oss-120b`) <br/> when `completions_api` is enabled                 |
+| `ssl_verify`                | *(Optional)* Verify SSL certificate (default: true)                                                                                        |
+| `ssl_cert`                  | *(Optional)* Path to SSL certificate file                                                                                                  |
+| `json_payload`              | *(Optional)* Boolean: use JSON payload instead of JSON string for `http client` based models (default: false)                              |
+| `headers`                   | *(Optional)* Dictionary of headers to be sent with the request for `http client` based models                                              |
 ![Note](https://img.shields.io/badge/Note-important-yellow)  
 > - Do **not** include `url`, `auth_token`, or `api_key` in your YAML config. These are sourced from environment variables as described above.<br>
 > - If you want to set **ssl_verify** to **false** globally, you can set `ssl_verify:false` under `model_config` section in config/configuration.yaml
