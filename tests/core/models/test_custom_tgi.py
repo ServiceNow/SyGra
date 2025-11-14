@@ -488,6 +488,38 @@ class TestCustomTGI(unittest.TestCase):
             "Native structured output generation failed", str(mock_logger.error.call_args)
         )
 
+    @patch("sygra.core.models.custom_models.ClientFactory")
+    @patch("sygra.core.models.custom_models.logger")
+    def test_tgi_model_completions_api_supported_without_hf_chat_template_model_id(
+        self, mock_logger, mock_client_factory
+    ):
+        """Test that CustomTGI supports completion API"""
+        tgi_config = {
+            "name": "tgi_model",
+            "model_type": "tgi",
+            "parameters": {"temperature": 0.7, "max_tokens": 100},
+            "url": "http://tgi-test.com",
+            "auth_token": "Bearer test_token_123",
+        }
+
+        # Create the model - should not raise an error
+        with self.assertRaises(ValueError) as context:
+            CustomTGI(tgi_config)
+        # Verify the error message
+        self.assertIn("Please set hf_chat_template_model_id for TGI Model", str(context.exception))
+
+    @patch("sygra.core.models.custom_models.AutoTokenizer")
+    def test_tgi_model_tokenizer_cannot_be_fetched_raises_error(self, mock_tokenizer):
+        """Test that CustomTGI raises error when tokenizer cannot be fetched"""
+        # Force tokenizer fetch to fail
+        mock_tokenizer.from_pretrained.side_effect = Exception("download failed")
+
+        # Should raise ValueError with informative message
+        with self.assertRaises(ValueError) as context:
+            CustomTGI(self.base_config)
+
+        self.assertIn("Tokenizer for tgi_model cannot be fetched.", str(context.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

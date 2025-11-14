@@ -31,10 +31,9 @@ def check_model_availability(task_name):
             logger.error(f"Model {mn} has no model configuration. Exiting the process.")
             sys.exit(1)
         mc["name"] = mn
-        backend = mc.get("backend", "default")
 
         # create model object for inference
-        mod = ModelFactory.create_model(mc, backend)
+        mod = ModelFactory.create_model(mc)
         model_param = ModelParams(url=mc.get("url"), auth_token=mc.get("auth_token"))
         # inference
         status = mod.ping()

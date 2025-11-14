@@ -80,12 +80,7 @@ class BaseCustomModel(ABC):
         self.generation_params: dict[Any, Any] = model_config.get("parameters") or {}
         self.chat_template_params: dict[Any, Any] = model_config.get("chat_template_params") or {}
         self.hf_chat_template_model_id = model_config.get("hf_chat_template_model_id")
-        if self.hf_chat_template_model_id:
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                self.hf_chat_template_model_id, token=os.environ.get(constants.HF_TOKEN)
-            )
-            if model_config.get("modify_tokenizer", False):
-                self._set_chat_template()
+        self._validate_completions_api_support()
         self.model_stats: Dict[str, Any] = {"resp_code_dist": {}, "errors": {}}
         # track total count for round_robin load balancing; see "_get_model_url"
         self.call_count = 0
@@ -93,27 +88,59 @@ class BaseCustomModel(ABC):
         self.url_reqs_count: DefaultDict[str, int] = collections.defaultdict(int)
         # store the timestamps to check if server is down
         self.model_failed_response_timestamp: list[float] = []
-        self._validate_completions_api_support()
         self._client: BaseClient
 
     def _set_client(self, url: str, auth_token: Optional[str] = None, async_client: bool = True):
         """Get or create the client instance on demand."""
         self._client = ClientFactory.create_client(self.model_config, url, auth_token, async_client)
 
-    def _validate_completions_api_support(self) -> None:
-        """
-        Validates that if completions_api is set to True, raises an error that model does not support completion API.
+    def _validate_completions_api_model_support(self) -> None:
+        """Validates that if completions_api is set to True, raises an error that model does not support completion API.
 
         Raises
         ------
         ValueError
             Model does not support completion API.
         """
-        if self.model_config.get("completions_api", False):
-            raise ValueError(
-                f"Model {self.name()} does not support completion API. "
-                f"Please set completions_api to False or remove completions_api from {self.name()} config in models.yaml"
-            )
+        raise ValueError(
+            f"Model {self.name()} does not support completion API. "
+            f"Please set completions_api to False or remove completions_api from {self.name()} config in models.yaml"
+        )
+
+    def _validate_completions_api_support(self) -> None:
+        """
+        Validates that if completions_api is set to True and hf_chat_template_model_id is set,
+        Fetches the tokenizer for the model and sets the chat template.
+        Raises a warning if Tokenizer cannot be fetched or chat template is not set.
+
+        Raises
+        ------
+        Warning
+            Model does not support completion API.
+        """
+
+        completions_api_enabled = self.model_config.get("completions_api", False)
+        if completions_api_enabled:
+            self._validate_completions_api_model_support()
+            if self.hf_chat_template_model_id:
+                try:
+                    self.tokenizer = AutoTokenizer.from_pretrained(
+                        self.hf_chat_template_model_id, token=os.environ.get(constants.HF_TOKEN)
+                    )
+                    if self.model_config.get("modify_tokenizer", False):
+                        self._set_chat_template()
+                except Exception:
+                    logger.warn(
+                        f"Tokenizer for {self.name()} cannot be fetched."
+                        f"Setting completions_api to False."
+                    )
+                    self.model_config["completions_api"] = False
+            else:
+                logger.warn(
+                    f"Completions API is enabled for {self.name()} but hf_chat_template_model_id is not set."
+                    f"Setting completions_api to False."
+                )
+                self.model_config["completions_api"] = False
 
     def _set_chat_template(self):
         """
@@ -658,8 +685,9 @@ class BaseCustomModel(ABC):
         raise ValueError(msg)
 
     def _get_messages(self, input: ChatPromptValue) -> list[dict[str, Any]]:
-        messages = self._convert_input(input.messages).to_messages()
-        messages = [_convert_message_to_dict(m) for m in messages]
+        prompt_value: PromptValue = self._convert_input(input.messages)
+        langchain_messages: list[BaseMessage] = prompt_value.to_messages()
+        messages: list[dict[str, Any]] = [_convert_message_to_dict(m) for m in langchain_messages]
         return messages
 
 
@@ -669,6 +697,34 @@ class CustomTGI(BaseCustomModel):
         utils.validate_required_keys(["url", "auth_token"], model_config, "model")
         self.model_config = model_config
         self.auth_token = cast(str, model_config.get("auth_token")).replace("Bearer ", "")
+
+    def _validate_completions_api_model_support(self) -> None:
+        logger.info(f"Model {self.name()} supports completion API.")
+
+    def _validate_completions_api_support(self) -> None:
+        """
+        Validates that if completions_api is set to True and hf_chat_template_model_id is set,
+        Fetches the tokenizer for the model and sets the chat template.
+        Raises a warning if Tokenizer cannot be fetched or chat template is not set.
+
+        Raises
+        ------
+        Warning
+            Model does not support completion API.
+        """
+        self.model_config["completions_api"] = True
+        self._validate_completions_api_model_support()
+        if self.hf_chat_template_model_id:
+            try:
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    self.hf_chat_template_model_id, token=os.environ.get(constants.HF_TOKEN)
+                )
+                if self.model_config.get("modify_tokenizer", False):
+                    self._set_chat_template()
+            except Exception:
+                raise ValueError(f"Tokenizer for {self.name()} cannot be fetched.")
+        else:
+            raise ValueError(f"Please set hf_chat_template_model_id for TGI Model {self.name()}.")
 
     async def _generate_native_structured_output(
         self,
@@ -903,9 +959,8 @@ class CustomVLLM(BaseCustomModel):
         self.auth_token = str(model_config.get("auth_token")).replace("Bearer ", "")
         self.model_serving_name = model_config.get("model_serving_name", self.name())
 
-    def _validate_completions_api_support(self) -> None:
-        if self.model_config.get("completions_api", False):
-            logger.info(f"Model {self.name()} supports completion API.")
+    def _validate_completions_api_model_support(self) -> None:
+        logger.info(f"Model {self.name()} supports completion API.")
 
     async def _generate_native_structured_output(
         self,
@@ -1059,10 +1114,6 @@ class CustomOpenAI(BaseCustomModel):
             ["url", "auth_token", "api_version", "model"], model_config, "model"
         )
         self.model_config = model_config
-
-    def _validate_completions_api_support(self) -> None:
-        if self.model_config.get("completions_api", False):
-            logger.info(f"Model {self.name()} supports completion API.")
 
     async def _generate_native_structured_output(
         self,
@@ -1600,9 +1651,8 @@ class CustomOllama(BaseCustomModel):
         super().__init__(model_config)
         self.model_config = model_config
 
-    def _validate_completions_api_support(self) -> None:
-        if self.model_config.get("completions_api", False):
-            logger.info(f"Model {self.name()} supports completion API.")
+    def _validate_completions_api_model_support(self) -> None:
+        logger.info(f"Model {self.name()} supports completion API.")
 
     async def _generate_native_structured_output(
         self,
