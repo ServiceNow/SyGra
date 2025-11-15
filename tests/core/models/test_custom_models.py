@@ -58,6 +58,7 @@ class TestValidateCompletionApiSupport(unittest.TestCase):
             **self.base_config,
             "name": "test_ollama",
             "model_type": "ollama",
+            "hf_chat_template_model_id": "test-model-id",
         }
 
     def tearDown(self):
@@ -143,13 +144,13 @@ class TestValidateCompletionApiSupport(unittest.TestCase):
         config = {**self.openai_config, "completions_api": True}
 
         # Create the model - should not raise an error
-        try:
+        with self.assertRaises(ValueError) as context:
             CustomOpenAI(config)
-        except ValueError:
-            self.fail("CustomOpenAI raised ValueError unexpectedly")
 
-        # Verify that logger.info was called with the appropriate message
-        mock_logger.info.assert_called_once_with(f"Model {config['name']} supports completion API.")
+        # Verify the error message
+        self.assertIn("does not support completion API", str(context.exception))
+        self.assertIn(self.openai_config["name"], str(context.exception))
+        self.assertIn("models.yaml", str(context.exception))
 
     @patch("sygra.core.models.custom_models.ClientFactory")
     @patch("sygra.core.models.custom_models.logger")

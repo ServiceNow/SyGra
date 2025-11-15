@@ -101,16 +101,6 @@ class TestCustomOpenAI(unittest.TestCase):
         with self.assertRaises(Exception):
             CustomOpenAI(config)
 
-    @patch("sygra.core.models.custom_models.logger")
-    def test_init_with_completions_api(self, mock_logger):
-        """Test initialization with completions API enabled"""
-        with patch("sygra.core.models.custom_models.AutoTokenizer"):
-            custom_openai = CustomOpenAI(self.completions_config)
-
-            self.assertTrue(custom_openai.model_config.get("completions_api"))
-            # Should log that model supports completion API
-            mock_logger.info.assert_any_call("Model gpt4_model supports completion API.")
-
     # ============== _generate_text Tests ==============
 
     async def _run_generate_text_chat_api_success(self, mock_set_client):
@@ -209,44 +199,6 @@ class TestCustomOpenAI(unittest.TestCase):
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     def test_generate_text_chat_api_success(self, mock_set_client):
         asyncio.run(self._run_generate_text_chat_api_success(mock_set_client))
-
-    async def _run_generate_text_completions_api_success(self, mock_set_client, mock_tokenizer):
-        """Test _generate_text with completions API"""
-        # Setup mock client
-        mock_client = MagicMock()
-        mock_client.build_request.return_value = {"prompt": "Formatted prompt"}
-
-        # Setup mock completion response for completions API
-        mock_choice = MagicMock()
-        mock_choice.model_dump.return_value = {"text": "Response text"}
-        mock_completion = MagicMock()
-        mock_completion.choices = [mock_choice]
-
-        mock_client.send_request = AsyncMock(return_value=mock_completion)
-
-        # Setup custom model with completions API
-        custom_openai = CustomOpenAI(self.completions_config)
-        custom_openai._client = mock_client
-        custom_openai.get_chat_formatted_text = MagicMock(return_value="Formatted prompt")
-
-        # Call _generate_text
-        model_params = ModelParams(url="https://api.openai.com/v1", auth_token="sk-test")
-        model_response = await custom_openai._generate_text(self.chat_input, model_params)
-
-        # Verify results (text should be stripped)
-        self.assertEqual(model_response.llm_response, "Response text")
-        self.assertEqual(model_response.response_code, 200)
-
-        # Verify completions API path was used
-        custom_openai.get_chat_formatted_text.assert_called_once()
-        mock_client.build_request.assert_called_once_with(formatted_prompt="Formatted prompt")
-
-    @patch("sygra.core.models.custom_models.AutoTokenizer")
-    @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
-    def test_generate_text_completions_api_success(self, mock_set_client, mock_tokenizer):
-        asyncio.run(
-            self._run_generate_text_completions_api_success(mock_set_client, mock_tokenizer)
-        )
 
     async def _run_generate_text_rate_limit_error(self, mock_set_client, mock_logger):
         """Test _generate_text with rate limit error"""

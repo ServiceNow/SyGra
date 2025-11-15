@@ -13,7 +13,7 @@ import sys
 import unittest
 from pathlib import Path
 from typing import Any, Dict
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
@@ -261,7 +261,18 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             }
         )
         vllm_model = CustomVLLM({**self.test_config, "url": "test", "auth_token": "test"})
-        tgi_model = CustomTGI({**self.test_config, "url": "test", "auth_token": "test"})
+        with patch(
+            "sygra.core.models.custom_models.AutoTokenizer.from_pretrained"
+        ) as mock_from_pretrained:
+            mock_from_pretrained.return_value = MagicMock()
+            tgi_model = CustomTGI(
+                {
+                    **self.test_config,
+                    "url": "test",
+                    "auth_token": "test",
+                    "hf_chat_template_model_id": "tgi-model-id",
+                }
+            )
         base_model = CustomModel(self.test_config)
 
         self.assertTrue(openai_model._supports_native_structured_output())
@@ -421,7 +432,18 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
     @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_tgi_native_structured_output_success(self, mock_parser, mock_utils):
         """Test TGI native structured output success"""
-        model = CustomTGI({**self.test_config, "url": "test", "auth_token": "test"})
+        with patch(
+            "sygra.core.models.custom_models.AutoTokenizer.from_pretrained"
+        ) as mock_from_pretrained:
+            mock_from_pretrained.return_value = MagicMock()
+            model = CustomTGI(
+                {
+                    **self.test_config,
+                    "url": "test",
+                    "auth_token": "test",
+                    "hf_chat_template_model_id": "tgi-model-id",
+                }
+            )
         tgi_response = json.dumps({"generated_text": self.valid_json})
         model._client = MockClient(response_text=tgi_response, status_code=200)
 
@@ -449,7 +471,18 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
     @patch("sygra.core.models.structured_output.structured_output_config.SchemaConfigParser")
     async def test_tgi_native_structured_output_http_error(self, mock_parser, mock_utils):
         """Test TGI native structured output with HTTP error"""
-        model = CustomTGI({**self.test_config, "url": "test", "auth_token": "test"})
+        with patch(
+            "sygra.core.models.custom_models.AutoTokenizer.from_pretrained"
+        ) as mock_from_pretrained:
+            mock_from_pretrained.return_value = MagicMock()
+            model = CustomTGI(
+                {
+                    **self.test_config,
+                    "url": "test",
+                    "auth_token": "test",
+                    "hf_chat_template_model_id": "tgi-model-id",
+                }
+            )
         model._client = MockClient(response_text="Server Error", status_code=500)
         model._generate_fallback_structured_output = AsyncMock(return_value=(self.valid_json, 200))
 
@@ -591,8 +624,13 @@ class TestStructuredOutputMethods(unittest.IsolatedAsyncioTestCase):
             "url": "test",
             "auth_token": "test",
             "completions_api": True,
+            "hf_chat_template_model_id": "test-model-id",
         }
-        model = CustomOllama(completions_config)
+        with patch(
+            "sygra.core.models.custom_models.AutoTokenizer.from_pretrained"
+        ) as mock_from_pretrained:
+            mock_from_pretrained.return_value = MagicMock()
+            model = CustomOllama(completions_config)
 
         # Mock missing tokenizer attribute
         model.tokenizer = Mock()
