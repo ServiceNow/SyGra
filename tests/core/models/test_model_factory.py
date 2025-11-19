@@ -97,7 +97,7 @@ class TestModelFactory(unittest.TestCase):
 
         with patch.object(CustomVLLM, "__init__", return_value=None) as mock_init:
             model_config = {"name": "test_vllm", "model_type": "vllm"}
-            ModelFactory.create_model(model_config, backend="default")
+            ModelFactory.create_model(model_config, backend="custom")
             mock_init.assert_called_once()
 
     @patch("sygra.utils.utils.load_model_config")
@@ -189,7 +189,7 @@ class TestModelFactory(unittest.TestCase):
 
         with patch.object(CustomOpenAI, "__init__", return_value=None) as mock_init:
             model_config = {"name": "test_openai", "model_type": "azure_openai"}
-            ModelFactory.create_model(model_config, backend="default")
+            ModelFactory.create_model(model_config, backend="custom")
             mock_init.assert_called_once()
 
     @patch("sygra.utils.utils.load_model_config")

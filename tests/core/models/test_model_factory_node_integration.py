@@ -93,7 +93,7 @@ class TestModelFactoryNodeIntegration(unittest.TestCase):
         # Test default backend uses standard model
         with patch.object(CustomVLLM, "__init__", return_value=None) as mock_default:
             model_config = {"name": "test_model", "model_type": "vllm"}
-            ModelFactory.create_model(model_config, "default")
+            ModelFactory.create_model(model_config, "custom")
             mock_default.assert_called_once()
 
         # Test langgraph backend uses chat models

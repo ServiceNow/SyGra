@@ -3,10 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import logging
-from typing import (
-    Any,
-    Type,
-)
+from typing import Any, Type
 
 import litellm
 import openai
@@ -18,6 +15,7 @@ import sygra.utils.constants as constants
 from sygra.core.models.custom_models import BaseCustomModel, ModelParams
 from sygra.core.models.model_response import ModelResponse
 from sygra.logger.logger_config import logger
+from sygra.metadata.metadata_integration import track_model_request
 from sygra.utils import utils
 
 logging.getLogger("LiteLLM").setLevel(logging.WARNING)
@@ -116,6 +114,7 @@ class CustomAzureOpenAI(BaseCustomModel):
                 input, model_params, pydantic_model, **kwargs
             )
 
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:

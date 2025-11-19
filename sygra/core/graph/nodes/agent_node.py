@@ -34,7 +34,9 @@ class AgentNode(LLMNode):
         configuration from the node configuration.
         """
 
-        self.model = ModelFactory.create_model(self.node_config["model"], constants.BACKEND)
+        self.model = ModelFactory.create_model(
+            self.node_config["model"], constants.MODEL_BACKEND_LANGGRAPH
+        )
 
     async def _exec_wrapper(self, state: dict[str, Any]) -> dict[str, Any]:
 
