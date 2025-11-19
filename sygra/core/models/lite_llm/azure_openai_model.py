@@ -8,7 +8,7 @@ from typing import Any, Type
 import litellm
 import openai
 from langchain_core.prompt_values import ChatPromptValue
-from litellm import aimage_edit, aimage_generation, aspeech
+from litellm import BadRequestError, aimage_edit, aimage_generation, aspeech
 from pydantic import BaseModel, ValidationError
 
 import sygra.utils.constants as constants
@@ -162,9 +162,15 @@ class CustomAzureOpenAI(BaseCustomModel):
             resp_text = completion.choices[0].model_dump()["message"]["content"]
             tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
         except openai.RateLimitError as e:
-            logger.warn(f"AzureOpenAI api request exceeded rate limit: {e}")
-            resp_text = f"{constants.ERROR_PREFIX} Http request failed {e}"
+            logger.warn(f"Azure OpenAI api request exceeded rate limit: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Azure OpenAI request failed {e}"
             ret_code = 429
+        except BadRequestError as e:
+            resp_text = (
+                f"{constants.ERROR_PREFIX} Azure OpenAI request failed with error: {e.message}"
+            )
+            logger.error(f"Azure OpenAI request failed with error: {e.message}")
+            ret_code = e.status_code
         except Exception as x:
             resp_text = f"{constants.ERROR_PREFIX} Http request failed {x}"
             logger.error(resp_text)

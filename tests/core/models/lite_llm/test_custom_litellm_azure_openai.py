@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import openai
+from litellm import BadRequestError
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
@@ -187,6 +188,27 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
 
     def test_generate_text_generic_exception(self):
         asyncio.run(self._run_generate_text_generic_exception())
+
+    async def _run_generate_text_bad_request_exception(self):
+        with patch(
+            "sygra.core.models.lite_llm.azure_openai_model.litellm.acompletion",
+            new_callable=AsyncMock,
+        ) as mock_acomp:
+            mock_acomp.side_effect = BadRequestError(
+                "Bad Request", llm_provider="openai", model="gpt-4o"
+            )
+
+            model = CustomAzureOpenAI(self.text_config)
+            # Force no status extraction
+            model._get_status_from_body = MagicMock(return_value=None)
+            params = ModelParams(url=self.text_config["url"], auth_token="sk-test")
+            resp = await model._generate_text(self.chat_input, params)
+
+            self.assertIn(constants.ERROR_PREFIX, resp.llm_response)
+            self.assertIn("Bad Request", resp.llm_response)
+
+    def test_generate_text_bad_request_exception(self):
+        asyncio.run(self._run_generate_text_bad_request_exception())
 
     async def _run_generate_speech_success_base64(self):
         with patch(

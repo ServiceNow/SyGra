@@ -6,7 +6,7 @@ from typing import Any, Type
 
 import openai
 from langchain_core.prompt_values import ChatPromptValue
-from litellm import acompletion, atext_completion
+from litellm import BadRequestError, acompletion, atext_completion
 from pydantic import BaseModel, ValidationError
 
 import sygra.utils.constants as constants
@@ -174,8 +174,12 @@ class CustomVLLM(BaseCustomModel):
             # TODO: Test rate limit handling for vllm
         except openai.RateLimitError as e:
             logger.warn(f"vLLM api request exceeded rate limit: {e}")
-            resp_text = f"{constants.ERROR_PREFIX} Http request failed {e}"
+            resp_text = f"{constants.ERROR_PREFIX} vLLM request failed {e}"
             ret_code = 429
+        except BadRequestError as e:
+            resp_text = f"{constants.ERROR_PREFIX} vLLM request failed with error: {e.message}"
+            logger.error(f"vLLM request failed with error: {e.message}")
+            ret_code = e.status_code
         except Exception as x:
             resp_text = f"{constants.ERROR_PREFIX} Http request failed {x}"
             logger.error(resp_text)
