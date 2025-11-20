@@ -30,8 +30,8 @@ class CustomVLLM(BaseCustomModel):
     def _validate_completions_api_model_support(self) -> None:
         logger.info(f"Model {self.name()} supports completion API.")
 
-    def _get_lite_llm_model_name(self) -> str:
-        return f"hosted_vllm/{self.model_serving_name}"
+    def _get_model_prefix(self) -> str:
+        return "hosted_vllm"
 
     async def _generate_native_structured_output(
         self,

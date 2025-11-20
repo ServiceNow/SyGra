@@ -29,9 +29,6 @@ class CustomOpenAI(BaseCustomModel):
         self.model_config = model_config
         self.model_name = self.model_config.get("model", self.name())
 
-    def _get_lite_llm_model_name(self) -> Any:
-        return self.model_name
-
     async def _generate_native_structured_output(
         self,
         input: ChatPromptValue,

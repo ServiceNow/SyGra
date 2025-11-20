@@ -30,8 +30,8 @@ class CustomAzureOpenAI(BaseCustomModel):
         self.model_name = self.model_config.get("model", self.name())
         self.api_version = self.model_config.get("api_version")
 
-    def _get_lite_llm_model_name(self) -> str:
-        return f"azure/{self.model_name}"
+    def _get_model_prefix(self) -> str:
+        return "azure"
 
     async def _generate_native_structured_output(
         self,
