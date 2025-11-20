@@ -33,6 +33,7 @@ class CustomAzureOpenAI(BaseCustomModel):
     def _get_model_prefix(self) -> str:
         return "azure"
 
+    @track_model_request
     async def _generate_native_structured_output(
         self,
         input: ChatPromptValue,
@@ -68,6 +69,7 @@ class CustomAzureOpenAI(BaseCustomModel):
                 api_version=self.api_version,
                 **all_params,
             )
+            self._extract_token_usage(completion)
             resp_text = completion.choices[0].model_dump()["message"]["content"]
             tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
             # Check if the request was successful based on the response status
@@ -159,6 +161,7 @@ class CustomAzureOpenAI(BaseCustomModel):
                 api_version=self.api_version,
                 **self.generation_params,
             )
+            self._extract_token_usage(completion)
             resp_text = completion.choices[0].model_dump()["message"]["content"]
             tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
         except openai.RateLimitError as e:

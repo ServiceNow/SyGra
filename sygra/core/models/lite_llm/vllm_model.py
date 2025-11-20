@@ -33,6 +33,7 @@ class CustomVLLM(BaseCustomModel):
     def _get_model_prefix(self) -> str:
         return "hosted_vllm"
 
+    @track_model_request
     async def _generate_native_structured_output(
         self,
         input: ChatPromptValue,
@@ -72,6 +73,7 @@ class CustomVLLM(BaseCustomModel):
                     api_key=model_params.auth_token,
                     **extra_params,
                 )
+                self._extract_token_usage(completion)
                 resp_text = completion.choices[0].model_dump()["text"]
             else:
                 # Convert input to messages
@@ -84,6 +86,7 @@ class CustomVLLM(BaseCustomModel):
                     api_key=model_params.auth_token,
                     **extra_params,
                 )
+                self._extract_token_usage(completion)
                 resp_text = completion.choices[0].model_dump()["message"]["content"]
                 tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
 
@@ -157,6 +160,7 @@ class CustomVLLM(BaseCustomModel):
                     api_key=model_params.auth_token,
                     **self.generation_params,
                 )
+                self._extract_token_usage(completion)
                 resp_text = completion.choices[0].model_dump()["text"]
             else:
                 # Convert input to messages
@@ -169,6 +173,7 @@ class CustomVLLM(BaseCustomModel):
                     api_key=model_params.auth_token,
                     **self.generation_params,
                 )
+                self._extract_token_usage(completion)
                 resp_text = completion.choices[0].model_dump()["message"]["content"]
                 tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
             # TODO: Test rate limit handling for vllm
@@ -181,7 +186,7 @@ class CustomVLLM(BaseCustomModel):
             logger.error(f"vLLM request failed with error: {e.message}")
             ret_code = e.status_code
         except Exception as x:
-            resp_text = f"{constants.ERROR_PREFIX} Http request failed {x}"
+            resp_text = f"{constants.ERROR_PREFIX} vLLM request failed {x}"
             logger.error(resp_text)
             rcode = self._get_status_from_body(x)
             if constants.ELEMAI_JOB_DOWN in resp_text or constants.CONNECTION_ERROR in resp_text:

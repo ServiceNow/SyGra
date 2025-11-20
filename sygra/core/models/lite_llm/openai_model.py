@@ -29,6 +29,7 @@ class CustomOpenAI(BaseCustomModel):
         self.model_config = model_config
         self.model_name = self.model_config.get("model", self.name())
 
+    @track_model_request
     async def _generate_native_structured_output(
         self,
         input: ChatPromptValue,
@@ -63,6 +64,7 @@ class CustomOpenAI(BaseCustomModel):
                 api_key=model_params.auth_token,
                 **all_params,
             )
+            self._extract_token_usage(completion)
             resp_text = completion.choices[0].model_dump()["message"]["content"]
             tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
             # Check if the request was successful based on the response status
@@ -153,6 +155,7 @@ class CustomOpenAI(BaseCustomModel):
                 api_key=model_params.auth_token,
                 **self.generation_params,
             )
+            self._extract_token_usage(completion)
             resp_text = completion.choices[0].model_dump()["message"]["content"]
             tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
         except openai.RateLimitError as e:
