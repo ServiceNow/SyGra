@@ -120,17 +120,20 @@ class CustomAzureOpenAI(BaseCustomModel):
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         from sygra.utils.model_utils import (
+            is_gpt4o_audio_model,
             should_route_to_image,
             should_route_to_speech,
             should_route_to_transcription,
         )
 
+        # Check if this is gpt-4o-audio model which uses chat completions with audio
+        if is_gpt4o_audio_model(self.model_config):
+            return await self._generate_audio_chat_completion(input, model_params)
+
         # Auto-detect audio input for transcription (audio-to-text)
         if should_route_to_transcription(input, self.model_config):
             return await self._generate_transcription(input, model_params)
-        
-        # Check the output type and route to appropriate method
-        if should_route_to_speech(self.model_config):
+        elif should_route_to_speech(self.model_config):
             return await self._generate_speech(input, model_params)
         elif should_route_to_image(self.model_config):
             return await self._generate_image(input, model_params)
@@ -390,6 +393,196 @@ class CustomAzureOpenAI(BaseCustomModel):
             ret_code = getattr(e, "status_code", 500)
         except Exception as x:
             resp_text = f"{constants.ERROR_PREFIX} Transcription request failed: {x}"
+            logger.error(f"[{self.name()}] {resp_text}")
+            rcode = self._get_status_from_body(x)
+            ret_code = rcode if rcode else 999
+
+        return ModelResponse(llm_response=resp_text, response_code=ret_code)
+
+    async def _generate_audio_chat_completion(
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
+        """
+        Generate response using gpt-4o-audio model with chat completions API via LiteLLM.
+        This model supports:
+        - Audio input (via input_audio in messages)
+        - Audio output (via modalities parameter)
+        - Text input/output
+        - Combined text+audio input/output
+
+        Args:
+            input: ChatPromptValue containing messages (can include audio)
+            model_params: Model parameters including URL and auth token
+
+        Returns:
+            Model Response
+            - For audio output: returns base64 encoded audio data URL
+            - For text output: returns text response
+            - On error: returns error message and error code
+        """
+        ret_code = 200
+        model_url = model_params.url
+
+        try:
+            # Convert messages to dict format
+            messages = self._get_messages(input)
+
+            # Process messages to convert audio_url -> input_audio format for gpt-4o-audio
+            processed_messages = []
+            for message_dict in messages:
+                processed_message = message_dict.copy()
+
+                # Handle audio_url -> input_audio conversion for multimodal content
+                if isinstance(message_dict.get("content"), list):
+                    processed_content = []
+                    for item in message_dict["content"]:
+                        if isinstance(item, dict) and item.get("type") == "audio_url":
+                            # Extract audio URL
+                            audio_url = item.get("audio_url", {})
+                            if isinstance(audio_url, dict):
+                                data_url = audio_url.get("url", "")
+                            else:
+                                data_url = audio_url
+
+                            # Extract base64 data and format from data URL
+                            if data_url.startswith("data:audio/"):
+                                # Parse: data:audio/<format>;base64,<data>
+                                parts = data_url.split(";base64,")
+                                if len(parts) == 2:
+                                    mime_parts = parts[0].split(":")
+                                    if len(mime_parts) == 2:
+                                        format_part = mime_parts[1].replace("audio/", "")
+                                        base64_data = parts[1]
+
+                                        # Map MIME types to OpenAI format names
+                                        mime_format_map = {"mpeg": "mp3"}
+                                        if format_part in mime_format_map:
+                                            format_part = mime_format_map[format_part]
+
+                                        # Convert to input_audio format expected by gpt-4o-audio
+                                        processed_content.append(
+                                            {
+                                                "type": "input_audio",
+                                                "input_audio": {
+                                                    "data": base64_data,
+                                                    "format": format_part,
+                                                },
+                                            }
+                                        )
+                                    else:
+                                        processed_content.append(item)
+                                else:
+                                    processed_content.append(item)
+                            else:
+                                processed_content.append(item)
+                        else:
+                            # Keep other types as-is (text, image_url, etc.)
+                            processed_content.append(item)
+
+                    processed_message["content"] = processed_content
+
+                processed_messages.append(processed_message)
+
+            output_type = self.model_config.get("output_type")
+
+            # gpt-4o-audio requires audio in modalities if output involves audio
+            has_audio_output = output_type == "audio"
+
+            has_audio_input = any(
+                isinstance(msg.get("content"), list)
+                and any(item.get("type") == "input_audio" for item in msg.get("content", []))
+                for msg in processed_messages
+            )
+
+            modalities = ["text"]
+            if has_audio_output:
+                if "audio" not in modalities:
+                    # modality = ["text", "audio"] is required for audio output
+                    modalities.append("audio")
+
+            if not has_audio_input:
+                has_audio_output = True
+                modalities = ["text", "audio"]
+
+            audio_params: dict[str, Any] = {}
+            if has_audio_output:
+                if (
+                    "audio" in self.generation_params
+                    and type(self.generation_params["audio"]) is dict
+                ):
+                    audio_params = self.generation_params["audio"]
+                else:
+                    logger.info(
+                        "Audio generation params not found, using default audio params, voice: alloy, format: wav"
+                    )
+                    audio_params = {"voice": "alloy", "format": "wav"}
+                    self.generation_params["audio"] = audio_params
+
+                logger.debug(
+                    f"[{self.name()}] Audio chat completion - modalities: {modalities}, audio params: {audio_params}"
+                )
+
+            # Prepare generation params
+            gen_params = {**self.generation_params}
+
+            # Add modalities if audio is involved
+            if "audio" in modalities:
+                gen_params["modalities"] = modalities
+
+            # Call LiteLLM completion with Azure parameters
+            completion = await litellm.acompletion(
+                model=self._get_lite_llm_model_name(),
+                messages=processed_messages,
+                api_base=model_url,
+                api_key=model_params.auth_token,
+                api_version=self.api_version,
+                **gen_params,
+            )
+
+            choice = completion.choices[0]
+            message = choice.model_dump()["message"]
+
+            if "audio" in modalities and message.get("audio"):
+                audio_data = message["audio"]
+
+                if isinstance(audio_data, dict):
+                    audio_base64 = audio_data.get("data", "")
+                    audio_format = audio_params.get("format", "wav")
+
+                    mime_types = {
+                        "mp3": "audio/mpeg",
+                        "opus": "audio/opus",
+                        "aac": "audio/aac",
+                        "flac": "audio/flac",
+                        "wav": "audio/wav",
+                        "pcm": "audio/pcm",
+                    }
+                    mime_type = mime_types.get(audio_format, "audio/wav")
+
+                    resp_text = f"data:{mime_type};base64,{audio_base64}"
+
+                    # Include transcript if available
+                    if message.get("content"):
+                        logger.debug(f"[{self.name()}] Transcript: {message['content']}")
+                else:
+                    resp_text = message.get("content", "").strip()
+            else:
+                resp_text = message.get("content", "").strip()
+
+        except openai.RateLimitError as e:
+            logger.warning(f"[{self.name()}] Azure OpenAI audio chat API rate limit: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Rate limit exceeded: {e}"
+            ret_code = 429
+        except openai.BadRequestError as e:
+            logger.error(f"[{self.name()}] Azure OpenAI audio chat API bad request: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Bad request: {e}"
+            ret_code = 400
+        except openai.APIError as e:
+            logger.error(f"[{self.name()}] Azure OpenAI audio chat API error: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} API error: {e}"
+            ret_code = getattr(e, "status_code", 500)
+        except Exception as x:
+            resp_text = f"{constants.ERROR_PREFIX} Audio chat request failed: {x}"
             logger.error(f"[{self.name()}] {resp_text}")
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
