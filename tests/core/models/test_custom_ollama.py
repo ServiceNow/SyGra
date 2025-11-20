@@ -31,7 +31,11 @@ class TestCustomOllama(unittest.TestCase):
         }
 
         # Configuration with completions API enabled
-        self.completions_config = {**self.base_config, "completions_api": True}
+        self.completions_config = {
+            **self.base_config,
+            "completions_api": True,
+            "hf_chat_template_model_id": "test-model-id",
+        }
 
         # Configuration with structured output
         self.structured_config = {
@@ -67,7 +71,11 @@ class TestCustomOllama(unittest.TestCase):
     @patch("sygra.core.models.custom_models.logger")
     def test_validate_completions_api_support(self, mock_logger):
         """Test _validate_completions_api_support method which should allow completions API"""
-        custom_ollama = CustomOllama(self.completions_config)
+        with patch(
+            "sygra.core.models.custom_models.AutoTokenizer.from_pretrained"
+        ) as mock_from_pretrained:
+            mock_from_pretrained.return_value = MagicMock()
+            custom_ollama = CustomOllama(self.completions_config)
 
         # The method should not raise an exception but log that the model supports completion API
         mock_logger.info.assert_any_call("Model qwen3:1.7b supports completion API.")
@@ -108,6 +116,25 @@ class TestCustomOllama(unittest.TestCase):
             self.base_config["parameters"],
         )
 
+    @patch("sygra.core.models.custom_models.logger")
+    def test_init_completions_api_without_hf_chat_template_model_id(self, mock_logger):
+        """Test initialization with completions API enabled"""
+        completions_config = {
+            **self.base_config,
+            "completions_api": True,
+        }
+        with patch(
+            "sygra.core.models.custom_models.AutoTokenizer.from_pretrained"
+        ) as mock_from_pretrained:
+            mock_from_pretrained.return_value = MagicMock()
+            custom_vllm = CustomOllama(completions_config)
+        # Should check if completions_api is set to False as hf_chat_template_model_id is not set
+        self.assertFalse(custom_vllm.model_config.get("completions_api"))
+        # Should log that hf_chat_template_model_id is not set
+        mock_logger.warn.assert_any_call(
+            "Completions API is enabled for qwen3:1.7b but hf_chat_template_model_id is not set.Setting completions_api to False."
+        )
+
     @patch("sygra.core.models.custom_models.ClientFactory")
     @patch("sygra.core.models.custom_models.BaseCustomModel._set_client")
     @patch("sygra.core.models.custom_models.BaseCustomModel._finalize_response")
@@ -133,7 +160,11 @@ class TestCustomOllama(unittest.TestCase):
         )
 
         # Setup custom model with mock client
-        custom_ollama = CustomOllama(self.completions_config)
+        with patch(
+            "sygra.core.models.custom_models.AutoTokenizer.from_pretrained"
+        ) as mock_from_pretrained:
+            mock_from_pretrained.return_value = MagicMock()
+            custom_ollama = CustomOllama(self.completions_config)
         custom_ollama._client = mock_client
 
         # Mock the get_chat_formatted_text method

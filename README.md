@@ -93,7 +93,7 @@ poetry run python main.py --task examples.glaive_code_assistant --num_records=1
 See full steps in <a href="https://servicenow.github.io/SyGra/sygra_library/">Sygra Library</a>.
 
 ```bash
-pip install sygra   
+pip install sygra  
 ```
 
 ```python
@@ -137,6 +137,8 @@ For example, openai client is being supported by Huggingface TGI, vLLM server an
 
 <kbd> ![ModelClient](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/component_model_client.png) </kbd>
 
+####  Integration with [LiteLLM](https://github.com/BerriAI/litellm)
+SyGra now integrates with LiteLLM—unlocking more flexibility, expanded model compatibility, and seamless end-to-end integrations.
 ## Task Components
 
 SyGra supports extendability and ease of implementation—most tasks are defined as graph configuration YAML files. Each task consists of two major components: a graph configuration and Python code to define conditions and processors.
@@ -145,7 +147,7 @@ YAML contains various parts:
 - **Data configuration** : Configure file or huggingface as source and sink for the task.
 - **Data transformation** : Configuration to transform the data into the format it can be used in the graph.
 - **Node configuration** : Configure nodes and corresponding properties, preprocessor and post processor.
-- **Edge configuration** : Connect the nodes configured above with or without conditions. 
+- **Edge configuration** : Connect the nodes configured above with or without conditions.
 - **Output configuration** : Configuration for data tranformation before writing the data into sink.
 
 A node is defined by the node module, supporting types like LLM call, multiple LLM call, lambda node, and sampler node.  
@@ -165,7 +167,7 @@ To contact us, please send us an [email](mailto:sygra_team@servicenow.com)!
 
 The package is licensed by ServiceNow, Inc. under the Apache 2.0 license. See [LICENSE](LICENSE) for more details.
 
----
+## Questions?
 
-**Questions?**  
+Ask SyGra's [DeepWiki](https://deepwiki.com/ServiceNow/SyGra) </br>
 Open an [issue](https://github.com/ServiceNow/SyGra/issues) or start a [discussion](https://github.com/ServiceNow/SyGra/discussions)! Contributions are welcome.

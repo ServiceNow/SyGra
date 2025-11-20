@@ -21,10 +21,12 @@ from typing import (
 )
 
 import openai
-from langchain_core.messages import BaseMessage
+from langchain_core.language_models import LanguageModelInput
+from langchain_core.messages import BaseMessage, convert_to_messages
 from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.prompt_values import ChatPromptValue
+from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_openai.chat_models.base import _convert_message_to_dict
 from pydantic import BaseModel, ValidationError
 from tenacity import (
     AsyncRetrying,
@@ -45,6 +47,12 @@ from sygra.core.models.structured_output.structured_output_config import Structu
 from sygra.logger.logger_config import logger
 from sygra.metadata.metadata_integration import track_model_request
 from sygra.utils import utils
+from sygra.utils.model_utils import (
+    is_gpt4o_audio_model,
+    should_route_to_image,
+    should_route_to_speech,
+    should_route_to_transcription,
+)
 
 
 class ModelParams:
@@ -79,12 +87,7 @@ class BaseCustomModel(ABC):
         self.generation_params: dict[Any, Any] = model_config.get("parameters") or {}
         self.chat_template_params: dict[Any, Any] = model_config.get("chat_template_params") or {}
         self.hf_chat_template_model_id = model_config.get("hf_chat_template_model_id")
-        if self.hf_chat_template_model_id:
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                self.hf_chat_template_model_id, token=os.environ.get(constants.HF_TOKEN)
-            )
-            if model_config.get("modify_tokenizer", False):
-                self._set_chat_template()
+        self._validate_completions_api_support()
         self.model_stats: Dict[str, Any] = {"resp_code_dist": {}, "errors": {}}
         # track total count for round_robin load balancing; see "_get_model_url"
         self.call_count = 0
@@ -92,27 +95,59 @@ class BaseCustomModel(ABC):
         self.url_reqs_count: DefaultDict[str, int] = collections.defaultdict(int)
         # store the timestamps to check if server is down
         self.model_failed_response_timestamp: list[float] = []
-        self._validate_completions_api_support()
         self._client: BaseClient
 
     def _set_client(self, url: str, auth_token: Optional[str] = None, async_client: bool = True):
         """Get or create the client instance on demand."""
         self._client = ClientFactory.create_client(self.model_config, url, auth_token, async_client)
 
-    def _validate_completions_api_support(self) -> None:
-        """
-        Validates that if completions_api is set to True, raises an error that model does not support completion API.
+    def _validate_completions_api_model_support(self) -> None:
+        """Validates that if completions_api is set to True, raises an error that model does not support completion API.
 
         Raises
         ------
         ValueError
             Model does not support completion API.
         """
-        if self.model_config.get("completions_api", False):
-            raise ValueError(
-                f"Model {self.name()} does not support completion API. "
-                f"Please set completions_api to False or remove completions_api from {self.name()} config in models.yaml"
-            )
+        raise ValueError(
+            f"Model {self.name()} does not support completion API. "
+            f"Please set completions_api to False or remove completions_api from {self.name()} config in models.yaml"
+        )
+
+    def _validate_completions_api_support(self) -> None:
+        """
+        Validates that if completions_api is set to True and hf_chat_template_model_id is set,
+        Fetches the tokenizer for the model and sets the chat template.
+        Raises a warning if Tokenizer cannot be fetched or chat template is not set.
+
+        Raises
+        ------
+        Warning
+            Model does not support completion API.
+        """
+
+        completions_api_enabled = self.model_config.get("completions_api", False)
+        if completions_api_enabled:
+            self._validate_completions_api_model_support()
+            if self.hf_chat_template_model_id:
+                try:
+                    self.tokenizer = AutoTokenizer.from_pretrained(
+                        self.hf_chat_template_model_id, token=os.environ.get(constants.HF_TOKEN)
+                    )
+                    if self.model_config.get("modify_tokenizer", False):
+                        self._set_chat_template()
+                except Exception:
+                    logger.warn(
+                        f"Tokenizer for {self.name()} cannot be fetched."
+                        f"Setting completions_api to False."
+                    )
+                    self.model_config["completions_api"] = False
+            else:
+                logger.warn(
+                    f"Completions API is enabled for {self.name()} but hf_chat_template_model_id is not set."
+                    f"Setting completions_api to False."
+                )
+                self.model_config["completions_api"] = False
 
     def _extract_token_usage(self, response: Any) -> None:
         """
@@ -213,8 +248,10 @@ class BaseCustomModel(ABC):
 
     def _supports_native_structured_output(self) -> bool:
         """Check if the model supports native structured output"""
-        # OpenAI and vLLM support native structured output
-        return isinstance(self, (CustomOpenAI, CustomVLLM, CustomTGI, CustomOllama))
+        return (
+            type(self)._generate_native_structured_output
+            is not BaseCustomModel._generate_native_structured_output
+        )
 
     async def _generate_native_structured_output(
         self,
@@ -648,6 +685,46 @@ class BaseCustomModel(ABC):
             formatted_tools = [convert_to_openai_tool(tool, strict=True) for tool in tools]
         return formatted_tools
 
+    @staticmethod
+    def _convert_input(model_input: LanguageModelInput) -> PromptValue:
+        """
+        Convert the input to a PromptValue.
+
+        This method takes in a LanguageModelInput, which can be a PromptValue,
+        a str, or a list of BaseMessages, and returns a PromptValue.
+
+        If the input is already a PromptValue, it is simply returned.
+        If the input is a str, it is converted to a StringPromptValue.
+        If the input is a list of BaseMessages, it is converted to a ChatPromptValue.
+        Otherwise, a ValueError is raised.
+
+        Args:
+            model_input (LanguageModelInput): The input to convert.
+
+        Returns:
+            PromptValue: The converted input.
+
+        Raises:
+            ValueError: If the input is not a PromptValue, str, or list of BaseMessages.
+        """
+        if isinstance(model_input, PromptValue):
+            return model_input
+        if isinstance(model_input, str):
+            return StringPromptValue(text=model_input)
+        if isinstance(model_input, Sequence):
+            return ChatPromptValue(messages=convert_to_messages(model_input))
+        msg = (
+            f"Invalid input type {type(model_input)}. "
+            "Must be a PromptValue, str, or list of BaseMessages."
+        )
+        raise ValueError(msg)
+
+    def _get_messages(self, input: ChatPromptValue) -> list[dict[str, Any]]:
+        prompt_value: PromptValue = self._convert_input(input.messages)
+        langchain_messages: list[BaseMessage] = prompt_value.to_messages()
+        messages: list[dict[str, Any]] = [_convert_message_to_dict(m) for m in langchain_messages]
+        return messages
+
 
 class CustomTGI(BaseCustomModel):
     def __init__(self, model_config: dict[str, Any]) -> None:
@@ -655,6 +732,34 @@ class CustomTGI(BaseCustomModel):
         utils.validate_required_keys(["url", "auth_token"], model_config, "model")
         self.model_config = model_config
         self.auth_token = cast(str, model_config.get("auth_token")).replace("Bearer ", "")
+
+    def _validate_completions_api_model_support(self) -> None:
+        logger.info(f"Model {self.name()} supports completion API.")
+
+    def _validate_completions_api_support(self) -> None:
+        """
+        Validates that if completions_api is set to True and hf_chat_template_model_id is set,
+        Fetches the tokenizer for the model and sets the chat template.
+        Raises a warning if Tokenizer cannot be fetched or chat template is not set.
+
+        Raises
+        ------
+        Warning
+            Model does not support completion API.
+        """
+        self.model_config["completions_api"] = True
+        self._validate_completions_api_model_support()
+        if self.hf_chat_template_model_id:
+            try:
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    self.hf_chat_template_model_id, token=os.environ.get(constants.HF_TOKEN)
+                )
+                if self.model_config.get("modify_tokenizer", False):
+                    self._set_chat_template()
+            except Exception:
+                raise ValueError(f"Tokenizer for {self.name()} cannot be fetched.")
+        else:
+            raise ValueError(f"Please set hf_chat_template_model_id for TGI Model {self.name()}.")
 
     async def _generate_native_structured_output(
         self,
@@ -944,9 +1049,8 @@ class CustomVLLM(BaseCustomModel):
         self.auth_token = str(model_config.get("auth_token")).replace("Bearer ", "")
         self.model_serving_name = model_config.get("model_serving_name", self.name())
 
-    def _validate_completions_api_support(self) -> None:
-        if self.model_config.get("completions_api", False):
-            logger.info(f"Model {self.name()} supports completion API.")
+    def _validate_completions_api_model_support(self) -> None:
+        logger.info(f"Model {self.name()} supports completion API.")
 
     async def _generate_native_structured_output(
         self,
@@ -1105,10 +1209,6 @@ class CustomOpenAI(BaseCustomModel):
         )
         self.model_config = model_config
 
-    def _validate_completions_api_support(self) -> None:
-        if self.model_config.get("completions_api", False):
-            logger.info(f"Model {self.name()} supports completion API.")
-
     async def _generate_native_structured_output(
         self,
         input: ChatPromptValue,
@@ -1207,18 +1307,15 @@ class CustomOpenAI(BaseCustomModel):
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         # Check if this is gpt-4o-audio model which uses chat completions with audio
-        model_name = str(self.model_config.get("model", ""))
-        is_audio_chat_model = "gpt-4o-audio" in model_name.lower()
-
-        # For gpt-4o-audio, route to audio chat completion regardless of output_type
-        if is_audio_chat_model:
+        if is_gpt4o_audio_model(self.model_config):
             return await self._generate_audio_chat_completion(input, model_params)
 
-        # Check the output type and route to appropriate method
-        output_type = self.model_config.get("output_type")
-        if output_type == "audio":
+        # Auto-detect audio input for transcription (audio-to-text)
+        if should_route_to_transcription(input, self.model_config):
+            return await self._generate_transcription(input, model_params)
+        elif should_route_to_speech(self.model_config):
             return await self._generate_speech(input, model_params)
-        elif output_type == "image":
+        elif should_route_to_image(self.model_config):
             return await self._generate_image(input, model_params)
         else:
             return await self._generate_text(input, model_params, **kwargs)
@@ -1375,6 +1472,122 @@ class CustomOpenAI(BaseCustomModel):
             ret_code = getattr(e, "status_code", 500)
         except Exception as x:
             resp_text = f"{constants.ERROR_PREFIX} TTS request failed: {x}"
+            logger.error(f"[{self.name()}] {resp_text}")
+            rcode = self._get_status_from_body(x)
+            ret_code = rcode if rcode else 999
+
+        return ModelResponse(llm_response=resp_text, response_code=ret_code)
+
+    async def _generate_transcription(
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
+        """
+        Transcribe audio to text using OpenAI/Azure OpenAI Transcription API.
+        This method is called when input_type is 'audio' in model config.
+
+        Args:
+            input: ChatPromptValue containing audio data URLs to transcribe
+            model_params: Model parameters including URL and auth token
+
+        Returns:
+            Model Response
+        """
+        ret_code = 200
+        model_url = model_params.url
+
+        try:
+            # Extract audio data URLs from messages using utility function
+            from sygra.utils.audio_utils import extract_audio_urls_from_messages
+
+            audio_data_urls, text_prompt = extract_audio_urls_from_messages(input.messages)
+
+            if not audio_data_urls:
+                logger.error(f"[{self.name()}] No audio data provided for transcription")
+                return ModelResponse(
+                    llm_response=f"{constants.ERROR_PREFIX} No audio data provided for transcription",
+                    response_code=400,
+                )
+
+            # Process only the first audio file (most transcription APIs handle one file at a time)
+            if len(audio_data_urls) > 1:
+                logger.warning(
+                    f"[{self.name()}] Multiple audio files provided. Using first audio only. "
+                    f"Additional {len(audio_data_urls) - 1} file(s) will be ignored."
+                )
+
+            audio_data_url = audio_data_urls[0]
+
+            # Create file-like object from audio data URL using utility function
+            from sygra.utils.audio_utils import create_audio_file_from_data_url
+
+            audio_file = create_audio_file_from_data_url(audio_data_url)
+
+            # Set up the OpenAI client
+            self._set_client(model_url, model_params.auth_token)
+
+            # Get transcription-specific parameters from generation_params or model_config
+            language = self.generation_params.get("language", self.model_config.get("language"))
+            response_format = self.generation_params.get(
+                "response_format", self.model_config.get("response_format", "json")
+            )
+            temperature = self.generation_params.get(
+                "temperature", self.model_config.get("temperature", 0)
+            )
+            timestamp_granularities = self.generation_params.get(
+                "timestamp_granularities", self.model_config.get("timestamp_granularities")
+            )
+
+            # Build transcription parameters
+            transcription_params: dict[str, Any] = {
+                "file": audio_file,
+            }
+
+            if language:
+                transcription_params["language"] = language
+            if text_prompt:
+                transcription_params["prompt"] = text_prompt
+            if response_format:
+                transcription_params["response_format"] = response_format
+            if temperature is not None:
+                transcription_params["temperature"] = temperature
+            if timestamp_granularities:
+                transcription_params["timestamp_granularities"] = timestamp_granularities
+
+            logger.debug(
+                f"[{self.name()}] Transcription parameters - language: {language}, "
+                f"format: {response_format}, temperature: {temperature}"
+            )
+
+            # Make the transcription API call
+            # Cast to OpenAIClient since BaseClient doesn't have create_transcription
+            openai_client = cast(OpenAIClient, self._client)
+            transcription_response = await openai_client.create_transcription(
+                model=str(self.model_config.get("model")), **transcription_params
+            )
+
+            # Handle different response formats
+            if response_format == "json" or response_format == "verbose_json":
+                # Response is an object with 'text' field and possibly other fields
+                if hasattr(transcription_response, "text"):
+                    resp_text = transcription_response.text
+                elif isinstance(transcription_response, dict):
+                    resp_text = transcription_response.get("text", str(transcription_response))
+                else:
+                    resp_text = str(transcription_response)
+            else:
+                # For 'text', 'srt', 'vtt' formats, response is plain text
+                resp_text = str(transcription_response)
+
+        except openai.RateLimitError as e:
+            logger.warning(f"[{self.name()}] OpenAI Transcription API request exceeded rate limit: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Rate limit exceeded: {e}"
+            ret_code = 429
+        except openai.APIError as e:
+            logger.error(f"[{self.name()}] OpenAI Transcription API error: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} API error: {e}"
+            ret_code = getattr(e, "status_code", 500)
+        except Exception as x:
+            resp_text = f"{constants.ERROR_PREFIX} Transcription request failed: {x}"
             logger.error(f"[{self.name()}] {resp_text}")
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
@@ -1795,23 +2008,19 @@ class CustomOpenAI(BaseCustomModel):
             f"[{self.name()}] Image edit parameters - images: {num_images}, params: {params}, streaming: {is_streaming}"
         )
 
-        # Decode images
+        # Decode images using utility function
+        from sygra.utils.image_utils import create_image_file_from_data_url
+
         if supports_multiple_images and num_images > 1:
             # Multiple images for GPT-Image-1
-            image_files = []
-            for idx, data_url in enumerate(image_data_urls):
-                _, _, img_bytes = parse_image_data_url(data_url)
-                img_file = io.BytesIO(img_bytes)
-                img_file.name = f"image_{idx}.png"
-                image_files.append(img_file)
-
+            image_files = [
+                create_image_file_from_data_url(data_url, idx)
+                for idx, data_url in enumerate(image_data_urls)
+            ]
             image_param = image_files
         else:
             # Single image for DALL-E-2 or single image input
-            _, _, image_bytes = parse_image_data_url(image_data_urls[0])
-            image_file = io.BytesIO(image_bytes)
-            image_file.name = "image.png"
-
+            image_file = create_image_file_from_data_url(image_data_urls[0], 0)
             image_param = [image_file]
 
         # Call the image edit API
@@ -1838,9 +2047,8 @@ class CustomOllama(BaseCustomModel):
         super().__init__(model_config)
         self.model_config = model_config
 
-    def _validate_completions_api_support(self) -> None:
-        if self.model_config.get("completions_api", False):
-            logger.info(f"Model {self.name()} supports completion API.")
+    def _validate_completions_api_model_support(self) -> None:
+        logger.info(f"Model {self.name()} supports completion API.")
 
     async def _generate_native_structured_output(
         self,

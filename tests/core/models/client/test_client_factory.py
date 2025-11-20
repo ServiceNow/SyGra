@@ -329,7 +329,6 @@ class TestClientFactory(unittest.TestCase):
         http_client = ClientFactory._create_http_client(model_config, model_url, model_auth_token)
 
         # Verify the client config was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
         self.assertIsNotNone(http_client)
         self.assertEqual(http_client.headers["Authorization"], "Bearer test-token")
         self.assertEqual(http_client.headers["Content-Type"], "application/json")
@@ -556,7 +555,6 @@ class TestClientFactory(unittest.TestCase):
         http_client = ClientFactory._create_http_client(model_config, model_url, auth_token)
 
         # Verify the client config was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
         self.assertIsNotNone(http_client)
         self.assertEqual(http_client.headers["Authorization"], auth_token)
         self.assertEqual(http_client.headers["Content-Type"], "application/json")
@@ -580,7 +578,6 @@ class TestClientFactory(unittest.TestCase):
         http_client = ClientFactory._create_http_client(model_config, model_url1, auth_token1)
 
         # Verify the client config was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
         self.assertIsNotNone(http_client)
         self.assertEqual(http_client.headers["Authorization"], auth_token1)
         self.assertEqual(http_client.headers["Content-Type"], "application/json")
@@ -603,7 +600,6 @@ class TestClientFactory(unittest.TestCase):
         http_client = ClientFactory._create_http_client(model_config, model_url1, auth_token)
 
         # Verify the client config was created with the right parameters
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
         self.assertIsNotNone(http_client)
         self.assertEqual(http_client.headers["Authorization"], auth_token)
         self.assertEqual(http_client.headers["Content-Type"], "application/json")
@@ -763,8 +759,6 @@ class TestClientFactory(unittest.TestCase):
             "json_payload": True,
         }
         http_client = ClientFactory._create_http_client(model_config, model_url, model_auth_token)
-        # validate called with required keys
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
         # json_payload is set
         self.assertTrue(http_client.json_payload)
         # default headers still applied and auth header injected
@@ -788,8 +782,6 @@ class TestClientFactory(unittest.TestCase):
             "json_payload": False,
         }
         http_client = ClientFactory._create_http_client(model_config, model_url, model_auth_token)
-        # validate called with required keys
-        mock_validate.assert_called_once_with(["url", "auth_token"], model_config, "model")
         # custom headers override defaults and are merged
         self.assertEqual(http_client.headers["X-Test"], "abc")
         # Authorization from token overrides any provided in headers

@@ -291,7 +291,6 @@ class ClientFactory:
             An HttpClient instance
         """
         model_config = utils.get_updated_model_config(model_config)
-        utils.validate_required_keys(["url", "auth_token"], model_config, "model")
         ssl_verify = bool(model_config.get("ssl_verify", True))
         ssl_cert = model_config.get("ssl_cert")
         json_payload = model_config.get("json_payload", False)
