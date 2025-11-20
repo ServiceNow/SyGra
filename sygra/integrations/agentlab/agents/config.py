@@ -67,7 +67,7 @@ class AgentConfigBuilder:
         )
 
         # Configure action subsets based on enable_chat flag
-        action_subsets = ["bid"]
+        action_subsets = ["bid", "nav"]
         if enable_chat:
             action_subsets.append("chat")
 
@@ -79,9 +79,13 @@ class AgentConfigBuilder:
                     use_ax_tree=use_ax_tree,
                     use_screenshot=use_screenshot,
                     use_som=use_som,
+                    use_history=True,
+                    use_action_history=True,
+                    use_think_history=True,
+                    use_tabs=True,
                 ),
                 action=dp.ActionFlags(
-                    multi_actions=False,
+                    multi_actions=True,
                     action_set=HighLevelActionSetArgs(
                         subsets=action_subsets,
                         strict=True,
