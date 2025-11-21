@@ -11,9 +11,11 @@ from sygra.core.models.custom_models import (
 )
 from sygra.core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
 from sygra.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
+from sygra.core.models.lite_llm.azure_model import CustomAzure as CustomLiteLLMAzure
 from sygra.core.models.lite_llm.azure_openai_model import (
     CustomAzureOpenAI as CustomLiteLLMAzureOpenAI,
 )
+from sygra.core.models.lite_llm.ollama_model import CustomOllama as CustomLiteLLMOllama
 from sygra.core.models.lite_llm.openai_model import CustomOpenAI as CustomLiteLLMOpenAI
 from sygra.core.models.lite_llm.vllm_model import CustomVLLM as CustomLiteLLMVLLM
 from sygra.logger.logger_config import logger
@@ -48,6 +50,8 @@ class ModelFactory:
             "openai": CustomLiteLLMOpenAI,
             "azure_openai": CustomLiteLLMAzureOpenAI,
             "vllm": CustomLiteLLMVLLM,
+            "azure": CustomLiteLLMAzure,
+            "ollama": CustomLiteLLMOllama,
         },
         MODEL_BACKEND_LANGGRAPH: {
             "vllm": CustomVLLMChatModel,

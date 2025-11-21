@@ -140,11 +140,23 @@ class BaseCustomModel(ABC):
         """
         Extract and store token usage from API response for metadata collection.
         """
+        # When usage stats are present in the response, extract from the response
         if hasattr(response, "usage") and response.usage:
             usage_dict = {
                 "prompt_tokens": getattr(response.usage, "prompt_tokens", 0),
                 "completion_tokens": getattr(response.usage, "completion_tokens", 0),
                 "total_tokens": getattr(response.usage, "total_tokens", 0),
+            }
+
+            self._last_request_usage = usage_dict
+
+        # When usage stats are not present in the response, try to extract from model_extra
+        elif hasattr(response, "model_extra") and response.model_extra.get("usage"):
+            usage = response.model_extra.get("usage")
+            usage_dict = {
+                "prompt_tokens": getattr(usage, "prompt_tokens", 0),
+                "completion_tokens": getattr(usage, "completion_tokens", 0),
+                "total_tokens": getattr(usage, "total_tokens", 0),
             }
 
             self._last_request_usage = usage_dict

@@ -150,9 +150,13 @@ class TestLiteLLMOpenAI(unittest.TestCase):
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.openai_model.logger") as mock_logger,
         ):
-            mock_acomp.side_effect = openai.RateLimitError(
-                "Rate limit exceeded", response=MagicMock(), body=None
+            api_error = openai.RateLimitError(
+                "Rate limit exceeded",
+                response=MagicMock(),
+                body={"error": {"message": "Rate limit exceeded", "type": "rate_limit_error"}},
             )
+            api_error.status_code = 429
+            mock_acomp.side_effect = api_error
 
             model = LiteLLMOpenAI(self.text_config)
             params = ModelParams(url=self.text_config["url"], auth_token="sk-test")
@@ -160,7 +164,7 @@ class TestLiteLLMOpenAI(unittest.TestCase):
 
             self.assertIn(constants.ERROR_PREFIX, resp.llm_response)
             self.assertEqual(resp.response_code, 429)
-            mock_logger.warn.assert_called()
+            mock_logger.warning.assert_called()
 
     def test_generate_text_rate_limit_error(self):
         asyncio.run(self._run_generate_text_rate_limit_error())
@@ -202,6 +206,36 @@ class TestLiteLLMOpenAI(unittest.TestCase):
 
     def test_generate_text_bad_request_exception(self):
         asyncio.run(self._run_generate_text_bad_request_exception())
+
+    async def _run_generate_text_api_error(self):
+        with (
+            patch(
+                "sygra.core.models.lite_llm.openai_model.litellm.acompletion",
+                new_callable=AsyncMock,
+            ) as mock_acomp,
+            patch("sygra.core.models.lite_llm.openai_model.logger") as mock_logger,
+        ):
+            mock_request = MagicMock()
+            mock_request.status_code = 500
+            api_error = openai.APIError(
+                "Internal server error",
+                request=mock_request,
+                body={"error": {"message": "Internal server error", "type": "api_error"}},
+            )
+            api_error.status_code = 500
+            mock_acomp.side_effect = api_error
+
+            model = LiteLLMOpenAI(self.text_config)
+            params = ModelParams(url=self.text_config["url"], auth_token="sk-test")
+            resp = await model._generate_text(self.chat_input, params)
+
+            self.assertIn(constants.ERROR_PREFIX, resp.llm_response)
+            self.assertIn("OpenAI API error", resp.llm_response)
+            self.assertEqual(resp.response_code, 500)
+            mock_logger.error.assert_called()
+
+    def test_generate_text_api_error(self):
+        asyncio.run(self._run_generate_text_api_error())
 
     async def _run_generate_speech_success_base64(self):
         with patch(
@@ -266,9 +300,13 @@ class TestLiteLLMOpenAI(unittest.TestCase):
             ) as mock_aspeech,
             patch("sygra.core.models.lite_llm.openai_model.logger") as mock_logger,
         ):
-            mock_aspeech.side_effect = openai.RateLimitError(
-                "Rate limit exceeded", response=MagicMock(), body=None
+            api_error = openai.RateLimitError(
+                "Rate limit exceeded",
+                response=MagicMock(),
+                body={"error": {"message": "Rate limit exceeded", "type": "rate_limit_error"}},
             )
+            api_error.status_code = 429
+            mock_aspeech.side_effect = api_error
             model = LiteLLMOpenAI(self.tts_config)
             params = ModelParams(url=self.tts_config["url"], auth_token="sk-test")
             tts_input = ChatPromptValue(messages=[HumanMessage(content="Hi")])
@@ -279,6 +317,25 @@ class TestLiteLLMOpenAI(unittest.TestCase):
 
     def test_generate_speech_rate_limit_error(self):
         asyncio.run(self._run_generate_speech_rate_limit_error())
+
+    async def _run_generate_speech_bad_request_error(self):
+        with patch(
+            "sygra.core.models.lite_llm.openai_model.aspeech", new_callable=AsyncMock
+        ) as mock_aspeech:
+            mock_aspeech.side_effect = BadRequestError(
+                "Invalid voice", llm_provider="openai", model="gpt-4o-mini-tts"
+            )
+
+            model = LiteLLMOpenAI(self.tts_config)
+            params = ModelParams(url=self.tts_config["url"], auth_token="sk-test")
+            tts_input = ChatPromptValue(messages=[HumanMessage(content="Hi")])
+            resp = await model._generate_speech(tts_input, params)
+
+            self.assertIn(constants.ERROR_PREFIX, resp.llm_response)
+            self.assertIn("OpenAI TTS bad request", resp.llm_response)
+
+    def test_generate_speech_bad_request_error(self):
+        asyncio.run(self._run_generate_speech_bad_request_error())
 
     async def _run_generate_speech_api_error(self):
         with (
@@ -301,7 +358,7 @@ class TestLiteLLMOpenAI(unittest.TestCase):
             params = ModelParams(url=self.tts_config["url"], auth_token="sk-test")
             tts_input = ChatPromptValue(messages=[HumanMessage(content="Hi")])
             resp = await model._generate_speech(tts_input, params)
-            self.assertIn("API error", resp.llm_response)
+            self.assertIn("OpenAI TTS request failed with error", resp.llm_response)
             self.assertEqual(resp.response_code, 500)
             mock_logger.error.assert_called()
 
@@ -401,7 +458,7 @@ class TestLiteLLMOpenAI(unittest.TestCase):
             model = LiteLLMOpenAI(self.image_config)
             params = ModelParams(url=self.image_config["url"], auth_token="sk-test")
             resp = await model._generate_image(self.image_input, params)
-            self.assertIn("Bad request", resp.llm_response)
+            self.assertIn("OpenAI Image API error", resp.llm_response)
             self.assertEqual(resp.response_code, 400)
 
     def test_generate_image_bad_request_error(self):
@@ -460,6 +517,39 @@ class TestLiteLLMOpenAI(unittest.TestCase):
 
     def test_generate_image_edit_with_input_image(self):
         asyncio.run(self._run_generate_image_edit_with_input_image())
+
+    async def _run_generate_image_invalid_image_data_url(self):
+        with (
+            patch(
+                "sygra.core.models.lite_llm.openai_model.aimage_edit", new_callable=AsyncMock
+            ) as mock_img_edit,
+            patch("sygra.utils.image_utils.parse_image_data_url") as mock_parse,
+        ):
+            mock_img_edit.return_value = MagicMock()
+            mock_parse.side_effect = ValueError("bad image data")
+
+            model = LiteLLMOpenAI(self.image_config)
+            params = ModelParams(url=self.image_config["url"], auth_token="sk-test")
+
+            messages = [
+                HumanMessage(
+                    content=[
+                        {"type": "text", "text": "Edit this"},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "data:image/png;base64,INVALID"},
+                        },
+                    ]
+                )
+            ]
+            edit_input = ChatPromptValue(messages=messages)
+            resp = await model._generate_image(edit_input, params)
+
+            self.assertIn("Invalid image data", resp.llm_response)
+            self.assertEqual(resp.response_code, 400)
+
+    def test_generate_image_invalid_image_data_url(self):
+        asyncio.run(self._run_generate_image_invalid_image_data_url())
 
     async def _run_native_structured_output_success(self):
         class Item(BaseModel):

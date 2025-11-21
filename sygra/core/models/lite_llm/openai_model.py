@@ -6,9 +6,9 @@ import logging
 from typing import Any, Type
 
 import litellm
-import openai
 from langchain_core.prompt_values import ChatPromptValue
 from litellm import BadRequestError, aimage_edit, aimage_generation, aspeech
+from openai import APIError, RateLimitError
 from pydantic import BaseModel, ValidationError
 
 import sygra.utils.constants as constants
@@ -128,7 +128,7 @@ class CustomOpenAI(BaseCustomModel):
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         """
-        Generate text using OpenAI/Azure OpenAI Chat or Completions API.
+        Generate text using OpenAI Chat or Completions API.
         This method is called when output_type is 'text' or not specified in model config.
         Args:
             input: ChatPromptValue containing the messages for chat completion
@@ -158,18 +158,24 @@ class CustomOpenAI(BaseCustomModel):
             self._extract_token_usage(completion)
             resp_text = completion.choices[0].model_dump()["message"]["content"]
             tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
-        except openai.RateLimitError as e:
-            logger.warn(f"OpenAI api request exceeded rate limit: {e}")
-            resp_text = f"{constants.ERROR_PREFIX} OpenAI request failed {e}"
-            ret_code = 429
+        except RateLimitError as e:
+            logger.warning(f"[{self.name()}] OpenAI API request exceeded rate limit: {e.message}")
+            resp_text = (
+                f"{constants.ERROR_PREFIX} OpenAI API request exceeded rate limit: {e.message}"
+            )
+            ret_code = getattr(e, "status_code", 429)
         except BadRequestError as e:
-            resp_text = f"{constants.ERROR_PREFIX} OpenAI request failed with error: {e.message}"
-            logger.error(f"OpenAI request failed with error: {e.message}")
-            ret_code = e.status_code
-        except Exception as x:
-            resp_text = f"{constants.ERROR_PREFIX} OpenAI request failed {x}"
-            logger.error(resp_text)
-            rcode = self._get_status_from_body(x)
+            logger.error(f"[{self.name()}] OpenAI API bad request: {e.message}")
+            resp_text = f"{constants.ERROR_PREFIX} OpenAI API bad request: {e.message}"
+            ret_code = getattr(e, "status_code", 400)
+        except APIError as e:
+            logger.error(f"[{self.name()}] OpenAI API error: {e.message}")
+            resp_text = f"{constants.ERROR_PREFIX} OpenAI API error: {e.message}"
+            ret_code = getattr(e, "status_code", 500)
+        except Exception as e:
+            logger.error(f"[{self.name()}] OpenAI text generation failed: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} OpenAI text generation failed: {e}"
+            rcode = self._get_status_from_body(e)
             ret_code = rcode if rcode else 999
         return ModelResponse(llm_response=resp_text, response_code=ret_code, tool_calls=tool_calls)
 
@@ -177,7 +183,7 @@ class CustomOpenAI(BaseCustomModel):
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         """
-        Generate speech from text using OpenAI/Azure OpenAI TTS API.
+        Generate speech from text using OpenAI TTS API.
         This method is called when output_type is 'audio' in model config.
 
         Args:
@@ -256,18 +262,24 @@ class CustomOpenAI(BaseCustomModel):
             data_url = f"data:{mime_type};base64,{audio_base64}"
             resp_text = data_url
 
-        except openai.RateLimitError as e:
+        except RateLimitError as e:
             logger.warning(f"[{self.name()}] OpenAI TTS API request exceeded rate limit: {e}")
-            resp_text = f"{constants.ERROR_PREFIX} Rate limit exceeded: {e}"
-            ret_code = 429
-        except openai.APIError as e:
-            logger.error(f"[{self.name()}] OpenAI TTS API error: {e}")
-            resp_text = f"{constants.ERROR_PREFIX} API error: {e}"
+            resp_text = f"{constants.ERROR_PREFIX} OpenAI TTS API request exceeded rate limit: {e}"
+            ret_code = getattr(e, "status_code", 429)
+        except BadRequestError as e:
+            logger.error(f"[{self.name()}] OpenAI TTS bad request: {e.message}")
+            resp_text = f"{constants.ERROR_PREFIX} OpenAI TTS bad request: {e.message}"
+            ret_code = getattr(e, "status_code", 400)
+        except APIError as e:
+            logger.error(f"[{self.name()}] OpenAI TTS request failed with error: {e.message}")
+            resp_text = (
+                f"{constants.ERROR_PREFIX} OpenAI TTS request failed with error: {e.message}"
+            )
             ret_code = getattr(e, "status_code", 500)
-        except Exception as x:
-            resp_text = f"{constants.ERROR_PREFIX} TTS request failed: {x}"
-            logger.error(f"[{self.name()}] {resp_text}")
-            rcode = self._get_status_from_body(x)
+        except Exception as e:
+            logger.error(f"[{self.name()}] OpenAI TTS request failed with error: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} OpenAI TTS request failed with error: {e}"
+            rcode = self._get_status_from_body(e)
             ret_code = rcode if rcode else 999
 
         return ModelResponse(llm_response=resp_text, response_code=ret_code)
@@ -276,7 +288,7 @@ class CustomOpenAI(BaseCustomModel):
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> ModelResponse:
         """
-        Generate or edit images using OpenAI/Azure OpenAI Image API.
+        Generate or edit images using OpenAI Image API.
         Auto-detects whether to use generation or editing based on input content:
         - If input contains images: uses edit_image() API (text+image-to-image)
         - If input is text only: uses create_image() API (text-to-image)
@@ -361,22 +373,24 @@ class CustomOpenAI(BaseCustomModel):
             logger.error(f"[{self.name()}] Invalid image data URL: {e}")
             resp_text = f"{constants.ERROR_PREFIX} Invalid image data: {e}"
             ret_code = 400
-        except openai.RateLimitError as e:
-            logger.warning(f"[{self.name()}] OpenAI Image API rate limit: {e}")
-            resp_text = f"{constants.ERROR_PREFIX} Rate limit exceeded: {e}"
-            ret_code = 429
-        except openai.BadRequestError as e:
-            logger.error(f"[{self.name()}] OpenAI Image API bad request: {e}")
-            resp_text = f"{constants.ERROR_PREFIX} Bad request: {e}"
-            ret_code = 400
-        except openai.APIError as e:
-            logger.error(f"[{self.name()}] OpenAI Image API error: {e}")
-            resp_text = f"{constants.ERROR_PREFIX} API error: {e}"
+        except RateLimitError as e:
+            logger.warning(
+                f"[{self.name()}] OpenAI Image API request exceeded rate limit: {e.message}"
+            )
+            resp_text = f"{constants.ERROR_PREFIX} OpenAI Image API request exceeded rate limit: {e.message}"
+            ret_code = getattr(e, "status_code", 429)
+        except BadRequestError as e:
+            logger.error(f"[{self.name()}] OpenAI Image API bad request: {e.message}")
+            resp_text = f"{constants.ERROR_PREFIX} OpenAI Image API bad request: {e.message}"
+            ret_code = getattr(e, "status_code", 400)
+        except APIError as e:
+            logger.error(f"[{self.name()}] OpenAI Image API error: {e.message}")
+            resp_text = f"{constants.ERROR_PREFIX} OpenAI Image API error: {e.message}"
             ret_code = getattr(e, "status_code", 500)
-        except Exception as x:
-            resp_text = f"{constants.ERROR_PREFIX} Image operation failed: {x}"
+        except Exception as e:
+            resp_text = f"{constants.ERROR_PREFIX} Image operation failed: {e}"
             logger.error(f"[{self.name()}] {resp_text}")
-            rcode = self._get_status_from_body(x)
+            rcode = self._get_status_from_body(e)
             ret_code = rcode if rcode else 999
 
         return ModelResponse(llm_response=resp_text, response_code=ret_code)

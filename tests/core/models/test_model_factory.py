@@ -17,9 +17,11 @@ from sygra.core.models.custom_models import (
 )
 from sygra.core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
 from sygra.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
+from sygra.core.models.lite_llm.azure_model import CustomAzure as CustomLiteLLMAzure
 from sygra.core.models.lite_llm.azure_openai_model import (
     CustomAzureOpenAI as CustomLiteLLMAzureOpenAI,
 )
+from sygra.core.models.lite_llm.ollama_model import CustomOllama as CustomLiteLLMOllama
 from sygra.core.models.lite_llm.openai_model import CustomOpenAI as CustomLiteLLMOpenAI
 from sygra.core.models.lite_llm.vllm_model import CustomVLLM as CustomLiteLLMVLLM
 from sygra.core.models.model_factory import ModelFactory
@@ -169,6 +171,24 @@ class TestModelFactory(unittest.TestCase):
 
         with patch.object(CustomAzure, "__init__", return_value=None) as mock_init:
             model_config = {"name": "test_azure", "model_type": "azure"}
+            ModelFactory.create_model(model_config, backend="custom")
+            mock_init.assert_called_once()
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_create_litellm_model_azure(self, mock_validate, mock_load_model_config):
+        """Test create_model with Azure model type"""
+        mock_load_model_config.return_value = {
+            "test_azure": {
+                "model_type": "azure",
+                "url": "http://azure-test.com",
+                "auth_token": "test-token",
+                "parameters": {},
+            }
+        }
+
+        with patch.object(CustomLiteLLMAzure, "__init__", return_value=None) as mock_init:
+            model_config = {"name": "test_azure", "model_type": "azure"}
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
@@ -240,6 +260,18 @@ class TestModelFactory(unittest.TestCase):
         }
 
         with patch.object(CustomOllama, "__init__", return_value=None) as mock_init:
+            model_config = {"name": "test_ollama", "model_type": "ollama"}
+            ModelFactory.create_model(model_config, backend="custom")
+            mock_init.assert_called_once()
+
+    @patch("sygra.utils.utils.load_model_config")
+    def test_create_litellm_model_ollama(self, mock_load_model_config):
+        """Test create_model with Ollama model type"""
+        mock_load_model_config.return_value = {
+            "test_ollama": {"model_type": "ollama", "parameters": {}}
+        }
+
+        with patch.object(CustomLiteLLMOllama, "__init__", return_value=None) as mock_init:
             model_config = {"name": "test_ollama", "model_type": "ollama"}
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
