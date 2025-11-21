@@ -17,6 +17,11 @@ from sygra.core.models.custom_models import (
 )
 from sygra.core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
 from sygra.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
+from sygra.core.models.lite_llm.azure_openai_model import (
+    CustomAzureOpenAI as CustomLiteLLMAzureOpenAI,
+)
+from sygra.core.models.lite_llm.openai_model import CustomOpenAI as CustomLiteLLMOpenAI
+from sygra.core.models.lite_llm.vllm_model import CustomVLLM as CustomLiteLLMVLLM
 from sygra.core.models.model_factory import ModelFactory
 
 
@@ -92,6 +97,24 @@ class TestModelFactory(unittest.TestCase):
 
         with patch.object(CustomVLLM, "__init__", return_value=None) as mock_init:
             model_config = {"name": "test_vllm", "model_type": "vllm"}
+            ModelFactory.create_model(model_config, backend="custom")
+            mock_init.assert_called_once()
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_create_litellm_model_vllm(self, mock_validate, mock_load_model_config):
+        """Test create_model with VLLM model type"""
+        mock_load_model_config.return_value = {
+            "test_vllm": {
+                "model_type": "vllm",
+                "url": "http://vllm-test.com",
+                "auth_token": "test-token",
+                "parameters": {},
+            }
+        }
+
+        with patch.object(CustomLiteLLMVLLM, "__init__", return_value=None) as mock_init:
+            model_config = {"name": "test_vllm", "model_type": "vllm"}
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
@@ -166,6 +189,46 @@ class TestModelFactory(unittest.TestCase):
 
         with patch.object(CustomOpenAI, "__init__", return_value=None) as mock_init:
             model_config = {"name": "test_openai", "model_type": "azure_openai"}
+            ModelFactory.create_model(model_config, backend="custom")
+            mock_init.assert_called_once()
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_create_litellm_model_azure_openai(self, mock_validate, mock_load_model_config):
+        """Test create_model with OpenAI model type"""
+        mock_load_model_config.return_value = {
+            "test_openai": {
+                "model_type": "azure_openai",
+                "url": "http://openai-test.com",
+                "api_key": "test-key",
+                "api_version": "2023-05-15",
+                "model": "gpt-4",
+                "parameters": {},
+            }
+        }
+
+        with patch.object(CustomLiteLLMAzureOpenAI, "__init__", return_value=None) as mock_init:
+            model_config = {"name": "test_openai", "model_type": "azure_openai"}
+            ModelFactory.create_model(model_config)
+            mock_init.assert_called_once()
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_create_litellm_model_openai(self, mock_validate, mock_load_model_config):
+        """Test create_model with OpenAI model type"""
+        mock_load_model_config.return_value = {
+            "test_openai": {
+                "model_type": "openai",
+                "url": "http://openai-test.com",
+                "api_key": "test-key",
+                "api_version": "2023-05-15",
+                "model": "gpt-4",
+                "parameters": {},
+            }
+        }
+
+        with patch.object(CustomLiteLLMOpenAI, "__init__", return_value=None) as mock_init:
+            model_config = {"name": "test_openai", "model_type": "openai"}
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
@@ -274,7 +337,33 @@ class TestModelFactory(unittest.TestCase):
     @patch("sygra.utils.utils.load_model_config")
     @patch("sygra.utils.utils.validate_required_keys")
     @patch("langchain_core.runnables.RunnableLambda")
-    def test_get_model(self, mock_runnable, mock_validate, mock_load_model_config):
+    def test_get_default_model(self, mock_runnable, mock_validate, mock_load_model_config):
+        """Test get_model method"""
+        mock_load_model_config.return_value = {
+            "test_model": {
+                "model_type": "vllm",
+                "url": "http://test.com",
+                "auth_token": "test-token",
+                "parameters": {},
+            }
+        }
+
+        # Mock the model instance
+        mock_model = MagicMock()
+        with patch.object(ModelFactory, "create_model", return_value=mock_model) as mock_create:
+            model_config = {"name": "test_model", "model_type": "vllm"}
+            ModelFactory.get_model(model_config, "default")
+
+            # Verify create_model was called
+            mock_create.assert_called_once_with(model_config, "default")
+
+            # Verify RunnableLambda was called
+            mock_runnable.assert_called()
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    @patch("langchain_core.runnables.RunnableLambda")
+    def test_get_litellm_model(self, mock_runnable, mock_validate, mock_load_model_config):
         """Test get_model method"""
         mock_load_model_config.return_value = {
             "test_model": {
@@ -292,7 +381,7 @@ class TestModelFactory(unittest.TestCase):
             ModelFactory.get_model(model_config)
 
             # Verify create_model was called
-            mock_create.assert_called_once_with(model_config, "default")
+            mock_create.assert_called_once_with(model_config, "litellm")
 
             # Verify RunnableLambda was called
             mock_runnable.assert_called()

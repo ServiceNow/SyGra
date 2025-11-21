@@ -76,6 +76,25 @@ class TestCustomVLLM(unittest.TestCase):
             # Should log that model supports completion API
             mock_logger.info.assert_any_call("Model vllm_model supports completion API.")
 
+    @patch("sygra.core.models.custom_models.logger")
+    def test_init_completions_api_without_hf_chat_template_model_id(self, mock_logger):
+        """Test initialization with completions API enabled"""
+        completions_config = {
+            **self.base_config,
+            "completions_api": True,
+        }
+        with patch(
+            "sygra.core.models.custom_models.AutoTokenizer.from_pretrained"
+        ) as mock_from_pretrained:
+            mock_from_pretrained.return_value = MagicMock()
+            custom_vllm = CustomVLLM(completions_config)
+        # Should check if completions_api is set to False as hf_chat_template_model_id is not set
+        self.assertFalse(custom_vllm.model_config.get("completions_api"))
+        # Should log that hf_chat_template_model_id is not set
+        mock_logger.warn.assert_any_call(
+            "Completions API is enabled for vllm_model but hf_chat_template_model_id is not set.Setting completions_api to False."
+        )
+
     def test_init_missing_url_raises_error(self):
         """Test initialization without url raises error"""
         config = {
