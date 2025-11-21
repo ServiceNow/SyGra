@@ -115,6 +115,7 @@ jobs:
       - run: make docs
       - uses: actions/upload-pages-artifact@v3
         with:
+          name: docs-build
           path: site
   # Deploy Docs
   deploy_docs:
@@ -127,3 +128,5 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: docs-build
