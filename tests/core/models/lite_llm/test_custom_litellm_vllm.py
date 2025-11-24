@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import openai
+from litellm import BadRequestError
 
 # Add the parent directory to sys.path to import the necessary modules
 sys.path.append(str(Path(__file__).parent.parent.parent.parent))
@@ -165,7 +166,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
             params = self._get_model_params()
             resp = await model._generate_response(self.chat_input, params)
             self.assertIn(constants.ERROR_PREFIX, resp.llm_response)
-            self.assertIn("Http request failed", resp.llm_response)
+            self.assertIn("vLLM request failed", resp.llm_response)
             self.assertEqual(resp.response_code, 429)
             mock_logger.warn.assert_called()
 
@@ -219,6 +220,27 @@ class TestLiteLLMVLLM(unittest.TestCase):
 
     def test_generate_response_generic_exception(self):
         asyncio.run(self._run_generate_response_generic_exception())
+
+    async def _run_generate_response_bad_request_exception(self):
+        with (
+            patch(
+                "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            ) as mock_acomp,
+            patch("sygra.core.models.lite_llm.vllm_model.logger") as mock_logger,
+        ):
+            mock_acomp.side_effect = BadRequestError(
+                "Bad Request", llm_provider="vllm_hosted", model="qwen3_32b"
+            )
+            model = LiteLLMVLLM(self.base_config)
+            model._get_status_from_body = MagicMock(return_value=None)
+            params = self._get_model_params()
+            resp = await model._generate_response(self.chat_input, params)
+            self.assertIn(constants.ERROR_PREFIX, resp.llm_response)
+            self.assertIn("Bad Request", resp.llm_response)
+            mock_logger.error.assert_called()
+
+    def test_generate_response_bad_request_exception(self):
+        asyncio.run(self._run_generate_response_bad_request_exception())
 
     async def _run_generate_response_with_extracted_status_code(self):
         with patch(

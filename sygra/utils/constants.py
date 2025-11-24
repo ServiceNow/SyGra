@@ -92,3 +92,8 @@ RESPONSE_KEY = "response_key"
 
 # constants for inference server types
 INFERENCE_SERVER_TRITON = "triton"
+
+# Model Backend
+MODEL_BACKEND_CUSTOM = "custom"
+MODEL_BACKEND_LITELLM = "litellm"
+MODEL_BACKEND_LANGGRAPH = "langgraph"

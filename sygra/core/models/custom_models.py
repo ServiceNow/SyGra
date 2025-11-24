@@ -10,15 +10,7 @@ import re
 import sys
 import time
 from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    DefaultDict,
-    Dict,
-    Optional,
-    Sequence,
-    Type,
-    cast,
-)
+from typing import Any, DefaultDict, Dict, Optional, Sequence, Type, cast
 
 import openai
 from langchain_core.language_models import LanguageModelInput
@@ -65,6 +57,7 @@ class BaseCustomModel(ABC):
     def __init__(self, model_config: dict[str, Any]) -> None:
         utils.validate_required_keys(["name", "parameters"], model_config, "model")
         self.model_config = model_config
+        self.model_name: str = self.model_config.get("model", self.name())
         self._structured_output_lock: Optional[asyncio.Lock] = None
         # Store last request token usage for metadata collection
         self._last_request_usage: Optional[dict[str, int]] = None
@@ -724,6 +717,23 @@ class BaseCustomModel(ABC):
         langchain_messages: list[BaseMessage] = prompt_value.to_messages()
         messages: list[dict[str, Any]] = [_convert_message_to_dict(m) for m in langchain_messages]
         return messages
+
+    def _get_model_prefix(self) -> str:
+        """
+        Returns the model prefix for the model.
+        """
+        return ""
+
+    def _get_lite_llm_model_name(self) -> str:
+        """
+        Returns the model name for the model.
+        If the model name contains a "/" or if the model prefix is empty, returns the model name.
+        Otherwise, returns the model prefix and model name separated by a "/".
+        """
+        if "/" in self.model_name or not self._get_model_prefix():
+            return self.model_name
+        model_prefix = self._get_model_prefix()
+        return f"{model_prefix}/{self.model_name}"
 
 
 class CustomTGI(BaseCustomModel):
@@ -1698,9 +1708,8 @@ class CustomOpenAI(BaseCustomModel):
 
             audio_params: dict[str, Any] = {}
             if has_audio_output:
-                if (
-                    "audio" in self.generation_params
-                    and type(self.generation_params["audio"]) is dict
+                if "audio" in self.generation_params and isinstance(
+                    self.generation_params["audio"], dict
                 ):
                     audio_params = self.generation_params["audio"]
                 else:

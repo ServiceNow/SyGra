@@ -3,21 +3,19 @@ from __future__ import annotations
 import base64
 import json
 import logging
-from typing import (
-    Any,
-    Type,
-)
+from typing import Any, Type
 
 import litellm
 import openai
 from langchain_core.prompt_values import ChatPromptValue
-from litellm import aimage_edit, aimage_generation, aspeech, atranscription
+from litellm import BadRequestError, aimage_edit, aimage_generation, aspeech, atranscription
 from pydantic import BaseModel, ValidationError
 
 import sygra.utils.constants as constants
 from sygra.core.models.custom_models import BaseCustomModel, ModelParams
 from sygra.core.models.model_response import ModelResponse
 from sygra.logger.logger_config import logger
+from sygra.metadata.metadata_integration import track_model_request
 from sygra.utils import utils
 
 logging.getLogger("LiteLLM").setLevel(logging.WARNING)
@@ -32,9 +30,10 @@ class CustomAzureOpenAI(BaseCustomModel):
         self.model_name = self.model_config.get("model", self.name())
         self.api_version = self.model_config.get("api_version")
 
-    def _get_lite_llm_model_name(self) -> str:
-        return f"azure/{self.model_name}"
+    def _get_model_prefix(self) -> str:
+        return "azure"
 
+    @track_model_request
     async def _generate_native_structured_output(
         self,
         input: ChatPromptValue,
@@ -70,6 +69,7 @@ class CustomAzureOpenAI(BaseCustomModel):
                 api_version=self.api_version,
                 **all_params,
             )
+            self._extract_token_usage(completion)
             resp_text = completion.choices[0].model_dump()["message"]["content"]
             tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
             # Check if the request was successful based on the response status
@@ -116,6 +116,7 @@ class CustomAzureOpenAI(BaseCustomModel):
                 input, model_params, pydantic_model, **kwargs
             )
 
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
@@ -172,12 +173,21 @@ class CustomAzureOpenAI(BaseCustomModel):
                 api_version=self.api_version,
                 **self.generation_params,
             )
+            self._extract_token_usage(completion)
             resp_text = completion.choices[0].model_dump()["message"]["content"]
             tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
         except openai.RateLimitError as e:
+            logger.warn(f"Azure OpenAI api request exceeded rate limit: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} Azure OpenAI request failed {e}"
             logger.warn(f"AzureOpenAI api request exceeded rate limit: {e}")
             resp_text = f"{constants.ERROR_PREFIX} Http request failed {e}"
             ret_code = 429
+        except BadRequestError as e:
+            resp_text = (
+                f"{constants.ERROR_PREFIX} Azure OpenAI request failed with error: {e.message}"
+            )
+            logger.error(f"Azure OpenAI request failed with error: {e.message}")
+            ret_code = e.status_code
         except Exception as x:
             resp_text = f"{constants.ERROR_PREFIX} Http request failed {x}"
             logger.error(resp_text)

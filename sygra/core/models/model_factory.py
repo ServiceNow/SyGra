@@ -18,6 +18,11 @@ from sygra.core.models.lite_llm.openai_model import CustomOpenAI as CustomLiteLL
 from sygra.core.models.lite_llm.vllm_model import CustomVLLM as CustomLiteLLMVLLM
 from sygra.logger.logger_config import logger
 from sygra.utils import utils
+from sygra.utils.constants import (
+    MODEL_BACKEND_CUSTOM,
+    MODEL_BACKEND_LANGGRAPH,
+    MODEL_BACKEND_LITELLM,
+)
 
 
 class ModelFactory:
@@ -29,7 +34,7 @@ class ModelFactory:
 
     # Mapping of model types to their respective implementation classes
     MODEL_TYPE_MAP: Dict[str, Dict[str, Type[Any]]] = {
-        "default": {
+        MODEL_BACKEND_CUSTOM: {
             "vllm": CustomVLLM,
             "mistralai": CustomMistralAPI,
             "tgi": CustomTGI,
@@ -39,12 +44,12 @@ class ModelFactory:
             "ollama": CustomOllama,
             "triton": CustomTriton,
         },
-        "litellm": {
+        MODEL_BACKEND_LITELLM: {
             "openai": CustomLiteLLMOpenAI,
             "azure_openai": CustomLiteLLMAzureOpenAI,
             "vllm": CustomLiteLLMVLLM,
         },
-        "langgraph": {
+        MODEL_BACKEND_LANGGRAPH: {
             "vllm": CustomVLLMChatModel,
             "openai": CustomOpenAIChatModel,
             "azure_openai": CustomOpenAIChatModel,
@@ -52,7 +57,9 @@ class ModelFactory:
     }
 
     @classmethod
-    def create_model(cls, model_config: Dict[str, Any], backend: str = "litellm") -> Any:
+    def create_model(
+        cls, model_config: Dict[str, Any], backend: str = MODEL_BACKEND_LITELLM
+    ) -> Any:
         """
         Create and return an appropriate model instance based on the provided configuration.
 
@@ -85,17 +92,17 @@ class ModelFactory:
         backend_map = cls.MODEL_TYPE_MAP.get(backend, {})
         model_cls = backend_map.get(model_type)
 
-        if model_cls is None and backend == "litellm":
-            model_cls = cls.MODEL_TYPE_MAP.get("default", {}).get(model_type)
+        if model_cls is None and backend == MODEL_BACKEND_LITELLM:
+            model_cls = cls.MODEL_TYPE_MAP.get(MODEL_BACKEND_CUSTOM, {}).get(model_type)
             if model_cls:
-                logger.info(f"Using default backend for model type {model_type}.")
+                logger.info(f"Using {MODEL_BACKEND_CUSTOM} backend for model type {model_type}.")
 
         if model_cls is None:
             logger.error(
-                f"No model implementation for {model_type} found for backend {backend} and default."
+                f"No model implementation for {model_type} found for backend {backend} and {MODEL_BACKEND_CUSTOM}."
             )
             raise NotImplementedError(
-                f"Model type {model_type} is not implemented for backend {backend} and default"
+                f"Model type {model_type} is not implemented for backend {backend} and {MODEL_BACKEND_CUSTOM}"
             )
 
         return model_cls(model_config)
@@ -126,7 +133,7 @@ class ModelFactory:
         return global_model_config
 
     @classmethod
-    def get_model(cls, model_config: Dict[str, Any], backend: str = "litellm") -> Any:
+    def get_model(cls, model_config: Dict[str, Any], backend: str = MODEL_BACKEND_LITELLM) -> Any:
         """
         Get a model instance wrapped in a Runnable for use in LLM nodes.
         This method returns a Langgraph RunnableLambda instance.

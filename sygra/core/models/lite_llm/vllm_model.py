@@ -2,20 +2,18 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import (
-    Any,
-    Type,
-)
+from typing import Any, Type
 
 import openai
 from langchain_core.prompt_values import ChatPromptValue
-from litellm import acompletion, atext_completion
+from litellm import BadRequestError, acompletion, atext_completion
 from pydantic import BaseModel, ValidationError
 
 import sygra.utils.constants as constants
 from sygra.core.models.custom_models import BaseCustomModel, ModelParams
 from sygra.core.models.model_response import ModelResponse
 from sygra.logger.logger_config import logger
+from sygra.metadata.metadata_integration import track_model_request
 from sygra.utils import utils
 
 logging.getLogger("LiteLLM").setLevel(logging.WARNING)
@@ -32,9 +30,10 @@ class CustomVLLM(BaseCustomModel):
     def _validate_completions_api_model_support(self) -> None:
         logger.info(f"Model {self.name()} supports completion API.")
 
-    def _get_lite_llm_model_name(self) -> str:
-        return f"hosted_vllm/{self.model_serving_name}"
+    def _get_model_prefix(self) -> str:
+        return "hosted_vllm"
 
+    @track_model_request
     async def _generate_native_structured_output(
         self,
         input: ChatPromptValue,
@@ -74,6 +73,7 @@ class CustomVLLM(BaseCustomModel):
                     api_key=model_params.auth_token,
                     **extra_params,
                 )
+                self._extract_token_usage(completion)
                 resp_text = completion.choices[0].model_dump()["text"]
             else:
                 # Convert input to messages
@@ -86,6 +86,7 @@ class CustomVLLM(BaseCustomModel):
                     api_key=model_params.auth_token,
                     **extra_params,
                 )
+                self._extract_token_usage(completion)
                 resp_text = completion.choices[0].model_dump()["message"]["content"]
                 tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
 
@@ -132,6 +133,7 @@ class CustomVLLM(BaseCustomModel):
                 input, model_params, pydantic_model, **kwargs
             )
 
+    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
@@ -158,6 +160,7 @@ class CustomVLLM(BaseCustomModel):
                     api_key=model_params.auth_token,
                     **self.generation_params,
                 )
+                self._extract_token_usage(completion)
                 resp_text = completion.choices[0].model_dump()["text"]
             else:
                 # Convert input to messages
@@ -170,15 +173,20 @@ class CustomVLLM(BaseCustomModel):
                     api_key=model_params.auth_token,
                     **self.generation_params,
                 )
+                self._extract_token_usage(completion)
                 resp_text = completion.choices[0].model_dump()["message"]["content"]
                 tool_calls = completion.choices[0].model_dump()["message"]["tool_calls"]
             # TODO: Test rate limit handling for vllm
         except openai.RateLimitError as e:
             logger.warn(f"vLLM api request exceeded rate limit: {e}")
-            resp_text = f"{constants.ERROR_PREFIX} Http request failed {e}"
+            resp_text = f"{constants.ERROR_PREFIX} vLLM request failed {e}"
             ret_code = 429
+        except BadRequestError as e:
+            resp_text = f"{constants.ERROR_PREFIX} vLLM request failed with error: {e.message}"
+            logger.error(f"vLLM request failed with error: {e.message}")
+            ret_code = e.status_code
         except Exception as x:
-            resp_text = f"{constants.ERROR_PREFIX} Http request failed {x}"
+            resp_text = f"{constants.ERROR_PREFIX} vLLM request failed {x}"
             logger.error(resp_text)
             rcode = self._get_status_from_body(x)
             if constants.ELEMAI_JOB_DOWN in resp_text or constants.CONNECTION_ERROR in resp_text:
