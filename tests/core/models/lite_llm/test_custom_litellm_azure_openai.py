@@ -99,6 +99,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
             mock_completion = MagicMock()
             mock_completion.choices = [mock_choice]
             mock_acomp.return_value = mock_completion
+            mock_completion.status_code = 200
 
             model = CustomAzureOpenAI(self.text_config)
             params = ModelParams(url=self.text_config["url"], auth_token="sk-test")
@@ -133,6 +134,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
             mock_completion = MagicMock()
             mock_completion.choices = [mock_choice]
             mock_acomp.return_value = mock_completion
+            mock_completion.status_code = 200
 
             model = CustomAzureOpenAI(self.text_config)
             params = ModelParams(url=self.text_config["url"], auth_token="sk-test")
@@ -595,6 +597,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
             mock_completion = MagicMock()
             mock_completion.choices = [mock_choice]
             mock_acomp.return_value = mock_completion
+            mock_completion.status_code = 200
 
             model = CustomAzureOpenAI(self.text_config)
             params = ModelParams(url=self.text_config["url"], auth_token="sk-test")

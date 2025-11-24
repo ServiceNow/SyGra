@@ -58,6 +58,7 @@ class TestLiteLLMAzure(unittest.TestCase):
             mock_completion = MagicMock()
             mock_completion.choices = [mock_choice]
             mock_acomp.return_value = mock_completion
+            mock_completion.status_code = 200
 
             model = CustomAzure(self.base_config)
             params = ModelParams(url=self.base_config["url"], auth_token="sk-test")
@@ -90,6 +91,7 @@ class TestLiteLLMAzure(unittest.TestCase):
             mock_completion = MagicMock()
             mock_completion.choices = [mock_choice]
             mock_acomp.return_value = mock_completion
+            mock_completion.status_code = 200
 
             model = CustomAzure(self.base_config)
             params = ModelParams(url=self.base_config["url"], auth_token="sk-test")

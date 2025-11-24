@@ -23,6 +23,7 @@ from sygra.core.models.lite_llm.azure_openai_model import (
 )
 from sygra.core.models.lite_llm.ollama_model import CustomOllama as CustomLiteLLMOllama
 from sygra.core.models.lite_llm.openai_model import CustomOpenAI as CustomLiteLLMOpenAI
+from sygra.core.models.lite_llm.triton_model import CustomTriton as CustomLiteLLMTriton
 from sygra.core.models.lite_llm.vllm_model import CustomVLLM as CustomLiteLLMVLLM
 from sygra.core.models.model_factory import ModelFactory
 
@@ -290,6 +291,24 @@ class TestModelFactory(unittest.TestCase):
         }
 
         with patch.object(CustomTriton, "__init__", return_value=None) as mock_init:
+            model_config = {"name": "test_triton", "model_type": "triton"}
+            ModelFactory.create_model(model_config, backend="custom")
+            mock_init.assert_called_once()
+
+    @patch("sygra.utils.utils.load_model_config")
+    def test_create_litellm_model_triton(self, mock_load_model_config):
+        """Test create_model with Triton model type"""
+        mock_load_model_config.return_value = {
+            "test_triton": {
+                "model_type": "triton",
+                "url": "http://triton-test.com",
+                "auth_token": "test-token",
+                "payload_key": "default",
+                "parameters": {},
+            }
+        }
+
+        with patch.object(CustomLiteLLMTriton, "__init__", return_value=None) as mock_init:
             model_config = {"name": "test_triton", "model_type": "triton"}
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
