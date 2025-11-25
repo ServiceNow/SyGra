@@ -454,7 +454,9 @@ class BaseCustomModel(ABC):
         if isinstance(url_obj, list):
             for i, url in enumerate(url_obj):
                 token = auth_token[i] if isinstance(auth_token, list) else auth_token
-                status = self._ping_model(url=str(url), auth_token=str(token), model=self.model_config)
+                status = self._ping_model(
+                    url=str(url), auth_token=str(token), model=self.model_config
+                )
                 if status != 200:
                     logger.error(f"Server({url}) responded with {status}")
                     return status
@@ -1983,7 +1985,6 @@ class CustomOpenAI(BaseCustomModel):
         Returns:
             Model Response object
         """
-
 
         if not prompt_text:
             logger.error(f"[{self.name()}] No prompt provided for image editing")

@@ -797,7 +797,6 @@ class CustomAzureOpenAI(BaseCustomModel):
             Model Response object
         """
 
-
         if not prompt_text:
             logger.error(f"[{self.name()}] No prompt provided for image editing")
             return ModelResponse(
