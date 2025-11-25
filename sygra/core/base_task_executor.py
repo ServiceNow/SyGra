@@ -21,6 +21,7 @@ from sygra.core.dataset.dataset_config import (
 from sygra.core.dataset.dataset_processor import DatasetProcessor
 from sygra.core.dataset.file_handler import FileHandler
 from sygra.core.dataset.huggingface_handler import HuggingFaceHandler
+from sygra.core.dataset.servicenow_handler import ServiceNowHandler
 from sygra.core.graph.graph_config import GraphConfig
 from sygra.core.graph.langgraph.graph_builder import LangGraphBuilder
 from sygra.core.graph.sygra_state import SygraState
@@ -436,7 +437,7 @@ class BaseTaskExecutor(ABC):
         logger.info(f"Generating {num_records} empty records")
         return [{} for _ in range(num_records)]
 
-    def _get_data_reader(self) -> Union[HuggingFaceHandler, FileHandler]:
+    def _get_data_reader(self) -> Union[HuggingFaceHandler, FileHandler, ServiceNowHandler]:
         """Get appropriate data reader based on source type"""
         if self.source_config is None:
             raise ValueError("source_config must be set to get a data reader")
@@ -445,6 +446,8 @@ class BaseTaskExecutor(ABC):
             return HuggingFaceHandler(self.source_config)
         elif self.source_config.type == DataSourceType.DISK_FILE:
             return FileHandler(self.source_config)
+        elif self.source_config.type == DataSourceType.SERVICENOW:
+            return ServiceNowHandler(self.source_config)
         else:
             raise ValueError(f"Unsupported data source type: {self.source_config.type}")
 
@@ -729,6 +732,11 @@ class BaseTaskExecutor(ABC):
                 if self.output_config.type == OutputType.HUGGINGFACE:
                     HuggingFaceHandler(
                         source_config=self.source_config,
+                        output_config=self.output_config,
+                    ).write(data)
+                elif self.output_config.type == OutputType.SERVICENOW:
+                    ServiceNowHandler(
+                        source_config=None,
                         output_config=self.output_config,
                     ).write(data)
                 else:

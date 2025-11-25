@@ -17,6 +17,7 @@ try:
     from sygra.core.dataset.dataset_config import TransformConfig  # noqa: F401
     from sygra.core.dataset.file_handler import FileHandler  # noqa: F401
     from sygra.core.dataset.huggingface_handler import HuggingFaceHandler  # noqa: F401
+    from sygra.core.dataset.servicenow_handler import ServiceNowHandler  # noqa: F401
 
     CORE_DATA_AVAILABLE = True
 except ImportError:
@@ -87,6 +88,40 @@ class DataSource:
         # Add shard support for HuggingFace
         if "shard" in kwargs:
             config["shard"] = kwargs["shard"]
+
+        # Add transformation support
+        if "transformations" in kwargs:
+            config["transformations"] = kwargs["transformations"]
+
+        return cls(config)
+
+    @classmethod
+    def servicenow(cls, instance: str, table: str, **kwargs) -> "DataSource":
+        """Create ServiceNow data source with full framework support."""
+        config = {
+            "type": "servicenow",
+            "instance": instance,
+            "table": table,
+            "username": kwargs.get("username"),
+            "password": kwargs.get("password"),
+            "oauth_client_id": kwargs.get("oauth_client_id"),
+            "oauth_client_secret": kwargs.get("oauth_client_secret"),
+            "token": kwargs.get("token"),
+            "query": kwargs.get("query"),
+            "filters": kwargs.get("filters"),
+            "fields": kwargs.get("fields"),
+            "limit": kwargs.get("limit"),
+            "batch_size": kwargs.get("batch_size", 100),
+            "order_by": kwargs.get("order_by"),
+            "order_desc": kwargs.get("order_desc", False),
+            "display_value": kwargs.get("display_value", "all"),
+            "exclude_reference_link": kwargs.get("exclude_reference_link", True),
+            "streaming": kwargs.get("streaming", False),
+            "proxy": kwargs.get("proxy"),
+            "verify_ssl": kwargs.get("verify_ssl"),
+            "cert": kwargs.get("cert"),
+            "auto_retry": kwargs.get("auto_retry", True),
+        }
 
         # Add transformation support
         if "transformations" in kwargs:
@@ -165,6 +200,28 @@ class DataSink:
         # Add filename support
         if "filename" in kwargs:
             config["filename"] = kwargs["filename"]
+
+        return cls(config)
+
+    @classmethod
+    def servicenow(cls, instance: str, table: str, **kwargs) -> "DataSink":
+        """Create ServiceNow data sink with full framework support."""
+        config = {
+            "type": "servicenow",
+            "instance": instance,
+            "table": table,
+            "username": kwargs.get("username"),
+            "password": kwargs.get("password"),
+            "oauth_client_id": kwargs.get("oauth_client_id"),
+            "oauth_client_secret": kwargs.get("oauth_client_secret"),
+            "token": kwargs.get("token"),
+            "operation": kwargs.get("operation", "insert"),
+            "key_field": kwargs.get("key_field", "sys_id"),
+            "proxy": kwargs.get("proxy"),
+            "verify_ssl": kwargs.get("verify_ssl"),
+            "cert": kwargs.get("cert"),
+            "auto_retry": kwargs.get("auto_retry", True),
+        }
 
         return cls(config)
 
@@ -270,6 +327,21 @@ def to_huggingface(repo_id: str, **kwargs) -> dict[str, Any]:
     return DataSinkFactory.to_huggingface(repo_id, **kwargs)
 
 
+def from_servicenow(
+    instance: str,
+    table: str,
+    **kwargs,
+) -> dict[str, Any]:
+    """Create a data source from ServiceNow table with optional filters and transformations."""
+    source = DataSource.servicenow(instance, table, **kwargs)
+    return source.to_config()
+
+
+def to_servicenow(instance: str, table: str, **kwargs) -> dict[str, Any]:
+    """Create a data sink to ServiceNow table."""
+    return DataSink.servicenow(instance, table, **kwargs).to_config()
+
+
 __all__ = [
     "DataSource",
     "DataSink",
@@ -277,7 +349,9 @@ __all__ = [
     "DataSinkFactory",
     "from_file",
     "from_huggingface",
+    "from_servicenow",
     "from_list",
     "to_file",
     "to_huggingface",
+    "to_servicenow",
 ]

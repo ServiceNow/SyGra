@@ -436,6 +436,12 @@ def get_graph_properties(task_name: Optional[str] = None) -> Any:
 
     formatted_task_name = _normalize_task_path(task)
     path = os.path.join(f"{formatted_task_name}/graph_config.yaml")
+
+    # For programmatic workflows, the config file may not exist
+    if not os.path.exists(path):
+        logger.debug(f"No graph_config.yaml found for task '{task}', using empty graph properties")
+        return {}
+
     yaml_config = load_yaml_file(path)
     return yaml_config.get("graph_config", {}).get("graph_properties", {})
 
