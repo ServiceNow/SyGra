@@ -1,7 +1,12 @@
+import base64
+import io
+import struct
+import wave
 from functools import partial
 from typing import Any
 
 from langchain_core.messages import BaseMessage
+from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableLambda, RunnableParallel
 from langgraph.graph import StateGraph
@@ -79,10 +84,14 @@ class LangGraphFactory(BackendFactory):
         """
         return RunnableLambda(lambda x: x)
 
-    def build_workflow(self, graph_config: GraphConfig):
+    def build_workflow(self, graph_config: GraphConfig) -> StateGraph:
         """
         Return the base state graph(from backend) with state variables only,
         which can add nodes, edges, compile and execute
+        Args:
+            graph_config: GraphConfig object containing state variables
+        Returns:
+            StateGraph: LangGraph StateGraph object
         """
         state_schema = LangGraphState
 
@@ -143,17 +152,63 @@ class LangGraphFactory(BackendFactory):
         """
         return utils.convert_messages_from_langchain_to_chat_format(msgs)
 
-    def get_test_message(self, is_multi_modal=True):
+    @staticmethod
+    def make_dummy_audio_data_url(duration_sec: float = 0.2, sample_rate: int = 16000) -> str:
         """
-        Return a test message to pass into model for the specific platform
+        Create a valid mono 16-bit PCM WAV data URL containing silence.
+        Duration >= 0.1s to satisfy OpenAI transcription minimum.
+
+        Args:
+            duration_sec (float): Duration of the silent audio in seconds.
+            sample_rate (int): Sample rate of the audio in Hz.
+        Returns:
+            str: Data URL of the generated silent WAV audio.
         """
-        if is_multi_modal:
-            # build the Multi Modal ChatPrompt for model inference
+        num_samples = int(duration_sec * sample_rate)
+
+        buf = io.BytesIO()
+        with wave.open(buf, "wb") as wf:
+            wf.setnchannels(1)  # mono
+            wf.setsampwidth(2)  # 16-bit
+            wf.setframerate(sample_rate)
+            silence_frame = struct.pack("<h", 0)  # one sample of silence
+            wf.writeframes(silence_frame * num_samples)
+
+        audio_bytes = buf.getvalue()
+        audio_b64 = base64.b64encode(audio_bytes).decode("ascii")
+        return f"data:audio/wav;base64,{audio_b64}"
+
+    def get_test_message(self, model_config: dict[str, Any]) -> PromptValue:
+        """
+        Get a test message for model inference
+        Args:
+            model_config: Dictionary containing model configuration parameters
+        Returns:
+            PromptValue: langchain PromptValue object containing test message
+        """
+        from sygra.logger.logger_config import logger
+
+        input_type = model_config.get("input_type")
+        output_type = model_config.get("output_type")
+        logger.debug(f"[get_test_message] model_config keys: {model_config.keys()}")
+        logger.debug(f"[get_test_message] input_type: {input_type}")
+
+        # Handling specifically for audio only input models like transcription models
+        if input_type == "audio" and not output_type:
+            audio_data_url = self.make_dummy_audio_data_url()
+
             messages = utils.convert_messages_from_chat_format_to_langchain(
-                [{"role": "user", "content": [{"type": "text", "text": "hello"}]}]
+                [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "audio_url", "audio_url": {"url": audio_data_url}}
+                        ],
+                    }
+                ]
             )
         else:
-            # build the ChatPrompt for model inference
+            # Default text message for text-based models
             messages = utils.convert_messages_from_chat_format_to_langchain(
                 [{"role": "user", "content": "hello"}]
             )

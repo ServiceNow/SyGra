@@ -101,6 +101,7 @@ tts_openai:
 
 transcribe:
   model: gpt-4o-transcribe
+  input_type: audio
   model_type: azure_openai
   api_version: 2025-03-01-preview
   # URL and api_key should be defined at .env file as SYGRA_TRANSCRIBE_URL and SYGRA_TRANSCRIBE_TOKEN

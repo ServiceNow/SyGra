@@ -427,16 +427,18 @@ class BaseCustomModel(ABC):
     ) -> ModelResponse:
         pass
 
-    def _ping_model(self, url: str, auth_token: str) -> int:
+    def _ping_model(self, url: str, auth_token: str, model: dict[str, Any]) -> int:
         """
         Ping a single model
         Args:
             url: single url to ping
             auth_token: auth token for the url
+            model: model config
+        Returns:
+            http status code
         """
-        # hello message
         is_multi_modal = self.model_config.get("multi_modal", True)
-        msg = utils.backend_factory.get_test_message(is_multi_modal=is_multi_modal)
+        msg = utils.backend_factory.get_test_message(model_config=model)
         # build parameters
         model_param = ModelParams(url=url, auth_token=auth_token)
         model_response: ModelResponse = asyncio.run(self._generate_response(msg, model_param))
@@ -458,7 +460,7 @@ class BaseCustomModel(ABC):
                     return status
             return 200
         else:
-            return self._ping_model(url=str(url_obj), auth_token=str(auth_token))
+            return self._ping_model(url=str(url_obj), auth_token=str(auth_token), model=self.model_config)
 
     def get_chat_formatted_text(
         self, chat_format_object: Sequence[BaseMessage], **chat_template_params

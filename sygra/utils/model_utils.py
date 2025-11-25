@@ -8,6 +8,7 @@ making model routing logic cleaner and more maintainable.
 from typing import Any, Optional
 
 from langchain_core.prompt_values import ChatPromptValue
+from sygra.logger.logger_config import logger
 
 
 class InputType:
@@ -249,12 +250,13 @@ def should_route_to_transcription(
         ... )
         False
     """
-    # Don't route GPT-4o-audio to transcription
-    if is_gpt4o_audio_model(model_config):
-        return False
-
-    # Route to transcription if audio input detected
-    return has_audio_input(input_value)
+    # presence of input type as audio and output_type as text is mandatory for transcription routing
+    if model_config.get("input_type", None) == InputType.AUDIO and model_config.get("output_type", OutputType.TEXT) == OutputType.TEXT:
+        if has_audio_input(input_value) and not is_gpt4o_audio_model(model_config):
+            return True
+        else:
+            logger.error("Transcription routing requested but no audio input detected.")
+    return False
 
 
 def should_route_to_speech(model_config: dict[str, Any]) -> bool:
