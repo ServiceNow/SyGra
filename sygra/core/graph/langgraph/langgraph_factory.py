@@ -201,9 +201,7 @@ class LangGraphFactory(BackendFactory):
                 [
                     {
                         "role": "user",
-                        "content": [
-                            {"type": "audio_url", "audio_url": {"url": audio_data_url}}
-                        ],
+                        "content": [{"type": "audio_url", "audio_url": {"url": audio_data_url}}],
                     }
                 ]
             )

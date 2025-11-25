@@ -385,7 +385,9 @@ class CustomOpenAI(BaseCustomModel):
                 resp_text = str(transcription_response)
 
         except openai.RateLimitError as e:
-            logger.warning(f"[{self.name()}] OpenAI Transcription API request exceeded rate limit: {e}")
+            logger.warning(
+                f"[{self.name()}] OpenAI Transcription API request exceeded rate limit: {e}"
+            )
             resp_text = f"{constants.ERROR_PREFIX} Rate limit exceeded: {e}"
             ret_code = 429
         except openai.APIError as e:

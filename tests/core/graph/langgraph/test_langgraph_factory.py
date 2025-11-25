@@ -15,7 +15,7 @@ class TestLangGraphFactory(unittest.TestCase):
         self.assertIsInstance(chat_prompt, ChatPromptValue)
         messages = chat_prompt.messages
         self.assertIsInstance(messages, list)
-        
+
         # For audio input, content should be a list with audio_url and text
         self.assertIsInstance(messages[0].content, list)
         self.assertTrue(
@@ -23,7 +23,7 @@ class TestLangGraphFactory(unittest.TestCase):
                 message_content.get("type") == "audio_url"
                 for message_content in messages[0].content
             ),
-            "Should contain audio_url in content"
+            "Should contain audio_url in content",
         )
 
     def test_get_test_message_text_only(self):

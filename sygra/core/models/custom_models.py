@@ -460,7 +460,9 @@ class BaseCustomModel(ABC):
                     return status
             return 200
         else:
-            return self._ping_model(url=str(url_obj), auth_token=str(auth_token), model=self.model_config)
+            return self._ping_model(
+                url=str(url_obj), auth_token=str(auth_token), model=self.model_config
+            )
 
     def get_chat_formatted_text(
         self, chat_format_object: Sequence[BaseMessage], **chat_template_params
@@ -1591,7 +1593,9 @@ class CustomOpenAI(BaseCustomModel):
                 resp_text = str(transcription_response)
 
         except openai.RateLimitError as e:
-            logger.warning(f"[{self.name()}] OpenAI Transcription API request exceeded rate limit: {e}")
+            logger.warning(
+                f"[{self.name()}] OpenAI Transcription API request exceeded rate limit: {e}"
+            )
             resp_text = f"{constants.ERROR_PREFIX} Rate limit exceeded: {e}"
             ret_code = 429
         except openai.APIError as e:
