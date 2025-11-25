@@ -307,7 +307,7 @@ class CustomOpenAI(BaseCustomModel):
             # Extract audio data URLs from messages using utility function
             from sygra.utils.audio_utils import extract_audio_urls_from_messages
 
-            audio_data_urls, text_prompt = extract_audio_urls_from_messages(input.messages)
+            audio_data_urls, text_prompt = extract_audio_urls_from_messages(list(input.messages))
 
             if not audio_data_urls:
                 logger.error(f"[{self.name()}] No audio data provided for transcription")

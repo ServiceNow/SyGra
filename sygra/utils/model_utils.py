@@ -190,7 +190,8 @@ def get_output_type(model_config: dict[str, Any]) -> str:
         >>> get_output_type(config)
         'text'
     """
-    return model_config.get("output_type", OutputType.TEXT)
+    output_type = str(model_config.get("output_type", OutputType.TEXT))
+    return output_type
 
 
 def is_gpt4o_audio_model(model_config: dict[str, Any]) -> bool:

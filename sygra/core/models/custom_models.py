@@ -454,7 +454,7 @@ class BaseCustomModel(ABC):
         if isinstance(url_obj, list):
             for i, url in enumerate(url_obj):
                 token = auth_token[i] if isinstance(auth_token, list) else auth_token
-                status = self._ping_model(url=str(url), auth_token=str(token))
+                status = self._ping_model(url=str(url), auth_token=str(token), model=self.model_config)
                 if status != 200:
                     logger.error(f"Server({url}) responded with {status}")
                     return status
@@ -1513,7 +1513,7 @@ class CustomOpenAI(BaseCustomModel):
             # Extract audio data URLs from messages using utility function
             from sygra.utils.audio_utils import extract_audio_urls_from_messages
 
-            audio_data_urls, text_prompt = extract_audio_urls_from_messages(input.messages)
+            audio_data_urls, text_prompt = extract_audio_urls_from_messages(list(input.messages))
 
             if not audio_data_urls:
                 logger.error(f"[{self.name()}] No audio data provided for transcription")
