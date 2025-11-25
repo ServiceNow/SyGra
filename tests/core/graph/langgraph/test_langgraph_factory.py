@@ -6,29 +6,34 @@ from sygra.core.graph.langgraph.langgraph_factory import LangGraphFactory
 
 
 class TestLangGraphFactory(unittest.TestCase):
-    def test_get_test_message_multimodal(self):
+    def test_get_test_message_audio_input(self):
+        """Test get_test_message with audio input type."""
         factory = LangGraphFactory()
-        chat_prompt = factory.get_test_message(is_multi_modal=True)
-
-        # Should return a LangChain BaseMessage (e.g., HumanMessage)
+        model_config = {"model": "whisper-1", "input_type": "audio"}
+        chat_prompt = factory.get_test_message(model_config)
 
         self.assertIsInstance(chat_prompt, ChatPromptValue)
         messages = chat_prompt.messages
-        # For multimodal, there should be list of messages
         self.assertIsInstance(messages, list)
-        # For multimodal, content should be a list of parts with a text part saying "hello"
+        
+        # For audio input, content should be a list with audio_url and text
+        self.assertIsInstance(messages[0].content, list)
         self.assertTrue(
             any(
-                message_content.get("type") == "text" and message_content.get("text") == "hello"
+                message_content.get("type") == "audio_url"
                 for message_content in messages[0].content
-            )
+            ),
+            "Should contain audio_url in content"
         )
 
     def test_get_test_message_text_only(self):
+        """Test get_test_message with default text input (no input_type)."""
         factory = LangGraphFactory()
-        chat_prompt = factory.get_test_message(is_multi_modal=False)
+        model_config = {"model": "gpt-4"}
+        chat_prompt = factory.get_test_message(model_config)
 
         self.assertIsInstance(chat_prompt, ChatPromptValue)
         messages = chat_prompt.messages
         self.assertIsInstance(messages, list)
+        # For text-only, content should be a simple string
         self.assertEqual(messages[0].content, "hello")
