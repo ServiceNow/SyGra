@@ -12,115 +12,75 @@ permissions:
   pages: write
   id-token: write
 
+env:
+  POETRY_CACHE_DIR: /tmp/poetry_cache
+
 jobs:
-  # Just one lightweight setup job to warm the cache
-  setup_sygra:
+
+  build:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+
     steps:
+      # ---- Cleanup runner disk ----
+      - name: Free disk space
+        run: |
+          df -h
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /usr/local/.ghcup || true
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true
+          sudo apt-get clean
+          df -h
+
+      # ---- Checkout ----
       - uses: actions/checkout@v4
+
+      # ---- Python + Poetry ----
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: "3.9"
+
       - uses: snok/install-poetry@v1
         with:
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
+
+      # ---- Cache Poetry deps only ----
       - uses: actions/cache@v4
         with:
-          path: .venv
-          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
+          path: /tmp/poetry_cache
+          key: poetry-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
+
+      # ---- Env Setup ----
       - run: make setup-dev
 
-  # Run Formatting
-  format:
-    needs: setup_sygra
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-      - uses: snok/install-poetry@v1
-        with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
-      - uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
-      - run: make setup-dev
-      - run: make check-format
-  # Run Linting
-  lint:
-    needs: setup_sygra
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-      - uses: snok/install-poetry@v1
-        with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
-      - uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
-      - run: make setup-dev
-      - run: make check-lint
-  # Run Tests
-  test:
-    needs: setup_sygra
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-      - uses: snok/install-poetry@v1
-        with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
-      - uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
-      - run: make setup-dev
-      - run: make test
-  # Build Docs
-  docs_build:
-    needs: setup_sygra
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-      - uses: snok/install-poetry@v1
-        with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
-      - uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-3.9-${{ hashFiles('**/poetry.lock', '**/pyproject.toml') }}
-      - run: make setup-dev
-      - run: make docs
+      # ---- FORMAT ----
+      - name: Run formatter
+        run: make check-format
+
+      # ---- LINT ----
+      - name: Run linter
+        run: make check-lint
+
+      # ---- TEST ----
+      - name: Run tests
+        run: make test
+
+      # ---- DOCS ----
+      - name: Build docs
+        run: make docs
+
+      # ---- Upload docs artifact ----
       - uses: actions/upload-pages-artifact@v3
         with:
-          name: docs-build
           path: site
   # Deploy Docs
   deploy_docs:
     if: github.ref == 'refs/heads/main'
-    needs: docs_build
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -128,5 +88,3 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
-        with:
-          artifact_name: docs-build
