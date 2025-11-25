@@ -21,6 +21,7 @@ from sygra.core.models.lite_llm.azure_model import CustomAzure as CustomLiteLLMA
 from sygra.core.models.lite_llm.azure_openai_model import (
     CustomAzureOpenAI as CustomLiteLLMAzureOpenAI,
 )
+from sygra.core.models.lite_llm.bedrock_model import CustomBedrock as CustomLiteLLMBedrock
 from sygra.core.models.lite_llm.ollama_model import CustomOllama as CustomLiteLLMOllama
 from sygra.core.models.lite_llm.openai_model import CustomOpenAI as CustomLiteLLMOpenAI
 from sygra.core.models.lite_llm.triton_model import CustomTriton as CustomLiteLLMTriton
@@ -311,6 +312,25 @@ class TestModelFactory(unittest.TestCase):
 
         with patch.object(CustomLiteLLMTriton, "__init__", return_value=None) as mock_init:
             model_config = {"name": "test_triton", "model_type": "triton"}
+            ModelFactory.create_model(model_config)
+            mock_init.assert_called_once()
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_create_litellm_model_bedrock(self, mock_validate, mock_load_model_config):
+        """Test create_model with Bedrock model type (LiteLLM backend)"""
+        mock_load_model_config.return_value = {
+            "test_bedrock": {
+                "model_type": "bedrock",
+                "parameters": {},
+                "aws_access_key_id": "AKIAxxx",
+                "aws_secret_access_key": "secret",
+                "aws_region_name": "us-east-1",
+            }
+        }
+
+        with patch.object(CustomLiteLLMBedrock, "__init__", return_value=None) as mock_init:
+            model_config = {"name": "test_bedrock", "model_type": "bedrock"}
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
