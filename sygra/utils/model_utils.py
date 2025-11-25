@@ -408,7 +408,7 @@ def validate_input_output_compatibility(
         True
     """
     input_type = detect_input_type(input_value)
-    output_type = get_output_type(model_config)
+    get_output_type(model_config)
     capabilities = get_model_capabilities(model_config)
 
     # Audio input is valid for transcription or audio chat models

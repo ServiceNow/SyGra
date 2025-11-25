@@ -796,9 +796,7 @@ class CustomAzureOpenAI(BaseCustomModel):
         Returns:
             Model Response object
         """
-        import io
 
-        from sygra.utils.image_utils import parse_image_data_url
 
         if not prompt_text:
             logger.error(f"[{self.name()}] No prompt provided for image editing")

@@ -437,7 +437,7 @@ class BaseCustomModel(ABC):
         Returns:
             http status code
         """
-        is_multi_modal = self.model_config.get("multi_modal", True)
+        self.model_config.get("multi_modal", True)
         msg = utils.backend_factory.get_test_message(model_config=model)
         # build parameters
         model_param = ModelParams(url=url, auth_token=auth_token)
@@ -1983,9 +1983,7 @@ class CustomOpenAI(BaseCustomModel):
         Returns:
             Model Response object
         """
-        import io
 
-        from sygra.utils.image_utils import parse_image_data_url
 
         if not prompt_text:
             logger.error(f"[{self.name()}] No prompt provided for image editing")
