@@ -5,6 +5,8 @@ This module introduces support for multimodal data generation pipelines that con
 1. **Audio Understanding LLMs** - Models like `Qwen2-Audio-7B` that can reason about, analyze, and answer questions about audio content
 2. **Dedicated Transcription Models** - Models like `Whisper` and `gpt-4o-transcribe` optimized specifically for accurate speech-to-text conversion
 
+> **Note:** 
+> For gpt-4o-audio multimodal generation, see the [GPT-4o Audio](./gpt_4o_audio.md) documentation.
 ## Key Features
 
 ### Audio Understanding LLMs
