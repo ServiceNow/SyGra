@@ -1,7 +1,7 @@
 from typing import Any
 
 from langchain_core.prompt_values import ChatPromptValue
-from litellm import acompletion
+from openai import APIError, BadRequestError, RateLimitError
 
 from sygra.core.models.custom_models import ModelParams
 from sygra.core.models.lite_llm.base import LiteLLMBase
@@ -44,13 +44,8 @@ class CustomAzure(LiteLLMBase):
     def _check_content_filter_finish_reason(self) -> bool:
         return True
 
-    def _fn_acompletion(self):
-        return acompletion
-
     def _map_exception(self, e: Exception, context: str) -> ModelResponse:
         # Import locally to avoid binding at module import time
-        from litellm import BadRequestError
-        from openai import APIError, RateLimitError
 
         if isinstance(e, RateLimitError):
             logger.warning(

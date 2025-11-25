@@ -1,10 +1,7 @@
 from typing import Any, Type
 
 from langchain_core.prompt_values import ChatPromptValue
-from litellm import BadRequestError, acompletion, atext_completion
-from openai import APIError
-from openai import BadRequestError as OpenAIBadRequestError
-from openai import RateLimitError
+from openai import APIError, BadRequestError, RateLimitError
 from pydantic import BaseModel
 
 from sygra.core.models.custom_models import ModelParams
@@ -41,13 +38,6 @@ class CustomOllama(LiteLLMBase):
         # Use JSON schema via `format` param
         return ("format", "schema")
 
-    # Ensure tests patch module-level functions
-    def _fn_acompletion(self):
-        return acompletion
-
-    def _fn_atext_completion(self):
-        return atext_completion
-
     # Ensure module-level logger is used for tests expecting per-module logging
     def _map_exception(self, e: Exception, context: str) -> ModelResponse:
         if isinstance(e, RateLimitError):
@@ -55,7 +45,7 @@ class CustomOllama(LiteLLMBase):
                 f"[{self.name()}] {context} request exceeded rate limit: {getattr(e, 'message', e)}"
             )
             return super()._map_exception(e, context)
-        if isinstance(e, (BadRequestError, OpenAIBadRequestError)):
+        if isinstance(e, BadRequestError):
             msg = getattr(e, "message", e)
             logger.error(f"[{self.name()}] Ollama API bad request: {msg}")
             return ModelResponse(

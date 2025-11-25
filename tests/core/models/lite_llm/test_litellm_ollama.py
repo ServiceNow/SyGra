@@ -54,7 +54,7 @@ class TestLiteLLMOllama(unittest.TestCase):
 
     async def _run_generate_response_chat_success(self):
         with patch(
-            "sygra.core.models.lite_llm.ollama_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {
@@ -79,7 +79,7 @@ class TestLiteLLMOllama(unittest.TestCase):
 
     async def _run_generate_response_chat_with_tool_calls(self):
         with patch(
-            "sygra.core.models.lite_llm.ollama_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             tool_call = {
                 "id": "call_abc",
@@ -109,7 +109,7 @@ class TestLiteLLMOllama(unittest.TestCase):
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     async def _run_generate_response_completions_success(self, mock_tokenizer):
         with patch(
-            "sygra.core.models.lite_llm.ollama_model.atext_completion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.atext_completion", new_callable=AsyncMock
         ) as mock_atext:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {"text": "Response text"}
@@ -135,7 +135,7 @@ class TestLiteLLMOllama(unittest.TestCase):
     async def _run_generate_response_rate_limit_error(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.ollama_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.ollama_model.logger") as mock_logger,
         ):
@@ -162,7 +162,7 @@ class TestLiteLLMOllama(unittest.TestCase):
     async def _run_generate_response_bad_request_error(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.ollama_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.ollama_model.logger") as mock_logger,
         ):
@@ -189,7 +189,7 @@ class TestLiteLLMOllama(unittest.TestCase):
     async def _run_generate_response_api_error(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.ollama_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.ollama_model.logger") as mock_logger,
         ):
@@ -217,7 +217,7 @@ class TestLiteLLMOllama(unittest.TestCase):
     async def _run_generate_response_generic_exception(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.ollama_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.ollama_model.logger") as mock_logger,
         ):
@@ -236,7 +236,7 @@ class TestLiteLLMOllama(unittest.TestCase):
 
     async def _run_generate_response_with_extracted_status_code(self):
         with patch(
-            "sygra.core.models.lite_llm.ollama_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_acomp.side_effect = Exception("Service unavailable")
             model = CustomOllama(self.base_config)
@@ -250,7 +250,7 @@ class TestLiteLLMOllama(unittest.TestCase):
 
     async def _run_generate_response_passes_generation_params(self):
         with patch(
-            "sygra.core.models.lite_llm.ollama_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {
@@ -281,7 +281,7 @@ class TestLiteLLMOllama(unittest.TestCase):
             name: str
 
         with patch(
-            "sygra.core.models.lite_llm.ollama_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {
@@ -306,7 +306,7 @@ class TestLiteLLMOllama(unittest.TestCase):
             name: str
 
         with patch(
-            "sygra.core.models.lite_llm.ollama_model.atext_completion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.atext_completion", new_callable=AsyncMock
         ) as mock_atext:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {"text": json.dumps({"name": "ok"})}
@@ -329,7 +329,7 @@ class TestLiteLLMOllama(unittest.TestCase):
             name: str
 
         with patch(
-            "sygra.core.models.lite_llm.ollama_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {

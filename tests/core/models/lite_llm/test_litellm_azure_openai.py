@@ -89,7 +89,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
     async def _run_generate_text_success(self):
         # Mock litellm.acompletion
         with patch(
-            "sygra.core.models.lite_llm.azure_openai_model.litellm.acompletion",
+            "sygra.core.models.lite_llm.base.acompletion",
             new_callable=AsyncMock,
         ) as mock_acomp:
             mock_choice = MagicMock()
@@ -119,7 +119,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
 
     async def _run_generate_text_with_tool_calls(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_openai_model.litellm.acompletion",
+            "sygra.core.models.lite_llm.base.acompletion",
             new_callable=AsyncMock,
         ) as mock_acomp:
             tool_call = {
@@ -151,7 +151,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
     async def _run_generate_text_rate_limit_error(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.azure_openai_model.litellm.acompletion",
+                "sygra.core.models.lite_llm.base.acompletion",
                 new_callable=AsyncMock,
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.azure_openai_model.logger") as mock_logger,
@@ -177,7 +177,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
 
     async def _run_generate_text_generic_exception(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_openai_model.litellm.acompletion",
+            "sygra.core.models.lite_llm.base.acompletion",
             new_callable=AsyncMock,
         ) as mock_acomp:
             mock_acomp.side_effect = Exception("Network timeout")
@@ -197,7 +197,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
 
     async def _run_generate_text_bad_request_exception(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_openai_model.litellm.acompletion",
+            "sygra.core.models.lite_llm.base.acompletion",
             new_callable=AsyncMock,
         ) as mock_acomp:
             mock_acomp.side_effect = BadRequestError(
@@ -219,7 +219,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
     async def _run_generate_text_api_error(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.azure_openai_model.litellm.acompletion",
+                "sygra.core.models.lite_llm.base.acompletion",
                 new_callable=AsyncMock,
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.azure_openai_model.logger") as mock_logger,
@@ -248,7 +248,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
 
     async def _run_generate_speech_success_base64(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_openai_model.aspeech", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.aspeech", new_callable=AsyncMock
         ) as mock_aspeech:
             mock_resp = MagicMock()
             mock_resp.content = b"fake_audio_data"
@@ -300,7 +300,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
 
     async def _run_generate_speech_speed_clamping(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_openai_model.aspeech", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.aspeech", new_callable=AsyncMock
         ) as mock_aspeech:
             mock_resp = MagicMock()
             mock_resp.content = b"audio_data"
@@ -326,7 +326,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
     async def _run_generate_speech_rate_limit_error(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.azure_openai_model.aspeech", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.aspeech", new_callable=AsyncMock
             ) as mock_aspeech,
             patch("sygra.core.models.lite_llm.azure_openai_model.logger") as mock_logger,
         ):
@@ -350,7 +350,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
 
     async def _run_generate_speech_bad_request_error(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_openai_model.aspeech", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.aspeech", new_callable=AsyncMock
         ) as mock_aspeech:
             mock_aspeech.side_effect = BadRequestError(
                 "Invalid voice", llm_provider="openai", model="gpt-4o-mini-tts"
@@ -370,7 +370,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
     async def _run_generate_speech_api_error(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.azure_openai_model.aspeech", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.aspeech", new_callable=AsyncMock
             ) as mock_aspeech,
             patch("sygra.core.models.lite_llm.azure_openai_model.logger") as mock_logger,
         ):
@@ -397,7 +397,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
 
     async def _run_generate_response_routes_to_speech(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_openai_model.aspeech", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.aspeech", new_callable=AsyncMock
         ) as mock_aspeech:
             mock_resp = MagicMock()
             mock_resp.content = b"audio"
@@ -415,7 +415,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
 
     async def _run_generate_image_success_single(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_openai_model.aimage_generation",
+            "sygra.core.models.lite_llm.base.aimage_generation",
             new_callable=AsyncMock,
         ) as mock_img_gen:
             mock_img_gen.return_value = MagicMock()
@@ -432,7 +432,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
 
     async def _run_generate_image_success_multiple(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_openai_model.aimage_generation",
+            "sygra.core.models.lite_llm.base.aimage_generation",
             new_callable=AsyncMock,
         ) as mock_img_gen:
             mock_img_gen.return_value = MagicMock()
@@ -462,7 +462,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
 
     async def _run_generate_image_rate_limit_error(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_openai_model.aimage_generation",
+            "sygra.core.models.lite_llm.base.aimage_generation",
             new_callable=AsyncMock,
         ) as mock_img_gen:
             mock_img_gen.side_effect = openai.RateLimitError(
@@ -479,7 +479,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
 
     async def _run_generate_image_bad_request_error(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_openai_model.aimage_generation",
+            "sygra.core.models.lite_llm.base.aimage_generation",
             new_callable=AsyncMock,
         ) as mock_img_gen:
             mock_img_gen.side_effect = openai.BadRequestError(
@@ -488,7 +488,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
             model = CustomAzureOpenAI(self.image_config)
             params = ModelParams(url=self.image_config["url"], auth_token="sk-test")
             resp = await model._generate_image(self.image_input, params)
-            self.assertIn("Azure OpenAI Image API error", resp.llm_response)
+            self.assertIn("Azure OpenAI Image API bad request", resp.llm_response)
             self.assertEqual(resp.response_code, 400)
 
     def test_generate_image_bad_request_error(self):
@@ -496,7 +496,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
 
     async def _run_generate_image_api_error(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_openai_model.aimage_generation",
+            "sygra.core.models.lite_llm.base.aimage_generation",
             new_callable=AsyncMock,
         ) as mock_img_gen:
             mock_request = MagicMock()
@@ -520,7 +520,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
     async def _run_generate_image_edit_with_input_image(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.azure_openai_model.aimage_edit", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.aimage_edit", new_callable=AsyncMock
             ) as mock_img_edit,
             patch("sygra.utils.image_utils.parse_image_data_url") as mock_parse,
         ):
@@ -552,7 +552,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
     async def _run_generate_image_invalid_image_data_url(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.azure_openai_model.aimage_edit", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.aimage_edit", new_callable=AsyncMock
             ) as mock_img_edit,
             patch("sygra.utils.image_utils.parse_image_data_url") as mock_parse,
         ):
@@ -587,7 +587,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
             name: str
 
         with patch(
-            "sygra.core.models.lite_llm.azure_openai_model.litellm.acompletion",
+            "sygra.core.models.lite_llm.base.acompletion",
             new_callable=AsyncMock,
         ) as mock_acomp:
             mock_choice = MagicMock()
@@ -613,7 +613,7 @@ class TestLiteLLMAzureOpenAI(unittest.TestCase):
             name: str
 
         with patch(
-            "sygra.core.models.lite_llm.azure_openai_model.litellm.acompletion",
+            "sygra.core.models.lite_llm.base.acompletion",
             new_callable=AsyncMock,
         ) as mock_acomp:
             mock_choice = MagicMock()

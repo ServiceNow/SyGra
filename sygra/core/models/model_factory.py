@@ -18,6 +18,7 @@ from sygra.core.models.lite_llm.azure_openai_model import (
 from sygra.core.models.lite_llm.ollama_model import CustomOllama as CustomLiteLLMOllama
 from sygra.core.models.lite_llm.openai_model import CustomOpenAI as CustomLiteLLMOpenAI
 from sygra.core.models.lite_llm.triton_model import CustomTriton as CustomLiteLLMTriton
+from sygra.core.models.lite_llm.vertex_ai_model import CustomVertexAI as CustomLiteLLMVertexAI
 from sygra.core.models.lite_llm.vllm_model import CustomVLLM as CustomLiteLLMVLLM
 from sygra.logger.logger_config import logger
 from sygra.utils import utils
@@ -54,6 +55,7 @@ class ModelFactory:
             "azure": CustomLiteLLMAzure,
             "ollama": CustomLiteLLMOllama,
             "triton": CustomLiteLLMTriton,
+            "vertex_ai": CustomLiteLLMVertexAI,
         },
         MODEL_BACKEND_LANGGRAPH: {
             "vllm": CustomVLLMChatModel,

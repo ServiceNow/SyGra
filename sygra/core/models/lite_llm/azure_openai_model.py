@@ -3,10 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Type
 
-import litellm
 from langchain_core.prompt_values import ChatPromptValue
-from litellm import BadRequestError, aimage_edit, aimage_generation, aspeech
-from openai import APIError, RateLimitError
+from openai import APIError, BadRequestError, RateLimitError
 from pydantic import BaseModel
 
 from sygra.core.models.custom_models import ModelParams
@@ -43,24 +41,6 @@ class CustomAzureOpenAI(LiteLLMBase):
 
     def _native_structured_output_spec(self):
         return ("response_format", "pydantic")
-
-    # Return provider-module functions so tests patching this module see the effect
-    def _fn_acompletion(self):
-        return litellm.acompletion
-
-    def _fn_atext_completion(self):
-        from litellm import atext_completion
-
-        return atext_completion
-
-    def _fn_aspeech(self):
-        return aspeech
-
-    def _fn_aimage_generation(self):
-        return aimage_generation
-
-    def _fn_aimage_edit(self):
-        return aimage_edit
 
     @track_model_request
     async def _generate_native_structured_output(

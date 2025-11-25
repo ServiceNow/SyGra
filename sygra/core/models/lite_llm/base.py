@@ -2,16 +2,18 @@ from __future__ import annotations
 
 import base64
 import json
-from typing import Any, Optional, Tuple
+from typing import Any, Optional, Tuple, Type
 
 from langchain_core.prompt_values import ChatPromptValue
-from litellm import BadRequestError
-from openai import APIError, RateLimitError
+from litellm import acompletion, aimage_edit, aimage_generation, aspeech, atext_completion
+from openai import APIError, BadRequestError, RateLimitError
+from pydantic import BaseModel
 
 import sygra.utils.constants as constants
 from sygra.core.models.custom_models import BaseCustomModel, ModelParams
 from sygra.core.models.model_response import ModelResponse
 from sygra.logger.logger_config import logger
+from sygra.metadata.metadata_integration import track_model_request
 
 
 class LiteLLMBase(BaseCustomModel):
@@ -58,28 +60,18 @@ class LiteLLMBase(BaseCustomModel):
 
     # ----- Async call providers (override to return provider-module functions so tests can patch there) -----
     def _fn_acompletion(self):
-        from litellm import acompletion  # local import to avoid binding at module import time
-
         return acompletion
 
     def _fn_atext_completion(self):
-        from litellm import atext_completion
-
         return atext_completion
 
     def _fn_aspeech(self):
-        from litellm import aspeech
-
         return aspeech
 
     def _fn_aimage_generation(self):
-        from litellm import aimage_generation
-
         return aimage_generation
 
     def _fn_aimage_edit(self):
-        from litellm import aimage_edit
-
         return aimage_edit
 
     # ----------------------- Common helpers -----------------------
@@ -195,6 +187,18 @@ class LiteLLMBase(BaseCustomModel):
             return self._map_exception(e, f"{self._provider_label()} API")
 
     # ----------------------- Native structured output -----------------------
+
+    @track_model_request
+    async def _generate_native_structured_output(
+        self,
+        input: ChatPromptValue,
+        model_params: ModelParams,
+        pydantic_model: Type[BaseModel],
+        **kwargs: Any,
+    ) -> ModelResponse:
+        self._apply_tools(**kwargs)
+        return await self._request_native_structured(input, model_params, pydantic_model)
+
     async def _request_native_structured(
         self, input: ChatPromptValue, model_params: ModelParams, pydantic_model: Any
     ) -> ModelResponse:
@@ -460,6 +464,16 @@ class LiteLLMBase(BaseCustomModel):
 
             if has_images:
                 # Image editing path
+                # Validate provider supports image editing before proceeding
+                fn_edit = getattr(self, "_fn_aimage_edit", None)
+                if not callable(fn_edit):
+                    logger.error(
+                        f"[{self.name()}] Image editing not supported by {self._provider_label()}"
+                    )
+                    return ModelResponse(
+                        llm_response=f"{constants.ERROR_PREFIX} Image editing is not supported by {self._provider_label()}",
+                        response_code=400,
+                    )
                 import io
 
                 from sygra.utils.image_utils import parse_image_data_url
@@ -479,10 +493,18 @@ class LiteLLMBase(BaseCustomModel):
                     image_file = io.BytesIO(image_bytes)
                     image_file.name = "image.png"
                     image_param = [image_file]
-
-                image_response = await self._fn_aimage_edit()(
-                    image=image_param, prompt=prompt_text, **common, **params
-                )
+                try:
+                    image_response = await self._fn_aimage_edit()(
+                        image=image_param, prompt=prompt_text, **common, **params
+                    )
+                except NotImplementedError:
+                    logger.error(
+                        f"[{self.name()}] Image editing not supported by {self._provider_label()}"
+                    )
+                    return ModelResponse(
+                        llm_response=f"{constants.ERROR_PREFIX} Image editing is not supported by {self._provider_label()}",
+                        response_code=400,
+                    )
                 if is_streaming:
                     images_data = await self._process_streaming_image_response(image_response)
                 else:

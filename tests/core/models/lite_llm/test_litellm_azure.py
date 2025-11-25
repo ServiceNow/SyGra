@@ -48,7 +48,7 @@ class TestLiteLLMAzure(unittest.TestCase):
 
     async def _run_generate_response_success(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {
@@ -76,7 +76,7 @@ class TestLiteLLMAzure(unittest.TestCase):
 
     async def _run_generate_response_with_tool_calls(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             tool_call = {
                 "id": "call_abc",
@@ -108,7 +108,7 @@ class TestLiteLLMAzure(unittest.TestCase):
     async def _run_generate_response_content_filter(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.azure_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.azure_model.logger") as mock_logger,
         ):
@@ -137,7 +137,7 @@ class TestLiteLLMAzure(unittest.TestCase):
     async def _run_generate_response_rate_limit_error(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.azure_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.azure_model.logger") as mock_logger,
         ):
@@ -164,7 +164,7 @@ class TestLiteLLMAzure(unittest.TestCase):
     async def _run_generate_response_bad_request_exception(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.azure_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.azure_model.logger") as mock_logger,
         ):
@@ -185,7 +185,7 @@ class TestLiteLLMAzure(unittest.TestCase):
     async def _run_generate_response_api_error(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.azure_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.azure_model.logger") as mock_logger,
         ):
@@ -213,7 +213,7 @@ class TestLiteLLMAzure(unittest.TestCase):
     async def _run_generate_response_generic_exception(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.azure_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.azure_model.logger") as mock_logger,
         ):
@@ -232,7 +232,7 @@ class TestLiteLLMAzure(unittest.TestCase):
 
     async def _run_generate_response_with_extracted_status_code(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_acomp.side_effect = Exception("Service unavailable")
             model = CustomAzure(self.base_config)
@@ -246,7 +246,7 @@ class TestLiteLLMAzure(unittest.TestCase):
 
     async def _run_generate_response_passes_generation_params(self):
         with patch(
-            "sygra.core.models.lite_llm.azure_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {

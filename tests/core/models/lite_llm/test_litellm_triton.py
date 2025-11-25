@@ -60,7 +60,7 @@ class TestLiteLLMTriton(unittest.TestCase):
 
     async def _run_generate_response_chat_api_success(self):
         with patch(
-            "sygra.core.models.lite_llm.triton_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {
@@ -86,7 +86,7 @@ class TestLiteLLMTriton(unittest.TestCase):
 
     async def _run_generate_response_chat_api_with_tools_success(self):
         with patch(
-            "sygra.core.models.lite_llm.triton_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             tool_call = {
                 "id": "call_12xyz",
@@ -118,7 +118,7 @@ class TestLiteLLMTriton(unittest.TestCase):
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     async def _run_generate_response_completions_api_success(self, mock_tokenizer):
         with patch(
-            "sygra.core.models.lite_llm.triton_model.atext_completion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.atext_completion", new_callable=AsyncMock
         ) as mock_atext:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {"text": "Response text"}
@@ -144,7 +144,7 @@ class TestLiteLLMTriton(unittest.TestCase):
     async def _run_generate_response_rate_limit_error(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.triton_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.triton_model.logger") as mock_logger,
         ):
@@ -168,7 +168,7 @@ class TestLiteLLMTriton(unittest.TestCase):
 
     async def _run_generate_response_connection_error(self):
         with patch(
-            "sygra.core.models.lite_llm.triton_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_acomp.side_effect = Exception(constants.CONNECTION_ERROR)
             model = LiteLLMTriton(self.base_config)
@@ -182,7 +182,7 @@ class TestLiteLLMTriton(unittest.TestCase):
     async def _run_generate_response_generic_exception(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.triton_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.triton_model.logger") as mock_logger,
         ):
@@ -202,7 +202,7 @@ class TestLiteLLMTriton(unittest.TestCase):
     async def _run_generate_response_bad_request_exception(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.triton_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.triton_model.logger") as mock_logger,
         ):
@@ -223,7 +223,7 @@ class TestLiteLLMTriton(unittest.TestCase):
     async def _run_generate_response_api_error_chat_api(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.triton_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.triton_model.logger") as mock_logger,
         ):
@@ -250,7 +250,7 @@ class TestLiteLLMTriton(unittest.TestCase):
 
     async def _run_generate_response_with_extracted_status_code(self):
         with patch(
-            "sygra.core.models.lite_llm.triton_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_acomp.side_effect = Exception("Service unavailable")
             model = LiteLLMTriton(self.base_config)
@@ -264,7 +264,7 @@ class TestLiteLLMTriton(unittest.TestCase):
 
     async def _run_generate_response_passes_generation_params(self):
         with patch(
-            "sygra.core.models.lite_llm.triton_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {"message": {"content": "Response"}}

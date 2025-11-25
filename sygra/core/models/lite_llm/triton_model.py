@@ -4,8 +4,7 @@ import logging
 from typing import Any
 
 from langchain_core.prompt_values import ChatPromptValue
-from litellm import BadRequestError, acompletion, atext_completion
-from openai import APIError, RateLimitError
+from openai import APIError, BadRequestError, RateLimitError
 
 from sygra.core.models.custom_models import ModelParams
 from sygra.core.models.lite_llm.base import LiteLLMBase
@@ -32,13 +31,6 @@ class CustomTriton(LiteLLMBase):
 
     def _provider_label(self) -> str:
         return "Triton"
-
-    # Ensure tests patch module-level functions
-    def _fn_acompletion(self):
-        return acompletion
-
-    def _fn_atext_completion(self):
-        return atext_completion
 
     # Ensure module-level logger is used for tests expecting per-module logging
     def _map_exception(self, e: Exception, context: str) -> ModelResponse:

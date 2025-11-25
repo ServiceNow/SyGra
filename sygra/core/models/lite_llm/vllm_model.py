@@ -4,8 +4,7 @@ import logging
 from typing import Any, Type
 
 from langchain_core.prompt_values import ChatPromptValue
-from litellm import BadRequestError, acompletion, atext_completion
-from openai import APIError, RateLimitError
+from openai import APIError, BadRequestError, RateLimitError
 from pydantic import BaseModel
 
 from sygra.core.models.custom_models import ModelParams
@@ -39,13 +38,6 @@ class CustomVLLM(LiteLLMBase):
     def _native_structured_output_spec(self):
         # vLLM uses guided_json with JSON schema
         return ("guided_json", "schema")
-
-    # Ensure tests patch module-level functions
-    def _fn_acompletion(self):
-        return acompletion
-
-    def _fn_atext_completion(self):
-        return atext_completion
 
     @track_model_request
     async def _generate_native_structured_output(

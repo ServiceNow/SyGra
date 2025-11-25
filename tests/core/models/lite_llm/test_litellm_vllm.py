@@ -74,7 +74,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
 
     async def _run_generate_response_chat_api_success(self):
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {
@@ -100,7 +100,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
 
     async def _run_generate_response_chat_api_with_tools_success(self):
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             tool_call = {
                 "id": "call_12xyz",
@@ -129,7 +129,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     async def _run_generate_response_completions_api_success(self, mock_tokenizer):
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.atext_completion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.atext_completion", new_callable=AsyncMock
         ) as mock_atext:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {"text": "Response text"}
@@ -155,7 +155,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
     async def _run_generate_response_rate_limit_error(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.vllm_model.logger") as mock_logger,
         ):
@@ -179,7 +179,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
 
     async def _run_generate_response_connection_error(self):
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_acomp.side_effect = Exception(constants.CONNECTION_ERROR)
             model = LiteLLMVLLM(self.base_config)
@@ -193,7 +193,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
     async def _run_generate_response_generic_exception(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.vllm_model.logger") as mock_logger,
         ):
@@ -213,7 +213,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
     async def _run_generate_response_bad_request_exception(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.vllm_model.logger") as mock_logger,
         ):
@@ -234,7 +234,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
     async def _run_generate_response_api_error_chat_api(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.vllm_model.logger") as mock_logger,
         ):
@@ -262,7 +262,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
     async def _run_generate_response_api_error_completions_api(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.vllm_model.atext_completion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.atext_completion", new_callable=AsyncMock
             ) as mock_atext,
             patch("sygra.core.models.lite_llm.vllm_model.logger") as mock_logger,
         ):
@@ -290,7 +290,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
 
     async def _run_generate_response_with_extracted_status_code(self):
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_acomp.side_effect = Exception("Service unavailable")
             model = LiteLLMVLLM(self.base_config)
@@ -304,7 +304,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
 
     async def _run_generate_response_passes_generation_params(self):
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {"message": {"content": "Response"}}
@@ -333,7 +333,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
             name: str
 
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {
@@ -358,7 +358,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
             name: str
 
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.atext_completion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.atext_completion", new_callable=AsyncMock
         ) as mock_atext:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {"text": json.dumps({"name": "ok"})}
@@ -381,7 +381,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
             name: str
 
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {
