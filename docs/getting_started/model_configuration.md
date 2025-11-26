@@ -228,7 +228,7 @@ This section summarizes provider-specific configuration and capabilities for mod
   - Native structured output support
 - **Notes**: Typically no API key required. Supports `completions_api: true` when using completions-style inference.
 
-### Vertex AI via LiteLLM (`model_type: vertex_ai`)
+### Vertex AI (`model_type: vertex_ai`)
 - **Required keys (YAML)**: `vertex_project`, `vertex_location`, `vertex_credentials`
   - `vertex_credentials` can be one of:
     - a dict (service account JSON)
@@ -242,7 +242,7 @@ This section summarizes provider-specific configuration and capabilities for mod
   - Audio: Not supported
   - Native structured output supported
 
-### AWS Bedrock via LiteLLM (`model_type: bedrock`)
+### AWS Bedrock (`model_type: bedrock`)
 - **Required keys (YAML)**: `aws_access_key_id`, `aws_secret_access_key`, `aws_region_name`
 - **Do not set**: `url`, `auth_token` (not used)
 - **Env vars**: `SYGRA_<MODEL>_AWS_ACCESS_KEY_ID`, `SYGRA_<MODEL>_AWS_SECRET_ACCESS_KEY`, `SYGRA_<MODEL>_AWS_REGION_NAME`
