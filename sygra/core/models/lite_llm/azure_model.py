@@ -51,14 +51,10 @@ class CustomAzure(LiteLLMBase):
             logger.warning(
                 f"[{self.name()}] Azure API request exceeded rate limit: {getattr(e, 'message', e)}"
             )
-            ctx = "Azure API"
         elif isinstance(e, BadRequestError):
             logger.error(f"[{self.name()}] Azure API bad request: {getattr(e, 'message', e)}")
-            ctx = "Azure API"
         elif isinstance(e, APIError):
             logger.error(f"[{self.name()}] Azure API error: {getattr(e, 'message', e)}")
-            ctx = "Azure API"
         else:
             logger.error(f"[{self.name()}] Azure text generation failed: {e}")
-            ctx = "Azure API"
-        return super()._map_exception(e, ctx)
+        return super()._map_exception(e, context)
