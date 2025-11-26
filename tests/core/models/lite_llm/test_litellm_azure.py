@@ -1,4 +1,5 @@
 import asyncio
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -11,6 +12,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompt_values import ChatPromptValue
+from pydantic import BaseModel
 
 from sygra.core.models.custom_models import ModelParams
 from sygra.core.models.lite_llm.azure_model import CustomAzure
@@ -272,6 +274,55 @@ class TestLiteLLMAzure(unittest.TestCase):
 
     def test_generate_response_passes_generation_params(self):
         asyncio.run(self._run_generate_response_passes_generation_params())
+
+    async def _run_fallback_structured_output_success(self):
+        class Item(BaseModel):
+            name: str
+
+        with patch(
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
+        ) as mock_acomp:
+            mock_choice = MagicMock()
+            mock_choice.model_dump.return_value = {
+                "message": {"content": json.dumps({"name": "ok"}), "tool_calls": None}
+            }
+            mock_completion = MagicMock()
+            mock_completion.choices = [mock_choice]
+            mock_acomp.return_value = mock_completion
+
+            model = CustomAzure(self.base_config)
+            params = ModelParams(url=self.base_config["url"], auth_token="sk-test")
+            resp = await model._generate_fallback_structured_output(self.chat_input, params, Item)
+            self.assertEqual(resp.response_code, 200)
+            data = json.loads(resp.llm_response)
+            self.assertEqual(data.get("name"), "ok")
+
+    def test_fallback_structured_output_success(self):
+        asyncio.run(self._run_fallback_structured_output_success())
+
+    async def _run_fallback_structured_output_parse_failure_returns_original(self):
+        class Item(BaseModel):
+            name: str
+
+        with patch(
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
+        ) as mock_acomp:
+            mock_choice = MagicMock()
+            mock_choice.model_dump.return_value = {
+                "message": {"content": "not_json", "tool_calls": None}
+            }
+            mock_completion = MagicMock()
+            mock_completion.choices = [mock_choice]
+            mock_acomp.return_value = mock_completion
+
+            model = CustomAzure(self.base_config)
+            params = ModelParams(url=self.base_config["url"], auth_token="sk-test")
+            resp = await model._generate_fallback_structured_output(self.chat_input, params, Item)
+            self.assertEqual(resp.response_code, 200)
+            self.assertEqual(resp.llm_response, "not_json")
+
+    def test_fallback_structured_output_parse_failure_returns_original(self):
+        asyncio.run(self._run_fallback_structured_output_parse_failure_returns_original())
 
 
 if __name__ == "__main__":

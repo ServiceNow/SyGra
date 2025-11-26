@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import base64
 import json
-from typing import Any, Optional, Tuple, Type
+from typing import Any, Optional, Tuple, Type, cast
 
+from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompt_values import ChatPromptValue
 from litellm import acompletion, aimage_edit, aimage_generation, aspeech, atext_completion
 from openai import APIError, BadRequestError, RateLimitError
@@ -204,7 +205,15 @@ class LiteLLMBase(BaseCustomModel):
     ) -> ModelResponse:
         spec = self._native_structured_output_spec()
         if not spec:
-            raise NotImplementedError("Native structured output not supported for this model")
+            logger.info(
+                f"[{self.name()}] Native structured output not supported; using fallback instructions"
+            )
+            return cast(
+                ModelResponse,
+                await self._generate_fallback_structured_output(
+                    input, model_params, pydantic_model
+                ),
+            )
         param_name, value_kind = spec
         common = self._build_common_kwargs(model_params)
         try:
@@ -237,8 +246,11 @@ class LiteLLMBase(BaseCustomModel):
                     f"[{self.name()}] Native structured output request failed with code: {status}"
                 )
                 # Fall back to instruction-based approach
-                return await self._generate_fallback_structured_output(
-                    input, model_params, pydantic_model
+                return cast(
+                    ModelResponse,
+                    await self._generate_fallback_structured_output(
+                        input, model_params, pydantic_model
+                    ),
                 )
 
             # Validate result; on failure, fall back
@@ -255,9 +267,57 @@ class LiteLLMBase(BaseCustomModel):
             except Exception as ve:
                 logger.error(f"[{self.name()}] Native structured output validation failed: {ve}")
                 # Fall back to instruction-based approach
-                return await self._generate_fallback_structured_output(
-                    input, model_params, pydantic_model
+                return cast(
+                    ModelResponse,
+                    await self._generate_fallback_structured_output(
+                        input, model_params, pydantic_model
+                    ),
                 )
+        except Exception as e:
+            return self._map_exception(e, f"{self._provider_label()} API")
+
+    @track_model_request
+    async def _generate_fallback_structured_output(
+        self,
+        input: ChatPromptValue,
+        model_params: ModelParams,
+        pydantic_model: Type[BaseModel],
+        **kwargs: Any,
+    ) -> ModelResponse:
+        try:
+            logger.info("Generating fallback structured output (LiteLLM)")
+            self._apply_tools(**kwargs)
+
+            parser = PydanticOutputParser(pydantic_object=pydantic_model)
+            format_instructions = parser.get_format_instructions()
+
+            modified_messages = list(input.messages)
+            if modified_messages and getattr(modified_messages[-1], "content", None):
+                modified_messages[-1].content = (
+                    str(modified_messages[-1].content) + f"\n\n{format_instructions}"
+                )
+
+            modified_input = ChatPromptValue(messages=modified_messages)
+
+            model_response: ModelResponse = await self._request_text(modified_input, model_params)
+
+            if model_response.response_code != 200:
+                logger.error(
+                    f"[{self.name()}] Fallback structured output failed with code: {model_response.response_code}"
+                )
+                return model_response
+
+            try:
+                parsed_output = parser.parse(model_response.llm_response or "")
+                logger.info(f"[{self.name()}] Fallback structured output parsed successfully")
+                return ModelResponse(
+                    llm_response=parsed_output.model_dump_json(),
+                    response_code=200,
+                    tool_calls=model_response.tool_calls,
+                )
+            except Exception as ve:
+                logger.warning(f"[{self.name()}] Failed to parse fallback structured output: {ve}")
+                return model_response
         except Exception as e:
             return self._map_exception(e, f"{self._provider_label()} API")
 
