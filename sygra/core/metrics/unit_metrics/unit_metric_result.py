@@ -6,7 +6,7 @@ In other words, this is a list of binary results(True,False) sent to any metric 
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 
 @dataclass
@@ -75,6 +75,7 @@ class UnitMetricResult:
         if self.correct != expected_correct:
             # Allow override but warn
             import warnings
+
             warnings.warn(
                 f"Inconsistent correctness: correct={self.correct} but "
                 f"tool_correct={self.tool_correct} and params_correct={self.params_correct}"
@@ -94,11 +95,11 @@ class UnitMetricResult:
             "golden": self.golden,
             "predicted": self.predicted,
             "metadata": self.metadata,
-            "reason": self.reason
+            "reason": self.reason,
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'UnitMetricResult':
+    def from_dict(cls, data: Dict[str, Any]) -> "UnitMetricResult":
         """
         Create UnitMetricResult from dictionary.
 
@@ -109,13 +110,13 @@ class UnitMetricResult:
             UnitMetricResult instance
         """
         return cls(
-            correct=data.get('correct', False),
-            tool_correct=data.get('tool_correct', False),
-            params_correct=data.get('params_correct', False),
-            golden=data.get('golden', {}),
-            predicted=data.get('predicted', {}),
-            metadata=data.get('metadata', {}),
-            reason=data.get('reason')
+            correct=data.get("correct", False),
+            tool_correct=data.get("tool_correct", False),
+            params_correct=data.get("params_correct", False),
+            golden=data.get("golden", {}),
+            predicted=data.get("predicted", {}),
+            metadata=data.get("metadata", {}),
+            reason=data.get("reason"),
         )
 
     def __repr__(self) -> str:
