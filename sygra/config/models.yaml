@@ -7,7 +7,7 @@ mixtral8x7b:
     temperature: 1.0
 
 mixtral_instruct_8x22b:
-  model_type: vllm  
+  model_type: vllm
   # URL and auth_token should be defined at .env file as SYGRA_MIXTRAL_INSTRUCT_8X22B_URL and SYGRA_MIXTRAL_INSTRUCT_8X22B_TOKEN
   hf_chat_template_model_id: meta-math/MetaMath-Mistral-7B
   parameters:
@@ -110,3 +110,21 @@ gpt_image_1:
   parameters:
     size: "1024x1024"
     quality: "high"
+
+# Vertex AI model
+gemini_2_5_pro:
+  model_type: vertex_ai
+  model: gemini-2.5-pro
+  # Vertex project, location and credentials should be defined at .env file as SYGRA_GEMINI_2_5_PRO_VERTEX_PROJECT, SYGRA_GEMINI_2_5_PRO_VERTEX_LOCATION, SYGRA_GEMINI_2_5_PRO_VERTEX_CREDENTIALS
+  parameters:
+    max_tokens: 5000
+    temperature: 0.5
+
+# Bedrock model
+bedrock_model:
+  model_type: bedrock
+  model: anthropic.claude-sonnet-4-5-20250929-v1:0
+  # aws_access_key_id, aws_secret_access_key, aws_region_name should be defined at .env file as SYGRA_BEDROCK_MODEL_AWS_ACCESS_KEY_ID, SYGRA_BEDROCK_MODEL_AWS_SECRET_ACCESS_KEY, SYGRA_BEDROCK_MODEL_AWS_REGION_NAME
+  parameters:
+    max_tokens: 5000
+    temperature: 0.5
