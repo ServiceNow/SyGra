@@ -437,8 +437,7 @@ class BaseCustomModel(ABC):
         Returns:
             http status code
         """
-        self.model_config.get("multi_modal", True)
-        msg = utils.backend_factory.get_test_message(model_config=model)
+        msg = utils.backend_factory.get_test_message(model_config=model_config)
         # build parameters
         model_param = ModelParams(url=url, auth_token=auth_token)
         model_response: ModelResponse = asyncio.run(self._generate_response(msg, model_param))
