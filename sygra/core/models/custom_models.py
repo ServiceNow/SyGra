@@ -433,7 +433,7 @@ class BaseCustomModel(ABC):
         Args:
             url: single url to ping
             auth_token: auth token for the url
-            model: model config
+            model_config: model config
         Returns:
             http status code
         """
@@ -454,7 +454,7 @@ class BaseCustomModel(ABC):
             for i, url in enumerate(url_obj):
                 token = auth_token[i] if isinstance(auth_token, list) else auth_token
                 status = self._ping_model(
-                    url=str(url), auth_token=str(token), model=self.model_config
+                    url=str(url), auth_token=str(token), model_config=self.model_config
                 )
                 if status != 200:
                     logger.error(f"Server({url}) responded with {status}")
@@ -462,7 +462,7 @@ class BaseCustomModel(ABC):
             return 200
         else:
             return self._ping_model(
-                url=str(url_obj), auth_token=str(auth_token), model=self.model_config
+                url=str(url_obj), auth_token=str(auth_token), model_config=self.model_config
             )
 
     def get_chat_formatted_text(
