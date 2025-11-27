@@ -18,29 +18,30 @@ class UnitMetricResult:
     containing boolean flags for correctness and contextual information.(True/False)
 
     Attributes:
-        correct: Overall correctness (tool + params both correct)
-        tool_correct: Tool/action type is correct
-        params_correct: Parameters are correct (only meaningful if tool_correct=True)
+        correct: Boolean indicating correctness (True/False)
         golden: Expected/golden response (dict)
         predicted: Model's predicted response (dict)
         metadata: Additional context (mission_id, step_id, retry_number, etc.)
-        reason: Optional human-readable reason for the result
 
     Usage:
         result = UnitMetricResult(
             correct=True,
-            tool_correct=True,
-            params_correct=True,
             golden={'event': 'click', 'properties': {'x': 100, 'y': 200}},
             predicted={'tool': 'click', 'x': 105, 'y': 195},
-            metadata={'mission_id': 'mission_01', 'step_id': 'step_1', 'retry_number': 0}
+            metadata={'mission_id': 'mission_01', 'step_id': 'step_1', 'validation_type': 'tool_only'}
+        )
+
+        # Example: Tool-only correctness
+        result = UnitMetricResult(
+            correct=True,  # Tool is correct
+            golden={'event': 'click'},
+            predicted={'tool': 'click'},
+            metadata={'mission_id': 'mission_01', 'step_id': 'step_1','validation_type': 'tool_only'}
         )
     """
 
     # Core validation results
     correct: bool
-    tool_correct: bool
-    params_correct: bool
 
     # Context
     golden: Dict[str, Any]
@@ -48,9 +49,6 @@ class UnitMetricResult:
 
     # Metadata (extensible for any task)
     metadata: Dict[str, Any] = field(default_factory=dict)
-
-    # Optional explanation
-    reason: Optional[str] = None
 
     def __post_init__(self):
         """Validate the result structure"""
@@ -64,23 +62,6 @@ class UnitMetricResult:
         if not isinstance(self.predicted, dict):
             raise ValueError("predicted must be a dictionary")
 
-        # Logical validation: if tool is wrong, params can't be correct
-        if not self.tool_correct and self.params_correct:
-            raise ValueError(
-                "Logical error: params_correct cannot be True if tool_correct is False"
-            )
-
-        # Overall correctness should match tool + params
-        expected_correct = self.tool_correct and self.params_correct
-        if self.correct != expected_correct:
-            # Allow override but warn
-            import warnings
-
-            warnings.warn(
-                f"Inconsistent correctness: correct={self.correct} but "
-                f"tool_correct={self.tool_correct} and params_correct={self.params_correct}"
-            )
-
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert to dictionary for serialization.
@@ -90,12 +71,9 @@ class UnitMetricResult:
         """
         return {
             "correct": self.correct,
-            "tool_correct": self.tool_correct,
-            "params_correct": self.params_correct,
             "golden": self.golden,
             "predicted": self.predicted,
-            "metadata": self.metadata,
-            "reason": self.reason,
+            "metadata": self.metadata
         }
 
     @classmethod
@@ -111,12 +89,9 @@ class UnitMetricResult:
         """
         return cls(
             correct=data.get("correct", False),
-            tool_correct=data.get("tool_correct", False),
-            params_correct=data.get("params_correct", False),
             golden=data.get("golden", {}),
             predicted=data.get("predicted", {}),
-            metadata=data.get("metadata", {}),
-            reason=data.get("reason"),
+            metadata=data.get("metadata", {})
         )
 
     def __repr__(self) -> str:
@@ -124,9 +99,8 @@ class UnitMetricResult:
         return (
             f"UnitMetricResult("
             f"correct={self.correct}, "
-            f"tool_correct={self.tool_correct}, "
-            f"params_correct={self.params_correct}, "
-            f"golden_event={self.golden.get('event', 'unknown')}, "
-            f"predicted_tool={self.predicted.get('tool', 'unknown')}"
+            f"golden={self.golden}, "
+            f"predicted={self.predicted}"
+            f"metadata={self.metadata}"
             f")"
         )

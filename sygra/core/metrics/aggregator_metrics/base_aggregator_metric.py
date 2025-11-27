@@ -42,8 +42,6 @@ class BaseAggregatorMetric(ABC):
             results: List of UnitMetricResult objects from validators
                     Each result contains:
                     - correct: bool (overall correctness)
-                    - tool_correct: bool (tool/action type correct)
-                    - params_correct: bool (parameters correct)
                     - golden: dict (expected response)
                     - predicted: dict (model response)
                     - metadata: dict (mission_id, step_id, retry_number, etc.)
@@ -61,14 +59,6 @@ class BaseAggregatorMetric(ABC):
     def _count_correct(self, results: List[UnitMetricResult]) -> int:
         """Count number of correct results"""
         return sum(1 for r in results if r.correct)
-
-    def _count_tool_correct(self, results: List[UnitMetricResult]) -> int:
-        """Count number of results with correct tool/action"""
-        return sum(1 for r in results if r.tool_correct)
-
-    def _count_params_correct(self, results: List[UnitMetricResult]) -> int:
-        """Count number of results with correct parameters"""
-        return sum(1 for r in results if r.params_correct)
 
     def _safe_divide(self, numerator: float, denominator: float) -> float:
         """Safe division that returns 0.0 if denominator is 0"""

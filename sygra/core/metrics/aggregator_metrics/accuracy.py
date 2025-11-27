@@ -44,8 +44,6 @@ class AccuracyMetric(BaseAggregatorMetric):
         # Overall accuracy
         total = len(results)
         correct = self._count_correct(results)
-        tool_correct = self._count_tool_correct(results)
-        params_correct = self._count_params_correct(results)
         overall_accuracy = self._safe_divide(correct, total)
         result = {
             "accuracy": overall_accuracy,
