@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Type
+from typing import Any
 
 from langchain_core.prompt_values import ChatPromptValue
 from openai import APIError, BadRequestError, RateLimitError
-from pydantic import BaseModel
 
 from sygra.core.models.custom_models import ModelParams
 from sygra.core.models.lite_llm.base import LiteLLMBase
@@ -43,17 +42,6 @@ class CustomAzureOpenAI(LiteLLMBase):
         return ("response_format", "pydantic")
 
     @track_model_request
-    async def _generate_native_structured_output(
-        self,
-        input: ChatPromptValue,
-        model_params: ModelParams,
-        pydantic_model: Type[BaseModel],
-        **kwargs: Any,
-    ) -> ModelResponse:
-        self._apply_tools(**kwargs)
-        return await self._request_native_structured(input, model_params, pydantic_model)
-
-    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
@@ -63,62 +51,22 @@ class CustomAzureOpenAI(LiteLLMBase):
         if "audio" in model_id:
             return await self._generate_audio_chat_completion(input, model_params)
         if output_type == "audio":
-            return await self._request_speech(input, model_params)
+            return await self._generate_speech(input, model_params)
         elif output_type == "image":
-            return await self._request_image(input, model_params)
+            return await self._generate_image(input, model_params)
         else:
-            return await self._request_text(input, model_params)
-
-    async def _generate_text(
-        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
-    ) -> ModelResponse:
-        return await self._request_text(input, model_params)
+            return await self._generate_text(input, model_params)
 
     async def _generate_speech(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         # Pre-log warning at module logger for overly long text, as tests expect warn to be called here
-        try:
-            text_to_speak = " ".join(
-                [str(getattr(m, "content", "")) for m in input.messages]
-            ).strip()
-            if len(text_to_speak) > 4096:
-                logger.warn(
-                    f"[{self.name()}] Text exceeds 4096 character limit: {len(text_to_speak)} characters"
-                )
-        except Exception:
-            pass
-        return await self._request_speech(input, model_params)
-
-    async def _generate_image(
-        self, input: ChatPromptValue, model_params: ModelParams
-    ) -> ModelResponse:
-        return await self._request_image(input, model_params)
-
-    async def _generate_audio_chat_completion(
-        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
-    ) -> ModelResponse:
-        return await self._request_audio_chat_completion(input, model_params)
-
-    async def _generate_image_from_text(
-        self, prompt_text: str, model_url: str, model_params: ModelParams
-    ) -> ModelResponse:
-        return await self._request_image(ChatPromptValue(messages=[]), model_params)
-
-    async def _process_streaming_image_response(self, stream_response):
-        return await super()._process_streaming_image_response(stream_response)
-
-    async def _process_image_response(self, image_response):
-        return await super()._process_image_response(image_response)
-
-    async def _url_to_data_url(self, url: str) -> str:
-        return await super()._url_to_data_url(url)
-
-    async def _edit_image_with_data_urls(
-        self, image_data_urls: list, prompt_text: str, model_url: str, model_params: ModelParams
-    ) -> ModelResponse:
-        # Delegate to shared image flow
-        return await self._request_image(ChatPromptValue(messages=[]), model_params)
+        text_to_speak = " ".join([str(getattr(m, "content", "")) for m in input.messages]).strip()
+        if len(text_to_speak) > 4096:
+            logger.warn(
+                f"[{self.name()}] Text exceeds 4096 character limit: {len(text_to_speak)} characters"
+            )
+        return await super()._generate_speech(input, model_params)
 
     # Ensure module-level logger is used for tests expecting per-module logging
     def _map_exception(self, e: Exception, context: str) -> ModelResponse:

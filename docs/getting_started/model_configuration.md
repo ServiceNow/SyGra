@@ -47,7 +47,7 @@ SYGRA_MIXTRAL_8X7B_CHAT_TEMPLATE={% for m in messages %} ... {% endfor %}
 
 | Key                         | Description                                                                                                                                           |
 |-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `model_type`                | Type of backend server (`tgi`, `vllm`, `openai`, `azure_openai`, `azure`, `mistralai`, `ollama`, `triton`, `bedrock`, `vertex_ai`)                     |
+| `model_type`                | Type of backend server (`tgi`, `vllm`, `openai`, `azure_openai`, `azure`, `mistralai`, `ollama`, `triton`, `bedrock`, `vertex_ai`)                    |
 | `model_name`                | Model name for your deployments (for Azure/Azure OpenAI)                                                                                              |
 | `api_version`               | API version for Azure or Azure OpenAI                                                                                                                 |
 | `multi_modal`               | *(Optional)* Boolean: Set this to false if the model is not multi-modal (default: true)                                                               |
@@ -58,6 +58,7 @@ SYGRA_MIXTRAL_8X7B_CHAT_TEMPLATE={% for m in messages %} ... {% endfor %}
 | `special_tokens`            | *(Optional)* List of special stop tokens used in generation                                                                                           |
 | `post_process`              | *(Optional)* Post processor after model inference (e.g. `models.model_postprocessor.RemoveThinkData`)                                                 |
 | `parameters`                | *(Optional)* Generation parameters (see below)                                                                                                        |
+| `image_capabilities`        | *(Optional)* Image model limits as dict. Supports `prompt_char_limit` (warn if exceeded) and `max_edit_images` (truncate extra input images).         |
 | `chat_template_params`      | *(Optional)* Chat template parameters (e.g. `reasoning_effort` for `gpt-oss-120b`) <br/> when `completions_api` is enabled                            |
 | `ssl_verify`                | *(Optional)* Verify SSL certificate (default: true)                                                                                                   |
 | `ssl_cert`                  | *(Optional)* Path to SSL certificate file                                                                                                             |
@@ -180,75 +181,17 @@ Otherwise, exception will be raised during the model initialization.
 
 This section summarizes provider-specific configuration and capabilities for models implemented under `sygra/core/models/lite_llm`.
 
-### OpenAI (`model_type: openai`)
-- **Required keys**: None in YAML beyond `model_type` and optional `model`. URL and token must come from env vars.
-- **Env vars**: `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`
-- **Capabilities**:
-  - Text (chat)
-  - Image: generation and editing supported
-  - Audio: TTS via `output_type: audio` and audio chat completions for audio-capable models
-  - Native structured output support
+| Provider | Text (chat) | Image generation | Image editing | Audio (TTS) | Audio chat | Native structured output | Completions API | Required keys                                                   | Env vars                                                                                                  |
+|----------|--------------|------------------|---------------|-------------|------------|--------------------------|-----------------|-----------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| OpenAI (`openai`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | `url`, `auth_token`                                             | `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`                                                                |
+| Azure OpenAI (`azure_openai`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | `url`, `auth_token`, `api_version`                              | `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`                                                                |
+| Azure (`azure`) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | `url`, `auth_token`                                             | `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`                                                                |
+| vLLM (`vllm`) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | `url`, `auth_token`                                             | `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`                                                                |
+| Triton (`triton`) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | `url`, `auth_token`                                             | `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`                                                                |
+| Ollama (`ollama`) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | None                                                            | `SYGRA_<MODEL>_URL`                                                                                                      |
+| Vertex AI (`vertex_ai`) | ✅ | ✅* | ❌ | ❌ | ❌ | ✅ | ❌ | `vertex_project`, `vertex_location`, `vertex_credentials`       | `SYGRA_<MODEL>_VERTEX_PROJECT`, `SYGRA_<MODEL>_VERTEX_LOCATION`, `SYGRA_<MODEL>_VERTEX_CREDENTIALS`       |
+| AWS Bedrock (`bedrock`) | ✅ | ✅* | ❌ | ❌ | ❌ | ✅ | ❌ | `aws_access_key_id`, `aws_secret_access_key`, `aws_region_name` | `SYGRA_<MODEL>_AWS_ACCESS_KEY_ID`, `SYGRA_<MODEL>_AWS_SECRET_ACCESS_KEY`, `SYGRA_<MODEL>_AWS_REGION_NAME` |
 
-### Azure OpenAI (`model_type: azure_openai`)
-- **Required keys**: `model_name`, `api_version`
-- **Env vars**: `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`
-- **Capabilities**:
-  - Text (chat)
-  - Image: generation and editing supported
-  - Audio: TTS via `output_type: audio` and audio chat completions for audio-capable deployments
-  - Native structured output support
+Legend: ✅ supported, ❌ not supported, ✅* supported depending on the selected model/deployment.
 
-### Azure (`model_type: azure`)
-- **Required keys**: None in YAML beyond `model_type`; URL and token must come from env vars
-- **Env vars**: `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`
-- **Capabilities**:
-  - Text (chat)
-  - Intended for non-OpenAI Azure endpoints acting as HTTP proxies
-
-### vLLM (`model_type: vllm`)
-- **Required keys**: None in YAML beyond `model_type`; URL and token must come from env vars
-- **Env vars**: `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`
-- **Capabilities**:
-  - Text (chat or completions)
-  - Native structured output support
-- **Notes**: Set `completions_api: true` when using completions-style inference and provide `hf_chat_template_model_id`.
-
-### Triton (`model_type: triton`)
-- **Required keys**: None in YAML beyond `model_type`; URL and token must come from env vars
-- **Env vars**: `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`
-- **Capabilities**:
-  - Text (chat or completions)
-- **Notes**: Set `completions_api: true` when using completions-style inference and provide `hf_chat_template_model_id`.
-
-### Ollama (`model_type: ollama`)
-- **Required keys**: None in YAML beyond `model_type`
-- **Env vars**: `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`
-- **Capabilities**:
-  - Text (chat or completions)
-  - Native structured output support
-- **Notes**: Typically no API key required. Supports `completions_api: true` when using completions-style inference.
-
-### Vertex AI (`model_type: vertex_ai`)
-- **Required keys (YAML)**: `vertex_project`, `vertex_location`, `vertex_credentials`
-  - `vertex_credentials` can be one of:
-    - a dict (service account JSON)
-    - a file path to a service account JSON
-    - a JSON string
-- **Do not set**: `url`, `auth_token` (not used)
-- **Env vars**: `SYGRA_<MODEL>_VERTEX_PROJECT`, `SYGRA_<MODEL>_VERTEX_LOCATION`, `SYGRA_<MODEL>_VERTEX_CREDENTIALS`
-- **Capabilities**:
-  - Text (chat)
-  - Image: Generation when the selected model supports it. Does not support image editing.
-  - Audio: Not supported
-  - Native structured output supported
-
-### AWS Bedrock (`model_type: bedrock`)
-- **Required keys (YAML)**: `aws_access_key_id`, `aws_secret_access_key`, `aws_region_name`
-- **Do not set**: `url`, `auth_token` (not used)
-- **Env vars**: `SYGRA_<MODEL>_AWS_ACCESS_KEY_ID`, `SYGRA_<MODEL>_AWS_SECRET_ACCESS_KEY`, `SYGRA_<MODEL>_AWS_REGION_NAME`
-- **Capabilities**:
-  - Text (chat)
-  - Image: Generation when the selected model supports it. Does not support image editing.
-  - Audio: Not supported
-  - Native structured output supported
 ---

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Type
+from typing import Any
 
 from langchain_core.prompt_values import ChatPromptValue
 from openai import APIError, BadRequestError, RateLimitError
-from pydantic import BaseModel
 
 from sygra.core.models.custom_models import ModelParams
 from sygra.core.models.lite_llm.base import LiteLLMBase
@@ -40,22 +39,19 @@ class CustomVLLM(LiteLLMBase):
         return ("guided_json", "schema")
 
     @track_model_request
-    async def _generate_native_structured_output(
-        self,
-        input: ChatPromptValue,
-        model_params: ModelParams,
-        pydantic_model: Type[BaseModel],
-        **kwargs: Any,
-    ) -> ModelResponse:
-        self._apply_tools(**kwargs)
-        return await self._request_native_structured(input, model_params, pydantic_model)
-
-    @track_model_request
     async def _generate_response(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         self._apply_tools(**kwargs)
-        return await self._request_text(input, model_params)
+        output_type = self.model_config.get("output_type")
+        if output_type in ("audio", "image"):
+            logger.error(
+                f"[{self.name()}] {self._provider_label()} does not support output_type '{output_type}'"
+            )
+            raise ValueError(
+                f"[{self.name()}] {self._provider_label()} does not support output_type '{output_type}'"
+            )
+        return await self._generate_text(input, model_params)
 
     # Ensure module-level logger is used for tests expecting per-module logging
     def _map_exception(self, e: Exception, context: str) -> ModelResponse:

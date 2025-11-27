@@ -18,19 +18,6 @@ class CustomAzure(LiteLLMBase):
         self.model_config = model_config
         self.model_name = self.model_config.get("model", self.name())
 
-    @track_model_request
-    async def _generate_response(
-        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
-    ) -> ModelResponse:
-        self._apply_tools(**kwargs)
-        result = await self._request_text(input, model_params)
-        if getattr(result, "finish_reason", None) == "content_filter":
-
-            logger.error(
-                f"[{self.name()}] Azure request failed with code: 400 and error: {constants.ERROR_PREFIX} Blocked by azure content filter"
-            )
-        return result
-
     # Provider hooks
     def _get_model_prefix(self) -> str:
         return "azure_ai"
@@ -43,6 +30,27 @@ class CustomAzure(LiteLLMBase):
 
     def _check_content_filter_finish_reason(self) -> bool:
         return True
+
+    @track_model_request
+    async def _generate_response(
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
+        self._apply_tools(**kwargs)
+        output_type = self.model_config.get("output_type")
+        if output_type in ("audio", "image"):
+            logger.error(
+                f"[{self.name()}] {self._provider_label()} does not support output_type '{output_type}'"
+            )
+            raise ValueError(
+                f"[{self.name()}] {self._provider_label()} does not support output_type '{output_type}'"
+            )
+        result = await self._generate_text(input, model_params)
+        if getattr(result, "finish_reason", None) == "content_filter":
+
+            logger.error(
+                f"[{self.name()}] Azure request failed with code: 400 and error: {constants.ERROR_PREFIX} Blocked by azure content filter"
+            )
+        return result
 
     def _map_exception(self, e: Exception, context: str) -> ModelResponse:
         # Import locally to avoid binding at module import time

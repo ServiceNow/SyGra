@@ -145,7 +145,7 @@ class LiteLLMBase(BaseCustomModel):
         )
 
     # ----------------------- Text (chat or completions) -----------------------
-    async def _request_text(
+    async def _generate_text(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> ModelResponse:
         common = self._build_common_kwargs(model_params)
@@ -198,11 +198,6 @@ class LiteLLMBase(BaseCustomModel):
         **kwargs: Any,
     ) -> ModelResponse:
         self._apply_tools(**kwargs)
-        return await self._request_native_structured(input, model_params, pydantic_model)
-
-    async def _request_native_structured(
-        self, input: ChatPromptValue, model_params: ModelParams, pydantic_model: Any
-    ) -> ModelResponse:
         spec = self._native_structured_output_spec()
         if not spec:
             logger.info(
@@ -218,10 +213,11 @@ class LiteLLMBase(BaseCustomModel):
         common = self._build_common_kwargs(model_params)
         try:
             # Construct provider-specific param
+            extra: dict[str, Any] = {}
             if value_kind == "pydantic":
-                extra = {param_name: pydantic_model}
+                extra[param_name] = pydantic_model
             else:
-                extra = {param_name: pydantic_model.model_json_schema()}
+                extra[param_name] = pydantic_model.model_json_schema()
 
             all_params = {**(self.generation_params or {}), **extra}
 
@@ -299,7 +295,7 @@ class LiteLLMBase(BaseCustomModel):
 
             modified_input = ChatPromptValue(messages=modified_messages)
 
-            model_response: ModelResponse = await self._request_text(modified_input, model_params)
+            model_response: ModelResponse = await self._generate_text(modified_input, model_params)
 
             if model_response.response_code != 200:
                 logger.error(
@@ -322,7 +318,7 @@ class LiteLLMBase(BaseCustomModel):
             return self._map_exception(e, f"{self._provider_label()} API")
 
     # ----------------------- Speech -----------------------
-    async def _request_speech(
+    async def _generate_speech(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> ModelResponse:
         common = self._build_common_kwargs(model_params)
@@ -335,10 +331,6 @@ class LiteLLMBase(BaseCustomModel):
                 return ModelResponse(
                     llm_response=f"{constants.ERROR_PREFIX} No text provided for TTS conversion",
                     response_code=400,
-                )
-            if len(text_to_speak) > 4096:
-                logger.warn(
-                    f"[{self.name()}] Text exceeds 4096 character limit: {len(text_to_speak)} characters"
                 )
 
             voice = self.generation_params.get("voice", self.model_config.get("voice", None))
@@ -376,7 +368,7 @@ class LiteLLMBase(BaseCustomModel):
         except Exception as e:
             return self._map_exception(e, f"{self._provider_label()} TTS")
 
-    async def _request_audio_chat_completion(
+    async def _generate_audio_chat_completion(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> ModelResponse:
         try:
@@ -506,7 +498,19 @@ class LiteLLMBase(BaseCustomModel):
                                     image_data_urls.append(url)
         return prompt_text.strip(), image_data_urls
 
-    async def _request_image(
+    def _image_capabilities(self) -> dict[str, Any]:
+        caps = self.model_config.get("image_capabilities")
+        out: dict[str, Any] = {}
+        if isinstance(caps, dict):
+            prompt_limit = caps.get("prompt_char_limit")
+            max_edit_images = caps.get("max_edit_images")
+            if isinstance(prompt_limit, int) and prompt_limit > 0:
+                out["prompt_char_limit"] = prompt_limit
+            if isinstance(max_edit_images, int) and max_edit_images > 0:
+                out["max_edit_images"] = max_edit_images
+        return out
+
+    async def _generate_image(
         self, input: ChatPromptValue, model_params: ModelParams
     ) -> ModelResponse:
         common = self._build_common_kwargs(model_params)
@@ -516,6 +520,13 @@ class LiteLLMBase(BaseCustomModel):
                 return ModelResponse(
                     llm_response=f"{constants.ERROR_PREFIX} No prompt provided for image generation",
                     response_code=400,
+                )
+
+            caps = self._image_capabilities()
+            limit = caps.get("prompt_char_limit")
+            if isinstance(limit, int) and limit > 0 and len(prompt_text) > limit:
+                logger.warning(
+                    f"[{self.name()}] Prompt exceeds {limit} character limit: {len(prompt_text)} characters"
                 )
 
             has_images = len(image_data_urls) > 0
@@ -538,7 +549,15 @@ class LiteLLMBase(BaseCustomModel):
 
                 from sygra.utils.image_utils import parse_image_data_url
 
-                # Support multiple images when supported by model family (OpenAI gpt-image-1)
+                max_imgs = caps.get("max_edit_images")
+                if isinstance(max_imgs, int) and max_imgs > 0:
+                    num_images = len(image_data_urls)
+                    if num_images > max_imgs:
+                        logger.warning(
+                            f"[{self.name()}] Only {max_imgs} input image(s) supported for editing. Using first {max_imgs} image(s). {num_images - max_imgs} image(s) will be ignored."
+                        )
+                        image_data_urls = image_data_urls[:max_imgs]
+
                 image_param: list[Any]
                 if len(image_data_urls) > 1:
                     image_files = []

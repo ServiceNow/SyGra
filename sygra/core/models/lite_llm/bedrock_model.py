@@ -79,9 +79,16 @@ class CustomBedrock(LiteLLMBase):
     ) -> ModelResponse:
         self._apply_tools(**kwargs)
         output_type = self.model_config.get("output_type")
+        if output_type == "audio":
+            logger.error(
+                f"[{self.name()}] {self._provider_label()} does not support output_type '{output_type}'"
+            )
+            raise ValueError(
+                f"[{self.name()}] {self._provider_label()} does not support output_type '{output_type}'"
+            )
         if output_type == "image":
-            return await self._request_image(input, model_params)
-        return await self._request_text(input, model_params)
+            return await self._generate_image(input, model_params)
+        return await self._generate_text(input, model_params)
 
     # Ensure module-level logger is used for tests expecting per-module logging
     def _map_exception(self, e: Exception, context: str) -> ModelResponse:

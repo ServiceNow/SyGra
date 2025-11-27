@@ -106,6 +106,9 @@ gpt_image_1:
   output_type: image
   model_type: azure_openai
   api_version: 2025-04-01-preview
+  image_capabilities:
+    prompt_char_limit: 32000
+    max_edit_images: 16
   # URL and api_key should be defined at .env file as SYGRA_GPT_IMAGE_1_URL and SYGRA_GPT_IMAGE_1_TOKEN
   parameters:
     size: "1024x1024"
