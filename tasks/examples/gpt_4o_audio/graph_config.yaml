@@ -1,7 +1,7 @@
 data_config:
   source:
     type: "disk"
-    file_path: "/Users/amit.saha/snow-llm/SyGra/tasks/examples/gpt_4o_audio/test.json"
+    file_path: "tasks/examples/gpt_4o_audio/test.json"
 
 graph_config:
   nodes:
