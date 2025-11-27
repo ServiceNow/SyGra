@@ -334,9 +334,6 @@ class LiteLLMBase(BaseCustomModel):
                 )
 
             voice = self.generation_params.get("voice", self.model_config.get("voice", None))
-            response_format = self.generation_params.get(
-                "response_format", self.model_config.get("response_format", "wav")
-            )
             speed = max(
                 0.25,
                 min(
@@ -348,11 +345,11 @@ class LiteLLMBase(BaseCustomModel):
             tts_params = {
                 "input": text_to_speak,
                 "voice": voice,
-                "response_format": response_format,
                 "speed": speed,
             }
-            audio_response = await self._fn_aspeech()(**common, **tts_params)
-
+            response_format = self.generation_params.get(
+                "response_format", self.model_config.get("response_format")
+            )
             mime_types = {
                 "mp3": "audio/mpeg",
                 "opus": "audio/opus",
@@ -361,7 +358,11 @@ class LiteLLMBase(BaseCustomModel):
                 "wav": "audio/wav",
                 "pcm": "audio/pcm",
             }
-            mime_type = mime_types.get(response_format, "audio/wav")
+            if response_format:
+                tts_params["response_format"] = response_format
+            mime_type = mime_types.get(response_format) if response_format else "audio/wav"
+
+            audio_response = await self._fn_aspeech()(**common, **tts_params)
             audio_base64 = base64.b64encode(audio_response.content).decode("utf-8")
             data_url = f"data:{mime_type};base64,{audio_base64}"
             return ModelResponse(llm_response=data_url, response_code=ret_code)

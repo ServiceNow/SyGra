@@ -182,14 +182,14 @@ Otherwise, exception will be raised during the model initialization.
 This section summarizes provider-specific configuration and capabilities for models implemented under `sygra/core/models/lite_llm`.
 
 | Provider | Text (chat) | Image generation | Image editing | Audio (TTS) | Audio chat | Native structured output | Completions API | Required keys                                                   | Env vars                                                                                                  |
-|----------|--------------|-----------------|--------------|-------------|------------|--------------------------|----------------|-----------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+|----------|--------------|-----------------|--------------|------------|-----------|--------------------------|----------------|-----------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
 | AWS Bedrock (`bedrock`) | ✅ | ✅* | ❌ | ❌ | ❌ | ✅ | ❌ | `aws_access_key_id`, `aws_secret_access_key`, `aws_region_name` | `SYGRA_<MODEL>_AWS_ACCESS_KEY_ID`, `SYGRA_<MODEL>_AWS_SECRET_ACCESS_KEY`, `SYGRA_<MODEL>_AWS_REGION_NAME` |
 | Azure (`azure`) | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | `url`, `auth_token`                                             | `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`                                                                |
 | Azure OpenAI (`azure_openai`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | `url`, `auth_token`, `api_version`                              | `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`                                                                |
 | Ollama (`ollama`) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | None                                                            | `SYGRA_<MODEL>_URL`                                                                                                      |
 | OpenAI (`openai`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | `url`, `auth_token`                                             | `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`                                                                |
 | Triton (`triton`) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | `url`, `auth_token`                                             | `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`                                                                |
-| Vertex AI (`vertex_ai`) | ✅ | ✅* | ❌ | ❌ | ❌ | ✅ | ❌ | `vertex_project`, `vertex_location`, `vertex_credentials`       | `SYGRA_<MODEL>_VERTEX_PROJECT`, `SYGRA_<MODEL>_VERTEX_LOCATION`, `SYGRA_<MODEL>_VERTEX_CREDENTIALS`       |
+| Vertex AI (`vertex_ai`) | ✅ | ✅* | ❌ | ✅ | ✅ | ✅ | ❌ | `vertex_project`, `vertex_location`, `vertex_credentials`       | `SYGRA_<MODEL>_VERTEX_PROJECT`, `SYGRA_<MODEL>_VERTEX_LOCATION`, `SYGRA_<MODEL>_VERTEX_CREDENTIALS`       |
 | vLLM (`vllm`) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | `url`, `auth_token`                                             | `SYGRA_<MODEL>_URL`, `SYGRA_<MODEL>_TOKEN`                                                                |
 
 Legend: ✅ supported, ❌ not supported, ✅* supported depending on the selected model/deployment.
