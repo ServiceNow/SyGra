@@ -427,7 +427,7 @@ class BaseCustomModel(ABC):
     ) -> ModelResponse:
         pass
 
-    def _ping_model(self, url: str, auth_token: str, model: dict[str, Any]) -> int:
+    def _ping_model(self, url: str, auth_token: str, model_config: dict[str, Any]) -> int:
         """
         Ping a single model
         Args:
