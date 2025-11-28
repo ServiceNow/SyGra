@@ -10,13 +10,12 @@ class BackendFactory(ABC):
     """
 
     @abstractmethod
-    def create_lambda_runnable(self, function_to_execute, node_config):
+    def create_lambda_runnable(self, exec_wrapper):
         """
         Abstract method to create a Lambda runnable.
 
         Args:
-            function_to_execute: Python function to execute, if it is a class it should be callable(__call__)
-            node_config:node config dictionary
+            exec_wrapper: Async function to execute
 
         Returns:
             Any: backend specific runnable object like Runnable for backend=Langgraph
