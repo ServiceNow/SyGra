@@ -410,6 +410,55 @@ class TestModelFactory(unittest.TestCase):
 
     @patch("sygra.utils.utils.load_model_config")
     @patch("sygra.utils.utils.validate_required_keys")
+    def test_error_message_for_invalid_model_custom_backend(
+        self, mock_validate, mock_load_model_config
+    ):
+        """When backend is 'custom' and model type is unsupported, the error log should not repeat 'custom'."""
+        mock_load_model_config.return_value = {
+            "bad_model": {
+                "model_type": "unsupported",
+                "parameters": {},
+            }
+        }
+        model_config = {"name": "bad_model", "model_type": "unsupported"}
+
+        with patch("sygra.core.models.model_factory.logger.error") as mock_error:
+            with self.assertRaises(NotImplementedError):
+                ModelFactory.create_model(model_config, backend="custom")
+
+            mock_error.assert_called_once()
+            msg = mock_error.call_args[0][0]
+            self.assertEqual(
+                "No model implementation for unsupported found for backend(s): custom.", msg
+            )
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_error_message_invalid_model_litellm_and_custom(
+        self, mock_validate, mock_load_model_config
+    ):
+        """When backend is 'litellm' and no implementation exists in either mapping, error should list 'litellm, custom'."""
+        mock_load_model_config.return_value = {
+            "bad_model": {
+                "model_type": "unsupported",
+                "parameters": {},
+            }
+        }
+        model_config = {"name": "bad_model", "model_type": "unsupported"}
+
+        with patch("sygra.core.models.model_factory.logger.error") as mock_error:
+            with self.assertRaises(NotImplementedError):
+                ModelFactory.create_model(model_config)
+
+            mock_error.assert_called_once()
+            msg = mock_error.call_args[0][0]
+            self.assertIn(
+                "No model implementation for unsupported found for backend(s): litellm, custom.",
+                msg,
+            )
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
     def test_create_model_unsupported_backend(self, mock_validate, mock_load_model_config):
         """Test create_model with unsupported backend"""
         mock_load_model_config.return_value = {

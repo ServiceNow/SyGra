@@ -108,11 +108,15 @@ class ModelFactory:
                 logger.info(f"Using {MODEL_BACKEND_CUSTOM} backend for model type {model_type}.")
 
         if model_cls is None:
+            considered_backends = [backend]
+            if backend == MODEL_BACKEND_LITELLM:
+                considered_backends.append(MODEL_BACKEND_CUSTOM)
+            backends_str = ", ".join(considered_backends)
             logger.error(
-                f"No model implementation for {model_type} found for backend {backend} and {MODEL_BACKEND_CUSTOM}."
+                f"No model implementation for {model_type} found for backend(s): {backends_str}."
             )
             raise NotImplementedError(
-                f"Model type {model_type} is not implemented for backend {backend} and {MODEL_BACKEND_CUSTOM}"
+                f"Model type {model_type} is not implemented for backend(s): {backends_str}"
             )
 
         return model_cls(model_config)
