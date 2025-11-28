@@ -179,7 +179,7 @@ Otherwise, exception will be raised during the model initialization.
 
 ## LiteLLM provider specifics
 
-This section summarizes provider-specific configuration and capabilities for models implemented under `sygra/core/models/lite_llm`.
+This section summarizes provider-specific configuration and capabilities for models implemented with litellm in sygra.
 
 | Provider | Text (chat) | Image generation | Image editing | Audio (TTS) | Audio chat | Native structured output | Completions API | Required keys                                                   | Env vars                                                                                                  |
 |----------|--------------|-----------------|--------------|------------|-----------|--------------------------|----------------|-----------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|

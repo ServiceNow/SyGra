@@ -28,10 +28,6 @@ class CustomAzureOpenAI(LiteLLMBase):
     def _get_model_prefix(self) -> str:
         return "azure"
 
-    # Provider hooks
-    def _base_url_param(self) -> str:
-        return "api_base"
-
     def _extra_call_params(self) -> dict[str, Any]:
         return {"api_version": self.api_version}
 

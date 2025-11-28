@@ -34,10 +34,6 @@ class CustomBedrock(LiteLLMBase):
     def _provider_label(self) -> str:
         return "Bedrock"
 
-    def _base_url_param(self) -> str:
-        # Bedrock does not use base URL
-        return "api_base"
-
     def _requires_api_key(self) -> bool:
         # Credentials are passed via AWS keys or environment, not api_key
         return False

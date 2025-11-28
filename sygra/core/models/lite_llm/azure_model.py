@@ -22,9 +22,6 @@ class CustomAzure(LiteLLMBase):
     def _get_model_prefix(self) -> str:
         return "azure_ai"
 
-    def _base_url_param(self) -> str:
-        return "api_base"
-
     def _provider_label(self) -> str:
         return "Azure"
 
