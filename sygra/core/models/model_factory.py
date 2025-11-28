@@ -11,10 +11,15 @@ from sygra.core.models.custom_models import (
 )
 from sygra.core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
 from sygra.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
+from sygra.core.models.lite_llm.azure_model import CustomAzure as CustomLiteLLMAzure
 from sygra.core.models.lite_llm.azure_openai_model import (
     CustomAzureOpenAI as CustomLiteLLMAzureOpenAI,
 )
+from sygra.core.models.lite_llm.bedrock_model import CustomBedrock as CustomLiteLLMBedrock
+from sygra.core.models.lite_llm.ollama_model import CustomOllama as CustomLiteLLMOllama
 from sygra.core.models.lite_llm.openai_model import CustomOpenAI as CustomLiteLLMOpenAI
+from sygra.core.models.lite_llm.triton_model import CustomTriton as CustomLiteLLMTriton
+from sygra.core.models.lite_llm.vertex_ai_model import CustomVertexAI as CustomLiteLLMVertexAI
 from sygra.core.models.lite_llm.vllm_model import CustomVLLM as CustomLiteLLMVLLM
 from sygra.logger.logger_config import logger
 from sygra.utils import utils
@@ -48,6 +53,11 @@ class ModelFactory:
             "openai": CustomLiteLLMOpenAI,
             "azure_openai": CustomLiteLLMAzureOpenAI,
             "vllm": CustomLiteLLMVLLM,
+            "azure": CustomLiteLLMAzure,
+            "ollama": CustomLiteLLMOllama,
+            "triton": CustomLiteLLMTriton,
+            "vertex_ai": CustomLiteLLMVertexAI,
+            "bedrock": CustomLiteLLMBedrock,
         },
         MODEL_BACKEND_LANGGRAPH: {
             "vllm": CustomVLLMChatModel,
@@ -98,11 +108,15 @@ class ModelFactory:
                 logger.info(f"Using {MODEL_BACKEND_CUSTOM} backend for model type {model_type}.")
 
         if model_cls is None:
+            considered_backends = [backend]
+            if backend == MODEL_BACKEND_LITELLM:
+                considered_backends.append(MODEL_BACKEND_CUSTOM)
+            backends_str = ", ".join(considered_backends)
             logger.error(
-                f"No model implementation for {model_type} found for backend {backend} and {MODEL_BACKEND_CUSTOM}."
+                f"No model implementation for {model_type} found for backend(s): {backends_str}."
             )
             raise NotImplementedError(
-                f"Model type {model_type} is not implemented for backend {backend} and {MODEL_BACKEND_CUSTOM}"
+                f"Model type {model_type} is not implemented for backend(s): {backends_str}"
             )
 
         return model_cls(model_config)

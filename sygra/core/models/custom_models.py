@@ -10,6 +10,7 @@ import re
 import sys
 import time
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, DefaultDict, Dict, Optional, Sequence, Type, cast
 
 import openai
@@ -140,11 +141,23 @@ class BaseCustomModel(ABC):
         """
         Extract and store token usage from API response for metadata collection.
         """
+        # When usage stats are present in the response, extract from the response
         if hasattr(response, "usage") and response.usage:
             usage_dict = {
                 "prompt_tokens": getattr(response.usage, "prompt_tokens", 0),
                 "completion_tokens": getattr(response.usage, "completion_tokens", 0),
                 "total_tokens": getattr(response.usage, "total_tokens", 0),
+            }
+
+            self._last_request_usage = usage_dict
+
+        # When usage stats are not present in the response, try to extract from model_extra
+        elif hasattr(response, "model_extra") and response.model_extra.get("usage"):
+            usage = response.model_extra.get("usage")
+            usage_dict = {
+                "prompt_tokens": getattr(usage, "prompt_tokens", 0),
+                "completion_tokens": getattr(usage, "completion_tokens", 0),
+                "total_tokens": getattr(usage, "total_tokens", 0),
             }
 
             self._last_request_usage = usage_dict
@@ -433,7 +446,33 @@ class BaseCustomModel(ABC):
         msg = utils.backend_factory.get_test_message(is_multi_modal=is_multi_modal)
         # build parameters
         model_param = ModelParams(url=url, auth_token=auth_token)
-        model_response: ModelResponse = asyncio.run(self._generate_response(msg, model_param))
+        # Prefer an existing event loop if available; otherwise run in a fresh loop
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            # Already inside a running loop on this thread; offload to a worker thread
+            def _runner() -> ModelResponse:
+                return cast(ModelResponse, asyncio.run(self._generate_response(msg, model_param)))
+
+            with ThreadPoolExecutor(max_workers=1) as ex:
+                model_response: ModelResponse = ex.submit(_runner).result()
+        else:
+            # No running loop in this thread; create/use one synchronously
+            if loop is None:
+                loop = asyncio.new_event_loop()
+                try:
+                    asyncio.set_event_loop(loop)
+                    model_response = loop.run_until_complete(
+                        self._generate_response(msg, model_param)
+                    )
+                finally:
+                    loop.close()
+                    asyncio.set_event_loop(None)
+            else:
+                model_response = loop.run_until_complete(self._generate_response(msg, model_param))
         return model_response.response_code
 
     def ping(self) -> int:
@@ -452,7 +491,10 @@ class BaseCustomModel(ABC):
                     return status
             return 200
         else:
-            return self._ping_model(url=str(url_obj), auth_token=str(auth_token))
+            return self._ping_model(
+                url=str(url_obj) if url_obj else "",
+                auth_token=str(auth_token) if auth_token else "",
+            )
 
     def get_chat_formatted_text(
         self, chat_format_object: Sequence[BaseMessage], **chat_template_params

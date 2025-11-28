@@ -59,31 +59,31 @@ def load_model_config(config_path: Optional[str] = None) -> Any:
         custom_configs = load_yaml_file(config_path)
         base_configs = {**base_configs, **custom_configs}
 
-    # For each model, look for corresponding environment variables
+    # For each model, look for corresponding environment variables and inject generically
     for model_name, config in base_configs.items():
-        # Convert model name to uppercase for environment variable lookup
         env_prefix = f"SYGRA_{get_env_name(model_name)}"
 
-        # Look for URL in environment variables
-        if url := os.environ.get(f"{env_prefix}_URL"):
-            # Check if it contains the list separator (indicating a list of URLs)
-            if constants.LIST_SEPARATOR in url:
-                # Split by the separator and filter out any empty strings
-                url_list = [u for u in url.split(constants.LIST_SEPARATOR) if u]
-                config["url"] = url_list
-            else:
-                # It's a single URL string
-                config["url"] = url
+        # Iterate over all env vars for this model
+        prefix_with_underscore = f"{env_prefix}_"
+        for env_key, env_val in os.environ.items():
+            if not env_key.startswith(prefix_with_underscore):
+                continue
 
-        # Look for auth token/API key in environment variables
-        if token := os.environ.get(f"{env_prefix}_TOKEN"):
-            # Check if it contains the list separator (indicating a list of Auth Tokens)
-            if constants.LIST_SEPARATOR in token:
-                # Split by the separator and filter out any empty strings
-                token_list = [t for t in token.split(constants.LIST_SEPARATOR) if t]
-                config["auth_token"] = token_list
+            # Determine destination config key
+            suffix = env_key[len(prefix_with_underscore) :]
+            if suffix == "URL":
+                dest_key = "url"
+            elif suffix in ("TOKEN", "AUTH_TOKEN"):
+                dest_key = "auth_token"
             else:
-                config["auth_token"] = token
+                dest_key = suffix.lower()
+
+            # Support list values via LIST_SEPARATOR
+            if constants.LIST_SEPARATOR in env_val:
+                values = [v for v in env_val.split(constants.LIST_SEPARATOR) if v]
+                config[dest_key] = values
+            else:
+                config[dest_key] = env_val
 
     return base_configs
 
