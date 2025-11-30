@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from langchain_core.prompt_values import ChatPromptValue
+from litellm import atranscription
 from openai import APIError, BadRequestError, RateLimitError
 
 from sygra.core.models.custom_models import ModelParams
@@ -11,7 +12,7 @@ from sygra.core.models.lite_llm.base import LiteLLMBase
 from sygra.core.models.model_response import ModelResponse
 from sygra.logger.logger_config import logger
 from sygra.metadata.metadata_integration import track_model_request
-from sygra.utils import utils
+from sygra.utils import utils, constants
 from sygra.utils.model_utils import is_gpt4o_audio_model, should_route_to_transcription, should_route_to_speech, \
     should_route_to_image
 

@@ -46,7 +46,6 @@ from sygra.utils.model_utils import (
     should_route_to_speech,
     should_route_to_transcription,
 )
-from tts_test import model_config
 
 
 class ModelParams:
