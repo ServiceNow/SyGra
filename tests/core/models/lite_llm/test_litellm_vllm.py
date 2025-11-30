@@ -304,7 +304,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
 
     async def _run_generate_response_with_custom_serving_name(self):
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {"message": {"content": "Response"}}
