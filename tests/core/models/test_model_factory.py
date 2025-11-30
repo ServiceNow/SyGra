@@ -17,10 +17,15 @@ from sygra.core.models.custom_models import (
 )
 from sygra.core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
 from sygra.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
+from sygra.core.models.lite_llm.azure_model import CustomAzure as CustomLiteLLMAzure
 from sygra.core.models.lite_llm.azure_openai_model import (
     CustomAzureOpenAI as CustomLiteLLMAzureOpenAI,
 )
+from sygra.core.models.lite_llm.bedrock_model import CustomBedrock as CustomLiteLLMBedrock
+from sygra.core.models.lite_llm.ollama_model import CustomOllama as CustomLiteLLMOllama
 from sygra.core.models.lite_llm.openai_model import CustomOpenAI as CustomLiteLLMOpenAI
+from sygra.core.models.lite_llm.triton_model import CustomTriton as CustomLiteLLMTriton
+from sygra.core.models.lite_llm.vertex_ai_model import CustomVertexAI as CustomLiteLLMVertexAI
 from sygra.core.models.lite_llm.vllm_model import CustomVLLM as CustomLiteLLMVLLM
 from sygra.core.models.model_factory import ModelFactory
 
@@ -169,6 +174,24 @@ class TestModelFactory(unittest.TestCase):
 
         with patch.object(CustomAzure, "__init__", return_value=None) as mock_init:
             model_config = {"name": "test_azure", "model_type": "azure"}
+            ModelFactory.create_model(model_config, backend="custom")
+            mock_init.assert_called_once()
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_create_litellm_model_azure(self, mock_validate, mock_load_model_config):
+        """Test create_model with Azure model type"""
+        mock_load_model_config.return_value = {
+            "test_azure": {
+                "model_type": "azure",
+                "url": "http://azure-test.com",
+                "auth_token": "test-token",
+                "parameters": {},
+            }
+        }
+
+        with patch.object(CustomLiteLLMAzure, "__init__", return_value=None) as mock_init:
+            model_config = {"name": "test_azure", "model_type": "azure"}
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
@@ -241,6 +264,18 @@ class TestModelFactory(unittest.TestCase):
 
         with patch.object(CustomOllama, "__init__", return_value=None) as mock_init:
             model_config = {"name": "test_ollama", "model_type": "ollama"}
+            ModelFactory.create_model(model_config, backend="custom")
+            mock_init.assert_called_once()
+
+    @patch("sygra.utils.utils.load_model_config")
+    def test_create_litellm_model_ollama(self, mock_load_model_config):
+        """Test create_model with Ollama model type"""
+        mock_load_model_config.return_value = {
+            "test_ollama": {"model_type": "ollama", "parameters": {}}
+        }
+
+        with patch.object(CustomLiteLLMOllama, "__init__", return_value=None) as mock_init:
+            model_config = {"name": "test_ollama", "model_type": "ollama"}
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
@@ -259,6 +294,62 @@ class TestModelFactory(unittest.TestCase):
 
         with patch.object(CustomTriton, "__init__", return_value=None) as mock_init:
             model_config = {"name": "test_triton", "model_type": "triton"}
+            ModelFactory.create_model(model_config, backend="custom")
+            mock_init.assert_called_once()
+
+    @patch("sygra.utils.utils.load_model_config")
+    def test_create_litellm_model_triton(self, mock_load_model_config):
+        """Test create_model with Triton model type"""
+        mock_load_model_config.return_value = {
+            "test_triton": {
+                "model_type": "triton",
+                "url": "http://triton-test.com",
+                "auth_token": "test-token",
+                "payload_key": "default",
+                "parameters": {},
+            }
+        }
+
+        with patch.object(CustomLiteLLMTriton, "__init__", return_value=None) as mock_init:
+            model_config = {"name": "test_triton", "model_type": "triton"}
+            ModelFactory.create_model(model_config)
+            mock_init.assert_called_once()
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_create_litellm_model_bedrock(self, mock_validate, mock_load_model_config):
+        """Test create_model with Bedrock model type (LiteLLM backend)"""
+        mock_load_model_config.return_value = {
+            "test_bedrock": {
+                "model_type": "bedrock",
+                "parameters": {},
+                "aws_access_key_id": "AKIAxxx",
+                "aws_secret_access_key": "secret",
+                "aws_region_name": "us-east-1",
+            }
+        }
+
+        with patch.object(CustomLiteLLMBedrock, "__init__", return_value=None) as mock_init:
+            model_config = {"name": "test_bedrock", "model_type": "bedrock"}
+            ModelFactory.create_model(model_config)
+            mock_init.assert_called_once()
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_create_litellm_model_vertex_ai(self, mock_validate, mock_load_model_config):
+        """Test create_model with Vertex AI model type (LiteLLM backend)"""
+        mock_load_model_config.return_value = {
+            "test_vertex": {
+                "model_type": "vertex_ai",
+                "parameters": {},
+                "vertex_project": "my-gcp-project",
+                "vertex_location": "us-central1",
+                "vertex_credentials": {"type": "service_account", "client_email": "svc@x"},
+            }
+        }
+
+        with patch.object(CustomLiteLLMVertexAI, "__init__", return_value=None) as mock_init:
+            model_config = {"name": "test_vertex", "model_type": "vertex_ai"}
             ModelFactory.create_model(model_config)
             mock_init.assert_called_once()
 
@@ -316,6 +407,55 @@ class TestModelFactory(unittest.TestCase):
         model_config = {"name": "test_unsupported", "model_type": "unsupported"}
         with self.assertRaises(NotImplementedError):
             ModelFactory.create_model(model_config)
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_error_message_for_invalid_model_custom_backend(
+        self, mock_validate, mock_load_model_config
+    ):
+        """When backend is 'custom' and model type is unsupported, the error log should not repeat 'custom'."""
+        mock_load_model_config.return_value = {
+            "bad_model": {
+                "model_type": "unsupported",
+                "parameters": {},
+            }
+        }
+        model_config = {"name": "bad_model", "model_type": "unsupported"}
+
+        with patch("sygra.core.models.model_factory.logger.error") as mock_error:
+            with self.assertRaises(NotImplementedError):
+                ModelFactory.create_model(model_config, backend="custom")
+
+            mock_error.assert_called_once()
+            msg = mock_error.call_args[0][0]
+            self.assertEqual(
+                "No model implementation for unsupported found for backend(s): custom.", msg
+            )
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_error_message_invalid_model_litellm_and_custom(
+        self, mock_validate, mock_load_model_config
+    ):
+        """When backend is 'litellm' and no implementation exists in either mapping, error should list 'litellm, custom'."""
+        mock_load_model_config.return_value = {
+            "bad_model": {
+                "model_type": "unsupported",
+                "parameters": {},
+            }
+        }
+        model_config = {"name": "bad_model", "model_type": "unsupported"}
+
+        with patch("sygra.core.models.model_factory.logger.error") as mock_error:
+            with self.assertRaises(NotImplementedError):
+                ModelFactory.create_model(model_config)
+
+            mock_error.assert_called_once()
+            msg = mock_error.call_args[0][0]
+            self.assertIn(
+                "No model implementation for unsupported found for backend(s): litellm, custom.",
+                msg,
+            )
 
     @patch("sygra.utils.utils.load_model_config")
     @patch("sygra.utils.utils.validate_required_keys")
