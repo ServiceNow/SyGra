@@ -503,7 +503,7 @@ class BaseCustomModel(ABC):
             return self._ping_model(
                 url=str(url_obj) if url_obj else "",
                 auth_token=str(auth_token) if auth_token else "",
-                model_config=self.model_config
+                model_config=self.model_config,
             )
 
     def get_chat_formatted_text(

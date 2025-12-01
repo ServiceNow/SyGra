@@ -12,9 +12,13 @@ from sygra.core.models.lite_llm.base import LiteLLMBase
 from sygra.core.models.model_response import ModelResponse
 from sygra.logger.logger_config import logger
 from sygra.metadata.metadata_integration import track_model_request
-from sygra.utils import utils, constants
-from sygra.utils.model_utils import is_gpt4o_audio_model, should_route_to_transcription, should_route_to_speech, \
-    should_route_to_image
+from sygra.utils import constants, utils
+from sygra.utils.model_utils import (
+    is_gpt4o_audio_model,
+    should_route_to_image,
+    should_route_to_speech,
+    should_route_to_transcription,
+)
 
 logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 
