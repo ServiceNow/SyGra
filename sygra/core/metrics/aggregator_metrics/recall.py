@@ -5,7 +5,7 @@ Recall = TP / (TP + FN)
 Measures: Of all actual positives, how many were predicted correctly?
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from sygra.core.metrics.aggregator_metrics.base_aggregator_metric import (
     BaseAggregatorMetric,

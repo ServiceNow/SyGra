@@ -5,7 +5,7 @@ F1 = 2 * (Precision * Recall) / (Precision + Recall)
 Harmonic mean of precision and recall.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from sygra.core.metrics.aggregator_metrics.base_aggregator_metric import (
     BaseAggregatorMetric,

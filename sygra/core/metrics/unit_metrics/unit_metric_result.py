@@ -6,7 +6,7 @@ In other words, this is a list of binary results(True,False) sent to any metric 
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 
 @dataclass

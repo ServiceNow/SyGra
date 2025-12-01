@@ -4,7 +4,7 @@ Singleton registry for discovering and instantiating aggregator metrics.
 Provides centralized service locator for all metrics (built-in and custom).
 """
 
-from typing import Dict, List, Optional, Type
+from typing import Dict, List, Type
 
 from sygra.core.metrics.aggregator_metrics.base_aggregator_metric import BaseAggregatorMetric
 from sygra.logger.logger_config import logger

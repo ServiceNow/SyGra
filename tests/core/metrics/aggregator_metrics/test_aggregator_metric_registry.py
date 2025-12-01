@@ -275,10 +275,20 @@ class TestAggregatorMetricRegistry:
     def test_registry_with_built_in_metrics(self):
         """Test registry with actual built-in metrics"""
         # Import built-in metrics to trigger their registration
+        # Note: Imports must happen after setup_method clears the registry
+        # We need to reload the modules to re-trigger the decorator registration
+        import importlib
+
+        from sygra.core.metrics.aggregator_metrics import accuracy, f1_score, precision, recall
+
+        # Reload modules to re-trigger decorator registration after registry was cleared
+        importlib.reload(accuracy)
+        importlib.reload(precision)
+        importlib.reload(recall)
+        importlib.reload(f1_score)
+
         from sygra.core.metrics.aggregator_metrics.accuracy import AccuracyMetric
-        from sygra.core.metrics.aggregator_metrics.f1_score import F1ScoreMetric
         from sygra.core.metrics.aggregator_metrics.precision import PrecisionMetric
-        from sygra.core.metrics.aggregator_metrics.recall import RecallMetric
 
         # Check that built-in metrics are registered
         assert AggregatorMetricRegistry.has_metric("accuracy")
@@ -287,8 +297,8 @@ class TestAggregatorMetricRegistry:
         assert AggregatorMetricRegistry.has_metric("f1_score")
 
         # Test instantiation
-        accuracy = AggregatorMetricRegistry.get_metric("accuracy")
-        assert isinstance(accuracy, AccuracyMetric)
+        accuracy_metric = AggregatorMetricRegistry.get_metric("accuracy")
+        assert isinstance(accuracy_metric, AccuracyMetric)
 
         precision = AggregatorMetricRegistry.get_metric(
             "precision", predicted_key="class", positive_class="A"

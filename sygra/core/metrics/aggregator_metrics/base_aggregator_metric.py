@@ -10,7 +10,7 @@ Subclasses can then implement their own calculation strategy.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from sygra.core.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 

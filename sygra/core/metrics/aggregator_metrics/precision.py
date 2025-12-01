@@ -5,7 +5,7 @@ Precision = TP / (TP + FP)
 Measures: Of all predicted positives, how many were actually positive?
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from sygra.core.metrics.aggregator_metrics.base_aggregator_metric import (
     BaseAggregatorMetric,
