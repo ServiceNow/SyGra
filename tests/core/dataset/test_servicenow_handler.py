@@ -5,11 +5,14 @@ These tests validate the ServiceNow integration without requiring a real
 ServiceNow instance by mocking the PySNC API.
 """
 
+import sys
+from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
 import pytest
 
+sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 from sygra.core.dataset.dataset_config import DataSourceConfig, OutputConfig
 from sygra.core.dataset.servicenow_handler import ServiceNowHandler
 
