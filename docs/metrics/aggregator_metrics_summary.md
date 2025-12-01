@@ -1,6 +1,16 @@
-# Aggregator Metrics - Quick Reference
+# Aggregator Metrics - Technical Reference
 
-## At a Glance
+> **Note**: This is a technical reference for platform developers. End users only need to list metric names in `graph_config.yaml`.
+
+## Architecture Overview
+
+Aggregator metrics are **low-level primitives** that calculate metrics for a **single class** at a time. They require explicit parameters (predicted_key, golden_key, positive_class) which are provided by **platform orchestration code**, not by end users.
+
+**Two-Layer Design:**
+1. **Aggregator Metrics** (this module) - Calculate for one class with explicit params
+2. **Platform Code** (graph execution layer) - Discovers classes, iterates, calls metrics
+
+## Metrics Reference
 
 | Metric | Formula | Required Parameters | Returns | Use Case |
 |--------|---------|---------------------|---------|----------|
@@ -9,53 +19,117 @@
 | **Recall** | `TP / (TP + FN)` | `golden_key`, `positive_class` | `{'recall': float}` | Coverage of positives |
 | **F1 Score** | `2 * (P * R) / (P + R)` | `predicted_key`, `golden_key`, `positive_class` | `{'f1_score': float}` | Balanced measure |
 
-## Quick Examples
+## End User Configuration
 
-### Accuracy
-```python
-from sygra.core.metrics.aggregator_metrics.accuracy import AccuracyMetric
+Users only specify which metrics they want:
 
-metric = AccuracyMetric()
-result = metric.calculate(validation_results)
-# {'accuracy': 0.85}
+```yaml
+# graph_config.yaml
+graph_properties:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
 ```
 
-### Precision
-```python
-from sygra.core.metrics.aggregator_metrics.precision import PrecisionMetric
+## Platform Code Responsibility
 
-metric = PrecisionMetric(
-    predicted_key="tool",      # What key to check in predicted dict
-    positive_class="click"     # What value is "positive"
-)
-result = metric.calculate(validation_results)
-# {'precision': 0.75}
+Platform code (to be implemented in graph execution layer) handles:
+
+### 1. Class Discovery
+```python
+def discover_classes(validation_results):
+    """Extract all unique classes from validation results."""
+    predicted_classes = set()
+    golden_classes = set()
+    
+    for result in validation_results:
+        if 'tool' in result.predicted:
+            predicted_classes.add(result.predicted['tool'])
+        if 'event' in result.golden:
+            golden_classes.add(result.golden['event'])
+    
+    return predicted_classes.union(golden_classes)
 ```
 
-### Recall
+### 2. Metric Orchestration
 ```python
-from sygra.core.metrics.aggregator_metrics.recall import RecallMetric
+from sygra.core.metrics.aggregator_metrics.aggregator_metric_registry import AggregatorMetricRegistry
 
-metric = RecallMetric(
-    golden_key="event",        # What key to check in golden dict
-    positive_class="click"     # What value is "positive"
-)
-result = metric.calculate(validation_results)
-# {'recall': 0.80}
+def run_evaluation(validation_results, metric_names):
+    """
+    Platform orchestration layer.
+    User provides: ["accuracy", "precision", "recall"]
+    Platform handles: class iteration, parameter passing
+    """
+    # Discover classes from data
+    classes = discover_classes(validation_results)  # ["click", "type", "scroll"]
+    
+    results = {}
+    
+    for metric_name in metric_names:
+        if metric_name == "accuracy":
+            # Accuracy is class-agnostic
+            metric = AggregatorMetricRegistry.get_metric("accuracy")
+            results["accuracy"] = metric.calculate(validation_results)
+        
+        elif metric_name == "precision":
+            # Platform iterates over all classes
+            results["precision"] = {}
+            for cls in classes:
+                metric = AggregatorMetricRegistry.get_metric(
+                    "precision",
+                    predicted_key="tool",  # Platform knows task structure
+                    positive_class=cls      # Platform iterates classes
+                )
+                results["precision"][cls] = metric.calculate(validation_results)
+        
+        elif metric_name == "recall":
+            results["recall"] = {}
+            for cls in classes:
+                metric = AggregatorMetricRegistry.get_metric(
+                    "recall",
+                    golden_key="event",
+                    positive_class=cls
+                )
+                results["recall"][cls] = metric.calculate(validation_results)
+        
+        elif metric_name == "f1_score":
+            results["f1_score"] = {}
+            for cls in classes:
+                metric = AggregatorMetricRegistry.get_metric(
+                    "f1_score",
+                    predicted_key="tool",
+                    golden_key="event",
+                    positive_class=cls
+                )
+                results["f1_score"][cls] = metric.calculate(validation_results)
+    
+    return results
+
+# Example Output:
+# {
+#   "accuracy": {"accuracy": 0.85},
+#   "precision": {
+#     "click": 0.75,
+#     "type": 0.80,
+#     "scroll": 0.70
+#   },
+#   "recall": {
+#     "click": 0.78,
+#     "type": 0.82,
+#     "scroll": 0.68
+#   },
+#   "f1_score": {
+#     "click": 0.76,
+#     "type": 0.81,
+#     "scroll": 0.69
+#   }
+# }
 ```
 
-### F1 Score
-```python
-from sygra.core.metrics.aggregator_metrics.f1_score import F1ScoreMetric
-
-metric = F1ScoreMetric(
-    predicted_key="tool",      # Key in predicted dict
-    golden_key="event",        # Key in golden dict
-    positive_class="click"     # What value is "positive"
-)
-result = metric.calculate(validation_results)
-# {'f1_score': 0.77}
-```
+**Key Point**: Platform code discovers classes and iterates. Metrics are just building blocks.
 
 ## Creating UnitMetricResult
 
@@ -70,48 +144,41 @@ result = UnitMetricResult(
 )
 ```
 
-## Common Patterns
+## Registry Usage (For Platform Developers)
 
-### Pattern 1: Calculate All Metrics
-```python
-results = [...]  # List of UnitMetricResult
-
-accuracy = AccuracyMetric().calculate(results)
-precision = PrecisionMetric("tool", "click").calculate(results)
-recall = RecallMetric("event", "click").calculate(results)
-f1 = F1ScoreMetric("tool", "event", "click").calculate(results)
-
-print(f"Accuracy:  {accuracy['accuracy']:.2%}")
-print(f"Precision: {precision['precision']:.2%}")
-print(f"Recall:    {recall['recall']:.2%}")
-print(f"F1 Score:  {f1['f1_score']:.2%}")
-```
-
-### Pattern 2: Multi-Class Evaluation
-```python
-classes = ["click", "type", "scroll"]
-
-for cls in classes:
-    f1 = F1ScoreMetric("tool", "event", cls)
-    score = f1.calculate(results)['f1_score']
-    print(f"{cls}: {score:.2%}")
-```
-
-### Pattern 3: Using Registry
+### Discovering Available Metrics
 ```python
 from sygra.core.metrics.aggregator_metrics.aggregator_metric_registry import AggregatorMetricRegistry
 
-# List available metrics
-print(AggregatorMetricRegistry.list_metrics())
-# ['accuracy', 'f1_score', 'precision', 'recall']
+# List all registered metrics
+available_metrics = AggregatorMetricRegistry.list_metrics()
+print(available_metrics)
+# Output: ['accuracy', 'f1_score', 'precision', 'recall']
 
-# Get metric by name
+# Check if specific metric exists
+if AggregatorMetricRegistry.has_metric("precision"):
+    print("Precision metric is available")
+
+# Get metric info
+info = AggregatorMetricRegistry.get_metrics_info()
+# Returns: {'precision': {'class': 'PrecisionMetric', 'module': '...'}}
+```
+
+### Direct Instantiation (Low-Level)
+```python
+# Platform code instantiates metrics with explicit parameters
 metric = AggregatorMetricRegistry.get_metric(
     "precision",
     predicted_key="tool",
     positive_class="click"
 )
+
+# Calculate for validation results
+output = metric.calculate(validation_results)
+# Returns: {'precision': 0.75}
 ```
+
+**Note**: End users never call these methods directly. Platform code handles it.
 
 ## Parameter Validation
 
