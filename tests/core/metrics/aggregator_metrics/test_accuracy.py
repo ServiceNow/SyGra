@@ -2,6 +2,7 @@
 Unit tests for AccuracyMetric
 Tests accuracy calculation from unit metric results.
 """
+
 import os
 import sys
 
@@ -9,6 +10,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
 
 import pytest
+
 from sygra.core.metrics.aggregator_metrics.accuracy import AccuracyMetric
 from sygra.core.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 from sygra.logger.logger_config import logger
@@ -230,18 +232,10 @@ class TestAccuracyMetric:
         logger.info("Testing calculate with different data types in golden/predicted")
         metric = AccuracyMetric()
         results = [
-            UnitMetricResult(
-                correct=True, golden={"value": 1}, predicted={"value": 1}
-            ),
-            UnitMetricResult(
-                correct=True, golden={"value": "text"}, predicted={"value": "text"}
-            ),
-            UnitMetricResult(
-                correct=True, golden={"value": True}, predicted={"value": True}
-            ),
-            UnitMetricResult(
-                correct=False, golden={"value": [1, 2]}, predicted={"value": [1, 3]}
-            ),
+            UnitMetricResult(correct=True, golden={"value": 1}, predicted={"value": 1}),
+            UnitMetricResult(correct=True, golden={"value": "text"}, predicted={"value": "text"}),
+            UnitMetricResult(correct=True, golden={"value": True}, predicted={"value": True}),
+            UnitMetricResult(correct=False, golden={"value": [1, 2]}, predicted={"value": [1, 3]}),
         ]
         output = metric.calculate(results)
 

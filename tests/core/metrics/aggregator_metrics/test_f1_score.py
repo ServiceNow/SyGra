@@ -2,12 +2,14 @@
 Unit tests for F1ScoreMetric
 Tests F1 score calculation (harmonic mean of precision and recall) from unit metric results.
 """
+
 import os
 import sys
 
 # Add project root to sys.path for relative imports to work
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
 import pytest
+
 from sygra.core.metrics.aggregator_metrics.f1_score import F1ScoreMetric
 from sygra.core.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 
@@ -17,16 +19,12 @@ class TestF1ScoreMetric:
 
     def test_get_metric_name(self):
         """Test that metric name is 'f1_score'"""
-        metric = F1ScoreMetric(
-            predicted_key="class", golden_key="class", positive_class="A"
-        )
+        metric = F1ScoreMetric(predicted_key="class", golden_key="class", positive_class="A")
         assert metric.get_metric_name() == "f1_score"
 
     def test_initialization_with_parameters(self):
         """Test initialization with custom parameters"""
-        metric = F1ScoreMetric(
-            predicted_key="tool", golden_key="event", positive_class="click"
-        )
+        metric = F1ScoreMetric(predicted_key="tool", golden_key="event", positive_class="click")
         assert metric.predicted_key == "tool"
         assert metric.golden_key == "event"
         assert metric.positive_class == "click"
@@ -36,23 +34,23 @@ class TestF1ScoreMetric:
         # Should raise TypeError when parameters are missing
         with pytest.raises(TypeError):
             F1ScoreMetric(golden_key="class", positive_class="A")
-        
+
         with pytest.raises(TypeError):
             F1ScoreMetric(predicted_key="class", positive_class="A")
-        
+
         with pytest.raises(TypeError):
             F1ScoreMetric(predicted_key="class", golden_key="class")
-        
+
         # Should raise ValueError when predicted_key is empty
         with pytest.raises(ValueError) as exc_info:
             F1ScoreMetric(predicted_key="", golden_key="class", positive_class="A")
         assert "predicted_key cannot be empty" in str(exc_info.value)
-        
+
         # Should raise ValueError when golden_key is empty
         with pytest.raises(ValueError) as exc_info:
             F1ScoreMetric(predicted_key="class", golden_key="", positive_class="A")
         assert "golden_key cannot be empty" in str(exc_info.value)
-        
+
         # Should raise ValueError when positive_class is None
         with pytest.raises(ValueError) as exc_info:
             F1ScoreMetric(predicted_key="class", golden_key="class", positive_class=None)
@@ -60,9 +58,7 @@ class TestF1ScoreMetric:
 
     def test_initialization_creates_precision_and_recall_metrics(self):
         """Test that initialization creates precision and recall metric instances"""
-        metric = F1ScoreMetric(
-            predicted_key="tool", golden_key="event", positive_class="click"
-        )
+        metric = F1ScoreMetric(predicted_key="tool", golden_key="event", positive_class="click")
         assert metric.precision_metric is not None
         assert metric.recall_metric is not None
         assert metric.precision_metric.predicted_key == "tool"
@@ -70,9 +66,7 @@ class TestF1ScoreMetric:
 
     def test_calculate_empty_results(self):
         """Test calculate with empty results list"""
-        metric = F1ScoreMetric(
-            predicted_key="class", golden_key="class", positive_class="A"
-        )
+        metric = F1ScoreMetric(predicted_key="class", golden_key="class", positive_class="A")
         results = []
         output = metric.calculate(results)
 
@@ -81,9 +75,7 @@ class TestF1ScoreMetric:
 
     def test_calculate_perfect_f1_score(self):
         """Test calculate with perfect F1 score (precision=1.0, recall=1.0)"""
-        metric = F1ScoreMetric(
-            predicted_key="class", golden_key="class", positive_class="click"
-        )
+        metric = F1ScoreMetric(predicted_key="class", golden_key="class", positive_class="click")
         results = [
             UnitMetricResult(
                 correct=True,
@@ -108,9 +100,7 @@ class TestF1ScoreMetric:
 
     def test_calculate_zero_f1_score(self):
         """Test calculate with zero F1 score (no true positives)"""
-        metric = F1ScoreMetric(
-            predicted_key="class", golden_key="class", positive_class="click"
-        )
+        metric = F1ScoreMetric(predicted_key="class", golden_key="class", positive_class="click")
         results = [
             # False Positives
             UnitMetricResult(
@@ -132,9 +122,7 @@ class TestF1ScoreMetric:
 
     def test_calculate_balanced_f1_score(self):
         """Test calculate with balanced precision and recall"""
-        metric = F1ScoreMetric(
-            predicted_key="class", golden_key="class", positive_class="click"
-        )
+        metric = F1ScoreMetric(predicted_key="class", golden_key="class", positive_class="click")
         results = [
             # True Positive
             UnitMetricResult(
@@ -166,9 +154,7 @@ class TestF1ScoreMetric:
 
     def test_calculate_high_precision_low_recall(self):
         """Test calculate with high precision but low recall"""
-        metric = F1ScoreMetric(
-            predicted_key="class", golden_key="class", positive_class="click"
-        )
+        metric = F1ScoreMetric(predicted_key="class", golden_key="class", positive_class="click")
         results = [
             # True Positive
             UnitMetricResult(
@@ -204,9 +190,7 @@ class TestF1ScoreMetric:
 
     def test_calculate_low_precision_high_recall(self):
         """Test calculate with low precision but high recall"""
-        metric = F1ScoreMetric(
-            predicted_key="class", golden_key="class", positive_class="click"
-        )
+        metric = F1ScoreMetric(predicted_key="class", golden_key="class", positive_class="click")
         results = [
             # True Positive
             UnitMetricResult(
@@ -242,9 +226,7 @@ class TestF1ScoreMetric:
 
     def test_calculate_with_different_keys(self):
         """Test calculate with different predicted_key and golden_key"""
-        metric = F1ScoreMetric(
-            predicted_key="tool", golden_key="event", positive_class="click"
-        )
+        metric = F1ScoreMetric(predicted_key="tool", golden_key="event", positive_class="click")
         results = [
             UnitMetricResult(
                 correct=True,
@@ -273,22 +255,12 @@ class TestF1ScoreMetric:
 
     def test_calculate_with_numeric_positive_class(self):
         """Test calculate with numeric positive class"""
-        metric = F1ScoreMetric(
-            predicted_key="label", golden_key="label", positive_class=1
-        )
+        metric = F1ScoreMetric(predicted_key="label", golden_key="label", positive_class=1)
         results = [
-            UnitMetricResult(
-                correct=True, golden={"label": 1}, predicted={"label": 1}
-            ),
-            UnitMetricResult(
-                correct=True, golden={"label": 1}, predicted={"label": 1}
-            ),
-            UnitMetricResult(
-                correct=False, golden={"label": 0}, predicted={"label": 1}
-            ),
-            UnitMetricResult(
-                correct=False, golden={"label": 1}, predicted={"label": 0}
-            ),
+            UnitMetricResult(correct=True, golden={"label": 1}, predicted={"label": 1}),
+            UnitMetricResult(correct=True, golden={"label": 1}, predicted={"label": 1}),
+            UnitMetricResult(correct=False, golden={"label": 0}, predicted={"label": 1}),
+            UnitMetricResult(correct=False, golden={"label": 1}, predicted={"label": 0}),
         ]
         output = metric.calculate(results)
 
@@ -301,9 +273,7 @@ class TestF1ScoreMetric:
 
     def test_calculate_with_boolean_positive_class(self):
         """Test calculate with boolean positive class"""
-        metric = F1ScoreMetric(
-            predicted_key="is_valid", golden_key="is_valid", positive_class=True
-        )
+        metric = F1ScoreMetric(predicted_key="is_valid", golden_key="is_valid", positive_class=True)
         results = [
             UnitMetricResult(
                 correct=True,
@@ -337,14 +307,8 @@ class TestF1ScoreMetric:
 
     def test_calculate_single_true_positive(self):
         """Test calculate with single true positive"""
-        metric = F1ScoreMetric(
-            predicted_key="class", golden_key="class", positive_class="A"
-        )
-        results = [
-            UnitMetricResult(
-                correct=True, golden={"class": "A"}, predicted={"class": "A"}
-            )
-        ]
+        metric = F1ScoreMetric(predicted_key="class", golden_key="class", positive_class="A")
+        results = [UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"})]
         output = metric.calculate(results)
 
         # TP=1, FP=0, FN=0
@@ -354,25 +318,15 @@ class TestF1ScoreMetric:
 
     def test_calculate_with_true_negatives(self):
         """Test calculate with true negatives (shouldn't affect F1)"""
-        metric = F1ScoreMetric(
-            predicted_key="class", golden_key="class", positive_class="A"
-        )
+        metric = F1ScoreMetric(predicted_key="class", golden_key="class", positive_class="A")
         results = [
             # True Positive
-            UnitMetricResult(
-                correct=True, golden={"class": "A"}, predicted={"class": "A"}
-            ),
+            UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
             # True Negatives (shouldn't affect F1)
-            UnitMetricResult(
-                correct=True, golden={"class": "B"}, predicted={"class": "B"}
-            ),
-            UnitMetricResult(
-                correct=True, golden={"class": "C"}, predicted={"class": "C"}
-            ),
+            UnitMetricResult(correct=True, golden={"class": "B"}, predicted={"class": "B"}),
+            UnitMetricResult(correct=True, golden={"class": "C"}, predicted={"class": "C"}),
             # False Positive
-            UnitMetricResult(
-                correct=False, golden={"class": "B"}, predicted={"class": "A"}
-            ),
+            UnitMetricResult(correct=False, golden={"class": "B"}, predicted={"class": "A"}),
         ]
         output = metric.calculate(results)
 
@@ -385,9 +339,7 @@ class TestF1ScoreMetric:
 
     def test_calculate_various_f1_values(self):
         """Test calculate with various F1 score values"""
-        metric = F1ScoreMetric(
-            predicted_key="class", golden_key="class", positive_class="A"
-        )
+        metric = F1ScoreMetric(predicted_key="class", golden_key="class", positive_class="A")
 
         # F1 = 0.8 (Precision=0.8, Recall=0.8)
         # TP=4, FP=1, FN=1
@@ -404,9 +356,7 @@ class TestF1ScoreMetric:
 
     def test_calculate_harmonic_mean_property(self):
         """Test that F1 is indeed the harmonic mean of precision and recall"""
-        metric = F1ScoreMetric(
-            predicted_key="class", golden_key="class", positive_class="A"
-        )
+        metric = F1ScoreMetric(predicted_key="class", golden_key="class", positive_class="A")
         results = [
             UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
             UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
@@ -429,30 +379,20 @@ class TestF1ScoreMetric:
 
     def test_calculate_when_precision_or_recall_is_zero(self):
         """Test calculate when either precision or recall is zero"""
-        metric = F1ScoreMetric(
-            predicted_key="class", golden_key="class", positive_class="A"
-        )
+        metric = F1ScoreMetric(predicted_key="class", golden_key="class", positive_class="A")
 
         # Only false positives (precision=0, recall undefined)
         results = [
-            UnitMetricResult(
-                correct=False, golden={"class": "B"}, predicted={"class": "A"}
-            ),
-            UnitMetricResult(
-                correct=False, golden={"class": "C"}, predicted={"class": "A"}
-            ),
+            UnitMetricResult(correct=False, golden={"class": "B"}, predicted={"class": "A"}),
+            UnitMetricResult(correct=False, golden={"class": "C"}, predicted={"class": "A"}),
         ]
         output = metric.calculate(results)
         assert output["f1_score"] == 0.0
 
         # Only false negatives (precision undefined, recall=0)
         results = [
-            UnitMetricResult(
-                correct=False, golden={"class": "A"}, predicted={"class": "B"}
-            ),
-            UnitMetricResult(
-                correct=False, golden={"class": "A"}, predicted={"class": "C"}
-            ),
+            UnitMetricResult(correct=False, golden={"class": "A"}, predicted={"class": "B"}),
+            UnitMetricResult(correct=False, golden={"class": "A"}, predicted={"class": "C"}),
         ]
         output = metric.calculate(results)
         assert output["f1_score"] == 0.0

@@ -5,10 +5,11 @@ Recall = TP / (TP + FN)
 Measures: Of all actual positives, how many were predicted correctly?
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from sygra.core.metrics.aggregator_metrics.base_aggregator_metric import (
     BaseAggregatorMetric,
-    register_aggregator_metric
+    register_aggregator_metric,
 )
 from sygra.core.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 from sygra.logger.logger_config import logger
@@ -30,7 +31,7 @@ class RecallMetric(BaseAggregatorMetric):
             positive_class: Value that represents positive class (e.g., "click", 1, True)
                           This is a required parameter since recall is a class-wise metric.
                           Without it, the metric would be equivalent to accuracy.
-        
+
         Raises:
             ValueError: If golden_key is empty or positive_class is None
         """
@@ -38,7 +39,7 @@ class RecallMetric(BaseAggregatorMetric):
             raise ValueError("RecallMetric: golden_key cannot be empty")
         if positive_class is None:
             raise ValueError("RecallMetric: positive_class is required (cannot be None)")
-        
+
         self.golden_key = golden_key
         self.positive_class = positive_class
 
@@ -68,11 +69,15 @@ class RecallMetric(BaseAggregatorMetric):
         if self.positive_class is None:
             raise ValueError("RecallMetric: Positive class is not provided")
         # Calculate tp, fn to compute recall
-        tp = sum(1 for r in results if r.golden.get(self.golden_key) == self.positive_class and r.correct)
-        fn = sum(1 for r in results if r.golden.get(self.golden_key) == self.positive_class and not r.correct)
+        tp = sum(
+            1 for r in results if r.golden.get(self.golden_key) == self.positive_class and r.correct
+        )
+        fn = sum(
+            1
+            for r in results
+            if r.golden.get(self.golden_key) == self.positive_class and not r.correct
+        )
 
         recall = self._safe_divide(tp, tp + fn)
 
-        return {
-            "recall": recall
-        }
+        return {"recall": recall}

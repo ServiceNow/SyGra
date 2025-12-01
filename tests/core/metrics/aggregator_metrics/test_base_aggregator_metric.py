@@ -2,6 +2,7 @@
 Unit tests for BaseAggregatorMetric
 Tests the abstract base class and its helper methods.
 """
+
 import os
 import sys
 
@@ -9,6 +10,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
 
 import pytest
+
 from sygra.core.metrics.aggregator_metrics.base_aggregator_metric import (
     BaseAggregatorMetric,
     register_aggregator_metric,
@@ -50,15 +52,9 @@ class TestBaseAggregatorMetric:
         """Test _count_correct when all results are correct"""
         metric = ConcreteMetric()
         results = [
-            UnitMetricResult(
-                correct=True, golden={"class": "A"}, predicted={"class": "A"}
-            ),
-            UnitMetricResult(
-                correct=True, golden={"class": "B"}, predicted={"class": "B"}
-            ),
-            UnitMetricResult(
-                correct=True, golden={"class": "C"}, predicted={"class": "C"}
-            ),
+            UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
+            UnitMetricResult(correct=True, golden={"class": "B"}, predicted={"class": "B"}),
+            UnitMetricResult(correct=True, golden={"class": "C"}, predicted={"class": "C"}),
         ]
         assert metric._count_correct(results) == 3
 
@@ -66,18 +62,10 @@ class TestBaseAggregatorMetric:
         """Test _count_correct with mixed correct/incorrect results"""
         metric = ConcreteMetric()
         results = [
-            UnitMetricResult(
-                correct=True, golden={"class": "A"}, predicted={"class": "A"}
-            ),
-            UnitMetricResult(
-                correct=False, golden={"class": "B"}, predicted={"class": "C"}
-            ),
-            UnitMetricResult(
-                correct=True, golden={"class": "D"}, predicted={"class": "D"}
-            ),
-            UnitMetricResult(
-                correct=False, golden={"class": "E"}, predicted={"class": "F"}
-            ),
+            UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
+            UnitMetricResult(correct=False, golden={"class": "B"}, predicted={"class": "C"}),
+            UnitMetricResult(correct=True, golden={"class": "D"}, predicted={"class": "D"}),
+            UnitMetricResult(correct=False, golden={"class": "E"}, predicted={"class": "F"}),
         ]
         assert metric._count_correct(results) == 2
 
@@ -85,12 +73,8 @@ class TestBaseAggregatorMetric:
         """Test _count_correct when all results are incorrect"""
         metric = ConcreteMetric()
         results = [
-            UnitMetricResult(
-                correct=False, golden={"class": "A"}, predicted={"class": "B"}
-            ),
-            UnitMetricResult(
-                correct=False, golden={"class": "C"}, predicted={"class": "D"}
-            ),
+            UnitMetricResult(correct=False, golden={"class": "A"}, predicted={"class": "B"}),
+            UnitMetricResult(correct=False, golden={"class": "C"}, predicted={"class": "D"}),
         ]
         assert metric._count_correct(results) == 0
 

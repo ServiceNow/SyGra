@@ -9,6 +9,7 @@ import sys
 # Add project root to sys.path for relative imports to work
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
 import pytest
+
 from sygra.core.metrics.aggregator_metrics.precision import PrecisionMetric
 from sygra.core.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 
@@ -32,16 +33,16 @@ class TestPrecisionMetric:
         # Should raise ValueError when predicted_key is missing
         with pytest.raises(TypeError):
             PrecisionMetric(positive_class="A")
-        
+
         # Should raise ValueError when positive_class is missing
         with pytest.raises(TypeError):
             PrecisionMetric(predicted_key="class")
-        
+
         # Should raise ValueError when predicted_key is empty
         with pytest.raises(ValueError) as exc_info:
             PrecisionMetric(predicted_key="", positive_class="A")
         assert "predicted_key cannot be empty" in str(exc_info.value)
-        
+
         # Should raise ValueError when positive_class is None
         with pytest.raises(ValueError) as exc_info:
             PrecisionMetric(predicted_key="class", positive_class=None)
@@ -233,18 +234,10 @@ class TestPrecisionMetric:
         """Test calculate with numeric positive class"""
         metric = PrecisionMetric(predicted_key="label", positive_class=1)
         results = [
-            UnitMetricResult(
-                correct=True, golden={"label": 1}, predicted={"label": 1}
-            ),
-            UnitMetricResult(
-                correct=False, golden={"label": 0}, predicted={"label": 1}
-            ),
-            UnitMetricResult(
-                correct=True, golden={"label": 1}, predicted={"label": 1}
-            ),
-            UnitMetricResult(
-                correct=True, golden={"label": 0}, predicted={"label": 0}
-            ),
+            UnitMetricResult(correct=True, golden={"label": 1}, predicted={"label": 1}),
+            UnitMetricResult(correct=False, golden={"label": 0}, predicted={"label": 1}),
+            UnitMetricResult(correct=True, golden={"label": 1}, predicted={"label": 1}),
+            UnitMetricResult(correct=True, golden={"label": 0}, predicted={"label": 0}),
         ]
         output = metric.calculate(results)
 
@@ -281,11 +274,7 @@ class TestPrecisionMetric:
     def test_calculate_single_true_positive(self):
         """Test calculate with single true positive"""
         metric = PrecisionMetric(predicted_key="class", positive_class="A")
-        results = [
-            UnitMetricResult(
-                correct=True, golden={"class": "A"}, predicted={"class": "A"}
-            )
-        ]
+        results = [UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"})]
         output = metric.calculate(results)
 
         assert "precision" in output
@@ -294,11 +283,7 @@ class TestPrecisionMetric:
     def test_calculate_single_false_positive(self):
         """Test calculate with single false positive"""
         metric = PrecisionMetric(predicted_key="class", positive_class="A")
-        results = [
-            UnitMetricResult(
-                correct=False, golden={"class": "B"}, predicted={"class": "A"}
-            )
-        ]
+        results = [UnitMetricResult(correct=False, golden={"class": "B"}, predicted={"class": "A"})]
         output = metric.calculate(results)
 
         assert "precision" in output
@@ -313,9 +298,7 @@ class TestPrecisionMetric:
                 golden={"class": "A"},
                 predicted={"other_key": "B"},  # Missing 'class' key
             ),
-            UnitMetricResult(
-                correct=True, golden={"class": "A"}, predicted={"class": "A"}
-            ),
+            UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
         ]
         output = metric.calculate(results)
 

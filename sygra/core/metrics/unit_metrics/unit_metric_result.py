@@ -73,7 +73,7 @@ class UnitMetricResult:
             "correct": self.correct,
             "golden": self.golden,
             "predicted": self.predicted,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
     @classmethod
@@ -91,7 +91,7 @@ class UnitMetricResult:
             correct=data.get("correct", False),
             golden=data.get("golden", {}),
             predicted=data.get("predicted", {}),
-            metadata=data.get("metadata", {})
+            metadata=data.get("metadata", {}),
         )
 
     def __repr__(self) -> str:

@@ -2,12 +2,14 @@
 Unit tests for RecallMetric
 Tests recall calculation (TP / (TP + FN)) from unit metric results.
 """
+
 import os
 import sys
 
 # Add project root to sys.path for relative imports to work
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
 import pytest
+
 from sygra.core.metrics.aggregator_metrics.recall import RecallMetric
 from sygra.core.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 
@@ -31,16 +33,16 @@ class TestRecallMetric:
         # Should raise TypeError when golden_key is missing
         with pytest.raises(TypeError):
             RecallMetric(positive_class="A")
-        
+
         # Should raise TypeError when positive_class is missing
         with pytest.raises(TypeError):
             RecallMetric(golden_key="class")
-        
+
         # Should raise ValueError when golden_key is empty
         with pytest.raises(ValueError) as exc_info:
             RecallMetric(golden_key="", positive_class="A")
         assert "golden_key cannot be empty" in str(exc_info.value)
-        
+
         # Should raise ValueError when positive_class is None
         with pytest.raises(ValueError) as exc_info:
             RecallMetric(golden_key="class", positive_class=None)
@@ -232,18 +234,10 @@ class TestRecallMetric:
         """Test calculate with numeric positive class"""
         metric = RecallMetric(golden_key="label", positive_class=1)
         results = [
-            UnitMetricResult(
-                correct=True, golden={"label": 1}, predicted={"label": 1}
-            ),
-            UnitMetricResult(
-                correct=False, golden={"label": 1}, predicted={"label": 0}
-            ),
-            UnitMetricResult(
-                correct=True, golden={"label": 1}, predicted={"label": 1}
-            ),
-            UnitMetricResult(
-                correct=True, golden={"label": 0}, predicted={"label": 0}
-            ),
+            UnitMetricResult(correct=True, golden={"label": 1}, predicted={"label": 1}),
+            UnitMetricResult(correct=False, golden={"label": 1}, predicted={"label": 0}),
+            UnitMetricResult(correct=True, golden={"label": 1}, predicted={"label": 1}),
+            UnitMetricResult(correct=True, golden={"label": 0}, predicted={"label": 0}),
         ]
         output = metric.calculate(results)
 
@@ -280,11 +274,7 @@ class TestRecallMetric:
     def test_calculate_single_true_positive(self):
         """Test calculate with single true positive"""
         metric = RecallMetric(golden_key="class", positive_class="A")
-        results = [
-            UnitMetricResult(
-                correct=True, golden={"class": "A"}, predicted={"class": "A"}
-            )
-        ]
+        results = [UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"})]
         output = metric.calculate(results)
 
         assert "recall" in output
@@ -293,11 +283,7 @@ class TestRecallMetric:
     def test_calculate_single_false_negative(self):
         """Test calculate with single false negative"""
         metric = RecallMetric(golden_key="class", positive_class="A")
-        results = [
-            UnitMetricResult(
-                correct=False, golden={"class": "A"}, predicted={"class": "B"}
-            )
-        ]
+        results = [UnitMetricResult(correct=False, golden={"class": "A"}, predicted={"class": "B"})]
         output = metric.calculate(results)
 
         assert "recall" in output
@@ -312,9 +298,7 @@ class TestRecallMetric:
                 golden={"other_key": "B"},  # Missing 'class' key
                 predicted={"class": "A"},
             ),
-            UnitMetricResult(
-                correct=True, golden={"class": "A"}, predicted={"class": "A"}
-            ),
+            UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
         ]
         output = metric.calculate(results)
 
@@ -351,17 +335,11 @@ class TestRecallMetric:
         metric = RecallMetric(golden_key="class", positive_class="A")
         results = [
             # True Positive
-            UnitMetricResult(
-                correct=True, golden={"class": "A"}, predicted={"class": "A"}
-            ),
+            UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
             # False Positive (doesn't affect recall)
-            UnitMetricResult(
-                correct=False, golden={"class": "B"}, predicted={"class": "A"}
-            ),
+            UnitMetricResult(correct=False, golden={"class": "B"}, predicted={"class": "A"}),
             # False Positive (doesn't affect recall)
-            UnitMetricResult(
-                correct=False, golden={"class": "C"}, predicted={"class": "A"}
-            ),
+            UnitMetricResult(correct=False, golden={"class": "C"}, predicted={"class": "A"}),
         ]
         output = metric.calculate(results)
 

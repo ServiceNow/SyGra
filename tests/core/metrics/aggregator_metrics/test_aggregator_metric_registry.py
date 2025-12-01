@@ -1,10 +1,12 @@
 import os
 import sys
+
 # Add project root to sys.path for relative imports to work
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
 
 
 import pytest
+
 from sygra.core.metrics.aggregator_metrics.aggregator_metric_registry import (
     AggregatorMetricRegistry,
 )
@@ -274,9 +276,9 @@ class TestAggregatorMetricRegistry:
         """Test registry with actual built-in metrics"""
         # Import built-in metrics to trigger their registration
         from sygra.core.metrics.aggregator_metrics.accuracy import AccuracyMetric
+        from sygra.core.metrics.aggregator_metrics.f1_score import F1ScoreMetric
         from sygra.core.metrics.aggregator_metrics.precision import PrecisionMetric
         from sygra.core.metrics.aggregator_metrics.recall import RecallMetric
-        from sygra.core.metrics.aggregator_metrics.f1_score import F1ScoreMetric
 
         # Check that built-in metrics are registered
         assert AggregatorMetricRegistry.has_metric("accuracy")
