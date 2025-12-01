@@ -62,7 +62,7 @@ class BaseAggregatorMetric(ABC):
 
     def _safe_divide(self, numerator: float, denominator: float) -> float:
         """Safe division that returns 0.0 if denominator is 0"""
-        return numerator / denominator if denominator > 0 else 0.0
+        return numerator / denominator if denominator != 0 else 0.0
 
 
 # Define decorator for metric registration
