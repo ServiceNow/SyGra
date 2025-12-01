@@ -16,27 +16,58 @@ from sygra.utils import utils
 logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 
 
-class CustomVLLM(LiteLLMBase):
+class CustomBedrock(LiteLLMBase):
     def __init__(self, model_config: dict[str, Any]) -> None:
         super().__init__(model_config)
-        utils.validate_required_keys(["url", "auth_token"], model_config, "model")
+        # Bedrock via LiteLLM uses AWS credentials (env or explicit params), not url/api_key
+        utils.validate_required_keys(
+            ["aws_access_key_id", "aws_secret_access_key", "aws_region_name"], model_config, "model"
+        )
         self.model_config = model_config
-        self.auth_token = str(model_config.get("auth_token")).replace("Bearer ", "")
-        self.model_serving_name = model_config.get("model_serving_name", self.name())
-
-    def _validate_completions_api_model_support(self) -> None:
-        logger.info(f"Model {self.name()} supports completion API.")
-
-    def _get_model_prefix(self) -> str:
-        return "hosted_vllm"
+        self.model_name = self.model_config.get("model", self.name())
 
     # Provider hooks
+    def _get_model_prefix(self) -> str:
+        # LiteLLM Bedrock provider prefix
+        return "bedrock"
+
     def _provider_label(self) -> str:
-        return "vLLM"
+        return "Bedrock"
+
+    def _requires_api_key(self) -> bool:
+        # Credentials are passed via AWS keys or environment, not api_key
+        return False
+
+    def _extra_call_params(self) -> dict[str, Any]:
+        # Allow passing AWS credentials explicitly via model config, otherwise LiteLLM
+        # will read them from the environment.
+        cfg = self.model_config
+        extra: dict[str, Any] = {}
+        for key in (
+            "aws_access_key_id",
+            "aws_secret_access_key",
+            "aws_region_name",
+        ):
+            val = cfg.get(key)
+            if val:
+                extra[key] = val
+        return extra
+
+    def _build_common_kwargs(self, model_params: ModelParams) -> dict[str, Any]:
+        # Start with base construction and remove base_url/api_key as they're not used
+        common = super()._build_common_kwargs(model_params)
+        base_url_key = self._base_url_param()
+        if base_url_key in common:
+            common.pop(base_url_key, None)
+        common.pop("api_key", None)
+        return common
+
+    # Bedrock does not support a generic image edit API across all models
+    def _fn_aimage_edit(self):
+        raise NotImplementedError(f"Image editing is not supported by {self._provider_label}")
 
     def _native_structured_output_spec(self):
-        # vLLM uses guided_json with JSON schema
-        return ("guided_json", "schema")
+        return ("response_format", "pydantic")
 
     @track_model_request
     async def _generate_response(
@@ -44,13 +75,15 @@ class CustomVLLM(LiteLLMBase):
     ) -> ModelResponse:
         self._apply_tools(**kwargs)
         output_type = self.model_config.get("output_type")
-        if output_type in ("audio", "image"):
+        if output_type == "audio":
             logger.error(
                 f"[{self.name()}] {self._provider_label()} does not support output_type '{output_type}'"
             )
             raise ValueError(
                 f"[{self.name()}] {self._provider_label()} does not support output_type '{output_type}'"
             )
+        if output_type == "image":
+            return await self._generate_image(input, model_params)
         return await self._generate_text(input, model_params)
 
     # Ensure module-level logger is used for tests expecting per-module logging

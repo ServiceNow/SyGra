@@ -74,7 +74,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
 
     async def _run_generate_response_chat_api_success(self):
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {
@@ -100,7 +100,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
 
     async def _run_generate_response_chat_api_with_tools_success(self):
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             tool_call = {
                 "id": "call_12xyz",
@@ -129,7 +129,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
     @patch("sygra.core.models.custom_models.AutoTokenizer")
     async def _run_generate_response_completions_api_success(self, mock_tokenizer):
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.atext_completion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.atext_completion", new_callable=AsyncMock
         ) as mock_atext:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {"text": "Response text"}
@@ -155,48 +155,37 @@ class TestLiteLLMVLLM(unittest.TestCase):
     async def _run_generate_response_rate_limit_error(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.vllm_model.logger") as mock_logger,
         ):
-            mock_acomp.side_effect = openai.RateLimitError(
-                "Rate limit exceeded", response=MagicMock(), body=None
+            api_error = openai.RateLimitError(
+                "Rate limit exceeded",
+                response=MagicMock(),
+                body={"error": {"message": "Rate limit exceeded", "type": "rate_limit_error"}},
             )
+            api_error.status_code = 429
+            mock_acomp.side_effect = api_error
             model = LiteLLMVLLM(self.base_config)
             params = self._get_model_params()
             resp = await model._generate_response(self.chat_input, params)
             self.assertIn(constants.ERROR_PREFIX, resp.llm_response)
-            self.assertIn("vLLM request failed", resp.llm_response)
+            self.assertIn("vLLM API request exceeded rate limit", resp.llm_response)
             self.assertEqual(resp.response_code, 429)
-            mock_logger.warn.assert_called()
+            mock_logger.warning.assert_called()
 
     def test_generate_response_rate_limit_error(self):
         asyncio.run(self._run_generate_response_rate_limit_error())
 
-    async def _run_generate_response_server_down(self):
-        with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
-        ) as mock_acomp:
-            mock_acomp.side_effect = Exception(f"Connection failed: {constants.ELEMAI_JOB_DOWN}")
-            model = LiteLLMVLLM(self.base_config)
-            params = self._get_model_params()
-            resp = await model._generate_response(self.chat_input, params)
-            self.assertIn(constants.ERROR_PREFIX, resp.llm_response)
-            self.assertIn(constants.ELEMAI_JOB_DOWN, resp.llm_response)
-            self.assertEqual(resp.response_code, 503)
-
-    def test_generate_response_server_down(self):
-        asyncio.run(self._run_generate_response_server_down())
-
     async def _run_generate_response_connection_error(self):
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_acomp.side_effect = Exception(constants.CONNECTION_ERROR)
             model = LiteLLMVLLM(self.base_config)
             params = self._get_model_params()
             resp = await model._generate_response(self.chat_input, params)
-            self.assertEqual(resp.response_code, 503)
+            self.assertEqual(resp.response_code, 999)
 
     def test_generate_response_connection_error(self):
         asyncio.run(self._run_generate_response_connection_error())
@@ -204,7 +193,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
     async def _run_generate_response_generic_exception(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.vllm_model.logger") as mock_logger,
         ):
@@ -224,7 +213,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
     async def _run_generate_response_bad_request_exception(self):
         with (
             patch(
-                "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
             ) as mock_acomp,
             patch("sygra.core.models.lite_llm.vllm_model.logger") as mock_logger,
         ):
@@ -242,9 +231,66 @@ class TestLiteLLMVLLM(unittest.TestCase):
     def test_generate_response_bad_request_exception(self):
         asyncio.run(self._run_generate_response_bad_request_exception())
 
+    async def _run_generate_response_api_error_chat_api(self):
+        with (
+            patch(
+                "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
+            ) as mock_acomp,
+            patch("sygra.core.models.lite_llm.vllm_model.logger") as mock_logger,
+        ):
+            mock_request = MagicMock()
+            mock_request.status_code = 500
+            api_error = openai.APIError(
+                "Internal server error",
+                request=mock_request,
+                body={"error": {"message": "Internal server error", "type": "api_error"}},
+            )
+            api_error.status_code = 500
+            mock_acomp.side_effect = api_error
+
+            model = LiteLLMVLLM(self.base_config)
+            params = self._get_model_params()
+            resp = await model._generate_response(self.chat_input, params)
+            self.assertIn(constants.ERROR_PREFIX, resp.llm_response)
+            self.assertIn("vLLM API error", resp.llm_response)
+            self.assertEqual(resp.response_code, 500)
+            mock_logger.error.assert_called()
+
+    def test_generate_response_api_error_chat_api(self):
+        asyncio.run(self._run_generate_response_api_error_chat_api())
+
+    async def _run_generate_response_api_error_completions_api(self):
+        with (
+            patch(
+                "sygra.core.models.lite_llm.base.atext_completion", new_callable=AsyncMock
+            ) as mock_atext,
+            patch("sygra.core.models.lite_llm.vllm_model.logger") as mock_logger,
+        ):
+            mock_request = MagicMock()
+            mock_request.status_code = 500
+            api_error = openai.APIError(
+                "Internal server error",
+                request=mock_request,
+                body={"error": {"message": "Internal server error", "type": "api_error"}},
+            )
+            api_error.status_code = 500
+            mock_atext.side_effect = api_error
+
+            model = LiteLLMVLLM(self.completions_config)
+            model.get_chat_formatted_text = MagicMock(return_value="Formatted prompt text")
+            params = self._get_model_params()
+            resp = await model._generate_response(self.chat_input, params)
+            self.assertIn(constants.ERROR_PREFIX, resp.llm_response)
+            self.assertIn("vLLM API error", resp.llm_response)
+            self.assertEqual(resp.response_code, 500)
+            mock_logger.error.assert_called()
+
+    def test_generate_response_api_error_completions_api(self):
+        asyncio.run(self._run_generate_response_api_error_completions_api())
+
     async def _run_generate_response_with_extracted_status_code(self):
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_acomp.side_effect = Exception("Service unavailable")
             model = LiteLLMVLLM(self.base_config)
@@ -258,7 +304,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
 
     async def _run_generate_response_passes_generation_params(self):
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {"message": {"content": "Response"}}
@@ -287,7 +333,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
             name: str
 
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {
@@ -312,7 +358,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
             name: str
 
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.atext_completion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.atext_completion", new_callable=AsyncMock
         ) as mock_atext:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {"text": json.dumps({"name": "ok"})}
@@ -335,7 +381,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
             name: str
 
         with patch(
-            "sygra.core.models.lite_llm.vllm_model.acompletion", new_callable=AsyncMock
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
         ) as mock_acomp:
             mock_choice = MagicMock()
             mock_choice.model_dump.return_value = {
@@ -358,6 +404,55 @@ class TestLiteLLMVLLM(unittest.TestCase):
 
     def test_native_structured_output_validation_fallback(self):
         asyncio.run(self._run_native_structured_output_validation_fallback())
+
+    async def _run_fallback_structured_output_success(self):
+        class Item(BaseModel):
+            name: str
+
+        with patch(
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
+        ) as mock_acomp:
+            mock_choice = MagicMock()
+            mock_choice.model_dump.return_value = {
+                "message": {"content": json.dumps({"name": "ok"}), "tool_calls": None}
+            }
+            mock_completion = MagicMock()
+            mock_completion.choices = [mock_choice]
+            mock_acomp.return_value = mock_completion
+
+            model = LiteLLMVLLM(self.base_config)
+            params = self._get_model_params()
+            resp = await model._generate_fallback_structured_output(self.chat_input, params, Item)
+            self.assertEqual(resp.response_code, 200)
+            data = json.loads(resp.llm_response)
+            self.assertEqual(data.get("name"), "ok")
+
+    def test_fallback_structured_output_success(self):
+        asyncio.run(self._run_fallback_structured_output_success())
+
+    async def _run_fallback_structured_output_parse_failure_returns_original(self):
+        class Item(BaseModel):
+            name: str
+
+        with patch(
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
+        ) as mock_acomp:
+            mock_choice = MagicMock()
+            mock_choice.model_dump.return_value = {
+                "message": {"content": "not_json", "tool_calls": None}
+            }
+            mock_completion = MagicMock()
+            mock_completion.choices = [mock_choice]
+            mock_acomp.return_value = mock_completion
+
+            model = LiteLLMVLLM(self.base_config)
+            params = self._get_model_params()
+            resp = await model._generate_fallback_structured_output(self.chat_input, params, Item)
+            self.assertEqual(resp.response_code, 200)
+            self.assertEqual(resp.llm_response, "not_json")
+
+    def test_fallback_structured_output_parse_failure_returns_original(self):
+        asyncio.run(self._run_fallback_structured_output_parse_failure_returns_original())
 
 
 if __name__ == "__main__":

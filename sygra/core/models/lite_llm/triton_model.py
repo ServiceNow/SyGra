@@ -16,27 +16,35 @@ from sygra.utils import utils
 logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 
 
-class CustomVLLM(LiteLLMBase):
+class CustomTriton(LiteLLMBase):
     def __init__(self, model_config: dict[str, Any]) -> None:
         super().__init__(model_config)
         utils.validate_required_keys(["url", "auth_token"], model_config, "model")
         self.model_config = model_config
-        self.auth_token = str(model_config.get("auth_token")).replace("Bearer ", "")
-        self.model_serving_name = model_config.get("model_serving_name", self.name())
 
     def _validate_completions_api_model_support(self) -> None:
+        # Triton supports completion API
         logger.info(f"Model {self.name()} supports completion API.")
 
     def _get_model_prefix(self) -> str:
-        return "hosted_vllm"
+        return "triton"
 
-    # Provider hooks
     def _provider_label(self) -> str:
-        return "vLLM"
+        return "Triton"
 
-    def _native_structured_output_spec(self):
-        # vLLM uses guided_json with JSON schema
-        return ("guided_json", "schema")
+    # Ensure module-level logger is used for tests expecting per-module logging
+    def _map_exception(self, e: Exception, context: str) -> ModelResponse:
+        if isinstance(e, RateLimitError):
+            logger.warning(
+                f"[{self.name()}] {context} request exceeded rate limit: {getattr(e, 'message', e)}"
+            )
+        elif isinstance(e, BadRequestError):
+            logger.error(f"[{self.name()}] {context} bad request: {getattr(e, 'message', e)}")
+        elif isinstance(e, APIError):
+            logger.error(f"[{self.name()}] {context} error: {getattr(e, 'message', e)}")
+        else:
+            logger.error(f"[{self.name()}] {context} request failed: {e}")
+        return super()._map_exception(e, context)
 
     @track_model_request
     async def _generate_response(
@@ -52,17 +60,3 @@ class CustomVLLM(LiteLLMBase):
                 f"[{self.name()}] {self._provider_label()} does not support output_type '{output_type}'"
             )
         return await self._generate_text(input, model_params)
-
-    # Ensure module-level logger is used for tests expecting per-module logging
-    def _map_exception(self, e: Exception, context: str) -> ModelResponse:
-        if isinstance(e, RateLimitError):
-            logger.warning(
-                f"[{self.name()}] {context} request exceeded rate limit: {getattr(e, 'message', e)}"
-            )
-        elif isinstance(e, BadRequestError):
-            logger.error(f"[{self.name()}] {context} bad request: {getattr(e, 'message', e)}")
-        elif isinstance(e, APIError):
-            logger.error(f"[{self.name()}] {context} error: {getattr(e, 'message', e)}")
-        else:
-            logger.error(f"[{self.name()}] {context} request failed: {e}")
-        return super()._map_exception(e, context)
