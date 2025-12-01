@@ -22,14 +22,23 @@ class PrecisionMetric(BaseAggregatorMetric):
     Caller specifies positive class via predicted_key and positive_class.
     """
 
-    def __init__(self, predicted_key: str = "class", positive_class: Optional[Any] = None):
+    def __init__(self, predicted_key: str, positive_class: Any):
         """
         Args:
             predicted_key: Key in predicted dict to check (e.g., "tool", "event", "class")
+                          This is a required parameter to ensure explicit configuration.
             positive_class: Value that represents positive class (e.g., "click", 1, True)
-                          If None, we throw an error since precision is a class wise metric
-                          otherwise it becomes accuracy.
+                          This is a required parameter since precision is a class-wise metric.
+                          Without it, the metric would be equivalent to accuracy.
+        
+        Raises:
+            ValueError: If predicted_key is empty or positive_class is None
         """
+        if not predicted_key:
+            raise ValueError("PrecisionMetric: predicted_key cannot be empty")
+        if positive_class is None:
+            raise ValueError("PrecisionMetric: positive_class is required (cannot be None)")
+        
         self.predicted_key = predicted_key
         self.positive_class = positive_class
 
@@ -52,9 +61,10 @@ class PrecisionMetric(BaseAggregatorMetric):
                 "precision": 0.0,
             }
 
-        # If positive class is not provided, raise an exception
+        # Note: positive_class validation now happens at __init__, so this is redundant
+        # but kept as a safety check in case of direct attribute manipulation
         if self.positive_class is None:
-            raise Exception(f"PrecisionMetric: Positive class is not provided")
+            raise ValueError("PrecisionMetric: Positive class is not provided")
         # We calculate tp, fp to calculate precision
         tp = sum(1 for r in results if r.predicted.get(self.predicted_key) == self.positive_class and r.correct)
         fp = sum(1 for r in results if r.predicted.get(self.predicted_key) == self.positive_class and not r.correct)

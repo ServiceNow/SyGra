@@ -26,17 +26,30 @@ class F1ScoreMetric(BaseAggregatorMetric):
 
     def __init__(
             self,
-            predicted_key: str = "class",
-            golden_key: str = "class",
-            positive_class: Optional[Any] = None
+            predicted_key: str,
+            golden_key: str,
+            positive_class: Any
     ):
         """
         Args:
             predicted_key: Key in predicted dict (e.g., "tool", "class")
+                          This is a required parameter to ensure explicit configuration.
             golden_key: Key in golden dict (e.g., "event", "class")
+                       This is a required parameter to ensure explicit configuration.
             positive_class: Value representing positive class (e.g., "click", 1, True)
-                          If None, it would throw an exception since it is a class wise metric.
+                          This is a required parameter since F1 is a class-wise metric.
+                          Without it, the metric would be equivalent to accuracy.
+        
+        Raises:
+            ValueError: If predicted_key/golden_key is empty or positive_class is None
         """
+        if not predicted_key:
+            raise ValueError("F1ScoreMetric: predicted_key cannot be empty")
+        if not golden_key:
+            raise ValueError("F1ScoreMetric: golden_key cannot be empty")
+        if positive_class is None:
+            raise ValueError("F1ScoreMetric: positive_class is required (cannot be None)")
+        
         self.predicted_key = predicted_key
         self.golden_key = golden_key
         self.positive_class = positive_class

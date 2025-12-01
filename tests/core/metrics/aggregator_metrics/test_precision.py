@@ -27,24 +27,25 @@ class TestPrecisionMetric:
         assert metric.predicted_key == "tool"
         assert metric.positive_class == "click"
 
-    def test_initialization_default_parameters(self):
-        """Test initialization with default parameters"""
-        metric = PrecisionMetric()
-        assert metric.predicted_key == "class"
-        assert metric.positive_class is None
-
-    def test_calculate_raises_error_without_positive_class(self):
-        """Test that calculate raises exception when positive_class is None"""
-        metric = PrecisionMetric(predicted_key="class", positive_class=None)
-        results = [
-            UnitMetricResult(
-                correct=True, golden={"class": "A"}, predicted={"class": "A"}
-            )
-        ]
-
-        with pytest.raises(Exception) as exc_info:
-            metric.calculate(results)
-        assert "Positive class is not provided" in str(exc_info.value)
+    def test_initialization_requires_parameters(self):
+        """Test that initialization requires both predicted_key and positive_class"""
+        # Should raise ValueError when predicted_key is missing
+        with pytest.raises(TypeError):
+            PrecisionMetric(positive_class="A")
+        
+        # Should raise ValueError when positive_class is missing
+        with pytest.raises(TypeError):
+            PrecisionMetric(predicted_key="class")
+        
+        # Should raise ValueError when predicted_key is empty
+        with pytest.raises(ValueError) as exc_info:
+            PrecisionMetric(predicted_key="", positive_class="A")
+        assert "predicted_key cannot be empty" in str(exc_info.value)
+        
+        # Should raise ValueError when positive_class is None
+        with pytest.raises(ValueError) as exc_info:
+            PrecisionMetric(predicted_key="class", positive_class=None)
+        assert "positive_class is required" in str(exc_info.value)
 
     def test_calculate_empty_results(self):
         """Test calculate with empty results list"""

@@ -31,12 +31,32 @@ class TestF1ScoreMetric:
         assert metric.golden_key == "event"
         assert metric.positive_class == "click"
 
-    def test_initialization_default_parameters(self):
-        """Test initialization with default parameters"""
-        metric = F1ScoreMetric()
-        assert metric.predicted_key == "class"
-        assert metric.golden_key == "class"
-        assert metric.positive_class is None
+    def test_initialization_requires_parameters(self):
+        """Test that initialization requires predicted_key, golden_key, and positive_class"""
+        # Should raise TypeError when parameters are missing
+        with pytest.raises(TypeError):
+            F1ScoreMetric(golden_key="class", positive_class="A")
+        
+        with pytest.raises(TypeError):
+            F1ScoreMetric(predicted_key="class", positive_class="A")
+        
+        with pytest.raises(TypeError):
+            F1ScoreMetric(predicted_key="class", golden_key="class")
+        
+        # Should raise ValueError when predicted_key is empty
+        with pytest.raises(ValueError) as exc_info:
+            F1ScoreMetric(predicted_key="", golden_key="class", positive_class="A")
+        assert "predicted_key cannot be empty" in str(exc_info.value)
+        
+        # Should raise ValueError when golden_key is empty
+        with pytest.raises(ValueError) as exc_info:
+            F1ScoreMetric(predicted_key="class", golden_key="", positive_class="A")
+        assert "golden_key cannot be empty" in str(exc_info.value)
+        
+        # Should raise ValueError when positive_class is None
+        with pytest.raises(ValueError) as exc_info:
+            F1ScoreMetric(predicted_key="class", golden_key="class", positive_class=None)
+        assert "positive_class is required" in str(exc_info.value)
 
     def test_initialization_creates_precision_and_recall_metrics(self):
         """Test that initialization creates precision and recall metric instances"""
@@ -47,21 +67,6 @@ class TestF1ScoreMetric:
         assert metric.recall_metric is not None
         assert metric.precision_metric.predicted_key == "tool"
         assert metric.recall_metric.golden_key == "event"
-
-    def test_calculate_raises_error_without_positive_class(self):
-        """Test that calculate raises exception when positive_class is None"""
-        metric = F1ScoreMetric(
-            predicted_key="class", golden_key="class", positive_class=None
-        )
-        results = [
-            UnitMetricResult(
-                correct=True, golden={"class": "A"}, predicted={"class": "A"}
-            )
-        ]
-
-        with pytest.raises(Exception) as exc_info:
-            metric.calculate(results)
-        assert "Positive class is not provided" in str(exc_info.value)
 
     def test_calculate_empty_results(self):
         """Test calculate with empty results list"""
