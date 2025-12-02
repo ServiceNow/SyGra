@@ -317,7 +317,7 @@ class TestLiteLLMVLLM(unittest.TestCase):
             await model._generate_response(self.chat_input, params)
 
             called = mock_acomp.call_args.kwargs
-            self.assertEqual(called["model"], "hosted_vllm/vllm_model")
+            self.assertEqual(called["model"], "hosted_vllm/custom_serving_name")
 
     def test_generate_response_with_custom_serving_name(self):
         asyncio.run(self._run_generate_response_with_custom_serving_name())

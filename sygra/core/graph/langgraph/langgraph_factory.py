@@ -2,7 +2,6 @@ import base64
 import io
 import struct
 import wave
-from functools import partial
 from typing import Any
 
 from langchain_core.messages import BaseMessage
