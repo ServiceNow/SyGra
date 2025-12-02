@@ -39,8 +39,7 @@ class LambdaNode(BaseNode):
         success = True
 
         try:
-            # The lambda function's apply() method expects (lambda_node_dict, state)
-            result: dict[str, Any] = self.func_to_execute(node_config, state)
+            result: dict[str, Any] = self.func_to_execute(self.node_config, state)
             return result
         except Exception:
             success = False
@@ -55,7 +54,7 @@ class LambdaNode(BaseNode):
         Returns:
              Any: platform specific runnable object like Runnable in LangGraph.
         """
-        return utils.backend_factory.create_lambda_runnable(self._exec_wrapper, self.node_config)
+        return utils.backend_factory.create_lambda_runnable(self._exec_wrapper)
 
     def validate_node(self):
         """
