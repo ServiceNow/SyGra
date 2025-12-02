@@ -27,10 +27,10 @@ Users only specify which metrics they want:
 # graph_config.yaml
 graph_properties:
   metrics:
-    - "accuracy"
-    - "precision"
-    - "recall"
-    - "f1_score"
+    - accuracy
+    - precision
+    - recall
+    - f1_score
 ```
 
 ## Platform Code Responsibility
@@ -54,8 +54,10 @@ def discover_classes(validation_results):
 ```
 
 ### 2. Metric Orchestration
+
 ```python
-from sygra.core.metrics.aggregator_metrics.aggregator_metric_registry import AggregatorMetricRegistry
+from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import AggregatorMetricRegistry
+
 
 def run_evaluation(validation_results, metric_names):
     """
@@ -65,15 +67,15 @@ def run_evaluation(validation_results, metric_names):
     """
     # Discover classes from data
     classes = discover_classes(validation_results)  # ["click", "type", "scroll"]
-    
+
     results = {}
-    
+
     for metric_name in metric_names:
         if metric_name == "accuracy":
             # Accuracy is class-agnostic
             metric = AggregatorMetricRegistry.get_metric("accuracy")
             results["accuracy"] = metric.calculate(validation_results)
-        
+
         elif metric_name == "precision":
             # Platform iterates over all classes
             results["precision"] = {}
@@ -81,10 +83,10 @@ def run_evaluation(validation_results, metric_names):
                 metric = AggregatorMetricRegistry.get_metric(
                     "precision",
                     predicted_key="tool",  # Platform knows task structure
-                    positive_class=cls      # Platform iterates classes
+                    positive_class=cls  # Platform iterates classes
                 )
                 results["precision"][cls] = metric.calculate(validation_results)
-        
+
         elif metric_name == "recall":
             results["recall"] = {}
             for cls in classes:
@@ -94,7 +96,7 @@ def run_evaluation(validation_results, metric_names):
                     positive_class=cls
                 )
                 results["recall"][cls] = metric.calculate(validation_results)
-        
+
         elif metric_name == "f1_score":
             results["f1_score"] = {}
             for cls in classes:
@@ -105,7 +107,7 @@ def run_evaluation(validation_results, metric_names):
                     positive_class=cls
                 )
                 results["f1_score"][cls] = metric.calculate(validation_results)
-    
+
     return results
 
 # Example Output:
@@ -134,21 +136,22 @@ def run_evaluation(validation_results, metric_names):
 ## Creating UnitMetricResult
 
 ```python
-from sygra.core.metrics.unit_metrics.unit_metric_result import UnitMetricResult
+from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 
 result = UnitMetricResult(
-    correct=True,                          # Required: Was prediction correct?
-    golden={'event': 'click'},            # Required: Ground truth
-    predicted={'tool': 'click'},          # Required: Model prediction
-    metadata={'step_id': 1}               # Optional: Additional context
+    correct=True,  # Required: Was prediction correct?
+    golden={'event': 'click'},  # Required: Ground truth
+    predicted={'tool': 'click'},  # Required: Model prediction
+    metadata={'step_id': 1}  # Optional: Additional context
 )
 ```
 
 ## Registry Usage (For Platform Developers)
 
 ### Discovering Available Metrics
+
 ```python
-from sygra.core.metrics.aggregator_metrics.aggregator_metric_registry import AggregatorMetricRegistry
+from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import AggregatorMetricRegistry
 
 # List all registered metrics
 available_metrics = AggregatorMetricRegistry.list_metrics()

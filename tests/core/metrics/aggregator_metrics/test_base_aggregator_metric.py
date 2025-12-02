@@ -11,11 +11,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 import pytest
 
-from sygra.core.metrics.aggregator_metrics.base_aggregator_metric import (
-    BaseAggregatorMetric,
-    register_aggregator_metric,
-)
-from sygra.core.metrics.unit_metrics.unit_metric_result import UnitMetricResult
+from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import aggregator_metric
+from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import BaseAggregatorMetric
+from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 
 
 class ConcreteMetric(BaseAggregatorMetric):
@@ -110,19 +108,19 @@ class TestBaseAggregatorMetric:
         assert metric._safe_divide(0.1, 0.2) == 0.5
 
 
-class TestRegisterAggregatorMetricDecorator:
-    """Test suite for register_aggregator_metric decorator"""
+class TestAggregatorMetricDecorator:
+    """Test suite for aggregator_metric decorator"""
 
     def test_decorator_registers_metric(self):
         """Test that decorator registers the metric"""
-        from sygra.core.metrics.aggregator_metrics.aggregator_metric_registry import (
+        from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import (
             AggregatorMetricRegistry,
         )
 
         # Clear registry first
         AggregatorMetricRegistry.clear()
 
-        @register_aggregator_metric("test_decorator_metric")
+        @aggregator_metric("test_decorator_metric")
         class TestDecoratorMetric(BaseAggregatorMetric):
             def get_metric_name(self):
                 return "test_decorator_metric"
@@ -140,14 +138,14 @@ class TestRegisterAggregatorMetricDecorator:
 
     def test_decorator_returns_class(self):
         """Test that decorator returns the class unchanged"""
-        from sygra.core.metrics.aggregator_metrics.aggregator_metric_registry import (
+        from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import (
             AggregatorMetricRegistry,
         )
 
         # Clear registry first
         AggregatorMetricRegistry.clear()
 
-        @register_aggregator_metric("test_return_class")
+        @aggregator_metric("test_return_class")
         class TestReturnClass(BaseAggregatorMetric):
             def get_metric_name(self):
                 return "test_return_class"

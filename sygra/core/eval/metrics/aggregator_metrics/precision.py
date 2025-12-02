@@ -7,15 +7,13 @@ Measures: Of all predicted positives, how many were actually positive?
 
 from typing import Any, Dict, List
 
-from sygra.core.metrics.aggregator_metrics.base_aggregator_metric import (
-    BaseAggregatorMetric,
-    register_aggregator_metric,
-)
-from sygra.core.metrics.unit_metrics.unit_metric_result import UnitMetricResult
+from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import aggregator_metric
+from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import BaseAggregatorMetric
+from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 from sygra.logger.logger_config import logger
 
 
-@register_aggregator_metric("precision")
+@aggregator_metric("precision")
 class PrecisionMetric(BaseAggregatorMetric):
     """
     Generic precision metric.

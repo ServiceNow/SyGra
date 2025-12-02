@@ -12,7 +12,7 @@ Subclasses can then implement their own calculation strategy.
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from sygra.core.metrics.unit_metrics.unit_metric_result import UnitMetricResult
+from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 
 
 class BaseAggregatorMetric(ABC):
@@ -63,31 +63,3 @@ class BaseAggregatorMetric(ABC):
     def _safe_divide(self, numerator: float, denominator: float) -> float:
         """Safe division that returns 0.0 if denominator is 0"""
         return numerator / denominator if denominator != 0 else 0.0
-
-
-# Define decorator for metric registration
-def register_aggregator_metric(name: str):
-    """
-    Decorator to auto-register aggregator metrics with the registry.
-    Usage:
-        @register_aggregator_metric("precision")
-        class PrecisionMetric(BaseAggregatorMetric):
-            def calculate(self, results):
-                # Implementation
-                pass
-    Args:
-        name: Unique name for the metric (used for registry lookup)
-    Returns:
-        Decorator function that registers the class
-    """
-
-    def decorator(cls):
-        # Import here to avoid circular dependency
-        from sygra.core.metrics.aggregator_metrics.aggregator_metric_registry import (
-            AggregatorMetricRegistry,
-        )
-
-        AggregatorMetricRegistry.register(name, cls)
-        return cls
-
-    return decorator

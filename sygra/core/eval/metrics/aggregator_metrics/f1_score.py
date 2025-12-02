@@ -7,17 +7,15 @@ Harmonic mean of precision and recall.
 
 from typing import Any, Dict, List
 
-from sygra.core.metrics.aggregator_metrics.base_aggregator_metric import (
-    BaseAggregatorMetric,
-    register_aggregator_metric,
-)
-from sygra.core.metrics.aggregator_metrics.precision import PrecisionMetric
-from sygra.core.metrics.aggregator_metrics.recall import RecallMetric
-from sygra.core.metrics.unit_metrics.unit_metric_result import UnitMetricResult
+from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import aggregator_metric
+from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import BaseAggregatorMetric
+from sygra.core.eval.metrics.aggregator_metrics.precision import PrecisionMetric
+from sygra.core.eval.metrics.aggregator_metrics.recall import RecallMetric
+from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 from sygra.logger.logger_config import logger
 
 
-@register_aggregator_metric("f1_score")
+@aggregator_metric("f1_score")
 class F1ScoreMetric(BaseAggregatorMetric):
     """
     Generic F1 score metric.

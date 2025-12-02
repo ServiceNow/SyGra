@@ -7,13 +7,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 import pytest
 
-from sygra.core.metrics.aggregator_metrics.aggregator_metric_registry import (
+from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import (
     AggregatorMetricRegistry,
+    aggregator_metric,
 )
-from sygra.core.metrics.aggregator_metrics.base_aggregator_metric import (
-    BaseAggregatorMetric,
-    register_aggregator_metric,
-)
+from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import BaseAggregatorMetric
 
 
 class TestMetric(BaseAggregatorMetric):
@@ -245,7 +243,7 @@ class TestAggregatorMetricRegistry:
         # Clear first
         AggregatorMetricRegistry.clear()
 
-        @register_aggregator_metric("decorated_metric")
+        @aggregator_metric("decorated_metric")
         class DecoratedMetric(BaseAggregatorMetric):
             def get_metric_name(self):
                 return "decorated_metric"
@@ -279,7 +277,7 @@ class TestAggregatorMetricRegistry:
         # We need to reload the modules to re-trigger the decorator registration
         import importlib
 
-        from sygra.core.metrics.aggregator_metrics import accuracy, f1_score, precision, recall
+        from sygra.core.eval.metrics.aggregator_metrics import accuracy, f1_score, precision, recall
 
         # Reload modules to re-trigger decorator registration after registry was cleared
         importlib.reload(accuracy)
@@ -287,8 +285,8 @@ class TestAggregatorMetricRegistry:
         importlib.reload(recall)
         importlib.reload(f1_score)
 
-        from sygra.core.metrics.aggregator_metrics.accuracy import AccuracyMetric
-        from sygra.core.metrics.aggregator_metrics.precision import PrecisionMetric
+        from sygra.core.eval.metrics.aggregator_metrics.accuracy import AccuracyMetric
+        from sygra.core.eval.metrics.aggregator_metrics.precision import PrecisionMetric
 
         # Check that built-in metrics are registered
         assert AggregatorMetricRegistry.has_metric("accuracy")

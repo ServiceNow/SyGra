@@ -4,10 +4,18 @@ Singleton registry for discovering and instantiating aggregator metrics.
 Provides centralized service locator for all metrics (built-in and custom).
 """
 
-from typing import Dict, List, Type
+# Avoid circular imports
+from __future__ import annotations
 
-from sygra.core.metrics.aggregator_metrics.base_aggregator_metric import BaseAggregatorMetric
+from typing import TYPE_CHECKING, Dict, List, Type
+
 from sygra.logger.logger_config import logger
+
+# This prevents circular imports while still providing type safety.
+if TYPE_CHECKING:
+    from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import (
+        BaseAggregatorMetric,
+    )
 
 
 class AggregatorMetricRegistry:
@@ -55,6 +63,11 @@ class AggregatorMetricRegistry:
 
         if not isinstance(metric_class, type):
             raise ValueError(f"metric_class must be a class, got {type(metric_class)}")
+
+        # Import at runtime (inside function) instead of at module level to avoid circular dependency
+        from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import (
+            BaseAggregatorMetric,
+        )
 
         if not issubclass(metric_class, BaseAggregatorMetric):
             raise ValueError(
@@ -208,3 +221,45 @@ class AggregatorMetricRegistry:
         for name, metric_class in cls._metrics.items():
             info[name] = {"class": metric_class.__name__, "module": metric_class.__module__}
         return info
+
+
+# Decorator for metric registration
+def aggregator_metric(name: str):
+    """
+    Decorator to auto-register aggregator metrics with the registry.
+
+    Usage:
+        @aggregator_metric("precision")
+        class PrecisionMetric(BaseAggregatorMetric):
+            def calculate(self, results):
+                # Implementation
+                pass
+
+    Args:
+        name: Unique name for the metric (used for registry lookup)
+
+    Returns:
+        Decorator function that registers the class
+    """
+
+    def decorator(cls):
+        # Import at runtime when decorator is applied (not at module load time)
+        # Metrics use this decorator, so they import this registry file.
+        # If we imported BaseAggregatorMetric at the top, we'd have:
+        # metric.py -> registry.py -> base.py (circular dependency)
+        # By importing here, the import happens when the class is decorated,
+        # after all modules have loaded.
+        from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import (
+            BaseAggregatorMetric,
+        )
+
+        # Validate that class inherits from BaseAggregatorMetric
+        if not issubclass(cls, BaseAggregatorMetric):
+            raise TypeError(
+                f"{cls.__name__} must inherit from BaseAggregatorMetric to use @aggregator_metric decorator"
+            )
+
+        AggregatorMetricRegistry.register(name, cls)
+        return cls
+
+    return decorator

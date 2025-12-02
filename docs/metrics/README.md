@@ -54,10 +54,10 @@ Technical reference for metric developers and platform code:
 # graph_config.yaml
 graph_properties:
   metrics:
-    - "accuracy"
-    - "precision"
-    - "recall"
-    - "f1_score"
+    - accuracy
+    - precision
+    - recall
+    - f1_score
 ```
 
 User just lists which metrics they want.
@@ -66,7 +66,8 @@ User just lists which metrics they want.
 
 ```python
 # Platform code (to be implemented in graph execution layer)
-from sygra.core.metrics.aggregator_metrics.aggregator_metric_registry import AggregatorMetricRegistry
+from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import AggregatorMetricRegistry
+
 
 def run_evaluation(validation_results, metric_names):
     """
@@ -76,14 +77,14 @@ def run_evaluation(validation_results, metric_names):
     """
     # 1. Discover classes from validation results
     classes = discover_classes(validation_results)  # e.g., ["click", "type", "scroll"]
-    
+
     # 2. For each metric, iterate over all classes
     results = {}
     for metric_name in metric_names:
         if metric_name == "accuracy":
             metric = AggregatorMetricRegistry.get_metric("accuracy")
             results["accuracy"] = metric.calculate(validation_results)
-        
+
         elif metric_name == "precision":
             results["precision"] = {}
             for cls in classes:
@@ -93,9 +94,9 @@ def run_evaluation(validation_results, metric_names):
                     positive_class=cls
                 )
                 results["precision"][cls] = metric.calculate(validation_results)
-        
+
         # Similar for recall, f1_score...
-    
+
     return results
 
 # Output:

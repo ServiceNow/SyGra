@@ -10,8 +10,8 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
 import pytest
 
-from sygra.core.metrics.aggregator_metrics.recall import RecallMetric
-from sygra.core.metrics.unit_metrics.unit_metric_result import UnitMetricResult
+from sygra.core.eval.metrics.aggregator_metrics.recall import RecallMetric
+from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 
 
 class TestRecallMetric:
