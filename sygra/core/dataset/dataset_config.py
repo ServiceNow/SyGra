@@ -17,10 +17,12 @@ class DataSourceType(Enum):
     Attributes:
         HUGGINGFACE: HuggingFace dataset source
         DISK_FILE: Local file system source
+        SERVICENOW: ServiceNow table source
     """
 
     HUGGINGFACE = "hf"
     DISK_FILE = "disk"
+    SERVICENOW = "servicenow"
 
 
 class TransformConfig(BaseModel):
@@ -44,6 +46,7 @@ class OutputType(Enum):
         JSONL: JSON Lines file output
         CSV: CSV file output
         PARQUET: Parquet file output
+        SERVICENOW: ServiceNow table output
     """
 
     HUGGINGFACE = "hf"
@@ -51,6 +54,7 @@ class OutputType(Enum):
     JSONL = "jsonl"
     CSV = "csv"
     PARQUET = "parquet"
+    SERVICENOW = "servicenow"
     NONE = None
 
 
@@ -69,8 +73,14 @@ class ShardConfig(BaseModel):
 class DataSourceConfig(BaseModel):
     """Configuration for data sources.
 
-    This class provides configuration options for both HuggingFace datasets
-    and local file system sources, including transformation specifications.
+    This class provides configuration options for HuggingFace datasets,
+    local file system sources, and ServiceNow tables, including transformation specs.
+
+    For ServiceNow sources:
+    - Connection credentials (instance, username, password) are read from
+      environment variables: SNOW_INSTANCE, SNOW_USERNAME, SNOW_PASSWORD
+    - Only query details (table, filters, fields, etc.) need to be specified
+    - Config values for credentials are optional overrides
 
     Attributes:
         type (DataSourceType): Type of data source
@@ -83,6 +93,9 @@ class DataSourceConfig(BaseModel):
         file_format (Optional[str]): Format for local files
         file_path (Optional[str]): Path to local file
         encoding (str): Character encoding for text files
+        table (Optional[str]): ServiceNow table name for queries
+        filters (Optional[dict]): Filters for ServiceNow queries
+        fields (Optional[list[str]]): Fields to retrieve from ServiceNow
         transformations (Optional[list[TransformConfig]]): List of transformations to apply
     """
 
@@ -100,6 +113,27 @@ class DataSourceConfig(BaseModel):
     file_format: Optional[str] = None
     file_path: Optional[str] = None
     encoding: str = "utf-8"
+
+    # For ServiceNow tables
+    instance: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    oauth_client_id: Optional[str] = None
+    oauth_client_secret: Optional[str] = None
+    table: Optional[str] = None
+    query: Optional[str] = None
+    filters: Optional[dict[str, Any]] = None
+    fields: Optional[list[str]] = None
+    limit: Optional[int] = None
+    batch_size: int = 100
+    order_by: Optional[str] = None
+    order_desc: bool = False
+    display_value: str = "all"
+    exclude_reference_link: bool = True
+    proxy: Optional[str] = None
+    verify_ssl: Optional[bool] = None
+    cert: Optional[str] = None
+    auto_retry: bool = True
 
     # Transformation functions
     transformations: Optional[list[TransformConfig]] = None
@@ -169,8 +203,14 @@ class DataSourceConfig(BaseModel):
 class OutputConfig(BaseModel):
     """Configuration for data output operations.
 
-    This class provides configuration options for both HuggingFace datasets
-    and local file system outputs.
+    This class provides configuration options for HuggingFace datasets,
+    local file system outputs, and ServiceNow tables.
+
+    For ServiceNow outputs:
+    - Connection credentials (instance, username, password) are read from
+      environment variables: SNOW_INSTANCE, SNOW_USERNAME, SNOW_PASSWORD
+    - Only operation details (table, operation, key_field) need to be specified
+    - Config values for credentials are optional overrides
 
     Attributes:
         type (OutputType): Type of output
@@ -183,6 +223,9 @@ class OutputConfig(BaseModel):
         filename (Optional[str]): Output filename
         file_path (Optional[str]): Output file path
         encoding (str): Character encoding for text files
+        table (Optional[str]): ServiceNow table name for output
+        operation (str): ServiceNow operation (insert/update/upsert)
+        key_field (str): Field to match for update/upsert operations
     """
 
     type: Optional[OutputType] = None
@@ -195,6 +238,20 @@ class OutputConfig(BaseModel):
     filename: Optional[str] = None
     file_path: Optional[str] = None
     encoding: str = "utf-8"
+
+    # For ServiceNow output
+    instance: Optional[str] = None
+    username: Optional[str] = None
+    password: Optional[str] = None
+    oauth_client_id: Optional[str] = None
+    oauth_client_secret: Optional[str] = None
+    table: Optional[str] = None
+    operation: str = "insert"  # insert, update, or upsert
+    key_field: str = "sys_id"  # Field to match for update/upsert
+    proxy: Optional[str] = None
+    verify_ssl: Optional[bool] = None
+    cert: Optional[str] = None
+    auto_retry: bool = True
 
     @classmethod
     def from_dict(cls, config: dict[str, Any]) -> "OutputConfig":
@@ -217,4 +274,17 @@ class OutputConfig(BaseModel):
             filename=config.get("filename"),
             file_path=config.get("file_path"),
             encoding=config.get("encoding", "utf-8"),
+            # ServiceNow fields
+            instance=config.get("instance"),
+            username=config.get("username"),
+            password=config.get("password"),
+            oauth_client_id=config.get("oauth_client_id"),
+            oauth_client_secret=config.get("oauth_client_secret"),
+            table=config.get("table"),
+            operation=config.get("operation", "insert"),
+            key_field=config.get("key_field", "sys_id"),
+            proxy=config.get("proxy"),
+            verify_ssl=config.get("verify_ssl"),
+            cert=config.get("cert"),
+            auto_retry=config.get("auto_retry", True),
         )
