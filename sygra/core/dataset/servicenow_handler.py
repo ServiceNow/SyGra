@@ -75,7 +75,7 @@ class ServiceNowHandler(DataHandler):
         proxy = self._get_config_value(config, "proxy")
         verify_ssl = self._get_config_value(config, "verify_ssl")
         cert = self._get_config_value(config, "cert")
-        auto_retry = self._get_config_value(config, "auto_retry", True)
+        self._get_config_value(config, "auto_retry", True)
 
         try:
             self.client = ServiceNowClient(
@@ -84,7 +84,6 @@ class ServiceNowHandler(DataHandler):
                 proxy=proxy,
                 verify=verify_ssl,
                 cert=cert,
-                auto_retry=auto_retry,
             )
             logger.info(f"Successfully connected to ServiceNow instance: {instance}")
         except Exception as e:
@@ -188,7 +187,7 @@ class ServiceNowHandler(DataHandler):
 
             # Create GlideRecord
             assert self.client is not None
-            gr = self.client.GlideRecord(table, batch_size=batch_size, rewindable=not streaming)
+            gr = self.client.GlideRecord(table, batch_size=batch_size)
 
             # Build query
             self._build_query(gr)
@@ -200,13 +199,21 @@ class ServiceNowHandler(DataHandler):
 
             # Set display value mode
             display_value = self._get_config_value(self.source_config, "display_value", "all")
-            gr.display_value = display_value
+            try:
+                gr.display_value = display_value
+            except Exception as e:
+                logger.debug(f"Could not set display_value (older pysnc version): {e}")
 
-            # Set reference link exclusion
+            # Set reference link exclusion (may not be supported in older pysnc versions)
             exclude_ref_link = self._get_config_value(
                 self.source_config, "exclude_reference_link", True
             )
-            gr.exclude_reference_link = exclude_ref_link
+            try:
+                gr.exclude_reference_link = exclude_ref_link
+            except (AttributeError, Exception) as e:
+                logger.debug(
+                    f"Could not set exclude_reference_link (not supported in this pysnc version): {e}"
+                )
 
             # Set limit if specified
             limit = self._get_config_value(self.source_config, "limit")
@@ -320,7 +327,13 @@ class ServiceNowHandler(DataHandler):
                 # Store both value and display_value
                 value = element.get_value()
                 display_value = element.get_display_value()
-                link = element.get_link()
+
+                # Try to get link (may not be supported in older pysnc versions)
+                link = None
+                try:
+                    link = element.get_link()
+                except (AttributeError, Exception):
+                    pass  # get_link() not supported in this pysnc version
 
                 if display_value and display_value != value:
                     formatted[field] = {
