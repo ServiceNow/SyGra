@@ -24,12 +24,11 @@ class LambdaNode(BaseNode):
         if isclass(self.func_to_execute):
             self.func_to_execute = self.func_to_execute.apply
 
-    async def _exec_wrapper(self, node_config: dict, state: dict[str, Any]) -> dict[str, Any]:
+    async def _exec_wrapper(self, state: dict[str, Any]) -> dict[str, Any]:
         """
         Wrapper to track lambda node execution.
 
         Args:
-            node_config: Node configuration (injected by partial in langgraph_factory).
             state: State of the node.
 
         Returns:
@@ -39,8 +38,7 @@ class LambdaNode(BaseNode):
         success = True
 
         try:
-            # The lambda function's apply() method expects (lambda_node_dict, state)
-            result: dict[str, Any] = self.func_to_execute(node_config, state)
+            result: dict[str, Any] = self.func_to_execute(self.node_config, state)
             return result
         except Exception:
             success = False
@@ -55,7 +53,7 @@ class LambdaNode(BaseNode):
         Returns:
              Any: platform specific runnable object like Runnable in LangGraph.
         """
-        return utils.backend_factory.create_lambda_runnable(self._exec_wrapper, self.node_config)
+        return utils.backend_factory.create_lambda_runnable(self._exec_wrapper)
 
     def validate_node(self):
         """

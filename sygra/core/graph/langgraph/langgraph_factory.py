@@ -1,4 +1,3 @@
-from functools import partial
 from typing import Any
 
 from langchain_core.messages import BaseMessage
@@ -18,18 +17,17 @@ class LangGraphFactory(BackendFactory):
     A factory class to convert Nodes into Runnable objects which LangGraph framework can execute.
     """
 
-    def create_lambda_runnable(self, function_to_execute, node_config):
+    def create_lambda_runnable(self, exec_wrapper):
         """
         Abstract method to create a Lambda runnable.
 
         Args:
-            function_to_execute: Python function to execute, if it is a class it should be callable(__call__)
-            node_config:node config dictionary
+            exec_wrapper: Async function to execute
 
         Returns:
             Any: backend specific runnable object like Runnable for backend=Langgraph
         """
-        return RunnableLambda(partial(function_to_execute, node_config))
+        return RunnableLambda(lambda x: x, afunc=exec_wrapper)
 
     def create_llm_runnable(self, exec_wrapper):
         """
