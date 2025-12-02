@@ -1,0 +1,53 @@
+data_config:
+  source:
+    type: servicenow
+    table: u_ai_incident_analysis
+
+    fields:
+      - sys_id
+      - u_short_description
+      - u_description
+
+    limit: 5
+
+  sink:
+    type: servicenow
+    table: u_ai_incident_analysis
+    operation: update
+    key_field: sys_id
+
+graph_config:
+  nodes:
+    generate_paraphrase:
+      node_type: llm
+      model:
+        provider: openai
+        name: gpt-4o-mini
+        temperature: 0.7
+        max_tokens: 500
+      output_keys: paraphrase
+      post_process: tasks.examples.servicenow_ai_analysis_update.task_executor.ParaphrasePostProcessor
+      prompt:
+        - system: |
+            You are an incident analysis expert. Your task is to create a detailed,
+            professional paraphrase of IT incidents based on the provided information.
+            Provide a clear, comprehensive description that would be useful for
+            technical teams to understand the incident quickly.
+        - user: |
+            Incident Summary: {u_short_description}
+
+            Description: {u_description}
+
+            Create a detailed paraphrase of this incident that:
+            1. Clearly explains what the issue is
+            2. Mentions any relevant systems or applications
+            3. Describes the impact if mentioned
+            4. Uses professional technical language
+
+            Provide ONLY the paraphrase text, no additional commentary.
+
+  edges:
+    - from: START
+      to: generate_paraphrase
+    - from: generate_paraphrase
+      to: END
