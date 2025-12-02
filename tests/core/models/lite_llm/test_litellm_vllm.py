@@ -56,11 +56,11 @@ class TestLiteLLMVLLM(unittest.TestCase):
         self.assertEqual(model.generation_params, self.base_config["parameters"])
         self.assertEqual(model.name(), "vllm_model")
         self.assertEqual(model.auth_token, "test_token_123")
-        self.assertEqual(model.model_serving_name, "vllm_model")
+        self.assertEqual(model.model_name, "vllm_model")
 
     def test_init_with_custom_serving_name(self):
         model = LiteLLMVLLM(self.serving_name_config)
-        self.assertEqual(model.model_serving_name, "custom_serving_name")
+        self.assertEqual(model.model_name, "custom_serving_name")
 
     @patch("sygra.core.models.lite_llm.vllm_model.logger")
     def test_init_with_completions_api(self, mock_logger):

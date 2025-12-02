@@ -22,7 +22,7 @@ class CustomVLLM(LiteLLMBase):
         utils.validate_required_keys(["url", "auth_token"], model_config, "model")
         self.model_config = model_config
         self.auth_token = str(model_config.get("auth_token")).replace("Bearer ", "")
-        self.model_serving_name = model_config.get("model_serving_name", self.name())
+        self.model_name = model_config.get("model_serving_name", self.name())
 
     def _validate_completions_api_model_support(self) -> None:
         logger.info(f"Model {self.name()} supports completion API.")
