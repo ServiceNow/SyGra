@@ -40,7 +40,7 @@ Platform code that:
 
 ## Available Documentation
 
-### [Aggregator Metrics Reference](./aggregator_metrics_summary.md)
+### [Aggregator Metrics Reference](aggregator_metrics_summary.md)
 Technical reference for metric developers and platform code:
 - What each metric calculates
 - Required parameters (handled by platform code)
