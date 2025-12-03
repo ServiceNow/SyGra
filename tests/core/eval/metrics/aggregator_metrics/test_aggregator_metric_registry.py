@@ -19,12 +19,23 @@ from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import Ba
 class TestMetric(BaseAggregatorMetric):
     """Test metric for registry testing"""
 
-    def __init__(self, param1=None, param2=None):
-        self.param1 = param1
-        self.param2 = param2
+    def _validate_config(self):
+        """Store optional params"""
+        self.param1 = (
+            self.config.model_extra.get("param1") if hasattr(self.config, "model_extra") else None
+        )
+        self.param2 = (
+            self.config.model_extra.get("param2") if hasattr(self.config, "model_extra") else None
+        )
 
-    def get_metric_name(self):
-        return "test_metric"
+    def _get_metadata(self):
+        from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
+
+        return BaseMetricMetadata(
+            name="test_metric",
+            display_name="Test Metric",
+            description="Test metric for registry testing",
+        )
 
     def calculate(self, results):
         return {"test": 1.0}
@@ -33,8 +44,18 @@ class TestMetric(BaseAggregatorMetric):
 class AnotherTestMetric(BaseAggregatorMetric):
     """Another test metric for registry testing"""
 
-    def get_metric_name(self):
-        return "another_test_metric"
+    def _validate_config(self):
+        """No config needed"""
+        pass
+
+    def _get_metadata(self):
+        from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
+
+        return BaseMetricMetadata(
+            name="another_test_metric",
+            display_name="Another Test Metric",
+            description="Another test metric for registry testing",
+        )
 
     def calculate(self, results):
         return {"another": 2.0}
@@ -131,13 +152,23 @@ class TestAggregatorMetricRegistry:
         """Test that get_metric raises error when instantiation fails"""
 
         class FailingMetric(BaseAggregatorMetric):
-            def __init__(self, required_param):
-                if required_param is None:
+            def _validate_config(self):
+                # This will fail if required_param is not provided
+                if (
+                    not hasattr(self.config, "model_extra")
+                    or "required_param" not in self.config.model_extra
+                ):
                     raise ValueError("required_param is required")
-                self.required_param = required_param
+                self.required_param = self.config.model_extra["required_param"]
 
-            def get_metric_name(self):
-                return "failing_metric"
+            def _get_metadata(self):
+                from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
+
+                return BaseMetricMetadata(
+                    name="failing_metric",
+                    display_name="Failing Metric",
+                    description="Test",
+                )
 
             def calculate(self, results):
                 return {}
@@ -247,8 +278,17 @@ class TestAggregatorMetricRegistry:
 
         @aggregator_metric("decorated_metric")
         class DecoratedMetric(BaseAggregatorMetric):
-            def get_metric_name(self):
-                return "decorated_metric"
+            def _validate_config(self):
+                pass
+
+            def _get_metadata(self):
+                from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
+
+                return BaseMetricMetadata(
+                    name="decorated_metric",
+                    display_name="Decorated Metric",
+                    description="Test",
+                )
 
             def calculate(self, results):
                 return {"decorated": 1.0}
@@ -319,8 +359,17 @@ class TestAggregatorMetricRegistry:
         """Test registry with metrics that don't require init parameters"""
 
         class SimpleMetric(BaseAggregatorMetric):
-            def get_metric_name(self):
-                return "simple_metric"
+            def _validate_config(self):
+                pass
+
+            def _get_metadata(self):
+                from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
+
+                return BaseMetricMetadata(
+                    name="simple_metric",
+                    display_name="Simple Metric",
+                    description="Test",
+                )
 
             def calculate(self, results):
                 return {"simple": 1.0}

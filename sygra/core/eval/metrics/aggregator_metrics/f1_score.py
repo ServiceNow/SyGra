@@ -11,6 +11,7 @@ from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry impor
 from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import BaseAggregatorMetric
 from sygra.core.eval.metrics.aggregator_metrics.precision import PrecisionMetric
 from sygra.core.eval.metrics.aggregator_metrics.recall import RecallMetric
+from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 from sygra.logger.logger_config import logger
 
@@ -18,44 +19,50 @@ from sygra.logger.logger_config import logger
 @aggregator_metric("f1_score")
 class F1ScoreMetric(BaseAggregatorMetric):
     """
-    Generic F1 score metric.
+    F1 Score metric: 2 * (Precision * Recall) / (Precision + Recall)
 
-    Caller specifies positive class via keys and values.
+    Harmonic mean of precision and recall.
+
+    Required configuration:
+        predicted_key: Key in predicted dict (e.g., "tool", "class")
+        golden_key: Key in golden dict (e.g., "event", "class")
+        positive_class: Value representing positive class (e.g., "click", 1, True)
     """
 
-    def __init__(self, predicted_key: str, golden_key: str, positive_class: Any):
-        """
-        Args:
-            predicted_key: Key in predicted dict (e.g., "tool", "class")
-                          This is a required parameter to ensure explicit configuration.
-            golden_key: Key in golden dict (e.g., "event", "class")
-                       This is a required parameter to ensure explicit configuration.
-            positive_class: Value representing positive class (e.g., "click", 1, True)
-                          This is a required parameter since F1 is a class-wise metric.
-                          Without it, the metric would be equivalent to accuracy.
+    def _validate_config(self):
+        """Validate F1-specific configuration requirements"""
+        if not self.config.predicted_key:
+            raise ValueError(f"{self.__class__.__name__}: predicted_key is required")
+        if not self.config.golden_key:
+            raise ValueError(f"{self.__class__.__name__}: golden_key is required")
+        if self.config.positive_class is None:
+            raise ValueError(
+                f"{self.__class__.__name__}: positive_class is required (cannot be None)"
+            )
 
-        Raises:
-            ValueError: If predicted_key/golden_key is empty or positive_class is None
-        """
-        if not predicted_key:
-            raise ValueError("F1ScoreMetric: predicted_key cannot be empty")
-        if not golden_key:
-            raise ValueError("F1ScoreMetric: golden_key cannot be empty")
-        if positive_class is None:
-            raise ValueError("F1ScoreMetric: positive_class is required (cannot be None)")
+        # Store validated fields as instance attributes
+        self.predicted_key = self.config.predicted_key
+        self.golden_key = self.config.golden_key
+        self.positive_class = self.config.positive_class
 
-        self.predicted_key = predicted_key
-        self.golden_key = golden_key
-        self.positive_class = positive_class
-
-        # Reuse existing precision and recall implementations
+        # Create precision and recall metrics (reuse implementations)
         self.precision_metric = PrecisionMetric(
-            predicted_key=predicted_key, positive_class=positive_class
+            predicted_key=self.predicted_key, positive_class=self.positive_class
         )
-        self.recall_metric = RecallMetric(golden_key=golden_key, positive_class=positive_class)
+        self.recall_metric = RecallMetric(
+            golden_key=self.golden_key, positive_class=self.positive_class
+        )
 
-    def get_metric_name(self) -> str:
-        return "f1_score"
+    def _get_metadata(self) -> BaseMetricMetadata:
+        """Return metadata for F1 score metric"""
+        return BaseMetricMetadata(
+            name="f1_score",
+            display_name="F1 Score",
+            description="Harmonic mean of precision and recall: 2 * (P * R) / (P + R)",
+            range=(0.0, 1.0),
+            higher_is_better=True,
+            metric_type="industry",
+        )
 
     def calculate(self, results: List[UnitMetricResult]) -> Dict[str, Any]:
         """
@@ -65,12 +72,10 @@ class F1ScoreMetric(BaseAggregatorMetric):
             results: List of UnitMetricResult
 
         Returns:
-            dict: {
-                "f1_score": float (0.0 to 1.0)
-            }
+            dict: {"f1_score": float (0.0 to 1.0)}
         """
         if not results:
-            logger.warning("F1ScoreMetric: No results provided")
+            logger.warning(f"{self.__class__.__name__}: No results provided")
             return {"f1_score": 0.0}
 
         # Reuse existing metric implementations

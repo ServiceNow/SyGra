@@ -33,17 +33,17 @@ class TestPrecisionMetric:
     def test_initialization_requires_parameters(self):
         """Test that initialization requires both predicted_key and positive_class"""
         # Should raise ValueError when predicted_key is missing
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             PrecisionMetric(positive_class="A")
 
         # Should raise ValueError when positive_class is missing
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             PrecisionMetric(predicted_key="class")
 
         # Should raise ValueError when predicted_key is empty
         with pytest.raises(ValueError) as exc_info:
             PrecisionMetric(predicted_key="", positive_class="A")
-        assert "predicted_key cannot be empty" in str(exc_info.value)
+        assert "predicted_key is required" in str(exc_info.value)
 
         # Should raise ValueError when positive_class is None
         with pytest.raises(ValueError) as exc_info:

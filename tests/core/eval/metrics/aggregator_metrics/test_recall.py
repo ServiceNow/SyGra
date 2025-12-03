@@ -32,18 +32,18 @@ class TestRecallMetric:
 
     def test_initialization_requires_parameters(self):
         """Test that initialization requires both golden_key and positive_class"""
-        # Should raise TypeError when golden_key is missing
-        with pytest.raises(TypeError):
+        # Should raise ValueError when golden_key is missing
+        with pytest.raises(ValueError):
             RecallMetric(positive_class="A")
 
-        # Should raise TypeError when positive_class is missing
-        with pytest.raises(TypeError):
+        # Should raise ValueError when positive_class is missing
+        with pytest.raises(ValueError):
             RecallMetric(golden_key="class")
 
         # Should raise ValueError when golden_key is empty
         with pytest.raises(ValueError) as exc_info:
             RecallMetric(golden_key="", positive_class="A")
-        assert "golden_key cannot be empty" in str(exc_info.value)
+        assert "golden_key is required" in str(exc_info.value)
 
         # Should raise ValueError when positive_class is None
         with pytest.raises(ValueError) as exc_info:

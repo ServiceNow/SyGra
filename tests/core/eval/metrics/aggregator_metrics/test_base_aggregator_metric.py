@@ -21,8 +21,22 @@ from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricRe
 class ConcreteMetric(BaseAggregatorMetric):
     """Concrete implementation for testing abstract base class"""
 
-    def get_metric_name(self) -> str:
-        return "test_metric"
+    def _validate_config(self):
+        """No config validation needed for test metric"""
+        pass
+
+    def _get_metadata(self):
+        """Return test metadata"""
+        from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
+
+        return BaseMetricMetadata(
+            name="test_metric",
+            display_name="Test Metric",
+            description="Test metric for unit tests",
+            range=(0.0, 1.0),
+            higher_is_better=True,
+            metric_type="custom",
+        )
 
     def calculate(self, results):
         return {"test": 1.0}
@@ -124,8 +138,17 @@ class TestAggregatorMetricDecorator:
 
         @aggregator_metric("test_decorator_metric")
         class TestDecoratorMetric(BaseAggregatorMetric):
-            def get_metric_name(self):
-                return "test_decorator_metric"
+            def _validate_config(self):
+                pass
+
+            def _get_metadata(self):
+                from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
+
+                return BaseMetricMetadata(
+                    name="test_decorator_metric",
+                    display_name="Test Decorator Metric",
+                    description="Test",
+                )
 
             def calculate(self, results):
                 return {"value": 1.0}
@@ -149,8 +172,17 @@ class TestAggregatorMetricDecorator:
 
         @aggregator_metric("test_return_class")
         class TestReturnClass(BaseAggregatorMetric):
-            def get_metric_name(self):
-                return "test_return_class"
+            def _validate_config(self):
+                pass
+
+            def _get_metadata(self):
+                from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
+
+                return BaseMetricMetadata(
+                    name="test_return_class",
+                    display_name="Test Return Class",
+                    description="Test",
+                )
 
             def calculate(self, results):
                 return {"value": 1.0}

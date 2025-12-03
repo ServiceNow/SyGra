@@ -33,25 +33,25 @@ class TestF1ScoreMetric:
 
     def test_initialization_requires_parameters(self):
         """Test that initialization requires predicted_key, golden_key, and positive_class"""
-        # Should raise TypeError when parameters are missing
-        with pytest.raises(TypeError):
+        # Should raise ValueError when parameters are missing
+        with pytest.raises(ValueError):
             F1ScoreMetric(golden_key="class", positive_class="A")
 
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             F1ScoreMetric(predicted_key="class", positive_class="A")
 
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             F1ScoreMetric(predicted_key="class", golden_key="class")
 
         # Should raise ValueError when predicted_key is empty
         with pytest.raises(ValueError) as exc_info:
             F1ScoreMetric(predicted_key="", golden_key="class", positive_class="A")
-        assert "predicted_key cannot be empty" in str(exc_info.value)
+        assert "predicted_key is required" in str(exc_info.value)
 
         # Should raise ValueError when golden_key is empty
         with pytest.raises(ValueError) as exc_info:
             F1ScoreMetric(predicted_key="class", golden_key="", positive_class="A")
-        assert "golden_key cannot be empty" in str(exc_info.value)
+        assert "golden_key is required" in str(exc_info.value)
 
         # Should raise ValueError when positive_class is None
         with pytest.raises(ValueError) as exc_info:

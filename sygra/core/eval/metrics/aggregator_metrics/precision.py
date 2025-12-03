@@ -9,6 +9,7 @@ from typing import Any, Dict, List
 
 from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import aggregator_metric
 from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import BaseAggregatorMetric
+from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 from sygra.logger.logger_config import logger
 
@@ -16,55 +17,54 @@ from sygra.logger.logger_config import logger
 @aggregator_metric("precision")
 class PrecisionMetric(BaseAggregatorMetric):
     """
-    Generic precision metric.
+    Precision metric: TP / (TP + FP)
 
-    Caller specifies positive class via predicted_key and positive_class.
+    Measures: Of all predicted positives, how many were actually positive?
+
+    Required configuration:
+        predicted_key: Key in predicted dict to check (e.g., "tool", "class")
+        positive_class: Value representing positive class (e.g., "click", 1, True)
     """
 
-    def __init__(self, predicted_key: str, positive_class: Any):
-        """
-        Args:
-            predicted_key: Key in predicted dict to check (e.g., "tool", "event", "class")
-                          This is a required parameter to ensure explicit configuration.
-            positive_class: Value that represents positive class (e.g., "click", 1, True)
-                          This is a required parameter since precision is a class-wise metric.
-                          Without it, the metric would be equivalent to accuracy.
+    def _validate_config(self):
+        """Validate precision-specific configuration requirements"""
+        if not self.config.predicted_key:
+            raise ValueError(f"{self.__class__.__name__}: predicted_key is required")
+        if self.config.positive_class is None:
+            raise ValueError(
+                f"{self.__class__.__name__}: positive_class is required (cannot be None)"
+            )
 
-        Raises:
-            ValueError: If predicted_key is empty or positive_class is None
-        """
-        if not predicted_key:
-            raise ValueError("PrecisionMetric: predicted_key cannot be empty")
-        if positive_class is None:
-            raise ValueError("PrecisionMetric: positive_class is required (cannot be None)")
+        # Store validated fields as instance attributes
+        self.predicted_key = self.config.predicted_key
+        self.positive_class = self.config.positive_class
 
-        self.predicted_key = predicted_key
-        self.positive_class = positive_class
-
-    def get_metric_name(self) -> str:
-        return "precision"
+    def _get_metadata(self) -> BaseMetricMetadata:
+        """Return metadata for precision metric"""
+        return BaseMetricMetadata(
+            name="precision",
+            display_name="Precision",
+            description="Proportion of positive predictions that are actually correct (TP / (TP + FP))",
+            range=(0.0, 1.0),
+            higher_is_better=True,
+            metric_type="industry",
+        )
 
     def calculate(self, results: List[UnitMetricResult]) -> Dict[str, Any]:
         """
         Calculate precision.
+
         Args:
             results: List of UnitMetricResult
+
         Returns:
-            dict: {
-                "precision": float (0.0 to 1.0)
-            }
+            dict: {"precision": float (0.0 to 1.0)}
         """
         if not results:
-            logger.warning("PrecisionMetric: No results provided")
-            return {
-                "precision": 0.0,
-            }
+            logger.warning(f"{self.__class__.__name__}: No results provided")
+            return {"precision": 0.0}
 
-        # Note: positive_class validation now happens at __init__, so this is redundant
-        # but kept as a safety check in case of direct attribute manipulation
-        if self.positive_class is None:
-            raise ValueError("PrecisionMetric: Positive class is not provided")
-        # We calculate tp, fp to calculate precision
+        # Calculate TP and FP
         tp = sum(
             1
             for r in results
@@ -77,5 +77,4 @@ class PrecisionMetric(BaseAggregatorMetric):
         )
 
         precision = self._safe_divide(tp, tp + fp)
-
         return {"precision": precision}
