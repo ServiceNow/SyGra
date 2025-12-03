@@ -82,7 +82,6 @@ qwen3_1.7b:
 gpt-audio:
   model_type: azure_openai
   model: gpt-4o-audio-preview
-  input_type: audio  # Indicate audio input support
   # URL and auth_token should be defined at .env file as SYGRA_GPT-4O-AUDIO-PREVIEW_URL and SYGRA_GPT-4O-AUDIO-PREVIEW_TOKEN
   api_version: 2025-01-01-preview
   parameters:
@@ -99,6 +98,17 @@ tts_openai:
   parameters:
     voice: "alloy"
     response_format: "wav"
+
+transcribe:
+  model: gpt-4o-transcribe
+  input_type: audio
+  model_type: azure_openai
+  api_version: 2025-03-01-preview
+  # URL and api_key should be defined at .env file as SYGRA_TRANSCRIBE_URL and SYGRA_TRANSCRIBE_TOKEN
+  parameters:
+    language: en
+    response_format: json
+    temperature: 0
 
 # Image generation model
 gpt_image_1:
