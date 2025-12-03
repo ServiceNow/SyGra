@@ -227,30 +227,27 @@ class BaseCustomModel(ABC):
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> Optional[ModelResponse]:
         """Handle structured output generation"""
-        lock = await self._get_lock()
-        # Re-entry prevention using asyncio locking
-        async with lock:
-            pydantic_model = self.structured_output.get_pydantic_model()
-            if not pydantic_model:
-                logger.warning(
-                    "Structured output enabled but no valid schema found, falling back to regular generation"
-                )
-                # Return a flag to signal that regular generation should be used
-                return None
+        pydantic_model = self.structured_output.get_pydantic_model()
+        if not pydantic_model:
+            logger.warning(
+                "Structured output enabled but no valid schema found, falling back to regular generation"
+            )
+            # Return a flag to signal that regular generation should be used
+            return None
 
-            # Check if model supports native structured output
-            if self._supports_native_structured_output():
-                logger.info(f"Using native structured output for {self.name()}")
-                return await self._generate_native_structured_output(
-                    input, model_params, pydantic_model, **kwargs
-                )
-            else:
-                logger.info(f"Using fallback structured output for {self.name()}")
-                # Get response from fallback method
-                model_response: ModelResponse = await self._generate_fallback_structured_output(
-                    input, model_params, pydantic_model, **kwargs
-                )
-                return model_response
+        # Check if model supports native structured output
+        if self._supports_native_structured_output():
+            logger.info(f"Using native structured output for {self.name()}")
+            return await self._generate_native_structured_output(
+                input, model_params, pydantic_model, **kwargs
+            )
+        else:
+            logger.info(f"Using fallback structured output for {self.name()}")
+            # Get response from fallback method
+            model_response: ModelResponse = await self._generate_fallback_structured_output(
+                input, model_params, pydantic_model, **kwargs
+            )
+            return model_response
 
     def _supports_native_structured_output(self) -> bool:
         """Check if the model supports native structured output"""
