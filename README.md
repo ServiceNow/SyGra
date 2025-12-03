@@ -37,7 +37,7 @@ SyGra Framework is created to generate synthetic data. As it is a complex proces
 - Define a task, which involves graph node configuration, flow between nodes and conditions between the node
 - Define the output location to dump the generated data
 
-Seed data can be pulled from either Huggingface or file system. Once the seed data is loaded, SyGra platform allows datagen users to write any data processing using the data transformation module. When the data is ready, users can define the data flow with various types of nodes. A node can also be a subgraph defined in another yaml file.
+Seed data can be pulled from various data source, few examples are Huggingface, File system, ServiceNow Instance. Once the seed data is loaded, SyGra platform allows datagen users to write any data processing using the data transformation module. When the data is ready, users can define the data flow with various types of nodes. A node can also be a subgraph defined in another yaml file.
 
 Each node can be defined with preprocessing, post processing, and LLM prompt with model parameters. Prompts can use seed data as python template keys.  
 Edges define the flow between nodes, which can be conditional or non-conditional, with support for parallel and one-to-many flows.
