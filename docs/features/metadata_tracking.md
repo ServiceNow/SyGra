@@ -39,7 +39,7 @@ results = graph.run(num_records=10, output_with_ts=True)
 
 **CLI Usage:**
 ```bash
-poetry run python main.py --task examples.glaive_code_assistant --num_records=10
+uv run python main.py --task examples.glaive_code_assistant --num_records=10
 
 # Metadata automatically saved to:
 # tasks/examples/glaive_code_assistant/metadata/metadata_*.json
@@ -74,16 +74,16 @@ By default, metadata collection is **enabled**. You can disable it using three m
 #### Method 1: CLI Flag (Per-Run)
 ```bash
 # Short form
-poetry run python main.py -t mytask -n 1000 -dm True
+uv run python main.py -t mytask -n 1000 -dm True
 
 # Long form
-poetry run python main.py --task mytask --num_records 1000 --disable_metadata True
+uv run python main.py --task mytask --num_records 1000 --disable_metadata True
 ```
 
 #### Method 2: Environment Variable (Global)
 ```bash
 export SYGRA_DISABLE_METADATA=1
-poetry run python main.py --task mytask
+uv run python main.py --task mytask
 ```
 
 **Accepted values:** `1`, `true`, `yes`, `True`, `YES` (case-insensitive)

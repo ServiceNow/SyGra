@@ -8,7 +8,7 @@ include check.mk
 # Python interpreter
 PYTHON = python
 PYTEST = pytest
-POETRY = poetry
+UV = uv
 
 ########################################################################################################################
 # DEVELOPMENT ENVIRONMENT
@@ -17,22 +17,22 @@ POETRY = poetry
 .PHONY: setup
 setup: ## Install core dependencies
 	@echo "Installing SyGra core dependencies"
-	$(POETRY) install --no-interaction --no-root --without dev,ui
+	$(UV) sync
 
 .PHONY: setup-all
 setup-all: ## Install core and extra dependencies
 	@echo "Installing SyGra Core and extra dependencies"
-	$(POETRY) install --no-interaction --no-root --without dev
+	$(UV) sync --extra ui
 
 .PHONY: setup-ui
 setup-ui: ## Install development dependencies
 	@echo "Installing SyGra UI dependencies"
-	$(POETRY) install --no-interaction --no-root --without dev
+	$(UV) sync --extra ui
 
 .PHONY: setup-dev
 setup-dev: ## Install development dependencies
 	@echo "Installing SyGra Core, Extra and Development dependencies"
-	$(POETRY) install --no-interaction --no-root
+	$(UV) sync --extra dev --extra ui
 
 ########################################################################################################################
 # TESTING
@@ -40,15 +40,15 @@ setup-dev: ## Install development dependencies
 
 .PHONY: test
 test: ## Run tests
-	$(POETRY) run $(PYTEST)
+	$(UV) run $(PYTEST)
 
 .PHONY: test-verbose
 test-verbose: ## Run tests in verbose mode
-	$(POETRY) run $(PYTEST) -v
+	$(UV) run $(PYTEST) -v
 
 .PHONY: test-coverage
 test-coverage: ## Run tests with coverage
-	$(POETRY) run $(PYTEST) --cov=sygra --cov-report=term --cov-report=xml
+	$(UV) run $(PYTEST) --cov=sygra --cov-report=term --cov-report=xml
 
 ########################################################################################################################
 # DOCUMENTATION
@@ -56,11 +56,11 @@ test-coverage: ## Run tests with coverage
 
 .PHONY: docs
 docs: ## Generate documentation
-	$(POETRY) run mkdocs build --strict
+	$(UV) run mkdocs build --strict
 
 .PHONY: docs-serve
 docs-serve: ## Serve documentation locally
-	$(POETRY) run mkdocs serve
+	$(UV) run mkdocs serve
 
 ########################################################################################################################
 # BUILDING & PUBLISHING
@@ -68,7 +68,7 @@ docs-serve: ## Serve documentation locally
 
 .PHONY: build
 build: ## Build package
-	$(POETRY) build
+	$(UV) run $(PYTHON) -m build
 
 .PHONY: clean
 clean: ## Clean build artifacts

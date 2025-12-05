@@ -30,15 +30,15 @@ We use [pre-commit](https://pre-commit.com/) to keep the codebase consistent. Ho
 ### One-time setup
 
 ```bash
-# Install dependencies (includes pre-commit as a dev dep)
-poetry install
+# Install project dependencies (dev tools included)
+make setup-dev
 
-# Install Git hooks for this repo
-poetry run pre-commit install
-poetry run pre-commit install -t pre-push
+# Install Git hooks for this repo (no need to add pre-commit to deps)
+uvx pre-commit install
+uvx pre-commit install -t pre-push
 
 # (optional) Warm the caches so your first commit is fast
-poetry run pre-commit run --all-files
+uvx pre-commit run --all-files
 ```
 
 #### Why pre-commit?

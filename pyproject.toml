@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=75", "wheel", "build>=1.2.1"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
 
 [project]
 name = "sygra"
@@ -56,23 +56,22 @@ dependencies = [
   "sentence-transformers>=5.1,<6.0",
   "soundfile>=0.13,<1.0",
   "types-pyyaml>=6.0,<7.0",
-  "fasttext-wheel (>=0.9.2,<0.10.0)",
-  "litellm (>=1.79.3,<2.0.0)",
-  "pysnc (>=1.1.0,<1.2.0)",
-  "boto3 (>=1.40.71,<2.0.0)",
-  "google-auth (>=2.43.0,<3.0.0)",
-  "google-cloud-aiplatform (>=1.128.0,<2.0.0)",
+  "fasttext-wheel>=0.9.2,<0.10.0",
+  "litellm>=1.79.3,<2.0.0",
+  "pysnc>=1.1.0,<1.2.0",
+  "boto3>=1.40.71,<2.0.0",
+  "google-auth>=2.43.0,<3.0.0",
+  "google-cloud-aiplatform>=1.128.0,<2.0.0",
 ]
 
 [project.optional-dependencies]
 ui = [
-  "streamlit>=1.49,<2.0",
+  "streamlit>=1.49,<2.0; python_version != '3.9.7'",
   "streamlit-agraph>=0.0,<1.0",
   "streamlit-autorefresh>=1.0,<2.0",
   "streamlit-flow-component>=1.6,<2.0",
   "watchdog>=6.0,<7.0",
 ]
-
 dev = [
   "pytest>=8.4,<9.0",
   "pytest-asyncio>=1.1,<2.0",
@@ -94,81 +93,15 @@ Releases = "https://github.com/ServiceNow/SyGra/releases"
 Issues = "https://github.com/ServiceNow/SyGra/issues"
 Discussions = "https://github.com/ServiceNow/SyGra/discussions"
 
-[tool.setuptools]
-packages = { find = { include = ["sygra*"], exclude = ["tests*", "docs*", "sygra_lib_examples*", "apps*"] } }
-
-[tool.setuptools.package-data]
-sygra = ["**/*.yaml", "**/*.yml", "**/*.jinja2", "**/*.j2", "**/*.json"]
-
-# --- Poetry section (explicit, must duplicate dependencies) ---
-[tool.poetry]
-name = "sygra"
-version = "1.0.0"
-description = "Graph-oriented Synthetic data generation Pipeline library"
-authors = ["SyGra Team <sygra_team@servicenow.com>"]
-license = "Apache-2.0"
-readme = "README.md"
-homepage = "https://github.com/ServiceNow/SyGra"
-repository = "https://github.com/ServiceNow/SyGra"
-
-[tool.poetry.dependencies]
-python = ">=3.9,<3.12,!=3.9.7"
-
-aiohttp = "^3.12"
-datasets = "^4.0"
-httpx = "^0.28"
-httpx-sse = "^0.4"
-huggingface-hub = "^0.34"
-langchain-community = "^0.3"
-langchain-core = "^0.3"
-langchain-mistralai = "^0.2"
-langgraph = "^0.6"
-mistralai = "^1.9"
-openai = "^1.107"
-PyYAML = "^6.0"
-transformers = ">=4.56,<4.57"
-grandalf = "^0.8"
-sentencepiece = "^0.2"
-protobuf = "^6.32"
-Jinja2 = "^3.1"
-pathvalidate = "^3.3"
-ujson = "^5.11"
-fasttext = "^0.9"
-lexicalrichness = "^0.5"
-langchain-openai = "^0.3"
-ollama = "^0.5"
-torch = "^2.8"
-mlxtend = "^0.23"
-pandarallel = "^1.6"
-sentence-transformers = "^5.1"
-soundfile = "^0.13"
-types-pyyaml = "^6.0"
-litellm = "^1.79.3"
-pysnc = ">=1.1.0,<1.2.0"
-boto3 = "^1.40.71"
-google-auth = "^2.43.0"
-google-cloud-aiplatform = "^1.128.0"
-
-[tool.poetry.group.ui.dependencies]
-streamlit = { version = "^1.49", markers = "python_version != '3.9.7'" }
-streamlit-agraph = "^0.0"
-streamlit-autorefresh = "^1.0"
-streamlit-flow-component = "^1.6"
-watchdog = "^6.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.4"
-pytest-asyncio = "^1.1"
-build = "^1.3"
-twine = "^6.2"
-black = "^25.1"
-isort = "^6.0"
-ruff = "^0.13"
-mypy = "^1.17"
-mkdocs = "^1.6"
-mkdocs-material = "^9.6"
-mkdocs-include-markdown-plugin = "^7.1"
-
+[tool.hatch.build.targets.wheel]
+packages = ["sygra"]
+include = [
+  "sygra/**/*.yaml",
+  "sygra/**/*.yml",
+  "sygra/**/*.jinja2",
+  "sygra/**/*.j2",
+  "sygra/**/*.json",
+]
 
 # --- Tool configurations ---
 [tool.black]

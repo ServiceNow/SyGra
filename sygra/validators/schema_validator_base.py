@@ -157,7 +157,7 @@ class SchemaValidator:
            Returns True if valid or if there is no schema, False otherwise.
         """
         if not (self.schema_class or self.fields):
-            logger.info("Skipping validation, schema_config not defined.")
+            logger.debug("Skipping validation, schema_config not defined.")
             return True
         if not self.schema_class:
             logger.info("YAML file based validation triggered. Routing to validateYAML.")

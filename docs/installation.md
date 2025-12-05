@@ -19,16 +19,19 @@
     ```
 
 
-3. Install poetry using the [official guidelines](https://python-poetry.org/docs/#installation).
+3. Install uv (fast Python package manager)
     ```bash
-    pip install poetry
+    # macOS/Linux (script)
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    # or with pipx
+    pipx install uv
     ```
 4. Run the following command to install all core dependencies.
     ```bash
     make setup
     ```
-5. (Optional) In your IDE, set your python interpreter to the poetry virtual environment.
-   Run `poetry run which python` to see the python interpreter path that you should add in your IDE.
+5. (Optional) In your IDE, set your Python interpreter to the project virtual environment created by uv.
+   The interpreter will be at `.venv/bin/python` in the project root after `make setup`.
 
 ---
 

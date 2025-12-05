@@ -32,7 +32,7 @@ def track_model_request(func: Callable) -> Callable:
             latency = time.time() - start_time
 
             # Extract model name and config
-            model_name = getattr(self, "name", lambda: "unknown")()
+            model_name = getattr(self, "model_name", "unknown")
             model_config = getattr(self, "model_config", None) or getattr(self, "_config", None)
 
             # Enhance model config with additional metadata (use deep copy to avoid modifying original)

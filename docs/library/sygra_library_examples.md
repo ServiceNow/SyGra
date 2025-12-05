@@ -25,8 +25,8 @@
 
 ```bash
 pip install sygra
-# or with poetry
-poetry add sygra
+# or add to a uv-managed project
+uv add sygra
 ```
 
 ### Your First Workflow
@@ -617,14 +617,14 @@ graph_config:
         name: gpt-4o-mini
       prompt:
         - user: "Summarize this text in 2 sentences: {text}"
-    
+
     tagger:
       node_type: llm
       model:
         name: gpt-4o-mini
       prompt:
         - user: "Generate 3 relevant tags for this summary: {summarizer_response}"
-  
+
   edges:
     - from: START
       to: summarizer
@@ -821,18 +821,18 @@ import sygra
 
 def create_educational_qa():
     """Generate educational Q&A pairs"""
-    
+
     workflow = sygra.Workflow("educational_qa")
-    
+
     # Input: Topics to generate Q&A about
     topics = [
         {"topic": "photosynthesis", "level": "high school"},
         {"topic": "mitosis", "level": "high school"},
         {"topic": "genetics", "level": "undergraduate"},
     ]
-    
+
     workflow.source(topics)
-    
+
     # Step 1: Generate question
     workflow.llm(
         model="gpt-4o",
@@ -846,7 +846,7 @@ def create_educational_qa():
             }
         ]
     )
-    
+
     # Step 2: Generate detailed answer
     workflow.llm(
         model="gpt-4o",
@@ -860,18 +860,18 @@ def create_educational_qa():
             }
         ]
     )
-    
+
     # Step 3: Generate follow-up questions
     workflow.llm(
         model="gpt-4o-mini",
         prompt="Based on this Q&A, generate 2 follow-up questions:\n"
                "Q: {llm_1_response}\nA: {llm_2_response}"
     )
-    
+
     # Save with quality tagging
     workflow.quality_tagging(True)
     workflow.sink("output/educational_qa.jsonl")
-    
+
     # Run
     results = workflow.run()
     print(f"✓ Generated {len(results)} Q&A pairs")
@@ -888,18 +888,18 @@ import sygra
 
 def create_code_examples():
     """Generate code examples with explanations"""
-    
+
     workflow = sygra.Workflow("code_generation")
-    
+
     # Input: Programming concepts
     concepts = [
         {"concept": "list comprehension", "language": "Python"},
         {"concept": "decorators", "language": "Python"},
         {"concept": "async/await", "language": "JavaScript"},
     ]
-    
+
     workflow.source(concepts)
-    
+
     # Step 1: Generate code example
     workflow.llm(
         model="gpt-4o",
@@ -914,7 +914,7 @@ def create_code_examples():
             }
         ]
     )
-    
+
     # Step 2: Generate explanation
     workflow.llm(
         model="gpt-4o",
@@ -927,15 +927,15 @@ def create_code_examples():
             }
         ]
     )
-    
+
     # Step 3: Generate use cases
     workflow.llm(
         model="gpt-4o-mini",
         prompt="List 3 practical use cases for {concept} in {language}"
     )
-    
+
     workflow.sink("output/code_examples.jsonl")
-    
+
     results = workflow.run()
     print(f"✓ Generated {len(results)} code examples")
     return results
@@ -951,18 +951,18 @@ import sygra
 
 def evolve_instructions():
     """Evolve simple instructions into complex ones"""
-    
+
     workflow = sygra.Workflow("instruction_evolution")
-    
+
     # Simple seed instructions
     seeds = [
         {"instruction": "Write a function to add two numbers"},
         {"instruction": "Create a class to store user data"},
         {"instruction": "Build a REST API endpoint"},
     ]
-    
+
     workflow.source(seeds)
-    
+
     # Evolution step 1: Add complexity
     workflow.llm(
         model="gpt-4o",
@@ -977,28 +977,28 @@ def evolve_instructions():
             }
         ]
     )
-    
+
     # Evolution step 2: Add constraints and requirements
     workflow.llm(
         model="gpt-4o",
         prompt="Add specific technical constraints and requirements to this instruction:\n"
                "{llm_1_response}"
     )
-    
+
     # Evolution step 3: Add test cases
     workflow.llm(
         model="gpt-4o-mini",
         prompt="Generate 3 test cases for this instruction:\n{llm_2_response}"
     )
-    
+
     # Enable quality tagging for evolution
     workflow.quality_tagging(
         enabled=True,
         config={"metrics": ["complexity", "clarity", "completeness"]}
     )
-    
+
     workflow.sink("output/evolved_instructions.jsonl")
-    
+
     results = workflow.run()
     print(f"✓ Evolved {len(results)} instructions")
     return results
@@ -1014,9 +1014,9 @@ import sygra
 
 def simulate_conversation():
     """Simulate multi-agent conversation"""
-    
+
     workflow = sygra.Workflow("agent_simulation")
-    
+
     scenarios = [
         {
             "topic": "climate change solutions",
@@ -1024,9 +1024,9 @@ def simulate_conversation():
             "agent2_role": "policy maker"
         }
     ]
-    
+
     workflow.source(scenarios)
-    
+
     # Agent 1: Environmental Scientist
     workflow.agent(
         model="gpt-4o",
@@ -1041,7 +1041,7 @@ def simulate_conversation():
             }
         ]
     )
-    
+
     # Agent 2: Policy Maker
     workflow.agent(
         model="gpt-4o",
@@ -1057,7 +1057,7 @@ def simulate_conversation():
             }
         ]
     )
-    
+
     # Synthesize conversation
     workflow.llm(
         model="gpt-4o",
@@ -1065,9 +1065,9 @@ def simulate_conversation():
                "Scientist: {agent_1_response}\n"
                "Policy Maker: {agent_2_response}"
     )
-    
+
     workflow.sink("output/agent_conversations.jsonl")
-    
+
     results = workflow.run()
     print(f"✓ Simulated {len(results)} conversations")
     return results
@@ -1084,10 +1084,10 @@ import sygra
 # Execute an existing YAML-based task
 def run_existing_task():
     """Run a pre-configured YAML task"""
-    
+
     # The task path points to a directory with graph_config.yaml
     workflow = sygra.Workflow("tasks/examples/evol_instruct")
-    
+
     # Run with custom parameters
     results = workflow.run(
         num_records=50,
@@ -1096,27 +1096,27 @@ def run_existing_task():
         resume=False,
         debug=False
     )
-    
+
     print(f"✓ Completed task with {len(results)} results")
     return results
 
 # Override specific nodes in existing task
 def run_task_with_overrides():
     """Run existing task with node overrides"""
-    
+
     workflow = sygra.Workflow("tasks/examples/evol_instruct")
-    
+
     # Override specific node configuration
     workflow.override(
         "graph_config.nodes.evolver.model.name",
         "gpt-4o-mini"  # Use different model
     )
-    
+
     workflow.override(
         "graph_config.nodes.evolver.model.temperature",
         0.5
     )
-    
+
     results = workflow.run(num_records=20)
     return results
 
@@ -1136,23 +1136,23 @@ import sygra
 
 def safe_workflow_execution():
     """Workflow with proper error handling"""
-    
+
     try:
         workflow = sygra.Workflow("safe_execution")
-        
+
         workflow.source("data/input.jsonl")
         workflow.llm("gpt-4o", "Process: {text}")
         workflow.sink("output/results.jsonl")
-        
+
         results = workflow.run(
             num_records=100,
             resume=True,  # Enable resume in case of failure
             checkpoint_interval=25  # Save progress frequently
         )
-        
+
         print(f"Success: {len(results)} records processed")
         return results
-        
+
     except Exception as e:
         print(f"Unexpected error: {e}")
 ```
@@ -1186,25 +1186,25 @@ import sygra
 
 def test_workflow():
     """Test workflow with small dataset first"""
-    
+
     # Create test data
     test_data = [
         {"text": "Test input 1"},
         {"text": "Test input 2"},
     ]
-    
+
     workflow = sygra.Workflow("test_workflow")
     workflow.source(test_data)
     workflow.llm("gpt-4o-mini", "Echo: {text}")  # Use cheaper model for testing
     workflow.sink("output/test_results.jsonl")
-    
+
     # Run with small dataset
     results = workflow.run(num_records=2)
-    
+
     # Validate results
     assert len(results) == 2, "Expected 2 results"
     assert all("llm_1_response" in r for r in results), "Missing LLM response"
-    
+
     print("Test passed - ready for production")
     return True
 
@@ -1219,26 +1219,26 @@ import sygra
 
 def progressive_workflow():
     """Build workflow progressively for better debugging"""
-    
+
     workflow = sygra.Workflow("progressive")
-    
+
     # Start simple
     workflow.source([{"text": "Hello"}])
     workflow.llm("gpt-4o", "Echo: {text}")
     workflow.sink("output/step1.jsonl")
-    
+
     # Test first step
     result1 = workflow.run(num_records=1)
     print(f"Step 1 complete: {result1}")
-    
+
     # Add second step
     workflow.llm("gpt-4o", "Expand: {llm_1_response}")
     workflow.sink("output/step2.jsonl")
-    
+
     # Test with both steps
     result2 = workflow.run(num_records=1)
     print(f"Step 2 complete: {result2}")
-    
+
     # Continue adding steps...
 ```
 
@@ -1249,21 +1249,21 @@ import sygra
 
 def efficient_workflow():
     """Workflow with efficient resource usage"""
-    
+
     workflow = sygra.Workflow("efficient")
-    
+
     # Use file source for large datasets (memory efficient)
     workflow.source("data/large_dataset.jsonl")
-    
+
     # Use cheaper model for simple tasks
     workflow.llm(
         model="gpt-4o-mini",  # More cost-effective
         prompt="Simple task: {text}"
     )
-    
+
     # Stream to output (don't keep all in memory)
     workflow.sink("output/results.jsonl")
-    
+
     # Process in batches
     workflow.run(
         num_records=10000,
@@ -1318,12 +1318,12 @@ from pathlib import Path
 
 def check_data_source(file_path):
     """Validate data source before running workflow"""
-    
+
     # Check file exists
     if not Path(file_path).exists():
         print(f"File not found: {file_path}")
         return False
-    
+
     # Check file is readable
     try:
         with open(file_path) as f:
@@ -1353,21 +1353,21 @@ import sygra
 
 def handle_large_dataset():
     """Process large dataset efficiently"""
-    
+
     workflow = sygra.Workflow("large_dataset")
-    
+
     # Use file source (streams data, not all in memory)
     workflow.source("data/very_large_file.jsonl")
-    
+
     workflow.llm("gpt-4o-mini", "Process: {text}")
-    
+
     # Use file sink (streams output)
     workflow.sink("output/results.jsonl")
-    
+
     # Process in chunks
     total_records = 100000
     chunk_size = 1000
-    
+
     for start in range(0, total_records, chunk_size):
         print(f"Processing records {start} to {start + chunk_size}")
         workflow.run(
@@ -1388,28 +1388,28 @@ import sygra
 
 def create_processing_pipeline():
     """Multi-stage processing pipeline"""
-    
+
     # Stage 1: Data cleaning
     stage1 = sygra.Workflow("stage1_clean")
     stage1.source("data/raw_data.jsonl")
     stage1.llm("gpt-4o-mini", "Clean and normalize: {text}")
     stage1.sink("output/stage1_cleaned.jsonl")
     stage1.run()
-    
+
     # Stage 2: Enhancement
     stage2 = sygra.Workflow("stage2_enhance")
     stage2.source("output/stage1_cleaned.jsonl")
     stage2.llm("gpt-4o", "Enhance with details: {llm_1_response}")
     stage2.sink("output/stage2_enhanced.jsonl")
     stage2.run()
-    
+
     # Stage 3: Quality filtering
     stage3 = sygra.Workflow("stage3_filter")
     stage3.source("output/stage2_enhanced.jsonl")
     stage3.quality_tagging(True)
     stage3.sink("output/final_output.jsonl")
     stage3.run()
-    
+
     print("✓ Pipeline complete")
 ```
 
@@ -1420,26 +1420,26 @@ import sygra
 
 def fan_out_processing():
     """Process one input with multiple models in parallel"""
-    
+
     # Shared input
     input_data = [{"question": "What is quantum computing?"}]
-    
+
     # Create multiple workflows for different models
     models = {
         "gpt4": "gpt-4o",
         "gpt4mini": "gpt-4o-mini",
         "claude": "claude-sonnet-4"
     }
-    
+
     results = {}
-    
+
     for name, model in models.items():
         workflow = sygra.Workflow(f"fanout_{name}")
         workflow.source(input_data)
         workflow.llm(model, "Answer: {question}")
         workflow.sink(f"output/fanout_{name}.jsonl")
         results[name] = workflow.run()
-    
+
     print(f"✓ Processed with {len(models)} models")
     return results
 ```
@@ -1451,16 +1451,16 @@ import sygra
 
 def iterative_refinement():
     """Iteratively refine output through multiple passes"""
-    
+
     data = [{"text": "Write about AI"}]
-    
+
     # Pass 1: Initial generation
     workflow1 = sygra.Workflow("refinement_pass1")
     workflow1.source(data)
     workflow1.llm("gpt-4o", "Write a draft about: {text}")
     workflow1.sink("output/draft_v1.jsonl")
     result1 = workflow1.run()
-    
+
     # Pass 2: Critique and improve
     workflow2 = sygra.Workflow("refinement_pass2")
     workflow2.source("output/draft_v1.jsonl")
@@ -1470,7 +1470,7 @@ def iterative_refinement():
     )
     workflow2.sink("output/draft_v2_critique.jsonl")
     result2 = workflow2.run()
-    
+
     # Pass 3: Final revision
     workflow3 = sygra.Workflow("refinement_pass3")
     workflow3.source("output/draft_v2_critique.jsonl")
@@ -1482,7 +1482,7 @@ def iterative_refinement():
     )
     workflow3.sink("output/final_version.jsonl")
     result3 = workflow3.run()
-    
+
     print("✓ Refinement complete")
     return result3
 ```
@@ -1494,13 +1494,13 @@ import sygra
 
 def build_consensus():
     """Get consensus from multiple models"""
-    
+
     workflow = sygra.Workflow("consensus")
-    
+
     workflow.source([
         {"question": "What are the key challenges in renewable energy?"}
     ])
-    
+
     # Get responses from multiple models
     workflow.multi_llm(
         models={
@@ -1510,14 +1510,14 @@ def build_consensus():
         },
         prompt="Answer this question: {question}"
     )
-    
+
     # Synthesize consensus
     workflow.llm(
         "gpt-4o",
         "Based on these three responses, create a consensus answer "
         "that incorporates the best points from each:\n{multi_llm_1_response}"
     )
-    
+
     workflow.sink("output/consensus_answers.jsonl")
     workflow.run()
 ```
@@ -1529,14 +1529,14 @@ import sygra
 
 def chain_of_thought():
     """Implement chain-of-thought reasoning"""
-    
+
     workflow = sygra.Workflow("chain_of_thought")
-    
+
     workflow.source([
         {"problem": "A train travels 120 km in 2 hours, then 180 km in 3 hours. "
                    "What is its average speed for the entire journey?"}
     ])
-    
+
     # Step 1: Break down the problem
     workflow.llm(
         "gpt-4o",
@@ -1545,19 +1545,19 @@ def chain_of_thought():
             {"user": "Break down this problem into steps: {problem}"}
         ]
     )
-    
+
     # Step 2: Solve each step
     workflow.llm(
         "gpt-4o",
         "Now solve each step:\n{llm_1_response}"
     )
-    
+
     # Step 3: Verify the solution
     workflow.llm(
         "gpt-4o",
         "Verify this solution is correct:\n{llm_2_response}"
     )
-    
+
     workflow.sink("output/chain_of_thought.jsonl")
     workflow.run()
 ```
@@ -1573,23 +1573,23 @@ import sygra
 
 def optimized_model_selection():
     """Use appropriate models for different tasks"""
-    
+
     workflow = sygra.Workflow("optimized")
-    
+
     workflow.source("data/tasks.jsonl")
-    
+
     # Simple tasks: Use smaller, faster model
     workflow.llm(
         model="gpt-4o-mini",  # Faster and cheaper
         prompt="Simple extraction: {text}"
     )
-    
+
     # Complex tasks: Use more capable model only when needed
     workflow.llm(
         model="gpt-4o",  # Use for complex reasoning
         prompt="Complex analysis: {llm_1_response}"
     )
-    
+
     workflow.sink("output/optimized.jsonl")
     workflow.run()
 ```
@@ -1601,18 +1601,18 @@ import sygra
 
 def optimized_batching():
     """Optimize batch size for throughput"""
-    
+
     workflow = sygra.Workflow("batched")
-    
+
     workflow.source("data/large_dataset.jsonl")
     workflow.llm("gpt-4o-mini", "Process: {text}")
     workflow.sink("output/results.jsonl")
-    
+
     # Optimal batch size depends on:
     # - API rate limits
     # - Memory constraints
     # - Network latency
-    
+
     workflow.run(
         num_records=10000,
         batch_size=100,  # Larger batches for better throughput
@@ -1629,38 +1629,38 @@ from pathlib import Path
 
 def cached_workflow():
     """Implement caching to avoid duplicate processing"""
-    
+
     cache_file = Path("cache/processed.json")
     cache_file.parent.mkdir(exist_ok=True)
-    
+
     # Load cache
     cache = {}
     if cache_file.exists():
         with open(cache_file) as f:
             cache = json.load(f)
-    
+
     # Process only new items
     all_data = [
         {"id": 1, "text": "First item"},
         {"id": 2, "text": "Second item"},
     ]
-    
+
     new_data = [item for item in all_data if str(item["id"]) not in cache]
-    
+
     if new_data:
         workflow = sygra.Workflow("cached")
         workflow.source(new_data)
         workflow.llm("gpt-4o", "Process: {text}")
         workflow.sink("output/new_results.jsonl")
         results = workflow.run()
-        
+
         # Update cache
         for item in results:
             cache[str(item["id"])] = item
-        
+
         with open(cache_file, "w") as f:
             json.dump(cache, f)
-        
+
         print(f"Processed {len(new_data)} new items")
     else:
         print("All items already in cache")

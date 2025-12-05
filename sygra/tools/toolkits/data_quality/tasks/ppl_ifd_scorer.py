@@ -2,7 +2,7 @@ import asyncio
 import json
 import math
 import os
-from typing import Any
+from typing import Any, Optional
 
 import aiohttp
 import numpy as np
@@ -28,7 +28,7 @@ class LogProbModel:
         self.auth = cfg.get("auth_token")
         self.timeout = cfg.get("timeout_seconds", 120)
         self.max_retries = cfg.get("max_retries", 3)
-        self.session: aiohttp.ClientSession | None = None
+        self.session: Optional[aiohttp.ClientSession] = None
         self.call_counter = 0
 
         # Support for multiple endpoints

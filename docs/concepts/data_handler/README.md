@@ -687,7 +687,7 @@ graph_config:
 
 **Run**:
 ```bash
-poetry run python main.py -t examples.servicenow_ai_analysis_insert -n 10
+uv run python main.py -t examples.servicenow_ai_analysis_insert -n 10
 ```
 
 ### Query Patterns
@@ -944,10 +944,10 @@ source = sygra.data.from_servicenow(
 **Run Examples**:
 ```bash
 # Insert example
-poetry run python main.py -t examples.servicenow_ai_analysis_insert -n 10
+uv run python main.py -t examples.servicenow_ai_analysis_insert -n 10
 
 # Update example
-poetry run python main.py -t examples.servicenow_ai_analysis_update -n 5
+uv run python main.py -t examples.servicenow_ai_analysis_update -n 5
 ```
 
 ### References

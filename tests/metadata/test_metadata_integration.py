@@ -17,8 +17,8 @@ class MockModel:
     """Mock model class for testing the decorator."""
 
     def __init__(self, model_name="test_model", model_type="test"):
-        self._model_name = model_name
-        self._model_type = model_type
+        self.model_name = model_name
+        self.model_type = model_type
         self.model_config = {
             "type": model_type,
             "parameters": {"temperature": 0.7, "max_tokens": 100},
@@ -27,11 +27,11 @@ class MockModel:
 
     def name(self):
         """Return model name."""
-        return self._model_name
+        return self.model_name
 
     def model_type(self):
         """Return model type."""
-        return self._model_type
+        return self.model_type
 
     @track_model_request
     async def async_generate(self, prompt):
@@ -302,39 +302,12 @@ class TestDecoratorEdgeCases:
         assert "unknown" in collector.model_metrics
 
     @pytest.mark.asyncio
-    async def test_decorator_with_callable_model_type(self):
-        """Test decorator when model_type is a callable."""
-
-        class ModelWithCallableType:
-            def name(self):
-                return "test_model"
-
-            def model_type(self):
-                return "CustomType"
-
-            model_config = {"type": "CustomType"}
-            _last_request_usage = None
-
-            @track_model_request
-            async def async_generate(self, prompt):
-                return ModelResponse(llm_response="response", response_code=200)
-
-        model = ModelWithCallableType()
-        collector = get_metadata_collector()
-
-        await model.async_generate("test")
-
-        metrics = collector.model_metrics["test_model"]
-        # Model type comes from config, not from the method
-        assert metrics.model_type == "CustomType"
-
-    @pytest.mark.asyncio
     async def test_decorator_with_non_dict_model_config(self):
         """Test decorator when model_config is not a dict."""
 
-        class ModelWithBadConfig:
+        class ModelWithBadConfig(MockModel):
             def name(self):
-                return "test_model"
+                return self.model_name
 
             model_config = "not a dict"
             _last_request_usage = None
@@ -343,7 +316,7 @@ class TestDecoratorEdgeCases:
             async def async_generate(self, prompt):
                 return ModelResponse(llm_response="response", response_code=200)
 
-        model = ModelWithBadConfig()
+        model = ModelWithBadConfig(model_name="test_model", model_type="test")
         collector = get_metadata_collector()
 
         # Should not crash
@@ -355,9 +328,7 @@ class TestDecoratorEdgeCases:
     async def test_decorator_with_partial_token_usage(self):
         """Test decorator with partial token usage information."""
 
-        class ModelWithPartialTokens:
-            def name(self):
-                return "test_model"
+        class ModelWithPartialTokens(MockModel):
 
             model_config = {}
 
@@ -367,7 +338,7 @@ class TestDecoratorEdgeCases:
                 self._last_request_usage = {"prompt_tokens": 100}
                 return ModelResponse(llm_response="response", response_code=200)
 
-        model = ModelWithPartialTokens()
+        model = ModelWithPartialTokens(model_name="test_model", model_type="test")
         collector = get_metadata_collector()
 
         await model.async_generate("test")
