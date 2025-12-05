@@ -17,51 +17,51 @@ JSON_PATHS = $(shell find sygra -name "*.json")
 
 lint: ## Run all linters (Ruff + mypy)
 	@echo "🚀 Running all linters..."
-	poetry run make lint-ruff
-	poetry run make lint-mypy
+	uv run make lint-ruff
+	uv run make lint-mypy
 
 lint-ruff: ## Fix code with Ruff (including unsafe fixes)
 	@echo "🛠️  Fixing with Ruff"
-	poetry run ruff check $(CODE_PATHS) --fix --unsafe-fixes --show-fixes
+	uv run ruff check $(CODE_PATHS) --fix --unsafe-fixes --show-fixes
 
 lint-mypy: ## Type-check the code with mypy
 	@echo "📐 Type-checking with mypy"
-	poetry run mypy $(LINT_MYPY_PATHS)
+	uv run mypy $(LINT_MYPY_PATHS)
 
 check-lint: ## Run Ruff + mypy without making any changes
 	@echo "🔎 Checking code style and types..."
-	poetry run ruff check $(CODE_PATHS)
-	poetry run mypy $(LINT_MYPY_PATHS)
+	uv run ruff check $(CODE_PATHS)
+	uv run mypy $(LINT_MYPY_PATHS)
 
 ########################################################################################################################
 # FORMAT
 ########################################################################################################################
 
 .PHONY: format-local
-format-local: format-black-local format-isort-local ## Run all formatters using poetry
+format-local: format-black-local format-isort-local ## Run all formatters using uv
 
 .PHONY: format
 format: ## Run all formatters in a controlled environment
 	@echo "Running all formatters"
-	poetry run make format-local
+	uv run make format-local
 
 .PHONY: format-black-local
-format-black-local: ## Format the code with black using poetry
+format-black-local: ## Format the code with black using uv
 	@echo "Formatting code with black"
-	poetry run black $(CODE_PATHS)
+	uv run black $(CODE_PATHS)
 
 .PHONY: format-black
 format-black: ## Run black in a controlled environment
-	poetry run make format-black-local
+	uv run make format-black-local
 
 .PHONY: format-isort-local
-format-isort-local: ## Sort imports with isort using poetry
+format-isort-local: ## Sort imports with isort using uv
 	@echo "Sorting imports with isort"
-	poetry run isort $(CODE_PATHS)
+	uv run isort $(CODE_PATHS)
 
 .PHONY: format-isort
 format-isort: ## Run isort in a controlled environment
-	poetry run make format-isort-local
+	uv run make format-isort-local
 
 ########################################################################################################################
 # CHECK FORMATTING
@@ -73,25 +73,25 @@ check-format-local: check-format-black-local check-format-isort-local ## Check f
 .PHONY: check-format
 check-format: ## Check all formatting in a controlled environment
 	@echo "Checking all formatting"
-	poetry run make check-format-local
+	uv run make check-format-local
 
 .PHONY: check-format-black-local
 check-format-black-local: ## Check black formatting without modifying files
 	@echo "Checking black formatting"
-	poetry run black --check $(CODE_PATHS)
+	uv run black --check $(CODE_PATHS)
 
 .PHONY: check-format-black
 check-format-black: ## Run black check in a controlled environment
-	poetry run make check-format-black-local
+	uv run make check-format-black-local
 
 .PHONY: check-format-isort-local
 check-format-isort-local: ## Check isort formatting without modifying files
 	@echo "Checking isort formatting"
-	poetry run isort --check --diff $(CODE_PATHS)
+	uv run isort --check --diff $(CODE_PATHS)
 
 .PHONY: check-format-isort
 check-format-isort: ## Run isort check in a controlled environment
-	poetry run make check-format-isort-local
+	uv run make check-format-isort-local
 
 .PHONY: help
 help:

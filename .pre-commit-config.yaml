@@ -45,9 +45,9 @@ repos:
 
   - repo: local
     hooks:
-      - id: mypy-poetry
+      - id: mypy-uv
         name: Type check with mypy
-        entry: poetry run mypy sygra
+        entry: uv run mypy sygra
         language: system
         pass_filenames: false
         stages: [ pre-commit ]
@@ -59,16 +59,11 @@ repos:
         name: Format code with Black
         files: ^(sygra|tests)/.*\.py$
 
-  - repo: https://github.com/python-poetry/poetry
-    rev: 1.7.0
-    hooks:
-      - id: poetry-check
-
   - repo: local
     hooks:
       - id: pytest
         name: Run tests with pytest
-        entry: poetry run pytest -q tests
+        entry: uv run pytest -q tests
         language: system
         pass_filenames: false
         stages: [ pre-commit ]
