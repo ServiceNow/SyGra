@@ -135,7 +135,7 @@ class LLMNode(BaseNode):
                     tool_calls = []
                     tool_calls_data = entry.get("tool_calls", {})
                     # convert into aimessage format
-                    if isinstance(tool_calls_data, dict):
+                    if isinstance(tool_calls_data, dict) and len(tool_calls_data) > 0:
                         tool_calls.append(
                             tool_utils.convert_openai_to_langchain_toolcall(tool_calls_data)
                         )
@@ -145,7 +145,11 @@ class LLMNode(BaseNode):
                                 tool_utils.convert_openai_to_langchain_toolcall(tc_entry)
                             )
 
-                    assistant_message = AIMessage(content=entry["content"], tool_calls=tool_calls)
+                    assistant_message = (
+                        AIMessage(content=entry["content"], tool_calls=tool_calls)
+                        if len(tool_calls) > 0
+                        else AIMessage(content=entry["content"])
+                    )
                     updated_msg_list.append(assistant_message)
                 elif entry["role"] == "tool":
                     content = str(entry["content"])
