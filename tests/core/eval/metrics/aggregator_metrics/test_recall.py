@@ -11,6 +11,7 @@ sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".."))
 )
 import pytest
+from pydantic import ValidationError
 
 from sygra.core.eval.metrics.aggregator_metrics.recall import RecallMetric
 from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
@@ -32,23 +33,21 @@ class TestRecallMetric:
 
     def test_initialization_requires_parameters(self):
         """Test that initialization requires both golden_key and positive_class"""
-        # Should raise ValueError when golden_key is missing
-        with pytest.raises(ValueError):
+        # Should raise ValidationError when golden_key is missing
+        with pytest.raises(ValidationError):
             RecallMetric(positive_class="A")
 
-        # Should raise ValueError when positive_class is missing
-        with pytest.raises(ValueError):
+        # Should raise ValidationError when positive_class is missing
+        with pytest.raises(ValidationError):
             RecallMetric(golden_key="class")
 
-        # Should raise ValueError when golden_key is empty
-        with pytest.raises(ValueError) as exc_info:
+        # Should raise ValidationError when golden_key is empty
+        with pytest.raises(ValidationError):
             RecallMetric(golden_key="", positive_class="A")
-        assert "golden_key is required" in str(exc_info.value)
 
-        # Should raise ValueError when positive_class is None
-        with pytest.raises(ValueError) as exc_info:
+        # Should raise ValidationError when positive_class is None
+        with pytest.raises(ValidationError):
             RecallMetric(golden_key="class", positive_class=None)
-        assert "positive_class is required" in str(exc_info.value)
 
     def test_calculate_empty_results(self):
         """Test calculate with empty results list"""

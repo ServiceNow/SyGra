@@ -7,11 +7,27 @@ Measures: Of all actual positives, how many were predicted correctly?
 
 from typing import Any, Dict, List
 
+from pydantic import BaseModel, Field, field_validator
+
 from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import aggregator_metric
 from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import BaseAggregatorMetric
 from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 from sygra.logger.logger_config import logger
+
+
+class RecallMetricConfig(BaseModel):
+    """Configuration for Recall Metric"""
+
+    golden_key: str = Field(..., min_length=1, description="Key in golden dict to check")
+    positive_class: Any = Field(..., description="Value representing positive class")
+
+    @field_validator("positive_class")
+    @classmethod
+    def validate_positive_class(cls, v):
+        if v is None:
+            raise ValueError("positive_class is required (cannot be None)")
+        return v
 
 
 @aggregator_metric("recall")
@@ -26,20 +42,16 @@ class RecallMetric(BaseAggregatorMetric):
         positive_class: Value representing positive class (e.g., "click", 1, True)
     """
 
-    def _validate_config(self):
-        """Validate recall-specific configuration requirements"""
-        if not self.config.golden_key:
-            raise ValueError(f"{self.__class__.__name__}: golden_key is required")
-        if self.config.positive_class is None:
-            raise ValueError(
-                f"{self.__class__.__name__}: positive_class is required (cannot be None)"
-            )
+    def validate_config(self):
+        """Validate and store recall-specific configuration requirements"""
+        # Validate using Pydantic config class
+        config_obj = RecallMetricConfig(**self.config)
 
         # Store validated fields as instance attributes
-        self.golden_key = self.config.golden_key
-        self.positive_class = self.config.positive_class
+        self.golden_key = config_obj.golden_key
+        self.positive_class = config_obj.positive_class
 
-    def _get_metadata(self) -> BaseMetricMetadata:
+    def get_metadata(self) -> BaseMetricMetadata:
         """Return metadata for recall metric"""
         return BaseMetricMetadata(
             name="recall",

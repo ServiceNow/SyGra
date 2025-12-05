@@ -19,16 +19,12 @@ from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import Ba
 class TestMetric(BaseAggregatorMetric):
     """Test metric for registry testing"""
 
-    def _validate_config(self):
+    def validate_config(self):
         """Store optional params"""
-        self.param1 = (
-            self.config.model_extra.get("param1") if hasattr(self.config, "model_extra") else None
-        )
-        self.param2 = (
-            self.config.model_extra.get("param2") if hasattr(self.config, "model_extra") else None
-        )
+        self.param1 = self.config.get("param1")
+        self.param2 = self.config.get("param2")
 
-    def _get_metadata(self):
+    def get_metadata(self):
         from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 
         return BaseMetricMetadata(
@@ -44,11 +40,11 @@ class TestMetric(BaseAggregatorMetric):
 class AnotherTestMetric(BaseAggregatorMetric):
     """Another test metric for registry testing"""
 
-    def _validate_config(self):
+    def validate_config(self):
         """No config needed"""
         pass
 
-    def _get_metadata(self):
+    def get_metadata(self):
         from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 
         return BaseMetricMetadata(
@@ -152,16 +148,13 @@ class TestAggregatorMetricRegistry:
         """Test that get_metric raises error when instantiation fails"""
 
         class FailingMetric(BaseAggregatorMetric):
-            def _validate_config(self):
+            def validate_config(self):
                 # This will fail if required_param is not provided
-                if (
-                    not hasattr(self.config, "model_extra")
-                    or "required_param" not in self.config.model_extra
-                ):
+                if "required_param" not in self.config:
                     raise ValueError("required_param is required")
-                self.required_param = self.config.model_extra["required_param"]
+                self.required_param = self.config["required_param"]
 
-            def _get_metadata(self):
+            def get_metadata(self):
                 from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 
                 return BaseMetricMetadata(
@@ -278,10 +271,10 @@ class TestAggregatorMetricRegistry:
 
         @aggregator_metric("decorated_metric")
         class DecoratedMetric(BaseAggregatorMetric):
-            def _validate_config(self):
+            def validate_config(self):
                 pass
 
-            def _get_metadata(self):
+            def get_metadata(self):
                 from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 
                 return BaseMetricMetadata(
@@ -359,10 +352,10 @@ class TestAggregatorMetricRegistry:
         """Test registry with metrics that don't require init parameters"""
 
         class SimpleMetric(BaseAggregatorMetric):
-            def _validate_config(self):
+            def validate_config(self):
                 pass
 
-            def _get_metadata(self):
+            def get_metadata(self):
                 from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 
                 return BaseMetricMetadata(

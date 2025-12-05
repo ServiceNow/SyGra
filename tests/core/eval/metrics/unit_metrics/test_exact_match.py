@@ -1,44 +1,44 @@
 """
-Tests for ExactMatchValidator
+Tests for ExactMatchMetric
 
 Comprehensive test suite for exact match validation functionality.
 """
 
 import pytest
 
-from sygra.core.eval.metrics.unit_metrics.exact_match_validator import ExactMatchValidator
+from sygra.core.eval.metrics.unit_metrics.exact_match import ExactMatchMetric
 from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 
 
-class TestExactMatchValidator:
-    """Test suite for ExactMatchValidator"""
+class TestExactMatchMetric:
+    """Test suite for ExactMatchMetric"""
 
     def test_initialization_default_config(self):
         """Test initialization with default configuration"""
-        validator = ExactMatchValidator()
+        validator = ExactMatchMetric()
         assert validator.case_sensitive is False
         assert validator.normalize_whitespace is True
         assert validator.key is None
 
     def test_initialization_custom_config(self):
         """Test initialization with custom configuration"""
-        validator = ExactMatchValidator(case_sensitive=True, normalize_whitespace=False)
+        validator = ExactMatchMetric(case_sensitive=True, normalize_whitespace=False)
         assert validator.case_sensitive is True
         assert validator.normalize_whitespace is False
 
     def test_initialization_with_key(self):
         """Test initialization with specific key"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         assert validator.key == "text"
 
     def test_get_metric_name(self):
         """Test get_metric_name returns correct name"""
-        validator = ExactMatchValidator()
+        validator = ExactMatchMetric()
         assert validator.get_metric_name() == "exact_match"
 
     def test_metadata(self):
         """Test metadata is correctly set"""
-        validator = ExactMatchValidator()
+        validator = ExactMatchMetric()
         assert validator.metadata.name == "exact_match"
         assert validator.metadata.display_name == "Exact Match"
         assert validator.metadata.range == (0.0, 1.0)
@@ -47,7 +47,7 @@ class TestExactMatchValidator:
 
     def test_exact_match_identical_strings(self):
         """Test exact match with identical strings"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(
             golden=[{"text": "hello world"}], predicted=[{"text": "hello world"}]
         )
@@ -60,7 +60,7 @@ class TestExactMatchValidator:
 
     def test_exact_match_case_insensitive_default(self):
         """Test case-insensitive matching (default behavior)"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(
             golden=[{"text": "Hello World"}], predicted=[{"text": "hello world"}]
         )
@@ -68,7 +68,7 @@ class TestExactMatchValidator:
 
     def test_exact_match_case_sensitive(self):
         """Test case-sensitive matching"""
-        validator = ExactMatchValidator(key="text", case_sensitive=True)
+        validator = ExactMatchMetric(key="text", case_sensitive=True)
         results = validator.evaluate(
             golden=[{"text": "Hello World"}], predicted=[{"text": "hello world"}]
         )
@@ -76,7 +76,7 @@ class TestExactMatchValidator:
 
     def test_exact_match_case_sensitive_identical(self):
         """Test case-sensitive matching with identical case"""
-        validator = ExactMatchValidator(key="text", case_sensitive=True)
+        validator = ExactMatchMetric(key="text", case_sensitive=True)
         results = validator.evaluate(
             golden=[{"text": "Hello World"}], predicted=[{"text": "Hello World"}]
         )
@@ -84,7 +84,7 @@ class TestExactMatchValidator:
 
     def test_normalize_whitespace_default(self):
         """Test whitespace normalization (default behavior)"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(
             golden=[{"text": "hello  world"}], predicted=[{"text": "hello world"}]
         )
@@ -92,7 +92,7 @@ class TestExactMatchValidator:
 
     def test_normalize_whitespace_leading_trailing(self):
         """Test whitespace normalization with leading/trailing spaces"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(
             golden=[{"text": "  hello world  "}], predicted=[{"text": "hello world"}]
         )
@@ -100,7 +100,7 @@ class TestExactMatchValidator:
 
     def test_no_normalize_whitespace(self):
         """Test without whitespace normalization"""
-        validator = ExactMatchValidator(key="text", normalize_whitespace=False)
+        validator = ExactMatchMetric(key="text", normalize_whitespace=False)
         results = validator.evaluate(
             golden=[{"text": "hello  world"}], predicted=[{"text": "hello world"}]
         )
@@ -108,129 +108,129 @@ class TestExactMatchValidator:
 
     def test_exact_match_different_strings(self):
         """Test with completely different strings"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(golden=[{"text": "hello"}], predicted=[{"text": "goodbye"}])
         assert results[0].correct is False
 
     def test_exact_match_empty_strings(self):
         """Test with empty strings"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(golden=[{"text": ""}], predicted=[{"text": ""}])
         assert results[0].correct is True
 
     def test_exact_match_one_empty_string(self):
         """Test with one empty string"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(golden=[{"text": "hello"}], predicted=[{"text": ""}])
         assert results[0].correct is False
 
     def test_exact_match_missing_key_in_golden(self):
         """Test when key is missing in golden dict"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(golden=[{"other": "value"}], predicted=[{"text": "hello"}])
         # Missing key returns empty string, so should not match
         assert results[0].correct is False
 
     def test_exact_match_missing_key_in_predicted(self):
         """Test when key is missing in predicted dict"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(golden=[{"text": "hello"}], predicted=[{"other": "value"}])
         assert results[0].correct is False
 
     def test_exact_match_missing_key_in_both(self):
         """Test when key is missing in both dicts"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(golden=[{"other": "value1"}], predicted=[{"other": "value2"}])
         # Both missing keys return empty strings, so should match
         assert results[0].correct is True
 
     def test_exact_match_no_key_compares_full_dict(self):
         """Test comparison of full dict when no key specified"""
-        validator = ExactMatchValidator()
+        validator = ExactMatchMetric()
         results = validator.evaluate(golden=[{"text": "hello"}], predicted=[{"text": "hello"}])
         assert results[0].correct is True
 
     def test_exact_match_no_key_different_dicts(self):
         """Test comparison of different dicts when no key specified"""
-        validator = ExactMatchValidator()
+        validator = ExactMatchMetric()
         results = validator.evaluate(golden=[{"text": "hello"}], predicted=[{"text": "goodbye"}])
         assert results[0].correct is False
 
     def test_exact_match_numeric_values(self):
         """Test with numeric values"""
-        validator = ExactMatchValidator(key="value")
+        validator = ExactMatchMetric(key="value")
         results = validator.evaluate(golden=[{"value": 42}], predicted=[{"value": 42}])
         assert results[0].correct is True
 
     def test_exact_match_numeric_string_mismatch(self):
         """Test numeric vs string comparison"""
-        validator = ExactMatchValidator(key="value")
+        validator = ExactMatchMetric(key="value")
         results = validator.evaluate(golden=[{"value": 42}], predicted=[{"value": "42"}])
         # Both converted to string, so should match
         assert results[0].correct is True
 
     def test_exact_match_float_values(self):
         """Test with float values"""
-        validator = ExactMatchValidator(key="value")
+        validator = ExactMatchMetric(key="value")
         results = validator.evaluate(golden=[{"value": 3.14}], predicted=[{"value": 3.14}])
         assert results[0].correct is True
 
     def test_exact_match_boolean_values(self):
         """Test with boolean values"""
-        validator = ExactMatchValidator(key="flag")
+        validator = ExactMatchMetric(key="flag")
         results = validator.evaluate(golden=[{"flag": True}], predicted=[{"flag": True}])
         assert results[0].correct is True
 
     def test_exact_match_boolean_mismatch(self):
         """Test with mismatched boolean values"""
-        validator = ExactMatchValidator(key="flag")
+        validator = ExactMatchMetric(key="flag")
         results = validator.evaluate(golden=[{"flag": True}], predicted=[{"flag": False}])
         assert results[0].correct is False
 
     def test_result_metadata_contains_validator_name(self):
         """Test that result metadata contains validator name"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(golden=[{"text": "hello"}], predicted=[{"text": "hello"}])
         assert results[0].metadata["validator"] == "exact_match"
 
     def test_result_metadata_contains_texts(self):
         """Test that result metadata contains compared texts"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(golden=[{"text": "hello"}], predicted=[{"text": "world"}])
         assert results[0].metadata["golden_text"] == "hello"
         assert results[0].metadata["predicted_text"] == "world"
 
     def test_result_metadata_contains_config(self):
         """Test that result metadata contains configuration"""
-        validator = ExactMatchValidator(key="text", case_sensitive=True)
+        validator = ExactMatchMetric(key="text", case_sensitive=True)
         results = validator.evaluate(golden=[{"text": "hello"}], predicted=[{"text": "hello"}])
         assert results[0].metadata["case_sensitive"] is True
         assert results[0].metadata["normalize_whitespace"] is True
 
     def test_normalize_text_method(self):
         """Test _normalize_text method directly"""
-        validator = ExactMatchValidator()
+        validator = ExactMatchMetric()
         assert validator._normalize_text("  Hello  World  ") == "hello world"
 
     def test_normalize_text_case_sensitive(self):
         """Test _normalize_text with case sensitivity"""
-        validator = ExactMatchValidator(case_sensitive=True)
+        validator = ExactMatchMetric(case_sensitive=True)
         assert validator._normalize_text("  Hello  World  ") == "Hello World"
 
     def test_normalize_text_no_whitespace_normalization(self):
         """Test _normalize_text without whitespace normalization"""
-        validator = ExactMatchValidator(normalize_whitespace=False)
+        validator = ExactMatchMetric(normalize_whitespace=False)
         assert validator._normalize_text("  Hello  World  ") == "  hello  world  "
 
     def test_compare_text_method(self):
         """Test _compare_text method directly"""
-        validator = ExactMatchValidator()
+        validator = ExactMatchMetric()
         assert validator._compare_text("Hello", "hello") is True
         assert validator._compare_text("Hello", "World") is False
 
     def test_multiple_items_in_list(self):
         """Test evaluation with multiple items in lists"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
 
         results = validator.evaluate(
             golden=[{"text": "hello"}, {"text": "world"}, {"text": "foo"}],
@@ -244,7 +244,7 @@ class TestExactMatchValidator:
 
     def test_mismatched_list_lengths_raises_error(self):
         """Test that mismatched list lengths raise ValueError"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
 
         with pytest.raises(ValueError) as exc_info:
             validator.evaluate(
@@ -256,13 +256,13 @@ class TestExactMatchValidator:
 
     def test_empty_lists(self):
         """Test with empty lists"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(golden=[], predicted=[])
         assert results == []
 
     def test_complex_dict_comparison(self):
         """Test with complex nested dicts"""
-        validator = ExactMatchValidator()
+        validator = ExactMatchMetric()
         results = validator.evaluate(
             golden=[{"a": 1, "b": {"c": 2}}], predicted=[{"a": 1, "b": {"c": 2}}]
         )
@@ -271,7 +271,7 @@ class TestExactMatchValidator:
 
     def test_special_characters(self):
         """Test with special characters"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(
             golden=[{"text": "hello@world.com"}], predicted=[{"text": "hello@world.com"}]
         )
@@ -279,7 +279,7 @@ class TestExactMatchValidator:
 
     def test_unicode_characters(self):
         """Test with unicode characters"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(
             golden=[{"text": "héllo wörld"}], predicted=[{"text": "héllo wörld"}]
         )
@@ -287,7 +287,7 @@ class TestExactMatchValidator:
 
     def test_newlines_and_tabs(self):
         """Test with newlines and tabs"""
-        validator = ExactMatchValidator(key="text")
+        validator = ExactMatchMetric(key="text")
         results = validator.evaluate(
             golden=[{"text": "hello\nworld"}], predicted=[{"text": "hello world"}]
         )
@@ -297,14 +297,14 @@ class TestExactMatchValidator:
     def test_config_from_dict(self):
         """Test initialization from config dict"""
         config = {"case_sensitive": True, "normalize_whitespace": False, "key": "text"}
-        validator = ExactMatchValidator(**config)
+        validator = ExactMatchMetric(**config)
         assert validator.case_sensitive is True
         assert validator.normalize_whitespace is False
         assert validator.key == "text"
 
     def test_batch_evaluation_mixed_results(self):
         """Test batch evaluation with mixed correct/incorrect results"""
-        validator = ExactMatchValidator(key="answer")
+        validator = ExactMatchMetric(key="answer")
 
         results = validator.evaluate(
             golden=[

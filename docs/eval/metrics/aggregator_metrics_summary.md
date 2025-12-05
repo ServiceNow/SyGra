@@ -1,14 +1,23 @@
-# Aggregator Metrics - Technical Reference
+# Metrics System - Technical Reference
 
-> **Note**: This is a technical reference for platform developers. End users only need to list metric names in `graph_config.yaml`.
+> **Note**: This is a technical reference for developers working with the metrics system.
 
 ## Architecture Overview
 
-Aggregator metrics are **low-level primitives** that calculate metrics for a **single class** at a time. They require explicit parameters (predicted_key, golden_key, positive_class) which are provided by **platform orchestration code**, not by end users.
+The metrics system has two main components:
 
-**Two-Layer Design:**
-1. **Aggregator Metrics** (this module) - Calculate for one class with explicit params
-2. **Platform Code** (graph execution layer) - Discovers classes, iterates, calls metrics
+### 1. Unit Metrics
+Validate individual predictions and return `UnitMetricResult` objects:
+- **ExactMatchMetric**: Validates exact string match between predicted and golden values
+- Supports flexible input types: dicts, strings, numbers, etc.
+- Returns list of `UnitMetricResult` with `correct` (bool), `golden`, `predicted`, and `metadata`
+
+### 2. Aggregator Metrics
+Calculate statistics from lists of `UnitMetricResult` objects:
+- **AccuracyMetric**: Overall correctness (no config needed)
+- **PrecisionMetric**: Quality of positive predictions (requires `predicted_key`, `positive_class`)
+- **RecallMetric**: Coverage of actual positives (requires `golden_key`, `positive_class`)
+- **F1ScoreMetric**: Balanced precision-recall (requires `predicted_key`, `golden_key`, `positive_class`)
 
 ## Metrics Reference
 
@@ -19,119 +28,95 @@ Aggregator metrics are **low-level primitives** that calculate metrics for a **s
 | **Recall** | `TP / (TP + FN)` | `golden_key`, `positive_class` | `{'recall': float}` | Coverage of positives |
 | **F1 Score** | `2 * (P * R) / (P + R)` | `predicted_key`, `golden_key`, `positive_class` | `{'f1_score': float}` | Balanced measure |
 
-## End User Configuration
+## Basic Usage
 
-Users only specify which metrics they want:
-
-```yaml
-# graph_config.yaml
-graph_properties:
-  metrics:
-    - accuracy
-    - precision
-    - recall
-    - f1_score
-```
-
-## Platform Code Responsibility
-
-Platform code (to be implemented in graph execution layer) handles:
-
-### 1. Class Discovery
-```python
-def discover_classes(validation_results):
-    """Extract all unique classes from validation results."""
-    predicted_classes = set()
-    golden_classes = set()
-    
-    for result in validation_results:
-        if 'tool' in result.predicted:
-            predicted_classes.add(result.predicted['tool'])
-        if 'event' in result.golden:
-            golden_classes.add(result.golden['event'])
-    
-    return predicted_classes.union(golden_classes)
-```
-
-### 2. Metric Orchestration
+### Unit Metrics
 
 ```python
-from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import AggregatorMetricRegistry
+from sygra.core.eval.metrics.unit_metrics.exact_match import ExactMatchMetric
 
+# Initialize with config
+metric = ExactMatchMetric(
+    case_sensitive=False,
+    normalize_whitespace=True,
+    key="text"  # Optional: extract specific key from dict
+)
 
-def run_evaluation(validation_results, metric_names):
-    """
-    Platform orchestration layer.
-    User provides: ["accuracy", "precision", "recall"]
-    Platform handles: class iteration, parameter passing
-    """
-    # Discover classes from data
-    classes = discover_classes(validation_results)  # ["click", "type", "scroll"]
+# Evaluate predictions (supports any type: dict, str, int, etc.)
+results = metric.evaluate(
+    golden=[{"text": "Hello World"}, {"text": "Foo"}],
+    predicted=[{"text": "hello  world"}, {"text": "bar"}]
+)
 
-    results = {}
-
-    for metric_name in metric_names:
-        if metric_name == "accuracy":
-            # Accuracy is class-agnostic
-            metric = AggregatorMetricRegistry.get_metric("accuracy")
-            results["accuracy"] = metric.calculate(validation_results)
-
-        elif metric_name == "precision":
-            # Platform iterates over all classes
-            results["precision"] = {}
-            for cls in classes:
-                metric = AggregatorMetricRegistry.get_metric(
-                    "precision",
-                    predicted_key="tool",  # Platform knows task structure
-                    positive_class=cls  # Platform iterates classes
-                )
-                results["precision"][cls] = metric.calculate(validation_results)
-
-        elif metric_name == "recall":
-            results["recall"] = {}
-            for cls in classes:
-                metric = AggregatorMetricRegistry.get_metric(
-                    "recall",
-                    golden_key="event",
-                    positive_class=cls
-                )
-                results["recall"][cls] = metric.calculate(validation_results)
-
-        elif metric_name == "f1_score":
-            results["f1_score"] = {}
-            for cls in classes:
-                metric = AggregatorMetricRegistry.get_metric(
-                    "f1_score",
-                    predicted_key="tool",
-                    golden_key="event",
-                    positive_class=cls
-                )
-                results["f1_score"][cls] = metric.calculate(validation_results)
-
-    return results
-
-# Example Output:
-# {
-#   "accuracy": {"accuracy": 0.85},
-#   "precision": {
-#     "click": 0.75,
-#     "type": 0.80,
-#     "scroll": 0.70
-#   },
-#   "recall": {
-#     "click": 0.78,
-#     "type": 0.82,
-#     "scroll": 0.68
-#   },
-#   "f1_score": {
-#     "click": 0.76,
-#     "type": 0.81,
-#     "scroll": 0.69
-#   }
-# }
+# Returns list of UnitMetricResult objects:
+# [
+#   UnitMetricResult(correct=True, golden={...}, predicted={...}, metadata={...}),
+#   UnitMetricResult(correct=False, golden={...}, predicted={...}, metadata={...})
+# ]
 ```
 
-**Key Point**: Platform code discovers classes and iterates. Metrics are just building blocks.
+### Aggregator Metrics
+
+```python
+from sygra.core.eval.metrics.aggregator_metrics.accuracy import AccuracyMetric
+from sygra.core.eval.metrics.aggregator_metrics.precision import PrecisionMetric
+from sygra.core.eval.metrics.aggregator_metrics.recall import RecallMetric
+from sygra.core.eval.metrics.aggregator_metrics.f1_score import F1ScoreMetric
+
+# Accuracy - no config needed
+accuracy = AccuracyMetric()
+result = accuracy.calculate(unit_results)
+# Returns: {'accuracy': 0.85}
+
+# Precision - requires predicted_key and positive_class
+precision = PrecisionMetric(
+    predicted_key="tool",
+    positive_class="click"
+)
+result = precision.calculate(unit_results)
+# Returns: {'precision': 0.75}
+
+# Recall - requires golden_key and positive_class
+recall = RecallMetric(
+    golden_key="event",
+    positive_class="click"
+)
+result = recall.calculate(unit_results)
+# Returns: {'recall': 0.78}
+
+# F1 Score - requires both keys and positive_class
+f1 = F1ScoreMetric(
+    predicted_key="tool",
+    golden_key="event",
+    positive_class="click"
+)
+result = f1.calculate(unit_results)
+# Returns: {'f1_score': 0.76}
+```
+
+### Complete Example
+
+```python
+from sygra.core.eval.metrics.unit_metrics.exact_match import ExactMatchMetric
+from sygra.core.eval.metrics.aggregator_metrics.accuracy import AccuracyMetric
+from sygra.core.eval.metrics.aggregator_metrics.precision import PrecisionMetric
+
+# Step 1: Validate predictions with unit metric
+validator = ExactMatchMetric(key="tool")
+unit_results = validator.evaluate(
+    golden=[{"tool": "click"}, {"tool": "type"}, {"tool": "click"}],
+    predicted=[{"tool": "click"}, {"tool": "scroll"}, {"tool": "type"}]
+)
+
+# Step 2: Calculate statistics with aggregator metrics
+accuracy = AccuracyMetric()
+print(accuracy.calculate(unit_results))
+# Output: {'accuracy': 0.33}
+
+precision = PrecisionMetric(predicted_key="tool", positive_class="click")
+print(precision.calculate(unit_results))
+# Output: {'precision': 1.0}
+```
 
 ## Creating UnitMetricResult
 
@@ -146,42 +131,45 @@ result = UnitMetricResult(
 )
 ```
 
-## Registry Usage (For Platform Developers)
+## Initialization Patterns
 
-### Discovering Available Metrics
+### Direct Import (Recommended)
+```python
+# Import specific metrics
+from sygra.core.eval.metrics.aggregator_metrics.accuracy import AccuracyMetric
+from sygra.core.eval.metrics.aggregator_metrics.precision import PrecisionMetric
 
+# Initialize with config
+accuracy = AccuracyMetric()
+precision = PrecisionMetric(predicted_key="tool", positive_class="click")
+```
+
+### Via Registry (Advanced)
 ```python
 from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import AggregatorMetricRegistry
 
 # List all registered metrics
 available_metrics = AggregatorMetricRegistry.list_metrics()
-print(available_metrics)
 # Output: ['accuracy', 'f1_score', 'precision', 'recall']
 
-# Check if specific metric exists
-if AggregatorMetricRegistry.has_metric("precision"):
-    print("Precision metric is available")
-
-# Get metric info
-info = AggregatorMetricRegistry.get_metrics_info()
-# Returns: {'precision': {'class': 'PrecisionMetric', 'module': '...'}}
-```
-
-### Direct Instantiation (Low-Level)
-```python
-# Platform code instantiates metrics with explicit parameters
+# Get metric via registry
 metric = AggregatorMetricRegistry.get_metric(
     "precision",
     predicted_key="tool",
     positive_class="click"
 )
-
-# Calculate for validation results
-output = metric.calculate(validation_results)
-# Returns: {'precision': 0.75}
+result = metric.calculate(unit_results)
 ```
 
-**Note**: End users never call these methods directly. Platform code handles it.
+### From Config Dict
+```python
+# Useful for dynamic configuration
+config = {
+    "predicted_key": "tool",
+    "positive_class": "click"
+}
+precision = PrecisionMetric(**config)
+```
 
 ## Parameter Validation
 
@@ -195,17 +183,19 @@ F1ScoreMetric(predicted_key="tool", golden_key="event", positive_class="click")
 
 ### ❌ Invalid Initialization
 ```python
-# Missing parameters - raises TypeError
+# Missing parameters - raises ValidationError
 PrecisionMetric()
 PrecisionMetric(predicted_key="tool")
 PrecisionMetric(positive_class="click")
 
-# Empty key - raises ValueError
+# Empty key - raises ValidationError
 PrecisionMetric(predicted_key="", positive_class="click")
 
-# None positive_class - raises ValueError
+# None positive_class - raises ValidationError
 PrecisionMetric(predicted_key="tool", positive_class=None)
 ```
+
+**Note**: All validation is handled by Pydantic, which raises `ValidationError` with detailed messages.
 
 ## Edge Cases
 
@@ -266,8 +256,37 @@ For binary classification with positive class "click":
 
 | Error | Cause | Solution |
 |-------|-------|----------|
-| `TypeError: missing required argument` | Missing parameter | Provide all required parameters |
-| `ValueError: predicted_key cannot be empty` | Empty string for key | Use non-empty key name |
-| `ValueError: positive_class is required` | None for positive_class | Provide actual positive class value |
+| `ValidationError: Field required` | Missing parameter | Provide all required parameters |
+| `ValidationError: String should have at least 1 character` | Empty string for key | Use non-empty key name |
+| `ValidationError: positive_class is required` | None for positive_class | Provide actual positive class value |
 | Returns 0.0 unexpectedly | Key doesn't exist in data | Check key names match your data |
 | Returns 0.0 unexpectedly | Positive class doesn't match | Check positive_class value matches data |
+
+## Configuration Architecture
+
+Each metric has its own Pydantic config class defined within the same module:
+
+```python
+# Inside precision.py
+class PrecisionMetricConfig(BaseModel):
+    predicted_key: str = Field(..., min_length=1)
+    positive_class: Any = Field(...)
+    
+    @field_validator("positive_class")
+    @classmethod
+    def validate_positive_class(cls, v):
+        if v is None:
+            raise ValueError("positive_class is required (cannot be None)")
+        return v
+
+class PrecisionMetric(BaseAggregatorMetric):
+    def validate_config(self):
+        config_obj = PrecisionMetricConfig(**self.config)
+        self.predicted_key = config_obj.predicted_key
+        self.positive_class = config_obj.positive_class
+```
+
+**Benefits:**
+- Self-contained: Each metric file has everything it needs
+- Type-safe: Pydantic provides validation and clear error messages
+- Extensible: Add new metrics without modifying shared config classes

@@ -7,11 +7,27 @@ Measures: Of all predicted positives, how many were actually positive?
 
 from typing import Any, Dict, List
 
+from pydantic import BaseModel, Field, field_validator
+
 from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import aggregator_metric
 from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import BaseAggregatorMetric
 from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 from sygra.logger.logger_config import logger
+
+
+class PrecisionMetricConfig(BaseModel):
+    """Configuration for Precision Metric"""
+
+    predicted_key: str = Field(..., min_length=1, description="Key in predicted dict to check")
+    positive_class: Any = Field(..., description="Value representing positive class")
+
+    @field_validator("positive_class")
+    @classmethod
+    def validate_positive_class(cls, v):
+        if v is None:
+            raise ValueError("positive_class is required (cannot be None)")
+        return v
 
 
 @aggregator_metric("precision")
@@ -26,20 +42,16 @@ class PrecisionMetric(BaseAggregatorMetric):
         positive_class: Value representing positive class (e.g., "click", 1, True)
     """
 
-    def _validate_config(self):
-        """Validate precision-specific configuration requirements"""
-        if not self.config.predicted_key:
-            raise ValueError(f"{self.__class__.__name__}: predicted_key is required")
-        if self.config.positive_class is None:
-            raise ValueError(
-                f"{self.__class__.__name__}: positive_class is required (cannot be None)"
-            )
+    def validate_config(self):
+        """Validate and store precision-specific configuration requirements"""
+        # Validate using Pydantic config class
+        config_obj = PrecisionMetricConfig(**self.config)
 
         # Store validated fields as instance attributes
-        self.predicted_key = self.config.predicted_key
-        self.positive_class = self.config.positive_class
+        self.predicted_key = config_obj.predicted_key
+        self.positive_class = config_obj.positive_class
 
-    def _get_metadata(self) -> BaseMetricMetadata:
+    def get_metadata(self) -> BaseMetricMetadata:
         """Return metadata for precision metric"""
         return BaseMetricMetadata(
             name="precision",

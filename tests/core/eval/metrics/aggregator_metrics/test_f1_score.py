@@ -11,6 +11,7 @@ sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".."))
 )
 import pytest
+from pydantic import ValidationError
 
 from sygra.core.eval.metrics.aggregator_metrics.f1_score import F1ScoreMetric
 from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
@@ -33,30 +34,27 @@ class TestF1ScoreMetric:
 
     def test_initialization_requires_parameters(self):
         """Test that initialization requires predicted_key, golden_key, and positive_class"""
-        # Should raise ValueError when parameters are missing
-        with pytest.raises(ValueError):
+        # Should raise ValidationError when parameters are missing
+        with pytest.raises(ValidationError):
             F1ScoreMetric(golden_key="class", positive_class="A")
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             F1ScoreMetric(predicted_key="class", positive_class="A")
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             F1ScoreMetric(predicted_key="class", golden_key="class")
 
-        # Should raise ValueError when predicted_key is empty
-        with pytest.raises(ValueError) as exc_info:
+        # Should raise ValidationError when predicted_key is empty
+        with pytest.raises(ValidationError):
             F1ScoreMetric(predicted_key="", golden_key="class", positive_class="A")
-        assert "predicted_key is required" in str(exc_info.value)
 
-        # Should raise ValueError when golden_key is empty
-        with pytest.raises(ValueError) as exc_info:
+        # Should raise ValidationError when golden_key is empty
+        with pytest.raises(ValidationError):
             F1ScoreMetric(predicted_key="class", golden_key="", positive_class="A")
-        assert "golden_key is required" in str(exc_info.value)
 
-        # Should raise ValueError when positive_class is None
-        with pytest.raises(ValueError) as exc_info:
+        # Should raise ValidationError when positive_class is None
+        with pytest.raises(ValidationError):
             F1ScoreMetric(predicted_key="class", golden_key="class", positive_class=None)
-        assert "positive_class is required" in str(exc_info.value)
 
     def test_initialization_creates_precision_and_recall_metrics(self):
         """Test that initialization creates precision and recall metric instances"""

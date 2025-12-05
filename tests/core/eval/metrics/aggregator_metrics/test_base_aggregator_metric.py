@@ -21,11 +21,11 @@ from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricRe
 class ConcreteMetric(BaseAggregatorMetric):
     """Concrete implementation for testing abstract base class"""
 
-    def _validate_config(self):
+    def validate_config(self):
         """No config validation needed for test metric"""
         pass
 
-    def _get_metadata(self):
+    def get_metadata(self):
         """Return test metadata"""
         from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 
@@ -138,10 +138,10 @@ class TestAggregatorMetricDecorator:
 
         @aggregator_metric("test_decorator_metric")
         class TestDecoratorMetric(BaseAggregatorMetric):
-            def _validate_config(self):
+            def validate_config(self):
                 pass
 
-            def _get_metadata(self):
+            def get_metadata(self):
                 from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 
                 return BaseMetricMetadata(
@@ -172,10 +172,10 @@ class TestAggregatorMetricDecorator:
 
         @aggregator_metric("test_return_class")
         class TestReturnClass(BaseAggregatorMetric):
-            def _validate_config(self):
+            def validate_config(self):
                 pass
 
-            def _get_metadata(self):
+            def get_metadata(self):
                 from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 
                 return BaseMetricMetadata(

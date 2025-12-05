@@ -24,14 +24,14 @@ class AccuracyMetric(BaseAggregatorMetric):
     No configuration required - works with any UnitMetricResult list.
     """
 
-    def _validate_config(self):
+    def validate_config(self):
         """
         Accuracy needs no configuration.
         All validation happens in the UnitMetricResult objects.
         """
         pass
 
-    def _get_metadata(self) -> BaseMetricMetadata:
+    def get_metadata(self) -> BaseMetricMetadata:
         """Return metadata for accuracy metric"""
         return BaseMetricMetadata(
             name="accuracy",

@@ -62,53 +62,67 @@ graph_properties:
 
 User just lists which metrics they want.
 
-### What Platform Code Does (Behind the Scenes)
+### Basic Usage Example
 
 ```python
-# Platform code (to be implemented in graph execution layer)
-from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import AggregatorMetricRegistry
+# 1. Unit Metrics - Validate individual predictions
+from sygra.core.eval.metrics.unit_metrics.exact_match import ExactMatchMetric
 
+# Initialize unit metric
+validator = ExactMatchMetric(case_sensitive=False, normalize_whitespace=True)
 
-def run_evaluation(validation_results, metric_names):
-    """
-    Platform orchestration layer.
-    User provides metric_names = ["accuracy", "precision", "recall"]
-    Platform handles the rest.
-    """
-    # 1. Discover classes from validation results
-    classes = discover_classes(validation_results)  # e.g., ["click", "type", "scroll"]
+# Evaluate predictions
+results = validator.evaluate(
+    golden=[{"text": "Hello World"}, {"text": "Foo"}],
+    predicted=[{"text": "hello  world"}, {"text": "bar"}]
+)
+# Returns: [UnitMetricResult(correct=True, ...), UnitMetricResult(correct=False, ...)]
 
-    # 2. For each metric, iterate over all classes
-    results = {}
-    for metric_name in metric_names:
-        if metric_name == "accuracy":
-            metric = AggregatorMetricRegistry.get_metric("accuracy")
-            results["accuracy"] = metric.calculate(validation_results)
+# 2. Aggregator Metrics - Calculate statistics from unit results
+from sygra.core.eval.metrics.aggregator_metrics.accuracy import AccuracyMetric
+from sygra.core.eval.metrics.aggregator_metrics.precision import PrecisionMetric
 
-        elif metric_name == "precision":
-            results["precision"] = {}
-            for cls in classes:
-                metric = AggregatorMetricRegistry.get_metric(
-                    "precision",
-                    predicted_key="tool",  # Platform knows task structure
-                    positive_class=cls
-                )
-                results["precision"][cls] = metric.calculate(validation_results)
+# Accuracy (no config needed)
+accuracy = AccuracyMetric()
+accuracy_score = accuracy.calculate(results)
+# Returns: {'accuracy': 0.5}
 
-        # Similar for recall, f1_score...
-
-    return results
-
-# Output:
-# {
-#   "accuracy": {"accuracy": 0.85},
-#   "precision": {"click": 0.75, "type": 0.80, "scroll": 0.70},
-#   "recall": {"click": 0.78, "type": 0.82, "scroll": 0.68},
-#   "f1_score": {"click": 0.76, "type": 0.81, "scroll": 0.69}
-# }
+# Precision (requires config)
+precision = PrecisionMetric(predicted_key="tool", positive_class="click")
+precision_score = precision.calculate(results)
+# Returns: {'precision': 0.75}
 ```
 
-**Key Point**: Platform code iterates over classes and calls metrics. User doesn't specify classes!
+### How Unit and Aggregator Metrics Work Together
+
+```python
+from sygra.core.eval.metrics.unit_metrics.exact_match import ExactMatchMetric
+from sygra.core.eval.metrics.aggregator_metrics.accuracy import AccuracyMetric
+from sygra.core.eval.metrics.aggregator_metrics.precision import PrecisionMetric
+
+# Step 1: Unit metric validates each prediction
+validator = ExactMatchMetric(key="tool")
+unit_results = validator.evaluate(
+    golden=[{"tool": "click"}, {"tool": "type"}, {"tool": "click"}],
+    predicted=[{"tool": "click"}, {"tool": "scroll"}, {"tool": "type"}]
+)
+# unit_results = [
+#   UnitMetricResult(correct=True, golden={...}, predicted={...}),
+#   UnitMetricResult(correct=False, golden={...}, predicted={...}),
+#   UnitMetricResult(correct=False, golden={...}, predicted={...})
+# ]
+
+# Step 2: Aggregator metrics compute statistics
+accuracy = AccuracyMetric()
+print(accuracy.calculate(unit_results))
+# Output: {'accuracy': 0.33}  (1 out of 3 correct)
+
+precision = PrecisionMetric(predicted_key="tool", positive_class="click")
+print(precision.calculate(unit_results))
+# Output: {'precision': 1.0}  (1 click predicted, 1 was correct)
+```
+
+**Key Point**: Unit metrics produce `UnitMetricResult` objects, aggregator metrics consume them to calculate statistics.
 
 ## Design Philosophy
 

@@ -5,19 +5,15 @@ Abstract base class for all aggregator metrics in the evaluation system.
 Aggregator metrics consume UnitMetricResults (T/F from validators) and produce
 statistical measures (precision, recall, F1, accuracy, etc.).
 
-Key Refactoring:
+Key Design:
 1. Common __init__(**config) signature across all metrics
-2. Single AggregatorMetricConfig class (not multiple config classes)
-3. Each metric validates its specific requirements in _validate_config()
-4. Structured metadata following standard eval convention
+2. Each metric stores and validates its own configuration requirements
+3. Structured metadata following standard eval convention
 """
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_config import (
-    AggregatorMetricConfig,
-)
 from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 
@@ -28,13 +24,12 @@ class BaseAggregatorMetric(ABC):
 
     All metrics use the same initialization pattern:
     1. __init__(**config) - common signature
-    2. Config validated by AggregatorMetricConfig (Pydantic)
-    3. Metric-specific validation in _validate_config()
-    4. Metadata initialized via _get_metadata()
+    2. Each metric stores and validates its own config requirements
+    3. Metadata initialized via get_metadata()
 
     Subclasses must implement:
-    - _validate_config(): Validate metric-specific requirements
-    - _get_metadata(): Return metric metadata
+    - validate_config(): Validate and store metric-specific requirements
+    - get_metadata(): Return metric metadata
     - calculate(): Compute metric from results
     """
 
@@ -42,9 +37,7 @@ class BaseAggregatorMetric(ABC):
         """
         Common initialization for all metrics.
 
-        This follows the idea of having one __init__ signature for
-        all metrics, config structure being validated by pydantic and
-        subclasses implementing their own validation method as required.
+        Each metric validates and stores its own configuration requirements.
 
         Args:
             **config: Configuration parameters (validated by subclass)
@@ -60,39 +53,42 @@ class BaseAggregatorMetric(ABC):
             config = {"predicted_key": "tool", "positive_class": "click"}
             metric = PrecisionMetric(**config)
         """
-        # Validate config structure using Pydantic
-        self.config = AggregatorMetricConfig(**config)
+        # Store raw config
+        self.config = config
 
-        # Let subclass validate its specific requirements
-        self._validate_config()
+        # Let subclass validate and store its specific requirements
+        self.validate_config()
 
         # Initialize metadata
-        self.metadata = self._get_metadata()
+        self.metadata = self.get_metadata()
 
     @abstractmethod
-    def _validate_config(self):
+    def validate_config(self):
         """
-        Validate metric-specific configuration requirements.
+        Validate and store metric-specific configuration requirements.
 
-        Subclasses override this to check for their required fields.
+        Subclasses override this to check for their required fields and store them as instance attributes.
         Should raise ValueError with clear message if validation fails.
         Use self.__class__.__name__ for consistency.
 
         Example:
-            def _validate_config(self):
-                if not self.config.predicted_key:
+            def validate_config(self):
+                predicted_key = self.config.get("predicted_key")
+                positive_class = self.config.get("positive_class")
+
+                if not predicted_key:
                     raise ValueError(f"{self.__class__.__name__}: predicted_key is required")
-                if self.config.positive_class is None:
+                if positive_class is None:
                     raise ValueError(f"{self.__class__.__name__}: positive_class is required")
 
                 # Store validated fields as instance attributes
-                self.predicted_key = self.config.predicted_key
-                self.positive_class = self.config.positive_class
+                self.predicted_key = predicted_key
+                self.positive_class = positive_class
         """
         pass
 
     @abstractmethod
-    def _get_metadata(self) -> BaseMetricMetadata:
+    def get_metadata(self) -> BaseMetricMetadata:
         """
         Return metadata for this metric.
 
@@ -100,7 +96,7 @@ class BaseAggregatorMetric(ABC):
             BaseMetricMetadata with name, description, range, etc.
 
         Example:
-            def _get_metadata(self) -> BaseMetricMetadata:
+            def get_metadata(self) -> BaseMetricMetadata:
                 return BaseMetricMetadata(
                     name="precision",
                     display_name="Precision",

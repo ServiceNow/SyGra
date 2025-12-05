@@ -1,11 +1,13 @@
 """
-Exact Match Validator
+Exact Match Metric
 
 Validates exact string match between predicted and golden values.
 Supports case sensitivity and whitespace normalization options.
 """
 
-from typing import Any, Dict, List
+from typing import Any, List, Optional
+
+from pydantic import BaseModel, Field
 
 from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 from sygra.core.eval.metrics.unit_metrics.base_unit_metric import BaseUnitMetric
@@ -13,9 +15,21 @@ from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricRe
 from sygra.logger.logger_config import logger
 
 
-class ExactMatchValidator(BaseUnitMetric):
+class ExactMatchMetricConfig(BaseModel):
+    """Configuration for Exact Match Metric"""
+
+    case_sensitive: bool = Field(
+        default=False, description="Whether to perform case-sensitive comparison"
+    )
+    normalize_whitespace: bool = Field(default=True, description="Whether to normalize whitespace")
+    key: Optional[str] = Field(
+        default=None, description="Key in dict to extract text for comparison"
+    )
+
+
+class ExactMatchMetric(BaseUnitMetric):
     """
-    Exact Match validator.
+    Exact Match metric.
 
     Validates that predicted text exactly matches golden text.
     Supports configuration for case sensitivity and whitespace normalization.
@@ -27,8 +41,8 @@ class ExactMatchValidator(BaseUnitMetric):
 
     Example:
         # Case-insensitive with whitespace normalization (default)
-        validator = ExactMatchValidator()
-        results = validator.evaluate(
+        metric = ExactMatchMetric()
+        results = metric.evaluate(
             golden=[{"text": "Hello World"}, {"text": "Foo"}],
             predicted=[{"text": "hello  world"}, {"text": "bar"}]
         )
@@ -36,29 +50,26 @@ class ExactMatchValidator(BaseUnitMetric):
         # results[1].correct = False
 
         # Case-sensitive
-        validator = ExactMatchValidator(case_sensitive=True)
-        results = validator.evaluate(
+        metric = ExactMatchMetric(case_sensitive=True)
+        results = metric.evaluate(
             golden=[{"text": "Hello"}],
             predicted=[{"text": "hello"}]
         )
         # results[0].correct = False
     """
 
-    def _validate_config(self):
-        """Validate exact match specific configuration"""
-        # Set defaults for optional config
-        self.case_sensitive = (
-            self.config.case_sensitive if self.config.case_sensitive is not None else False
-        )
-        self.normalize_whitespace = (
-            self.config.normalize_whitespace
-            if self.config.normalize_whitespace is not None
-            else True
-        )
-        self.key = self.config.key  # Optional - if None, compare entire dict as string
+    def validate_config(self):
+        """Validate and store exact match specific configuration"""
+        # Validate using Pydantic config class
+        config_obj = ExactMatchMetricConfig(**self.config)
 
-    def _get_metadata(self) -> BaseMetricMetadata:
-        """Return metadata for exact match validator"""
+        # Store validated fields as instance attributes
+        self.case_sensitive = config_obj.case_sensitive
+        self.normalize_whitespace = config_obj.normalize_whitespace
+        self.key = config_obj.key  # Optional - if None, compare entire value as string
+
+    def get_metadata(self) -> BaseMetricMetadata:
+        """Return metadata for exact match metric"""
         return BaseMetricMetadata(
             name="exact_match",
             display_name="Exact Match",
@@ -68,15 +79,13 @@ class ExactMatchValidator(BaseUnitMetric):
             metric_type="industry",
         )
 
-    def evaluate(
-        self, golden: List[Dict[str, Any]], predicted: List[Dict[str, Any]]
-    ) -> List[UnitMetricResult]:
+    def evaluate(self, golden: List[Any], predicted: List[Any]) -> List[UnitMetricResult]:
         """
         Evaluate exact match between golden and predicted values.
 
         Args:
-            golden: List of expected responses (each is a dict)
-            predicted: List of model's predicted responses (each is a dict)
+            golden: List of expected responses (can be dict, str, int, etc.)
+            predicted: List of model's predicted responses (can be dict, str, int, etc.)
 
         Returns:
             List of UnitMetricResult, one for each golden/predicted pair
@@ -93,13 +102,20 @@ class ExactMatchValidator(BaseUnitMetric):
         results = []
         for g, p in zip(golden, predicted):
             try:
-                # Extract text for comparison
+                # Extract text for comparison based on type. Avoid hard code and use isinstance.
                 if self.key:
-                    # Compare specific key
-                    golden_text = g.get(self.key, "")
-                    predicted_text = p.get(self.key, "")
+                    # If key is specified, expect dict and extract key, otherwise assume string
+                    if isinstance(g, dict):
+                        golden_text = g.get(self.key, "")
+                    else:
+                        golden_text = str(g)
+
+                    if isinstance(p, dict):
+                        predicted_text = p.get(self.key, "")
+                    else:
+                        predicted_text = str(p)
                 else:
-                    # Compare entire dict as string
+                    # No key specified - convert entire value to string
                     golden_text = str(g)
                     predicted_text = str(p)
 
