@@ -368,6 +368,15 @@ def extract_audio_urls_from_messages(messages: list) -> tuple[list[str], str]:
                                 audio_data_urls.append(url)
                         elif item.get("type") == "text":
                             text_prompt += item.get("text", "") + " "
+                        else:
+                            # Unhandled content type (expected: 'audio_url' or 'text')
+                            logger.warning(f"Skipping unsupported content type: {item.get('type')}")
+                    else:
+                        # Expected dict but got something else
+                        logger.error(f"Expected dict in content list, got {type(item).__name__}: {item}")
+            else:
+                # Content is neither string nor list
+                logger.error(f"Unexpected content format: expected str or list, got {type(content).__name__}")
 
     return audio_data_urls, text_prompt.strip()
 
