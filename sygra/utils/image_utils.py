@@ -420,7 +420,13 @@ def extract_image_urls_from_messages(messages: list) -> tuple[list[str], str]:
                     if isinstance(item, dict):
                         if item.get("type") == "image_url":
                             image_url = item.get("image_url", {})
-                            url = image_url.get("url", "")
+                            # Handle both string and dict formats
+                            if isinstance(image_url, str):
+                                url = image_url
+                            elif isinstance(image_url, dict):
+                                url = image_url.get("url", "")
+                            else:
+                                url = ""
                             if url:
                                 image_data_urls.append(url)
                         elif item.get("type") == "text":
@@ -430,11 +436,14 @@ def extract_image_urls_from_messages(messages: list) -> tuple[list[str], str]:
                             logger.warning(f"Skipping unsupported content type: {item.get('type')}")
                     else:
                         # Expected dict but got something else
-                        logger.error(f"Expected dict in content list, got {type(item).__name__}: {item}")
+                        logger.error(
+                            f"Expected dict in content list, got {type(item).__name__}: {item}"
+                        )
             else:
                 # Content is neither string nor list
-                logger.error(f"Unexpected content format: expected str or list, got {type(content).__name__}")
-
+                logger.error(
+                    f"Unexpected content format: expected str or list, got {type(content).__name__}"
+                )
 
     return image_data_urls, text_prompt.strip()
 

@@ -170,7 +170,7 @@ def get_audio_url(audio_bytes: bytes, mime: str = "audio/wav") -> str:
     Returns:
         str: A base64-encoded data URL representing the audio.
     """
-    b64 = base64.b64encode(audio_bytes).decode("ascii")
+    b64 = base64.b64encode(audio_bytes).decode("utf-8")
     return f"data:{mime};base64,{b64}"
 
 
@@ -363,7 +363,13 @@ def extract_audio_urls_from_messages(messages: list) -> tuple[list[str], str]:
                     if isinstance(item, dict):
                         if item.get("type") == "audio_url":
                             audio_url = item.get("audio_url", {})
-                            url = audio_url.get("url", "")
+                            # Handle both string and dict formats
+                            if isinstance(audio_url, str):
+                                url = audio_url
+                            elif isinstance(audio_url, dict):
+                                url = audio_url.get("url", "")
+                            else:
+                                url = ""
                             if url:
                                 audio_data_urls.append(url)
                         elif item.get("type") == "text":
@@ -373,10 +379,14 @@ def extract_audio_urls_from_messages(messages: list) -> tuple[list[str], str]:
                             logger.warning(f"Skipping unsupported content type: {item.get('type')}")
                     else:
                         # Expected dict but got something else
-                        logger.error(f"Expected dict in content list, got {type(item).__name__}: {item}")
+                        logger.error(
+                            f"Expected dict in content list, got {type(item).__name__}: {item}"
+                        )
             else:
                 # Content is neither string nor list
-                logger.error(f"Unexpected content format: expected str or list, got {type(content).__name__}")
+                logger.error(
+                    f"Unexpected content format: expected str or list, got {type(content).__name__}"
+                )
 
     return audio_data_urls, text_prompt.strip()
 

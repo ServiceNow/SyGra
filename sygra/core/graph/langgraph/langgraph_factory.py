@@ -173,7 +173,7 @@ class LangGraphFactory(BackendFactory):
             wf.writeframes(silence_frame * num_samples)
 
         audio_bytes = buf.getvalue()
-        audio_b64 = base64.b64encode(audio_bytes).decode("ascii")
+        audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
         return f"data:audio/wav;base64,{audio_b64}"
 
     def get_test_message(self, model_config: dict[str, Any]) -> PromptValue:

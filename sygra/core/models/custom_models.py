@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import base64
 import collections
 import json
 import os
@@ -39,7 +38,7 @@ from sygra.core.models.model_response import ModelResponse
 from sygra.core.models.structured_output.structured_output_config import StructuredOutputConfig
 from sygra.logger.logger_config import logger
 from sygra.metadata.metadata_integration import track_model_request
-from sygra.utils import utils
+from sygra.utils import audio_utils, image_utils, utils
 from sygra.utils.model_utils import (
     is_gpt4o_audio_model,
     should_route_to_image,
@@ -1510,10 +1509,7 @@ class CustomOpenAI(BaseCustomModel):
             }
             mime_type = mime_types.get(response_format, "audio/wav")
 
-            # Create base64 encoded data URL
-            audio_base64 = base64.b64encode(audio_response.content).decode("utf-8")
-            data_url = f"data:{mime_type};base64,{audio_base64}"
-            resp_text = data_url
+            resp_text = audio_utils.get_audio_url(audio_response.content, mime=mime_type)
 
         except openai.RateLimitError as e:
             logger.warning(f"[{self.name()}] OpenAI TTS API request exceeded rate limit: {e}")
@@ -1549,10 +1545,9 @@ class CustomOpenAI(BaseCustomModel):
         model_url = model_params.url
 
         try:
-            # Extract audio data URLs from messages using utility function
-            from sygra.utils.audio_utils import extract_audio_urls_from_messages
-
-            audio_data_urls, text_prompt = extract_audio_urls_from_messages(list(input.messages))
+            audio_data_urls, text_prompt = audio_utils.extract_audio_urls_from_messages(
+                list(input.messages)
+            )
 
             if not audio_data_urls:
                 logger.error(f"[{self.name()}] No audio data provided for transcription")
@@ -1571,9 +1566,7 @@ class CustomOpenAI(BaseCustomModel):
             audio_data_url = audio_data_urls[0]
 
             # Create file-like object from audio data URL using utility function
-            from sygra.utils.audio_utils import create_audio_file_from_data_url
-
-            audio_file = create_audio_file_from_data_url(audio_data_url)
+            audio_file = audio_utils.create_audio_file_from_data_url(audio_data_url)
 
             # Set up the OpenAI client
             self._set_client(model_url, model_params.auth_token)
@@ -1850,31 +1843,9 @@ class CustomOpenAI(BaseCustomModel):
 
         try:
 
-            # Extract text and images from messages
-            prompt_text = ""
-            image_data_urls = []
-
-            for message in input.messages:
-                if hasattr(message, "content"):
-                    if isinstance(message.content, str):
-                        content = message.content
-                        if content.startswith("data:image/"):
-                            image_data_urls.append(content)
-                        else:
-                            prompt_text += content + " "
-                    elif isinstance(message.content, list):
-                        for item in message.content:
-                            if isinstance(item, dict):
-                                if item.get("type") == "text":
-                                    prompt_text += item.get("text", "") + " "
-                                elif item.get("type") == "image_url":
-                                    url = item.get("image_url", "")
-                                    if isinstance(url, dict):
-                                        url = url.get("url", "")
-                                    if url.startswith("data:image/"):
-                                        image_data_urls.append(url)
-
-            prompt_text = prompt_text.strip()
+            image_data_urls, prompt_text = image_utils.extract_image_urls_from_messages(
+                list(input.messages)
+            )
             if not prompt_text:
                 logger.error(f"[{self.name()}] No prompt provided for image generation")
                 return ModelResponse(
@@ -1983,27 +1954,21 @@ class CustomOpenAI(BaseCustomModel):
         Process streaming image generation response.
         Delegates to image_utils for processing.
         """
-        from sygra.utils.image_utils import process_streaming_image_response
-
-        return await process_streaming_image_response(stream_response, self.name())
+        return await image_utils.process_streaming_image_response(stream_response, self.name())
 
     async def _process_image_response(self, image_response):
         """
         Process regular (non-streaming) image response.
         Delegates to image_utils for processing.
         """
-        from sygra.utils.image_utils import process_image_response
-
-        return await process_image_response(image_response, self.name())
+        return await image_utils.process_image_response(image_response, self.name())
 
     async def _url_to_data_url(self, url: str) -> str:
         """
         Fetch an image from URL and convert to base64 data URL.
         Delegates to image_utils for processing.
         """
-        from sygra.utils.image_utils import url_to_data_url
-
-        return await url_to_data_url(url, self.name())
+        return await image_utils.url_to_data_url(url, self.name())
 
     async def _edit_image_with_data_urls(
         self, image_data_urls: list, prompt_text: str, model_url: str, model_params: ModelParams
@@ -2060,18 +2025,17 @@ class CustomOpenAI(BaseCustomModel):
         )
 
         # Decode images using utility function
-        from sygra.utils.image_utils import create_image_file_from_data_url
 
         if supports_multiple_images and num_images > 1:
             # Multiple images for GPT-Image-1
             image_files = [
-                create_image_file_from_data_url(data_url, idx)
+                image_utils.create_image_file_from_data_url(data_url, idx)
                 for idx, data_url in enumerate(image_data_urls)
             ]
             image_param = image_files
         else:
             # Single image for DALL-E-2 or single image input
-            image_file = create_image_file_from_data_url(image_data_urls[0], 0)
+            image_file = image_utils.create_image_file_from_data_url(image_data_urls[0], 0)
             image_param = [image_file]
 
         # Call the image edit API
