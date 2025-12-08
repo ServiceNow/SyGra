@@ -37,7 +37,7 @@ SyGra Framework is created to generate synthetic data. As it is a complex proces
 - Define a task, which involves graph node configuration, flow between nodes and conditions between the node
 - Define the output location to dump the generated data
 
-Seed data can be pulled from either Huggingface or file system. Once the seed data is loaded, SyGra platform allows datagen users to write any data processing using the data transformation module. When the data is ready, users can define the data flow with various types of nodes. A node can also be a subgraph defined in another yaml file.
+Seed data can be pulled from various data source, few examples are Huggingface, File system, ServiceNow Instance. Once the seed data is loaded, SyGra platform allows datagen users to write any data processing using the data transformation module. When the data is ready, users can define the data flow with various types of nodes. A node can also be a subgraph defined in another yaml file.
 
 Each node can be defined with preprocessing, post processing, and LLM prompt with model parameters. Prompts can use seed data as python template keys.  
 Edges define the flow between nodes, which can be conditional or non-conditional, with support for parallel and one-to-many flows.
@@ -114,8 +114,10 @@ workflow.run(num_records=1)
 The SyGra architecture is composed of multiple components. The following diagrams illustrate the four primary components and their associated modules.
 
 ### Data Handler
-Data handler is used for reading and writing the data. Currently, it supports file handler with various file types and huggingface handler.
-When reading data from huggingface, it can read the whole dataset and process, or it can stream chunk of data.
+Data handler is used for reading and writing the data. Currently, it supports following handlers: 
+ - File handler with various file types like JSON, JSONL, CSV, Parquet, Folder with supported type.
+ - Huggingface handler: When reading data from huggingface, it can read the whole dataset and process, or it can stream chunk of data.
+ - ServiceNow Handler to connect a ServiceNow instance : Currently it reads or writes into a single table per dataset configuration.
 
 <kbd> ![DataHandler](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/component_data_handler.png) </kbd>
 
