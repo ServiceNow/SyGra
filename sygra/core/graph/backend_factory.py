@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Any
 
 from sygra.core.graph.graph_config import GraphConfig
 from sygra.core.graph.sygra_message import SygraMessage
@@ -106,7 +107,7 @@ class BackendFactory(ABC):
         pass
 
     @abstractmethod
-    def get_test_message(self, is_multi_modal=True):
+    def get_test_message(self, model_config: dict[str, Any]):
         """
         Return a test message to pass into model for the specific platform
         """

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import base64
 import collections
 import json
 import os
@@ -39,7 +38,13 @@ from sygra.core.models.model_response import ModelResponse
 from sygra.core.models.structured_output.structured_output_config import StructuredOutputConfig
 from sygra.logger.logger_config import logger
 from sygra.metadata.metadata_integration import track_model_request
-from sygra.utils import utils
+from sygra.utils import audio_utils, image_utils, utils
+from sygra.utils.model_utils import (
+    is_gpt4o_audio_model,
+    should_route_to_image,
+    should_route_to_speech,
+    should_route_to_transcription,
+)
 
 
 class ModelParams:
@@ -431,16 +436,17 @@ class BaseCustomModel(ABC):
     ) -> ModelResponse:
         pass
 
-    def _ping_model(self, url: str, auth_token: str) -> int:
+    def _ping_model(self, url: str, auth_token: str, model_config: dict[str, Any]) -> int:
         """
         Ping a single model
         Args:
             url: single url to ping
             auth_token: auth token for the url
+            model_config: model config
+        Returns:
+            http status code
         """
-        # hello message
-        is_multi_modal = self.model_config.get("multi_modal", True)
-        msg = utils.backend_factory.get_test_message(is_multi_modal=is_multi_modal)
+        msg = utils.backend_factory.get_test_message(model_config=model_config)
         # build parameters
         model_param = ModelParams(url=url, auth_token=auth_token)
         # Prefer an existing event loop if available; otherwise run in a fresh loop
@@ -482,7 +488,9 @@ class BaseCustomModel(ABC):
         if isinstance(url_obj, list):
             for i, url in enumerate(url_obj):
                 token = auth_token[i] if isinstance(auth_token, list) else auth_token
-                status = self._ping_model(url=str(url), auth_token=str(token))
+                status = self._ping_model(
+                    url=str(url), auth_token=str(token), model_config=self.model_config
+                )
                 if status != 200:
                     logger.error(f"Server({url}) responded with {status}")
                     return status
@@ -491,6 +499,7 @@ class BaseCustomModel(ABC):
             return self._ping_model(
                 url=str(url_obj) if url_obj else "",
                 auth_token=str(auth_token) if auth_token else "",
+                model_config=self.model_config,
             )
 
     def get_chat_formatted_text(
@@ -1350,18 +1359,15 @@ class CustomOpenAI(BaseCustomModel):
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
     ) -> ModelResponse:
         # Check if this is gpt-4o-audio model which uses chat completions with audio
-        model_name = str(self.model_config.get("model", ""))
-        is_audio_chat_model = "gpt-4o-audio" in model_name.lower()
-
-        # For gpt-4o-audio, route to audio chat completion regardless of output_type
-        if is_audio_chat_model:
+        if is_gpt4o_audio_model(self.model_config):
             return await self._generate_audio_chat_completion(input, model_params)
 
-        # Check the output type and route to appropriate method
-        output_type = self.model_config.get("output_type")
-        if output_type == "audio":
+        # Auto-detect audio input for transcription (audio-to-text)
+        if should_route_to_transcription(input, self.model_config):
+            return await self._generate_transcription(input, model_params)
+        elif should_route_to_speech(self.model_config):
             return await self._generate_speech(input, model_params)
-        elif output_type == "image":
+        elif should_route_to_image(self.model_config):
             return await self._generate_image(input, model_params)
         else:
             return await self._generate_text(input, model_params, **kwargs)
@@ -1503,10 +1509,7 @@ class CustomOpenAI(BaseCustomModel):
             }
             mime_type = mime_types.get(response_format, "audio/wav")
 
-            # Create base64 encoded data URL
-            audio_base64 = base64.b64encode(audio_response.content).decode("utf-8")
-            data_url = f"data:{mime_type};base64,{audio_base64}"
-            resp_text = data_url
+            resp_text = audio_utils.get_audio_url(audio_response.content, mime=mime_type)
 
         except openai.RateLimitError as e:
             logger.warning(f"[{self.name()}] OpenAI TTS API request exceeded rate limit: {e}")
@@ -1518,6 +1521,121 @@ class CustomOpenAI(BaseCustomModel):
             ret_code = getattr(e, "status_code", 500)
         except Exception as x:
             resp_text = f"{constants.ERROR_PREFIX} TTS request failed: {x}"
+            logger.error(f"[{self.name()}] {resp_text}")
+            rcode = self._get_status_from_body(x)
+            ret_code = rcode if rcode else 999
+
+        return ModelResponse(llm_response=resp_text, response_code=ret_code)
+
+    async def _generate_transcription(
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
+    ) -> ModelResponse:
+        """
+        Transcribe audio to text using OpenAI/Azure OpenAI Transcription API.
+        This method is called when input_type is 'audio' in model config.
+
+        Args:
+            input: ChatPromptValue containing audio data URLs to transcribe
+            model_params: Model parameters including URL and auth token
+
+        Returns:
+            Model Response
+        """
+        ret_code = 200
+        model_url = model_params.url
+
+        try:
+            audio_data_urls, text_prompt = audio_utils.extract_audio_urls_from_messages(
+                list(input.messages)
+            )
+
+            if not audio_data_urls:
+                logger.error(f"[{self.name()}] No audio data provided for transcription")
+                return ModelResponse(
+                    llm_response=f"{constants.ERROR_PREFIX} No audio data provided for transcription",
+                    response_code=400,
+                )
+
+            # Process only the first audio file (most transcription APIs handle one file at a time)
+            if len(audio_data_urls) > 1:
+                logger.warning(
+                    f"[{self.name()}] Multiple audio files provided. Using first audio only. "
+                    f"Additional {len(audio_data_urls) - 1} file(s) will be ignored."
+                )
+
+            audio_data_url = audio_data_urls[0]
+
+            # Create file-like object from audio data URL using utility function
+            audio_file = audio_utils.create_audio_file_from_data_url(audio_data_url)
+
+            # Set up the OpenAI client
+            self._set_client(model_url, model_params.auth_token)
+
+            # Get transcription-specific parameters from generation_params or model_config
+            language = self.generation_params.get("language", self.model_config.get("language"))
+            response_format = self.generation_params.get(
+                "response_format", self.model_config.get("response_format", "json")
+            )
+            temperature = self.generation_params.get(
+                "temperature", self.model_config.get("temperature", 0)
+            )
+            timestamp_granularities = self.generation_params.get(
+                "timestamp_granularities", self.model_config.get("timestamp_granularities")
+            )
+
+            # Build transcription parameters
+            transcription_params: dict[str, Any] = {
+                "file": audio_file,
+            }
+
+            if language:
+                transcription_params["language"] = language
+            if text_prompt:
+                transcription_params["prompt"] = text_prompt
+            if response_format:
+                transcription_params["response_format"] = response_format
+            if temperature is not None:
+                transcription_params["temperature"] = temperature
+            if timestamp_granularities:
+                transcription_params["timestamp_granularities"] = timestamp_granularities
+
+            logger.debug(
+                f"[{self.name()}] Transcription parameters - language: {language}, "
+                f"format: {response_format}, temperature: {temperature}"
+            )
+
+            # Make the transcription API call
+            # Cast to OpenAIClient since BaseClient doesn't have create_transcription
+            openai_client = cast(OpenAIClient, self._client)
+            transcription_response = await openai_client.create_transcription(
+                model=str(self.model_config.get("model")), **transcription_params
+            )
+
+            # Handle different response formats
+            if response_format == "json" or response_format == "verbose_json":
+                # Response is an object with 'text' field and possibly other fields
+                if hasattr(transcription_response, "text"):
+                    resp_text = transcription_response.text
+                elif isinstance(transcription_response, dict):
+                    resp_text = transcription_response.get("text", str(transcription_response))
+                else:
+                    resp_text = str(transcription_response)
+            else:
+                # For 'text', 'srt', 'vtt' formats, response is plain text
+                resp_text = str(transcription_response)
+
+        except openai.RateLimitError as e:
+            logger.warning(
+                f"[{self.name()}] OpenAI Transcription API request exceeded rate limit: {e}"
+            )
+            resp_text = f"{constants.ERROR_PREFIX} Rate limit exceeded: {e}"
+            ret_code = 429
+        except openai.APIError as e:
+            logger.error(f"[{self.name()}] OpenAI Transcription API error: {e}")
+            resp_text = f"{constants.ERROR_PREFIX} API error: {e}"
+            ret_code = getattr(e, "status_code", 500)
+        except Exception as x:
+            resp_text = f"{constants.ERROR_PREFIX} Transcription request failed: {x}"
             logger.error(f"[{self.name()}] {resp_text}")
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
@@ -1725,31 +1843,9 @@ class CustomOpenAI(BaseCustomModel):
 
         try:
 
-            # Extract text and images from messages
-            prompt_text = ""
-            image_data_urls = []
-
-            for message in input.messages:
-                if hasattr(message, "content"):
-                    if isinstance(message.content, str):
-                        content = message.content
-                        if content.startswith("data:image/"):
-                            image_data_urls.append(content)
-                        else:
-                            prompt_text += content + " "
-                    elif isinstance(message.content, list):
-                        for item in message.content:
-                            if isinstance(item, dict):
-                                if item.get("type") == "text":
-                                    prompt_text += item.get("text", "") + " "
-                                elif item.get("type") == "image_url":
-                                    url = item.get("image_url", "")
-                                    if isinstance(url, dict):
-                                        url = url.get("url", "")
-                                    if url.startswith("data:image/"):
-                                        image_data_urls.append(url)
-
-            prompt_text = prompt_text.strip()
+            image_data_urls, prompt_text = image_utils.extract_image_urls_from_messages(
+                list(input.messages)
+            )
             if not prompt_text:
                 logger.error(f"[{self.name()}] No prompt provided for image generation")
                 return ModelResponse(
@@ -1858,27 +1954,21 @@ class CustomOpenAI(BaseCustomModel):
         Process streaming image generation response.
         Delegates to image_utils for processing.
         """
-        from sygra.utils.image_utils import process_streaming_image_response
-
-        return await process_streaming_image_response(stream_response, self.name())
+        return await image_utils.process_streaming_image_response(stream_response, self.name())
 
     async def _process_image_response(self, image_response):
         """
         Process regular (non-streaming) image response.
         Delegates to image_utils for processing.
         """
-        from sygra.utils.image_utils import process_image_response
-
-        return await process_image_response(image_response, self.name())
+        return await image_utils.process_image_response(image_response, self.name())
 
     async def _url_to_data_url(self, url: str) -> str:
         """
         Fetch an image from URL and convert to base64 data URL.
         Delegates to image_utils for processing.
         """
-        from sygra.utils.image_utils import url_to_data_url
-
-        return await url_to_data_url(url, self.name())
+        return await image_utils.url_to_data_url(url, self.name())
 
     async def _edit_image_with_data_urls(
         self, image_data_urls: list, prompt_text: str, model_url: str, model_params: ModelParams
@@ -1897,9 +1987,6 @@ class CustomOpenAI(BaseCustomModel):
         Returns:
             Model Response object
         """
-        import io
-
-        from sygra.utils.image_utils import parse_image_data_url
 
         if not prompt_text:
             logger.error(f"[{self.name()}] No prompt provided for image editing")
@@ -1937,23 +2024,18 @@ class CustomOpenAI(BaseCustomModel):
             f"[{self.name()}] Image edit parameters - images: {num_images}, params: {params}, streaming: {is_streaming}"
         )
 
-        # Decode images
+        # Decode images using utility function
+
         if supports_multiple_images and num_images > 1:
             # Multiple images for GPT-Image-1
-            image_files = []
-            for idx, data_url in enumerate(image_data_urls):
-                _, _, img_bytes = parse_image_data_url(data_url)
-                img_file = io.BytesIO(img_bytes)
-                img_file.name = f"image_{idx}.png"
-                image_files.append(img_file)
-
+            image_files = [
+                image_utils.create_image_file_from_data_url(data_url, idx)
+                for idx, data_url in enumerate(image_data_urls)
+            ]
             image_param = image_files
         else:
             # Single image for DALL-E-2 or single image input
-            _, _, image_bytes = parse_image_data_url(image_data_urls[0])
-            image_file = io.BytesIO(image_bytes)
-            image_file.name = "image.png"
-
+            image_file = image_utils.create_image_file_from_data_url(image_data_urls[0], 0)
             image_param = [image_file]
 
         # Call the image edit API

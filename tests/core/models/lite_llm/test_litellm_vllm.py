@@ -302,6 +302,26 @@ class TestLiteLLMVLLM(unittest.TestCase):
     def test_generate_response_with_extracted_status_code(self):
         asyncio.run(self._run_generate_response_with_extracted_status_code())
 
+    async def _run_generate_response_with_custom_serving_name(self):
+        with patch(
+            "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
+        ) as mock_acomp:
+            mock_choice = MagicMock()
+            mock_choice.model_dump.return_value = {"message": {"content": "Response"}}
+            mock_completion = MagicMock()
+            mock_completion.choices = [mock_choice]
+            mock_acomp.return_value = mock_completion
+
+            model = LiteLLMVLLM(self.serving_name_config)
+            params = self._get_model_params()
+            await model._generate_response(self.chat_input, params)
+
+            called = mock_acomp.call_args.kwargs
+            self.assertEqual(called["model"], "hosted_vllm/custom_serving_name")
+
+    def test_generate_response_with_custom_serving_name(self):
+        asyncio.run(self._run_generate_response_with_custom_serving_name())
+
     async def _run_generate_response_passes_generation_params(self):
         with patch(
             "sygra.core.models.lite_llm.base.acompletion", new_callable=AsyncMock
