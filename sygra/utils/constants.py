@@ -97,3 +97,7 @@ INFERENCE_SERVER_TRITON = "triton"
 MODEL_BACKEND_CUSTOM = "custom"
 MODEL_BACKEND_LITELLM = "litellm"
 MODEL_BACKEND_LANGGRAPH = "langgraph"
+
+# variables used for multiple datasets
+ALIAS_JOINER = "->"
+DEFAULT_ALIAS = "__others__"

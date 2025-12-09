@@ -2,9 +2,7 @@ import ast
 import copy
 import hashlib
 import json
-import logging
 import os
-import random
 import pandas as pd
 from abc import ABC
 from datetime import datetime
@@ -33,10 +31,6 @@ from sygra.metadata.metadata_collector import get_metadata_collector
 from sygra.processors.output_record_generator import BaseOutputGenerator
 from sygra.tools.toolkits.data_quality.processor import DataQuality
 from sygra.utils import constants, utils
-
-# variables used for datasets
-alias_joiner = "->"
-default_alias = "__others__"
 
 class BaseTaskExecutor(ABC):
     def __init__(self, args: Any, graph_config_dict: Optional[dict] = None):
@@ -410,10 +404,10 @@ class BaseTaskExecutor(ABC):
         column_names = list(df.columns)
         # check if anyone column has alias prefix, skip it
         for column_name in column_names:
-            if column_name.startswith(alias + alias_joiner):
+            if column_name.startswith(alias + constants.ALIAS_JOINER):
                 return df
 
-        column_rename_map = {c:alias_joiner.join([alias, c]) for c in list(df.columns)}
+        column_rename_map = {c:constants.ALIAS_JOINER.join([alias, c]) for c in list(df.columns)}
         df = df.rename(columns=column_rename_map)
         return df
 
@@ -525,8 +519,8 @@ class BaseTaskExecutor(ABC):
                     sec_alias_name = ds.get("conf").get("alias")
                     pri_alias_name = primary_config.get("alias")
                     # convert the keys with alias prefix (table1.column1)
-                    primary_column = alias_joiner.join([pri_alias_name, ds.get("conf").get("primary_key")])
-                    join_column = alias_joiner.join([sec_alias_name, ds.get("conf").get("join_key")])
+                    primary_column = constants.ALIAS_JOINER.join([pri_alias_name, ds.get("conf").get("primary_key")])
+                    join_column = constants.ALIAS_JOINER.join([sec_alias_name, ds.get("conf").get("join_key")])
                     # where_clause = ds.get("conf").get("where_clause")
                     primary_df = pd.merge(
                         primary_df,
@@ -902,11 +896,11 @@ class BaseTaskExecutor(ABC):
             # now we have multiple dataset under various alias as key including __others__ (default)
             if isinstance(self.output_config, OutputConfig):
                 # old flow with single output config
-                self._upload_into_sink(self.output_config, splitted_dataset[default_alias], self.source_config)
+                self._upload_into_sink(self.output_config, splitted_dataset[constants.DEFAULT_ALIAS], self.source_config)
             elif isinstance(self.output_config, list):
                 for output_cfg in self.output_config:
                     # if alias not defined, it will TRY to push default columns
-                    alias = output_cfg.alias if output_cfg.alias else default_alias
+                    alias = output_cfg.alias if output_cfg.alias else constants.DEFAULT_ALIAS
                     # TODO do we need to have corresponding source config??
                     self._upload_into_sink(output_cfg, splitted_dataset[alias], None)
                     logger.info(f"Successfully uploaded {alias} to sink.")
@@ -922,11 +916,11 @@ class BaseTaskExecutor(ABC):
             # split the row into multiple dict with key as alias
             splitted_row = {}
             for col, val in row.items():
-                if alias_joiner in col:
-                    alias = col.split(alias_joiner)[0]
-                    actual_col = col.split(alias_joiner)[1]
+                if constants.ALIAS_JOINER in col:
+                    alias = col.split(constants.ALIAS_JOINER)[0]
+                    actual_col = col.split(constants.ALIAS_JOINER)[1]
                 else:
-                    alias = default_alias
+                    alias = constants.DEFAULT_ALIAS
                     actual_col = col
                 if alias not in splitted_row:
                     splitted_row[alias] = {}
