@@ -7,10 +7,37 @@ theme:
   name: material
   logo: resources/images/sygra_logo.png
   favicon: resources/images/sygra_logo.png
+  font:
+    text: Roboto
+    code: Fira Code
+  icon:
+    repo: fontawesome/brands/github-alt
   features:
-    - navigation.top
+    - navigation.tabs
+    - navigation.expand
+    - navigation.path
     - toc.follow
     - content.code.copy
+    - content.code.select
+    - content.code.annotate
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+extra_css:
+  - resources/css/servicenow.css
 
 markdown_extensions:
   - admonition
@@ -20,13 +47,13 @@ markdown_extensions:
   - pymdownx.superfences
 
 nav:
-  - Home: index.md
-  - Installation: installation.md
   - Getting Started:
+      - Welcome: index.md
+      - Installation: installation.md
       - Task Executor: getting_started/Task_Executor.md
+      - Model Configuration: getting_started/model_configuration.md
       - Graph Config Guide: getting_started/graph_config_guide.md
       - Adding Edges: getting_started/adding_edges.md
-      - Model Configuration: getting_started/model_configuration.md
       - Create a Synthetic Datagen Pipeline: getting_started/create_new_pipeline.md
       - Create a task with UI: getting_started/create_task_ui.md
   - Concepts:
@@ -37,6 +64,8 @@ nav:
           - Audio to Text: concepts/multimodal/audio_to_text.md
           - Image to Text: concepts/multimodal/image_to_text.md
           - Text to Speech: concepts/multimodal/text_to_speech.md
+          - Image Generation: concepts/multimodal/image_generation.md
+          - GPT-4o (Audio): concepts/multimodal/gpt_4o_audio.md
       - Nodes:
           - Agent Node: concepts/nodes/agent_node.md
           - Lambda Node: concepts/nodes/lambda_node.md
