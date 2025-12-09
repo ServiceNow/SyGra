@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import base64
+import io
 import json
 from typing import Any, Optional, Tuple, Type, cast
 
@@ -15,6 +15,7 @@ from sygra.core.models.custom_models import BaseCustomModel, ModelParams
 from sygra.core.models.model_response import ModelResponse
 from sygra.logger.logger_config import logger
 from sygra.metadata.metadata_integration import track_model_request
+from sygra.utils import audio_utils, image_utils
 
 
 class LiteLLMBase(BaseCustomModel):
@@ -348,7 +349,7 @@ class LiteLLMBase(BaseCustomModel):
                 "speed": speed,
             }
             response_format = self.generation_params.get(
-                "response_format", self.model_config.get("response_format")
+                "response_format", self.model_config.get("response_format", "wav")
             )
             mime_types = {
                 "mp3": "audio/mpeg",
@@ -360,11 +361,10 @@ class LiteLLMBase(BaseCustomModel):
             }
             if response_format:
                 tts_params["response_format"] = response_format
-            mime_type = mime_types.get(response_format) if response_format else "audio/wav"
+            mime_type = mime_types.get(response_format, "wav") if response_format else "audio/wav"
 
             audio_response = await self._fn_aspeech()(**common, **tts_params)
-            audio_base64 = base64.b64encode(audio_response.content).decode("utf-8")
-            data_url = f"data:{mime_type};base64,{audio_base64}"
+            data_url = audio_utils.get_audio_url(audio_response.content, mime=mime_type)
             return ModelResponse(llm_response=data_url, response_code=ret_code)
         except Exception as e:
             return self._map_exception(e, f"{self._provider_label()} TTS")
@@ -476,28 +476,10 @@ class LiteLLMBase(BaseCustomModel):
 
     # ----------------------- Image -----------------------
     async def _extract_prompt_and_images(self, input: ChatPromptValue) -> tuple[str, list[str]]:
-        prompt_text = ""
-        image_data_urls: list[str] = []
-        for message in input.messages:
-            if hasattr(message, "content"):
-                content = getattr(message, "content")
-                if isinstance(content, str):
-                    if content.startswith("data:image/"):
-                        image_data_urls.append(content)
-                    else:
-                        prompt_text += f"{content} "
-                elif isinstance(content, list):
-                    for item in content:
-                        if isinstance(item, dict):
-                            if item.get("type") == "text":
-                                prompt_text += f"{item.get('text', '')} "
-                            elif item.get("type") == "image_url":
-                                url = item.get("image_url", "")
-                                if isinstance(url, dict):
-                                    url = url.get("url", "")
-                                if isinstance(url, str) and url.startswith("data:image/"):
-                                    image_data_urls.append(url)
-        return prompt_text.strip(), image_data_urls
+        image_data_urls, prompt_text = image_utils.extract_image_urls_from_messages(
+            list(input.messages)
+        )
+        return prompt_text, image_data_urls
 
     def _image_capabilities(self) -> dict[str, Any]:
         caps = self.model_config.get("image_capabilities")
@@ -546,9 +528,6 @@ class LiteLLMBase(BaseCustomModel):
                         llm_response=f"{constants.ERROR_PREFIX} Image editing is not supported by {self._provider_label()}",
                         response_code=400,
                     )
-                import io
-
-                from sygra.utils.image_utils import parse_image_data_url
 
                 max_imgs = caps.get("max_edit_images")
                 if isinstance(max_imgs, int) and max_imgs > 0:
@@ -563,13 +542,13 @@ class LiteLLMBase(BaseCustomModel):
                 if len(image_data_urls) > 1:
                     image_files = []
                     for idx, data_url in enumerate(image_data_urls):
-                        _, _, img_bytes = parse_image_data_url(data_url)
+                        _, _, img_bytes = image_utils.parse_image_data_url(data_url)
                         img_file = io.BytesIO(img_bytes)
                         img_file.name = f"image_{idx}.png"
                         image_files.append(img_file)
                     image_param = image_files
                 else:
-                    _, _, image_bytes = parse_image_data_url(image_data_urls[0])
+                    _, _, image_bytes = image_utils.parse_image_data_url(image_data_urls[0])
                     image_file = io.BytesIO(image_bytes)
                     image_file.name = "image.png"
                     image_param = [image_file]
@@ -615,16 +594,10 @@ class LiteLLMBase(BaseCustomModel):
 
     # ----------------------- Image helpers (overridable for tests) -----------------------
     async def _process_streaming_image_response(self, stream_response):
-        from sygra.utils.image_utils import process_streaming_image_response
-
-        return await process_streaming_image_response(stream_response, self.name())
+        return await image_utils.process_streaming_image_response(stream_response, self.name())
 
     async def _process_image_response(self, image_response):
-        from sygra.utils.image_utils import process_image_response
-
-        return await process_image_response(image_response, self.name())
+        return await image_utils.process_image_response(image_response, self.name())
 
     async def _url_to_data_url(self, url: str) -> str:
-        from sygra.utils.image_utils import url_to_data_url
-
-        return await url_to_data_url(url, self.name())
+        return await image_utils.url_to_data_url(url, self.name())

@@ -170,7 +170,7 @@ def get_audio_url(audio_bytes: bytes, mime: str = "audio/wav") -> str:
     Returns:
         str: A base64-encoded data URL representing the audio.
     """
-    b64 = base64.b64encode(audio_bytes).decode("ascii")
+    b64 = base64.b64encode(audio_bytes).decode("utf-8")
     return f"data:{mime};base64,{b64}"
 
 
@@ -314,3 +314,110 @@ def save_audio_data_url(
     except Exception as e:
         logger.error(f"Failed to save audio data: {e}")
         raise
+
+
+def extract_audio_urls_from_messages(messages: list) -> tuple[list[str], str]:
+    """
+    Extract audio data URLs and text prompt from messages.
+
+    Extracts all audio_url content and concatenates text content
+    from a list of LangChain messages.
+
+    Args:
+        messages: List of LangChain message objects
+
+    Returns:
+        tuple: (audio_data_urls: list[str], text_prompt: str)
+            - audio_data_urls: List of audio data URL strings
+            - text_prompt: Concatenated text content from messages
+
+    Examples:
+        >>> from langchain_core.messages import HumanMessage
+        >>> messages = [HumanMessage(content=[
+        ...     {"type": "audio_url", "audio_url": {"url": "data:audio/wav;base64,..."}},
+        ...     {"type": "text", "text": "Transcribe this"}
+        ... ])]
+        >>> audio_urls, text = extract_audio_urls_from_messages(messages)
+        >>> len(audio_urls)
+        1
+        >>> text
+        'Transcribe this'
+    """
+    audio_data_urls = []
+    text_prompt = ""
+
+    for message in messages:
+        if hasattr(message, "content"):
+            content = message.content
+
+            # Handle string content
+            if isinstance(content, str):
+                if content.startswith("data:audio/"):
+                    audio_data_urls.append(content)
+                else:
+                    text_prompt += content + " "
+
+            # Handle list content (multimodal)
+            elif isinstance(content, list):
+                for item in content:
+                    if isinstance(item, dict):
+                        if item.get("type") == "audio_url":
+                            audio_url = item.get("audio_url", {})
+                            # Handle both string and dict formats
+                            if isinstance(audio_url, str):
+                                url = audio_url
+                            elif isinstance(audio_url, dict):
+                                url = audio_url.get("url", "")
+                            else:
+                                url = ""
+                            if url:
+                                audio_data_urls.append(url)
+                        elif item.get("type") == "text":
+                            text_prompt += item.get("text", "") + " "
+                        else:
+                            # Unhandled content type (expected: 'audio_url' or 'text')
+                            logger.warning(f"Skipping unsupported content type: {item.get('type')}")
+                    else:
+                        # Expected dict but got something else
+                        logger.error(
+                            f"Expected dict in content list, got {type(item).__name__}: {item}"
+                        )
+            else:
+                # Content is neither string nor list
+                logger.error(
+                    f"Unexpected content format: expected str or list, got {type(content).__name__}"
+                )
+
+    return audio_data_urls, text_prompt.strip()
+
+
+def create_audio_file_from_data_url(audio_data_url: str) -> io.BytesIO:
+    """
+    Create a file-like object from an audio data URL.
+
+    Parses the audio data URL, extracts the audio bytes, and creates
+    a BytesIO object with appropriate filename.
+
+    Args:
+        audio_data_url: Base64-encoded audio data URL (e.g., "data:audio/wav;base64,...")
+
+    Returns:
+        io.BytesIO: File-like object containing audio data with .name attribute set
+
+    Raises:
+        ValueError: If data URL is invalid or cannot be parsed
+
+    Examples:
+        >>> data_url = "data:audio/wav;base64,UklGRi..."
+        >>> audio_file = create_audio_file_from_data_url(data_url)
+        >>> audio_file.name
+        'audio.wav'
+        >>> isinstance(audio_file, io.BytesIO)
+        True
+    """
+    mime_type, audio_format, audio_bytes = parse_audio_data_url(audio_data_url)
+
+    audio_file = io.BytesIO(audio_bytes)
+    audio_file.name = f"audio.{audio_format}"
+
+    return audio_file

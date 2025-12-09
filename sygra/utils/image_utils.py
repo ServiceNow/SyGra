@@ -371,3 +371,113 @@ async def process_streaming_image_response(
                     images_data.append(data_url)
 
     return images_data
+
+
+def extract_image_urls_from_messages(messages: list) -> tuple[list[str], str]:
+    """
+    Extract image data URLs and text prompt from messages.
+
+    Extracts all image_url content and concatenates text content
+    from a list of LangChain messages.
+
+    Args:
+        messages: List of LangChain message objects
+
+    Returns:
+        tuple: (image_data_urls: list[str], text_prompt: str)
+            - image_data_urls: List of image data URL strings
+            - text_prompt: Concatenated text content from messages
+
+    Examples:
+        >>> from langchain_core.messages import HumanMessage
+        >>> messages = [HumanMessage(content=[
+        ...     {"type": "image_url", "image_url": {"url": "data:image/png;base64,..."}},
+        ...     {"type": "text", "text": "Describe this image"}
+        ... ])]
+        >>> image_urls, text = extract_image_urls_from_messages(messages)
+        >>> len(image_urls)
+        1
+        >>> text
+        'Describe this image'
+    """
+    image_data_urls = []
+    text_prompt = ""
+
+    for message in messages:
+        if hasattr(message, "content"):
+            content = message.content
+
+            # Handle string content
+            if isinstance(content, str):
+                if content.startswith("data:image/"):
+                    image_data_urls.append(content)
+                else:
+                    text_prompt += content + " "
+
+            # Handle list content (multimodal)
+            elif isinstance(content, list):
+                for item in content:
+                    if isinstance(item, dict):
+                        if item.get("type") == "image_url":
+                            image_url = item.get("image_url", {})
+                            # Handle both string and dict formats
+                            if isinstance(image_url, str):
+                                url = image_url
+                            elif isinstance(image_url, dict):
+                                url = image_url.get("url", "")
+                            else:
+                                url = ""
+                            if url:
+                                image_data_urls.append(url)
+                        elif item.get("type") == "text":
+                            text_prompt += item.get("text", "") + " "
+                        else:
+                            # Unhandled content type (expected: 'audio_url' or 'text')
+                            logger.warning(f"Skipping unsupported content type: {item.get('type')}")
+                    else:
+                        # Expected dict but got something else
+                        logger.error(
+                            f"Expected dict in content list, got {type(item).__name__}: {item}"
+                        )
+            else:
+                # Content is neither string nor list
+                logger.error(
+                    f"Unexpected content format: expected str or list, got {type(content).__name__}"
+                )
+
+    return image_data_urls, text_prompt.strip()
+
+
+def create_image_file_from_data_url(image_data_url: str, index: int = 0) -> "io.BytesIO":
+    """
+    Create a file-like object from an image data URL.
+
+    Parses the image data URL, extracts the image bytes, and creates
+    a BytesIO object with appropriate filename.
+
+    Args:
+        image_data_url: Base64-encoded image data URL (e.g., "data:image/png;base64,...")
+        index: Index for filename when processing multiple images (default: 0)
+
+    Returns:
+        io.BytesIO: File-like object containing image data with .name attribute set
+
+    Raises:
+        ValueError: If data URL is invalid or cannot be parsed
+
+    Examples:
+        >>> data_url = "data:image/png;base64,iVBORw0K..."
+        >>> image_file = create_image_file_from_data_url(data_url)
+        >>> image_file.name
+        'image_0.png'
+        >>> isinstance(image_file, io.BytesIO)
+        True
+    """
+    import io
+
+    mime_type, image_format, image_bytes = parse_image_data_url(image_data_url)
+
+    image_file = io.BytesIO(image_bytes)
+    image_file.name = f"image_{index}.{image_format}"
+
+    return image_file
