@@ -199,6 +199,50 @@ class OpenAIAzureClient(BaseClient):
             speed=speed,
         )
 
+    async def create_transcription(
+        self,
+        file: Any,
+        model: str,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Transcribe audio to text using Azure OpenAI's audio transcription API.
+
+        Args:
+            file: The audio file to transcribe. Can be a file path (str) or file-like object.
+                  Supported formats: mp3, mp4, mpeg, mpga, m4a, wav, webm, flac, ogg
+            model (str): The transcription model deployment name (e.g., 'whisper-1', 'gpt-4o-transcribe')
+            **kwargs: Additional parameters supported by the API:
+                - language (str): Language of the input audio in ISO-639-1 format (e.g., 'en', 'es')
+                - prompt (str): Optional text to guide the model's style
+                - response_format (str): Format of the transcript output
+                  Options: 'json', 'text', 'srt', 'verbose_json', 'vtt'. Defaults to 'json'
+                - temperature (float): Sampling temperature between 0 and 1. Defaults to 0
+                - timestamp_granularities (list): Timestamp granularities for segments
+                  Options: ['word', 'segment']. Only for verbose_json format
+
+        Returns:
+            Any: The transcription response from the API
+
+        Raises:
+            ValueError: If async_client is False (Transcription requires async client)
+        """
+        if not self.async_client:
+            raise ValueError(
+                "Transcription API requires async client. Please initialize with async_client=True"
+            )
+
+        client = cast(Any, self.client)
+
+        # Build the request parameters with all provided kwargs
+        params: Dict[str, Any] = {
+            "file": file,
+            "model": model,
+            **kwargs,  # Pass all additional parameters
+        }
+
+        return await client.audio.transcriptions.create(**params)
+
     async def create_image(
         self,
         model: str,
