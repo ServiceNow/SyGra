@@ -7,7 +7,6 @@ logs/*
 .DS_Store
 .vscode/
 .env
-poetry.lock
 *.egg-info/*
 site/
 build/

@@ -71,7 +71,7 @@ def calculate_cost(model_name: str, prompt_tokens: int, completion_tokens: int) 
         return 0.0
 
     # No pricing available - log and return 0.0
-    logger.info(
+    logger.debug(
         f"No pricing information available for model '{model_name}'. "
         f"Cost will be reported as $0.00. "
         f"Supported models: OpenAI (GPT-4, GPT-3.5, etc.), Azure OpenAI and Anthropic Claude on Bedrock."

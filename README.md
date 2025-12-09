@@ -83,7 +83,7 @@ See full steps in <a href="https://servicenow.github.io/SyGra/installation/">Ins
 git clone git@github.com:ServiceNow/SyGra.git
 
 cd SyGra
-poetry run python main.py --task examples.glaive_code_assistant --num_records=1
+uv run python main.py --task examples.glaive_code_assistant --num_records=1
 ```
 </details>
 
@@ -114,7 +114,7 @@ workflow.run(num_records=1)
 The SyGra architecture is composed of multiple components. The following diagrams illustrate the four primary components and their associated modules.
 
 ### Data Handler
-Data handler is used for reading and writing the data. Currently, it supports following handlers: 
+Data handler is used for reading and writing the data. Currently, it supports following handlers:
  - File handler with various file types like JSON, JSONL, CSV, Parquet, Folder with supported type.
  - Huggingface handler: When reading data from huggingface, it can read the whole dataset and process, or it can stream chunk of data.
  - ServiceNow Handler to connect a ServiceNow instance : Currently it reads or writes into a single table per dataset configuration.
