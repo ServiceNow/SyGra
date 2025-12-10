@@ -21,6 +21,12 @@ from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricRe
 class ConcreteMetric(BaseAggregatorMetric):
     """Concrete implementation for testing abstract base class"""
 
+    def __init__(self, **config):
+        """Initialize with two-phase initialization."""
+        super().__init__(**config)
+        self.validate_config()
+        self.metadata = self.get_metadata()
+
     def validate_config(self):
         """No config validation needed for test metric"""
         pass
@@ -138,6 +144,11 @@ class TestAggregatorMetricDecorator:
 
         @aggregator_metric("test_decorator_metric")
         class TestDecoratorMetric(BaseAggregatorMetric):
+            def __init__(self, **config):
+                super().__init__(**config)
+                self.validate_config()
+                self.metadata = self.get_metadata()
+
             def validate_config(self):
                 pass
 
@@ -172,6 +183,11 @@ class TestAggregatorMetricDecorator:
 
         @aggregator_metric("test_return_class")
         class TestReturnClass(BaseAggregatorMetric):
+            def __init__(self, **config):
+                super().__init__(**config)
+                self.validate_config()
+                self.metadata = self.get_metadata()
+
             def validate_config(self):
                 pass
 

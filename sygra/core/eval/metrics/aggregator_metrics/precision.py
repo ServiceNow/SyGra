@@ -38,9 +38,15 @@ class PrecisionMetric(BaseAggregatorMetric):
     Measures: Of all predicted positives, how many were actually positive?
 
     Required configuration:
-        predicted_key: Key in predicted dict to check (e.g., "tool", "class")
-        positive_class: Value representing positive class (e.g., "click", 1, True)
+        predicted_key: Key in predicted dict to check (e.g., "tool")
+        positive_class: Value representing the positive class (e.g., "click")
     """
+
+    def __init__(self, **config):
+        """Initialize precision metric with two-phase initialization."""
+        super().__init__(**config)
+        self.validate_config()
+        self.metadata = self.get_metadata()
 
     def validate_config(self):
         """Validate and store precision-specific configuration requirements"""

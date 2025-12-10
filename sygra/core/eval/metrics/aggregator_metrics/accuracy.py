@@ -24,6 +24,12 @@ class AccuracyMetric(BaseAggregatorMetric):
     No configuration required - works with any UnitMetricResult list.
     """
 
+    def __init__(self, **config):
+        """Initialize accuracy metric with two-phase initialization."""
+        super().__init__(**config)
+        self.validate_config()
+        self.metadata = self.get_metadata()
+
     def validate_config(self):
         """
         Accuracy needs no configuration.

@@ -12,7 +12,7 @@ Key Design:
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, List
+from typing import Any, Dict, List
 
 from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
@@ -33,34 +33,34 @@ class BaseUnitMetric(ABC):
     - evaluate(): Validate predictions and return list of UnitMetricResult objects
     """
 
+    # Declare attributes that subclasses will set
+    metadata: BaseMetricMetadata
+    config: Dict[str, Any]
+
     def __init__(self, **config):
         """
         Common initialization for all unit metrics.
 
-        Each metric validates and stores its own configuration requirements.
+        The base class only stores the raw configuration. Subclasses must call
+        their own validate_config() and get_metadata() after super().__init__()
+        to ensure proper initialization order.
 
         Args:
             **config: Configuration parameters (validated by subclass)
 
         Example:
-            # ExactMatch with case sensitivity
-            metric = ExactMatchMetric(case_sensitive=True)
+            class MyMetric(BaseUnitMetric):
+                def __init__(self, **config):
+                    super().__init__(**config)
+                    self.validate_config()  # Subclass calls this
+                    self.metadata = self.get_metadata()  # Subclass calls this
 
-            # ExactMatch with normalization
-            metric = ExactMatchMetric(normalize_whitespace=True)
-
-            # From config dict
-            config = {"case_sensitive": False, "normalize_whitespace": True}
-            metric = ExactMatchMetric(**config)
+        Note:
+            Subclasses should NOT override this method. Instead, implement
+            validate_config() and get_metadata() to customize behavior.
         """
-        # Store raw config
+        # Store raw config only - do not call overridable methods
         self.config = config
-
-        # Let subclass validate and store its specific requirements
-        self.validate_config()
-
-        # Initialize metadata
-        self.metadata = self.get_metadata()
 
     @abstractmethod
     def validate_config(self):

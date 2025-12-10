@@ -19,6 +19,12 @@ from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import Ba
 class TestMetric(BaseAggregatorMetric):
     """Test metric for registry testing"""
 
+    def __init__(self, **config):
+        """Initialize with two-phase initialization."""
+        super().__init__(**config)
+        self.validate_config()
+        self.metadata = self.get_metadata()
+
     def validate_config(self):
         """Store optional params"""
         self.param1 = self.config.get("param1")
@@ -40,6 +46,12 @@ class TestMetric(BaseAggregatorMetric):
 class AnotherTestMetric(BaseAggregatorMetric):
     """Another test metric for registry testing"""
 
+    def __init__(self, **config):
+        """Initialize with two-phase initialization."""
+        super().__init__(**config)
+        self.validate_config()
+        self.metadata = self.get_metadata()
+
     def validate_config(self):
         """No config needed"""
         pass
@@ -54,7 +66,7 @@ class AnotherTestMetric(BaseAggregatorMetric):
         )
 
     def calculate(self, results):
-        return {"another": 2.0}
+        return {"another_test": 1.0}
 
 
 class TestAggregatorMetricRegistry:
@@ -148,6 +160,11 @@ class TestAggregatorMetricRegistry:
         """Test that get_metric raises error when instantiation fails"""
 
         class FailingMetric(BaseAggregatorMetric):
+            def __init__(self, **config):
+                super().__init__(**config)
+                self.validate_config()
+                self.metadata = self.get_metadata()
+
             def validate_config(self):
                 # This will fail if required_param is not provided
                 if "required_param" not in self.config:
@@ -271,6 +288,11 @@ class TestAggregatorMetricRegistry:
 
         @aggregator_metric("decorated_metric")
         class DecoratedMetric(BaseAggregatorMetric):
+            def __init__(self, **config):
+                super().__init__(**config)
+                self.validate_config()
+                self.metadata = self.get_metadata()
+
             def validate_config(self):
                 pass
 
@@ -352,6 +374,11 @@ class TestAggregatorMetricRegistry:
         """Test registry with metrics that don't require init parameters"""
 
         class SimpleMetric(BaseAggregatorMetric):
+            def __init__(self, **config):
+                super().__init__(**config)
+                self.validate_config()
+                self.metadata = self.get_metadata()
+
             def validate_config(self):
                 pass
 

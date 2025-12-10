@@ -58,6 +58,12 @@ class ExactMatchMetric(BaseUnitMetric):
         # results[0].correct = False
     """
 
+    def __init__(self, **config):
+        """Initialize exact match metric with two-phase initialization."""
+        super().__init__(**config)
+        self.validate_config()
+        self.metadata = self.get_metadata()
+
     def validate_config(self):
         """Validate and store exact match specific configuration"""
         # Validate using Pydantic config class

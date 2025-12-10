@@ -38,9 +38,15 @@ class RecallMetric(BaseAggregatorMetric):
     Measures: Of all actual positives, how many were predicted correctly?
 
     Required configuration:
-        golden_key: Key in golden dict to check (e.g., "event", "class")
-        positive_class: Value representing positive class (e.g., "click", 1, True)
+        golden_key: Key in golden dict to check (e.g., "event")
+        positive_class: Value representing the positive class (e.g., "click")
     """
+
+    def __init__(self, **config):
+        """Initialize recall metric with two-phase initialization."""
+        super().__init__(**config)
+        self.validate_config()
+        self.metadata = self.get_metadata()
 
     def validate_config(self):
         """Validate and store recall-specific configuration requirements"""

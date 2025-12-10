@@ -33,34 +33,34 @@ class BaseAggregatorMetric(ABC):
     - calculate(): Compute metric from results
     """
 
+    # Declare attributes that subclasses will set
+    metadata: BaseMetricMetadata
+    config: Dict[str, Any]
+
     def __init__(self, **config):
         """
-        Common initialization for all metrics.
+        Common initialization for all aggregator metrics.
 
-        Each metric validates and stores its own configuration requirements.
+        The base class only stores the raw configuration. Subclasses must call
+        their own validate_config() and get_metadata() after super().__init__()
+        to ensure proper initialization order.
 
         Args:
             **config: Configuration parameters (validated by subclass)
 
         Example:
-            # Precision
-            metric = PrecisionMetric(predicted_key="tool", positive_class="click")
+            class MyMetric(BaseAggregatorMetric):
+                def __init__(self, **config):
+                    super().__init__(**config)
+                    self.validate_config()  # Subclass calls this
+                    self.metadata = self.get_metadata()  # Subclass calls this
 
-            # Accuracy (no config needed)
-            metric = AccuracyMetric()
-
-            # From config dict
-            config = {"predicted_key": "tool", "positive_class": "click"}
-            metric = PrecisionMetric(**config)
+        Note:
+            Subclasses should NOT override this method. Instead, implement
+            validate_config() and get_metadata() to customize behavior.
         """
-        # Store raw config
+        # Store raw config only - do not call overridable methods
         self.config = config
-
-        # Let subclass validate and store its specific requirements
-        self.validate_config()
-
-        # Initialize metadata
-        self.metadata = self.get_metadata()
 
     @abstractmethod
     def validate_config(self):

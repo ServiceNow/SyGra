@@ -41,10 +41,16 @@ class F1ScoreMetric(BaseAggregatorMetric):
     Harmonic mean of precision and recall.
 
     Required configuration:
-        predicted_key: Key in predicted dict (e.g., "tool", "class")
-        golden_key: Key in golden dict (e.g., "event", "class")
-        positive_class: Value representing positive class (e.g., "click", 1, True)
+        predicted_key: Key in predicted dict to check (e.g., "tool")
+        golden_key: Key in golden dict to check (e.g., "event")
+        positive_class: Value representing the positive class (e.g., "click")
     """
+
+    def __init__(self, **config):
+        """Initialize F1 score metric with two-phase initialization."""
+        super().__init__(**config)
+        self.validate_config()
+        self.metadata = self.get_metadata()
 
     def validate_config(self):
         """Validate and store F1-specific configuration requirements"""
