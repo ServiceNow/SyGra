@@ -374,27 +374,39 @@ class BaseTaskExecutor(ABC):
 
     # validation if list of data config set in source or sink
     # rule 1: alias and join_type is mandatory if source/sink config is a list
+    # rule 2: all dataset should be vstack join type, vstack cant mix with other horizontal concat
     def validate_data_config(self, source_config: list, sink_config: list) -> None:
         alias = set()
+        join_type_list = set()
+        is_vstack = False
         if isinstance(source_config, list):
             for source_config_obj in source_config:
-                if not source_config_obj.get("join_type") or not source_config_obj.get("alias"):
+                if not source_config_obj.get(constants.DATASET_JOIN_TYPE) or not source_config_obj.get(constants.DATASET_ALIAS):
                     # if the source data config is a list, it should have join_type and alias
                     logger.error(f"One of the source data config has missing alias or join_type.")
                     return False
                 else:
-                    alias.add(source_config_obj["alias"])
+                    alias.add(source_config_obj[constants.DATASET_ALIAS])
+                    join_type_list.add(source_config_obj[constants.DATASET_JOIN_TYPE])
+                    is_vstack = (source_config_obj[constants.DATASET_JOIN_TYPE] == constants.JOIN_TYPE_VSTACK) if is_vstack is False else is_vstack
             if len(alias) != len(source_config):
                 logger.error("Duplicate alias in source data config list.")
+
+        # if vstack, all dataset should be set with vstack
+        # alias name will not be used for column rename in this case
+        if is_vstack and len(join_type_list) > 1:
+            logger.error("All dataset must set with vstack or none should have join_type as vstack.")
+            return False
+
         alias = set()
         if isinstance(sink_config, list):
             for sink_config_obj in sink_config:
-                if not sink_config_obj.get("alias"):
+                if not sink_config_obj.get(constants.DATASET_ALIAS):
                     # if the sink data config is a list, it should have alias name
                     logger.error(f"One of the sink data config has missing alias.")
                     return False
                 else:
-                    alias.add(sink_config_obj["alias"])
+                    alias.add(sink_config_obj[constants.DATASET_ALIAS])
             if len(alias) != len(sink_config):
                 logger.error("Duplicate alias in sink data config list.")
         return True
@@ -479,12 +491,15 @@ class BaseTaskExecutor(ABC):
                     return []
 
             # Read primary and secondary dataset into dataframes
+            is_vstack = False
             for conf in source_config:
-                join_type = conf.get("join_type")
-                alias = conf.get("alias")
+                join_type = conf.get(constants.DATASET_JOIN_TYPE)
+                alias = conf.get(constants.DATASET_ALIAS)
                 conf_obj = DataSourceConfig.from_dict(conf)
                 reader = self._get_data_reader(conf_obj)
-                if join_type == "primary":
+                # store if join type is vstack(all should be vstack, so checking last element only)
+                is_vstack = (join_type == constants.JOIN_TYPE_VSTACK)
+                if join_type == constants.JOIN_TYPE_PRIMARY:
                     primary_config = conf
                     # read the dataset
                     primary_dataset = self._read_data(reader, conf_obj)
@@ -493,7 +508,7 @@ class BaseTaskExecutor(ABC):
                     primary_dataset = self.apply_transforms(conf_obj, primary_dataset)
                     # convert to dataframe
                     primary_df = pd.DataFrame(primary_dataset)
-                    # add alias prefix in the column name
+                    # add alias prefix in the column name(join_type cant be vstack if it is set to primary)
                     primary_df = self._rename_dataframe(primary_df, alias)
                 else:
                     # read the dataset
@@ -503,45 +518,51 @@ class BaseTaskExecutor(ABC):
                     sec_dataset = self.apply_transforms(conf_obj, sec_dataset)
                     # convert to dataframe
                     sec_df = pd.DataFrame(sec_dataset)
-                    # add alias prefix in the column name
-                    sec_df = self._rename_dataframe(sec_df, alias)
+                    # add alias prefix in the column name (avoid column rename for join_type==vstack)
+                    sec_df = self._rename_dataframe(sec_df, alias) if is_vstack is False else sec_df
                     # store the dataframe in to the list
                     dataset_list.append({"conf": conf, "dataset": sec_df})
 
-            # TODO if no primary and join type is vstack
-            # read concat_type = intersection(default) or union
-            if primary_df is None or len(primary_dataset) == 0:
-                logger.error("Primary dataset is not defined.")
+            # if join type is vstack
+            if len(dataset_list) > 0 and is_vstack:
+                logger.info("All datasets are vertically stacking.")
+                # fetch all dataframes
+                all_df = [ds.get("dataset") for ds in dataset_list]
+                vmerged_df = pd.concat(all_df, axis=0, join='inner')
+                # now convert dataframe to list of dict (full_data)
+                full_data = vmerged_df.to_dict(orient="records")
+            elif primary_df is None or len(primary_dataset) == 0:
+                logger.error("Primary dataset is not defined for horizontal stack/concatenation.")
+            else:
+                # merge datasets into primary
+                for ds in dataset_list:
+                    join_type = ds.get("conf").get(constants.DATASET_JOIN_TYPE)
+                    current_df = ds.get("dataset")
+                    if join_type == constants.JOIN_TYPE_COLUMN:
+                        sec_alias_name = ds.get("conf").get(constants.DATASET_ALIAS)
+                        pri_alias_name = primary_config.get(constants.DATASET_ALIAS)
+                        # convert the keys with alias prefix (table1.column1)
+                        primary_column = constants.ALIAS_JOINER.join([pri_alias_name, ds.get("conf").get(constants.PRIMARY_KEY)])
+                        join_column = constants.ALIAS_JOINER.join([sec_alias_name, ds.get("conf").get(constants.JOIN_KEY)])
+                        # where_clause = ds.get("conf").get("where_clause")
+                        primary_df = pd.merge(
+                            primary_df,
+                            current_df,
+                            left_on=primary_column,
+                            right_on=join_column,
+                            how="left"
+                        )
+                    elif join_type == constants.JOIN_TYPE_SEQUENTIAL:
+                        primary_df = self._repeat_to_merge_sequentially(primary_df, current_df)
+                    elif join_type == constants.JOIN_TYPE_CROSS:
+                        primary_df = primary_df.merge(current_df, how="cross")
+                    elif join_type == constants.JOIN_TYPE_RANDOM:
+                        primary_df = self._shuffle_and_extend(primary_df, current_df)
+                    else:
+                        logger.error("Not implemented join_type")
 
-            # merge datasets into primary
-            for ds in dataset_list:
-                join_type = ds.get("conf").get("join_type")
-                current_df = ds.get("dataset")
-                if join_type == "column":
-                    sec_alias_name = ds.get("conf").get("alias")
-                    pri_alias_name = primary_config.get("alias")
-                    # convert the keys with alias prefix (table1.column1)
-                    primary_column = constants.ALIAS_JOINER.join([pri_alias_name, ds.get("conf").get("primary_key")])
-                    join_column = constants.ALIAS_JOINER.join([sec_alias_name, ds.get("conf").get("join_key")])
-                    # where_clause = ds.get("conf").get("where_clause")
-                    primary_df = pd.merge(
-                        primary_df,
-                        current_df,
-                        left_on=primary_column,
-                        right_on=join_column,
-                        how="left"
-                    )
-                elif join_type == "sequential":
-                    primary_df = self._repeat_to_merge_sequentially(primary_df, current_df)
-                elif join_type == "cross":
-                    primary_df = primary_df.merge(current_df, how="cross")
-                elif join_type == "random":
-                    primary_df = self._shuffle_and_extend(primary_df, current_df)
-                else:
-                    logger.error("Not implemented join_type")
-
-            # now convert dataframe to list of dict (full_data)
-            full_data = primary_df.to_dict(orient="records")
+                # now convert dataframe to list of dict (full_data)
+                full_data = primary_df.to_dict(orient="records")
         else:
             logger.error(f"Unsupported source config type.")
 

@@ -899,6 +899,8 @@ Extra parameters supported in the dataset configuration:
     * `cross`: Dataset with this join type, will multiple with primary dataset. One record from this dataset will merge horizontally with each primary record. So, if this dataset has 10 records and primary has 100, final dataset will be 1000 records.
     * `column`: This dataset type will use one column(`join_key`) and try to match with one column(`primary_key`) from primary dataset. This is same as RDBMS table join with foreign key.
   * Vertical stack or row based: This type of joining is possible if there are matching column is the dataset. The `join_key` should be `vstack` for all the dataset in the list. A dataset transformation(rename column) can be applied to match the column name with other dataset.
+    During vstack merged dataset will have common column names, alias name will not be prefixed in the column name. Use variable name directly in the prompt, without the alias prefix.
+    Sink configuration should be a single configuration if aliasing not done in the python code.
 
 <br>`primary_key`: Signifies the column of the primary dataset which should match with other dataset column `join_key` when join type is `column`
 <br>`join_key`: Signifies the column of other dataset which should match with primary dataset column `primary_key` when join type is `column`
