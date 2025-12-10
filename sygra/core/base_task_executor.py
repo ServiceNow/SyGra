@@ -456,6 +456,7 @@ class BaseTaskExecutor(ABC):
 
         full_data = []
         if isinstance(source_config, dict):
+            # if single dataset configured as dict - existing flow
             source_config_obj = DataSourceConfig.from_dict(source_config)
             reader = self._get_data_reader(source_config_obj)
             full_data = self._read_data(reader, source_config_obj)
@@ -465,7 +466,8 @@ class BaseTaskExecutor(ABC):
 
             # Apply transformations to the dataset
             full_data = self.apply_transforms(self.source_config, full_data)
-        else:
+        elif isinstance(source_config, list):
+            # if multiple dataset configured as list
             dataset_list = []
             primary_df = None
             primary_config = None
@@ -474,7 +476,7 @@ class BaseTaskExecutor(ABC):
                 sink_config = data_config.get("sink")
                 if not self.validate_data_config(source_config, sink_config):
                     logger.error("Invalid source or sink config.")
-                    return
+                    return []
 
             # Read primary and secondary dataset into dataframes
             for conf in source_config:
@@ -540,6 +542,8 @@ class BaseTaskExecutor(ABC):
 
             # now convert dataframe to list of dict (full_data)
             full_data = primary_df.to_dict(orient="records")
+        else:
+            logger.error(f"Unsupported source config type.")
 
         if isinstance(full_data, list):
             assert len(full_data) > 0, "No data found in the dataset"
@@ -876,7 +880,6 @@ class BaseTaskExecutor(ABC):
             )
             data_quality_processor.process(input_path=out_file, output_path=out_file)
 
-        # TODO : split the data into multiple dataset
         # Write to sink if configured
         if self.output_config and dataset_processor.is_valid_schema:
             try:

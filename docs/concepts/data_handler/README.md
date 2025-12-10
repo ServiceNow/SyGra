@@ -872,6 +872,36 @@ source = sygra.data.from_servicenow(
     auto_retry=True                     # Retry on 429 errors (default: True)
 )
 ```
+### Working with multiple dataset
+SyGra allow data generation engineer to connect multiple dataset, merge them into single and write into multiple dataset. This usecase can be very useful when working with multiple tables in ServiceNow instance.
+
+Let's look at the below scenario. We have ServiceNow instance with incident table contains 5 records, we want to generate many unique incident records with variety of domains.
+
+First we will configure two datasets: one to fetch incident records and apply transform(`CombineRecords`) to create single record with 5 fewshot example, lets call it ds1(alias name).
+Second, load domain and sub domain from a file(csv or json), lets call it ds2(alias name). Assume we have 100000 records, but we picked only 1000 records. We join the incident table(1 record) with file data as more columns.
+
+Here we can use a 'cross' type join, which multiplies 2 dataset and creates final dataset.
+The result dataset will contain columns or keys with prefix of alias name of the dataset, so column description will become ds1->description and domain will become ds2->domain.
+In the graph yaml file, we can use the variables along with alias prefix like `{ds2->domain}`.
+
+We also need to define multiple sink with alias name, in our case we only need one sink with alias name as ds1 as we are generating only incident records(ds1), however we can have multiple sink configuration to write data into various dataset.
+
+![MultipleDataset](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/multiple_dataset.png)
+
+Here is one example task with multiple dataset: `tasks/examples/multiple_dataset`
+
+Extra parameters supported in the dataset configuration:
+<br>`alias`: This variable gives a name to the dataset, so keys can be accessed in the prompt with alias prefix. The format to access in prompt `alias_name->column`
+<br>`join_type`: Supports various join type like `primary`, `cross`, `sequential`, `random`, `column`. 
+  * Horizontal or column based: In this join type, one dataset should have `join_type`: `primary`, where other dataset will be able to join in various ways:
+    * `sequential`: Dataset with this join type will sequentially pick one record and merge horizontally with one record from primary dataset. If the primary dataset is small, it will truncate and join, else it will rotate the record index.
+    * `random`: Dataset with this join type will pick one random record and merge horizontally with one record from primary dataset.
+    * `cross`: Dataset with this join type, will multiple with primary dataset. One record from this dataset will merge horizontally with each primary record. So, if this dataset has 10 records and primary has 100, final dataset will be 1000 records.
+    * `column`: This dataset type will use one column(`join_key`) and try to match with one column(`primary_key`) from primary dataset. This is same as RDBMS table join with foreign key.
+  * Vertical stack or row based: This type of joining is possible if there are matching column is the dataset. The `join_key` should be `vstack` for all the dataset in the list. A dataset transformation(rename column) can be applied to match the column name with other dataset.
+
+<br>`primary_key`: Signifies the column of the primary dataset which should match with other dataset column `join_key` when join type is `column`
+<br>`join_key`: Signifies the column of other dataset which should match with primary dataset column `primary_key` when join type is `column`
 
 ### Configuration Reference
 
