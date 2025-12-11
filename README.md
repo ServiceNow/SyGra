@@ -58,7 +58,7 @@ Pick how you want to use **SyGra**:
   <img src="https://img.shields.io/badge/Use%20as-Framework-4F46E5?style=for-the-badge" alt="Install as Framework">
 </a>
 &nbsp;&nbsp;
-<a href="https://servicenow.github.io/SyGra/sygra_library/">
+<a href="https://servicenow.github.io/SyGra/library/sygra_library/">
   <img src="https://img.shields.io/badge/Use%20as-Library-10B981?style=for-the-badge" alt="Install as Library">
 </a>
 
