@@ -71,6 +71,7 @@ ui = [
   "streamlit-autorefresh>=1.0,<2.0",
   "streamlit-flow-component>=1.6,<2.0",
   "watchdog>=6.0,<7.0",
+  "plotly>=6.5.0"
 ]
 dev = [
   "pytest>=8.4,<9.0",
