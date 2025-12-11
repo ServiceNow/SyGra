@@ -69,7 +69,7 @@ Pick how you want to use **SyGra**:
   (Start here: **[`Installation`](https://servicenow.github.io/SyGra/installation/)**)
 
 - **Library** → Import SyGra in your own Python app/notebook; call APIs directly.
-  (Start here: **[`SyGra Library`](https://servicenow.github.io/SyGra/sygra_library/)**)
+  (Start here: **[`SyGra Library`](https://servicenow.github.io/SyGra/library/sygra_library/)**)
 
 ![Note](https://img.shields.io/badge/Note-important-yellow)  
 > Before running the commands below, make sure to add your model configuration in `config/models.yaml` and set environment variables for credentials and chat templates as described in the [Model Configuration](https://servicenow.github.io/SyGra/getting_started/model_configuration/) docs.
@@ -90,7 +90,7 @@ uv run python main.py --task examples.glaive_code_assistant --num_records=1
 <details>
   <summary><strong>TL;DR – Library Setup</strong></summary>
 
-See full steps in <a href="https://servicenow.github.io/SyGra/sygra_library/">Sygra Library</a>.
+See full steps in <a href="https://servicenow.github.io/SyGra/library/sygra_library/">Sygra Library</a>.
 
 ```bash
 pip install sygra  
