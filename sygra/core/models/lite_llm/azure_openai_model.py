@@ -74,7 +74,7 @@ class CustomAzureOpenAI(LiteLLMBase):
         elif should_route_to_image(self.model_config):
             return await self._generate_image(input, model_params)
         else:
-            return await self._generate_text(input, model_params, **kwargs)
+            return await self._generate_text(input, model_params)
 
     async def _generate_speech(
         self, input: ChatPromptValue, model_params: ModelParams, **kwargs: Any
