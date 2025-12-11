@@ -890,9 +890,9 @@ We also need to define multiple sink with alias name, in our case we only need o
 
 Here is one example task with multiple dataset: `tasks/examples/multiple_dataset`
 
-Extra parameters supported in the dataset configuration:
-<br>`alias`: This variable gives a name to the dataset, so keys can be accessed in the prompt with alias prefix. The format to access in prompt `alias_name->column`
-<br>`join_type`: Supports various join type like `primary`, `cross`, `sequential`, `random`, `column`. 
+Extra parameters supported for dataset configuration as a list:
+* `alias`: This variable gives a name to the dataset, so keys can be accessed in the prompt with alias prefix. The format to access in prompt `alias_name->column`
+* `join_type`: Supports various join type like `primary`, `cross`, `sequential`, `random`, `column`. 
   * Horizontal or column based: In this join type, one dataset should have `join_type`: `primary`, where other dataset will be able to join in various ways:
     * `sequential`: Dataset with this join type will sequentially pick one record and merge horizontally with one record from primary dataset. If the primary dataset is small, it will truncate and join, else it will rotate the record index.
     * `random`: Dataset with this join type will pick one random record and merge horizontally with one record from primary dataset.
@@ -902,8 +902,8 @@ Extra parameters supported in the dataset configuration:
     During vstack merged dataset will have common column names, alias name will not be prefixed in the column name. Use variable name directly in the prompt, without the alias prefix.
     Sink configuration should be a single configuration if aliasing not done in the python code.
 
-<br>`primary_key`: Signifies the column of the primary dataset which should match with other dataset column `join_key` when join type is `column`
-<br>`join_key`: Signifies the column of other dataset which should match with primary dataset column `primary_key` when join type is `column`
+* `primary_key`: Signifies the column of the primary dataset which should match with other dataset column `join_key` when join type is `column`
+* `join_key`: Signifies the column of other dataset which should match with primary dataset column `primary_key` when join type is `column`
 
 ### Configuration Reference
 

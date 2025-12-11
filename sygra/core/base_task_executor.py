@@ -375,7 +375,7 @@ class BaseTaskExecutor(ABC):
     # validation if list of data config set in source or sink
     # rule 1: alias and join_type is mandatory if source/sink config is a list
     # rule 2: all dataset should be vstack join type, vstack cant mix with other horizontal concat
-    def validate_data_config(self, source_config: list, sink_config: list) -> None:
+    def validate_data_config(self, source_config: list, sink_config: list) -> bool:
         alias = set()
         join_type_list = set()
         is_vstack = False
@@ -477,7 +477,7 @@ class BaseTaskExecutor(ABC):
             self._capture_dataset_metadata(full_data, reader)
 
             # Apply transformations to the dataset
-            full_data = self.apply_transforms(self.source_config, full_data)
+            full_data = self.apply_transforms(source_config_obj, full_data)
         elif isinstance(source_config, list):
             # if multiple dataset configured as list
             dataset_list = []

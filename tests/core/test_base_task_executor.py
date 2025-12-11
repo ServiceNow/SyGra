@@ -621,3 +621,56 @@ def test_output_sink_jsonl_reading(
     ):
         dummy_instance.execute()
         mock_write.assert_called_once()
+
+def test_validate_data_config_rule1_success_flow(dummy_instance):
+    # success flow in source and sink
+    src_config_list = [{"alias": "ds1", "join_type": "primary", "type": "servicenow", "table": "incident", "limit": 10},
+                       {"alias": "ds2", "join_type": "sequential", "type": "servicenow", "table": "request", "limit": 10},
+                       {"alias": "ds3", "join_type": "random", "type": "servicenow", "table": "problem", "limit": 10}]
+    sink_config_list = [{"alias": "ds1", "type": "servicenow", "table": "incident", "operation": "insert"}]
+    validated = dummy_instance.validate_data_config(src_config_list, sink_config_list)
+    assert validated == True
+
+def test_validate_data_config_rule1_missing_join_type(dummy_instance):
+    # missing join type in source
+    src_config_list = [{"alias": "ds1", "join_type": "primary", "type": "servicenow", "table": "incident", "limit": 10},
+                       {"alias": "ds2", "type": "servicenow", "table": "request", "limit": 10},
+                       {"alias": "ds3", "join_type": "random", "type": "servicenow", "table": "problem", "limit": 10}]
+    sink_config_list = [{"alias": "ds1", "type": "servicenow", "table": "incident", "operation": "insert"}]
+    validated = dummy_instance.validate_data_config(src_config_list, sink_config_list)
+    assert validated == False
+
+def test_validate_data_config_rule1_missing_alias(dummy_instance):
+    # missing alias in source
+    src_config_list = [{"alias": "ds1", "join_type": "primary", "type": "servicenow", "table": "incident", "limit": 10},
+                       {"join_type": "sequential", "type": "servicenow", "table": "request", "limit": 10},
+                       {"alias": "ds3", "join_type": "random", "type": "servicenow", "table": "problem", "limit": 10}]
+    sink_config_list = [{"alias": "ds1", "type": "servicenow", "table": "incident", "operation": "insert"}]
+    validated = dummy_instance.validate_data_config(src_config_list, sink_config_list)
+    assert validated == False
+
+    # missing alias in sink
+    src_config_list = [{"alias": "ds1", "join_type": "primary", "type": "servicenow", "table": "incident", "limit": 10},
+                       {"alias": "ds2", "join_type": "sequential", "type": "servicenow", "table": "request", "limit": 10},
+                       {"alias": "ds3", "join_type": "random", "type": "servicenow", "table": "problem", "limit": 10}]
+    sink_config_list = [{"type": "servicenow", "table": "incident", "operation": "insert"}]
+    validated = dummy_instance.validate_data_config(src_config_list, sink_config_list)
+    assert validated == False
+
+def test_validate_data_config_rule2_vstack_success(dummy_instance):
+    # all source should be vstack
+    src_config_list = [{"alias": "ds1", "join_type": "vstack", "type": "servicenow", "table": "incident", "limit": 10},
+                       {"alias": "ds2", "join_type": "vstack", "type": "servicenow", "table": "request", "limit": 10},
+                       {"alias": "ds3", "join_type": "vstack", "type": "servicenow", "table": "problem", "limit": 10}]
+    sink_config_list = [{"alias": "ds1", "type": "servicenow", "table": "incident", "operation": "insert"}]
+    validated = dummy_instance.validate_data_config(src_config_list, sink_config_list)
+    assert validated == True
+
+def test_validate_data_config_rule2_vstack_failure(dummy_instance):
+    # some source are non vstack
+    src_config_list = [{"alias": "ds1", "join_type": "vstack", "type": "servicenow", "table": "incident", "limit": 10},
+                       {"alias": "ds2", "join_type": "primary", "type": "servicenow", "table": "request", "limit": 10},
+                       {"alias": "ds3", "join_type": "random", "type": "servicenow", "table": "problem", "limit": 10}]
+    sink_config_list = [{"alias": "ds1", "type": "servicenow", "table": "incident", "operation": "insert"}]
+    validated = dummy_instance.validate_data_config(src_config_list, sink_config_list)
+    assert validated == False
