@@ -9,6 +9,7 @@ import json
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
 import pytest
+import pandas as pd
 
 from sygra.core.base_task_executor import BaseTaskExecutor
 from sygra.core.dataset.dataset_config import OutputType
@@ -674,3 +675,37 @@ def test_validate_data_config_rule2_vstack_failure(dummy_instance):
     sink_config_list = [{"alias": "ds1", "type": "servicenow", "table": "incident", "operation": "insert"}]
     validated = dummy_instance.validate_data_config(src_config_list, sink_config_list)
     assert validated == False
+
+def test_rename_dataframe(dummy_instance):
+    test_df = pd.DataFrame([{"roll":1, "name": "John", "marks": 123.5}, {"roll":2, "name": "Johny", "marks": 152.5}])
+    final_df = dummy_instance._rename_dataframe(test_df, "student")
+    new_columns = list(final_df.columns)
+    assert "student->roll" in new_columns and  "student->name" in new_columns and  "student->marks" in new_columns
+
+def test_repeat_to_merge_sequentially(dummy_instance):
+    # horizontal merge with different columns
+    # test 1 : both df has same rows
+    primary_df = pd.DataFrame([{"roll": 1, "name": "John", "marks": 123.5}, {"roll": 2, "name": "Johny", "marks": 152.5}])
+    secondary_df = pd.DataFrame([{"class": 5, "sports": "cricket"}, {"class": 6, "sports": "football"}])
+    merged_df = dummy_instance._repeat_to_merge_sequentially(primary_df, secondary_df)
+    assert len(merged_df) == 2 and merged_df.iloc[0]["class"] == 5 and merged_df.iloc[1]["class"] == 6
+
+    # test 2 : secondary has less rows (need rotation with same data)
+    primary_df = pd.DataFrame([{"roll": 1, "name": "John", "marks": 123.5}, {"roll": 2, "name": "Johny", "marks": 152.5}])
+    secondary_df = pd.DataFrame([{"class": 5, "sports": "cricket"}])
+    merged_df = dummy_instance._repeat_to_merge_sequentially(primary_df, secondary_df)
+    assert len(merged_df) == 2 and merged_df.iloc[0]["class"] == 5 and merged_df.iloc[1]["class"] == 5
+
+    # test 3 : secondary has more rows (truncation needed)
+    primary_df = pd.DataFrame([{"roll": 1, "name": "John", "marks": 123.5}, {"roll": 2, "name": "Johny", "marks": 152.5}])
+    secondary_df = pd.DataFrame([{"class": 5, "sports": "cricket"}, {"class": 6, "sports": "football"}, {"class": 7, "sports": "tennis"}])
+    merged_df = dummy_instance._repeat_to_merge_sequentially(primary_df, secondary_df)
+    assert len(merged_df) == 2 and merged_df.iloc[0]["class"] == 5 and merged_df.iloc[1]["class"] == 6
+
+def test_shuffle_and_extend(dummy_instance):
+    # random merge from secondary by keeping primary rows same
+    primary_df = pd.DataFrame([{"roll": 1, "name": "John", "marks": 123.5}, {"roll": 2, "name": "Johny", "marks": 152.5}])
+    secondary_df = pd.DataFrame([{"class": 5, "sports": "cricket"}, {"class": 6, "sports": "football"}, {"class": 7, "sports": "tennis"}])
+    merged_df = dummy_instance._shuffle_and_extend(primary_df, secondary_df)
+    # 2 records but new column can have value from any record(secondary)
+    assert len(merged_df) == 2 and (merged_df.iloc[0]["class"] == 5 or merged_df.iloc[0]["class"] == 6 or merged_df.iloc[0]["class"] == 7)
