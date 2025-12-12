@@ -7,7 +7,6 @@ from typing import Any, Tuple, Union, cast
 
 import numpy as np
 import requests  # type: ignore[import-untyped]
-from torchcodec.decoders import AudioDecoder  # type: ignore[import-untyped]
 
 try:
     import soundfile as sf  # type: ignore[import-untyped]
@@ -53,8 +52,6 @@ def is_hf_audio_dict(val: Any) -> bool:
     ):
         return True
     elif isinstance(val, dict) and "bytes" in val and isinstance(val.get("path"), str):
-        return True
-    elif isinstance(val, AudioDecoder):
         return True
     else:
         return False

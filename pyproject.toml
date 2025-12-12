@@ -28,7 +28,7 @@ classifiers = [
 keywords = ["llm", "fine-tuning", "data generation", "synthetic data", "nlp", "sft", "dpo", "data quality", "metadata tagging", "graph",]
 dependencies = [
   "aiohttp>=3.12,<4.0",
-  "datasets>=4.0,<5.0",
+  "datasets<=4.0.0",
   "httpx>=0.28,<0.29",
   "httpx-sse>=0.4,<0.5",
   "huggingface-hub>=0.34,<1.0",
@@ -51,7 +51,7 @@ dependencies = [
   "langchain-openai>=0.3,<1.0",
   "ollama>=0.5,<1.0",
   "torch>=2.8,<3.0",
-  "torchcodec>=0.8,<1.0",
+#  "torchcodec<0.7",
   "mlxtend>=0.23,<1.0",
   "pandarallel>=1.6,<2.0",
   "sentence-transformers>=5.1,<6.0",
