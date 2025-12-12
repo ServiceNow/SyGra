@@ -57,7 +57,11 @@ nav:
       - Create a Synthetic Datagen Pipeline: getting_started/create_new_pipeline.md
       - Create a task with UI: getting_started/create_task_ui.md
   - Concepts:
-      - Data Handler: concepts/data_handler/README.md
+      - Data Handler:
+          - Overview: concepts/data_handler/README.md
+          - File System Handler: concepts/data_handler/file_system.md
+          - HuggingFace Handler: concepts/data_handler/huggingface.md
+          - ServiceNow Handler: concepts/data_handler/servicenow.md
       - Data Mapper: concepts/data_mapper/README.md
       - Data Quality: concepts/data_quality/README.md
       - Multimodal:

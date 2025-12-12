@@ -8,6 +8,18 @@ The `config` folder contains the main configuration file: `models.yaml`. You can
 > **Note:**  
 > For Triton, the pre-processing and post-processing configuration (`payload_json` & `response_key`) can be defined in the [`payload_cfg.json`](https://github.com/ServiceNow/SyGra/blob/main/sygra/config/payload_cfg.json) file. `payload_key` in the `payload_cfg.json` file should be added to the `models.yaml` file for the corresponding Triton model. If the payload key is not defined in `models.yaml`, the default payload format will be used.
 
+## Model Clients
+
+SyGra doesn't support inference within the framework, but it supports various clients, which helps connecting with different kind of servers.
+For example, openai client is being supported by Huggingface TGI, vLLM server and Azure services. However, model configuration does not allow to change clients, but it can be configured in models code.
+
+<kbd> ![ModelClient](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/component_model_client.png) </kbd>
+
+### Integration with [LiteLLM](https://github.com/BerriAI/litellm)
+SyGra now integrates with LiteLLM—unlocking more flexibility, expanded model compatibility, and seamless end-to-end integrations.
+
+---
+
 ### Environment Variables for Credentials and Chat Templates
 
 All sensitive connection information such as model URL and tokens **must be set via environment variables** and not stored in the config file.

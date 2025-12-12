@@ -241,6 +241,11 @@ This defines the graph level properties, it can be a common properties but contr
 
 ### Nodes
 
+This module is responsible for building various kind of nodes like LLM node, Multi-LLM node, Lambda node, Agent node etc.
+Each node is defined for various task, for example multi-llm node is used to load-balance the data among various inference point running same model.
+
+<kbd> ![Nodes](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/component_nodes.png) </kbd>
+
 Nodes represent the processing steps in your pipeline. SyGra supports multiple types of nodes, such as LLM, multi_llm, weighted_sampler, lambda, agent, subgraph, and more.
 
 All node types support these common parameters:
@@ -253,6 +258,11 @@ All node types support these common parameters:
 **For detailed documentation and configuration options for each node type, see [nodes/](https://github.com/ServiceNow/SyGra/tree/main/docs/concepts/nodes).**
 
 ### Edges
+
+Once node are built, we can connect them with simple edge or conditional edge.
+Conditional edge uses python code to decide the path. Conditional edge helps implimenting if-else flow as well as loops in the graph.
+
+<kbd> ![Edges](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/component_edges.png) </kbd>
 
 Edges define the flow of execution between nodes.
 
