@@ -51,6 +51,7 @@ dependencies = [
   "langchain-openai>=0.3,<1.0",
   "ollama>=0.5,<1.0",
   "torch>=2.8,<3.0",
+  "torchcodec>=0.8,<1.0",
   "mlxtend>=0.23,<1.0",
   "pandarallel>=1.6,<2.0",
   "sentence-transformers>=5.1,<6.0",

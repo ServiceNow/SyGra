@@ -7,6 +7,7 @@ from typing import Any, Tuple, Union, cast
 
 import numpy as np
 import requests  # type: ignore[import-untyped]
+from torchcodec.decoders import AudioDecoder
 
 try:
     import soundfile as sf  # type: ignore[import-untyped]
@@ -45,11 +46,22 @@ def is_hf_audio_dict(val: Any) -> bool:
     Returns:
         bool: True if the value is a HuggingFace audio dict, False otherwise.
     """
-    return (
+    if (
         isinstance(val, dict)
         and isinstance(val.get("array"), np.ndarray)
         and isinstance(val.get("sampling_rate"), (int, float))
-    )
+    ):
+        return True
+    elif (
+        isinstance(val, dict)
+        and "bytes" in val
+        and isinstance(val.get("path"), str)
+    ):
+        return True
+    elif isinstance(val, AudioDecoder):
+        return True
+    else:
+        return False
 
 
 def is_raw_audio_bytes(val: Any) -> bool:
@@ -131,9 +143,28 @@ def load_audio(data: Any, timeout: float = 5.0) -> Union[bytes, None]:
 
         # 2. HuggingFace audio dict
         if is_hf_audio_dict(data):
-            buf = io.BytesIO()
-            sf.write(buf, data["array"], int(data["sampling_rate"]), format="WAV")
-            return buf.getvalue()
+            # Handle dict with "array" and "sampling_rate" fields
+            if "array" in data and "sampling_rate" in data:
+                buf = io.BytesIO()
+                sf.write(buf, data["array"], int(data["sampling_rate"]), format="WAV")
+                return buf.getvalue()
+            
+            # Handle dict with "bytes" and "path" fields (HF Audio feature)
+            elif "bytes" in data and "path" in data:
+                # If bytes is available, use it directly
+                if data["bytes"] is not None:
+                    return bytes(data["bytes"])
+                # Otherwise, load from path if it exists
+                elif data["path"] and os.path.exists(data["path"]):
+                    try:
+                        with open(data["path"], "rb") as f:
+                            return f.read()
+                    except Exception as e:
+                        logger.warning(f"Failed to read audio from path {data['path']}: {e}")
+                        return None
+                else:
+                    logger.warning(f"Audio path does not exist: {data.get('path')}")
+                    return None
 
         # 3. Remote URL
         if isinstance(data, str) and data.startswith(("http://", "https://")):

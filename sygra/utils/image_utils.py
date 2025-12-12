@@ -78,7 +78,7 @@ def get_image_fields(record: dict[str, Any]) -> list[str]:
                 image_fields.add(key)
 
     if not image_fields:
-        logger.warning("No image fields found in the record.")
+        logger.debug("No image fields found in the record.")
     return list(image_fields)
 
 
