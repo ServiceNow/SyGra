@@ -536,6 +536,8 @@ class BaseTaskExecutor(ABC):
         if isinstance(source_config, dict):
             # if single dataset configured as dict - existing flow
             source_config_obj = DataSourceConfig.from_dict(source_config)
+            # Store source config for metadata collection
+            self.source_config = source_config_obj
             reader = self._get_data_reader(source_config_obj)
             full_data = self._read_data(reader, source_config_obj)
 
