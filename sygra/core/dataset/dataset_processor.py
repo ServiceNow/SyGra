@@ -303,8 +303,7 @@ class DatasetProcessor:
         # Process multimodal data: save base64 data URLs to files and replace with file paths
         # Skip this for HuggingFace output as it expects data URLs, not file paths
         skip_multimodal_processing = (
-            self.output_config is not None
-            and self.output_config.type == OutputType.HUGGINGFACE
+            self.output_config is not None and self.output_config.type == OutputType.HUGGINGFACE
         )
 
         if not skip_multimodal_processing:

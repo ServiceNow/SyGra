@@ -52,11 +52,7 @@ def is_hf_audio_dict(val: Any) -> bool:
         and isinstance(val.get("sampling_rate"), (int, float))
     ):
         return True
-    elif (
-        isinstance(val, dict)
-        and "bytes" in val
-        and isinstance(val.get("path"), str)
-    ):
+    elif isinstance(val, dict) and "bytes" in val and isinstance(val.get("path"), str):
         return True
     elif isinstance(val, AudioDecoder):
         return True
@@ -148,7 +144,7 @@ def load_audio(data: Any, timeout: float = 5.0) -> Union[bytes, None]:
                 buf = io.BytesIO()
                 sf.write(buf, data["array"], int(data["sampling_rate"]), format="WAV")
                 return buf.getvalue()
-            
+
             # Handle dict with "bytes" and "path" fields (HF Audio feature)
             elif "bytes" in data and "path" in data:
                 # If bytes is available, use it directly
