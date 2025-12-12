@@ -12,7 +12,7 @@ from PIL import Image
 from sygra.logger.logger_config import logger
 
 # Curated list of common user-facing image file extensions
-COMMON_IMAGE_EXTENSIONS = (
+SUPPORTED_IMAGE_EXTENSIONS = (
     ".jpg",
     ".jpeg",
     ".png",
@@ -112,6 +112,32 @@ def is_valid_image_bytes(data: bytes) -> bool:
         return False
 
 
+def is_image_url(val: str) -> bool:
+    """
+    Check if a string is an HTTP/HTTPS URL pointing to an image file.
+
+    Args:
+        val (str): The string to check.
+
+    Returns:
+        bool: True if the string is an image URL, False otherwise.
+    """
+    return val.startswith(("http://", "https://")) and val.lower().endswith(SUPPORTED_IMAGE_EXTENSIONS)
+
+
+def is_image_file_path(val: str) -> bool:
+    """
+    Check if a string is a local file path with an image extension.
+
+    Args:
+        val (str): The string to check.
+
+    Returns:
+        bool: True if the string has an image file extension, False otherwise.
+    """
+    return val.lower().endswith(SUPPORTED_IMAGE_EXTENSIONS)
+
+
 def is_image_like(val: Any) -> bool:
     """
     Check if a value looks like valid image content.
@@ -129,11 +155,7 @@ def is_image_like(val: Any) -> bool:
     elif isinstance(val, bytes):
         return is_valid_image_bytes(val)
     elif isinstance(val, str):
-        return (
-            val.startswith("http") and val.lower().endswith(COMMON_IMAGE_EXTENSIONS)
-        ) or val.lower().endswith(  # URL check
-            COMMON_IMAGE_EXTENSIONS
-        )  # Local file check
+        return is_image_url(val) or is_image_file_path(val)
     return False
 
 

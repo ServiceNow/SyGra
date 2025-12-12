@@ -11,7 +11,6 @@ import datasets  # type: ignore[import-untyped]
 import tqdm  # type: ignore[import-untyped]
 from langgraph.graph.state import CompiledStateGraph
 
-from sygra.core.dataset.dataset_config import OutputConfig, OutputType
 from sygra.core.graph.graph_config import GraphConfig
 from sygra.core.resumable_execution import ResumableExecutionManager
 from sygra.data_mapper.mapper import DataMapper
@@ -37,7 +36,6 @@ class DatasetProcessor:
         output_record_generator: Optional[Callable] = None,
         resumable: bool = False,
         task_name: Optional[str] = None,
-        output_config: Optional[OutputConfig] = None,
     ):
         assert (
             checkpoint_interval % batch_size == 0
@@ -53,7 +51,6 @@ class DatasetProcessor:
         self.debug = debug
         self.input_record_generator = input_record_generator
         self.output_record_generator = output_record_generator
-        self.output_config = output_config
         self.is_valid_schema = True
 
         # initialize the state variables
@@ -301,24 +298,14 @@ class DatasetProcessor:
         )
 
         # Process multimodal data: save base64 data URLs to files and replace with file paths
-        # Skip this for HuggingFace output as it expects data URLs, not file paths
-        skip_multimodal_processing = (
-            self.output_config is not None and self.output_config.type == OutputType.HUGGINGFACE
-        )
-
-        if not skip_multimodal_processing:
-            try:
-                multimodal_output_dir = ".".join(self.output_file.split(".")[:-1])
-                output_records = multimodal_processor.process_batch_multimodal_data(
-                    output_records, Path(multimodal_output_dir)
-                )
-            except Exception as e:
-                logger.warning(
-                    f"Failed to process multimodal data: {e}. Continuing with original records."
-                )
-        else:
-            logger.info(
-                "Skipping multimodal processing for HuggingFace output - preserving data URLs"
+        try:
+            multimodal_output_dir = ".".join(self.output_file.split(".")[:-1])
+            output_records = multimodal_processor.process_batch_multimodal_data(
+                output_records, Path(multimodal_output_dir)
+            )
+        except Exception as e:
+            logger.warning(
+                f"Failed to process multimodal data: {e}. Continuing with original records."
             )
 
         # Handle intermediate writing if needed

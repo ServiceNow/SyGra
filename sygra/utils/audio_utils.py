@@ -7,7 +7,7 @@ from typing import Any, Tuple, Union, cast
 
 import numpy as np
 import requests  # type: ignore[import-untyped]
-from torchcodec.decoders import AudioDecoder
+from torchcodec.decoders._audio_decoder import AudioDecoder
 
 try:
     import soundfile as sf  # type: ignore[import-untyped]
@@ -73,6 +73,32 @@ def is_raw_audio_bytes(val: Any) -> bool:
     return isinstance(val, (bytes, bytearray))
 
 
+def is_audio_url(val: str) -> bool:
+    """
+    Check if a string is an HTTP/HTTPS URL pointing to an audio file.
+
+    Args:
+        val (str): The string to check.
+
+    Returns:
+        bool: True if the string is an audio URL, False otherwise.
+    """
+    return val.lower().startswith(("http://", "https://")) and val.lower().endswith(SUPPORTED_AUDIO_EXTENSIONS)
+
+
+def is_audio_file_path(val: str) -> bool:
+    """
+    Check if a string is a local file path with an audio extension that exists.
+
+    Args:
+        val (str): The string to check.
+
+    Returns:
+        bool: True if the string is an existing audio file path, False otherwise.
+    """
+    return os.path.exists(val) and val.lower().endswith(SUPPORTED_AUDIO_EXTENSIONS)
+
+
 def is_audio_path_or_url(val: Any) -> bool:
     """
     Check if a value is a local file path or a URL pointing to a supported audio file.
@@ -86,14 +112,7 @@ def is_audio_path_or_url(val: Any) -> bool:
     if not isinstance(val, str):
         return False
 
-    val_lower = val.lower()
-
-    is_url = val_lower.startswith(("http://", "https://")) and val_lower.endswith(
-        SUPPORTED_AUDIO_EXTENSIONS
-    )
-    is_local = os.path.exists(val) and val_lower.endswith(SUPPORTED_AUDIO_EXTENSIONS)
-
-    return is_url or is_local
+    return is_audio_url(val) or is_audio_file_path(val)
 
 
 def is_audio_like(val: Any) -> bool:
