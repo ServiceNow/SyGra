@@ -83,6 +83,10 @@ class DataSourceConfig(BaseModel):
     - Config values for credentials are optional overrides
 
     Attributes:
+        alias (Optional[str]): Optional alias for this dataset
+        join_type (Optional[str]): Optional join type for this dataset
+        primary_key (Optional[str]): Optional primary key from primary dataset, where join_type is column based
+        join_key (Optional[str]): Optional join key for this dataset, where join_type is column based
         type (DataSourceType): Type of data source
         repo_id (Optional[str]): HuggingFace repository ID
         config_name (Optional[str]): HuggingFace dataset configuration name
@@ -98,6 +102,11 @@ class DataSourceConfig(BaseModel):
         fields (Optional[list[str]]): Fields to retrieve from ServiceNow
         transformations (Optional[list[TransformConfig]]): List of transformations to apply
     """
+
+    alias: Optional[str] = None
+    join_type: Optional[str] = None
+    primary_key: Optional[str] = None
+    join_key: Optional[str] = None
 
     type: DataSourceType
 
@@ -213,6 +222,7 @@ class OutputConfig(BaseModel):
     - Config values for credentials are optional overrides
 
     Attributes:
+        alias (str): Alias for output configuration
         type (OutputType): Type of output
         repo_id (Optional[str]): HuggingFace repository ID
         config_name (Optional[str]): HuggingFace dataset configuration name
@@ -228,6 +238,7 @@ class OutputConfig(BaseModel):
         key_field (str): Field to match for update/upsert operations
     """
 
+    alias: Optional[str] = None
     type: Optional[OutputType] = None
     repo_id: Optional[str] = None
     config_name: Optional[str] = None
@@ -264,6 +275,7 @@ class OutputConfig(BaseModel):
             OutputConfig: Validated configuration object
         """
         return cls(
+            alias=config.get("alias"),
             type=OutputType(config.get("type", OutputType.NONE)),
             repo_id=config.get("repo_id"),
             config_name=config.get("config_name"),

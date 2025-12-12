@@ -299,8 +299,31 @@ class NodeMetrics:
 
 
 @dataclass
+class DataSourceInfo:
+    """Metadata about a single data source (used in multi-dataset scenarios)."""
+
+    alias: str
+    source_type: str = "unknown"
+    source_path: Optional[str] = None
+    dataset_version: Optional[str] = None
+    dataset_hash: Optional[str] = None
+    join_type: Optional[str] = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert to dictionary."""
+        return {
+            "alias": self.alias,
+            "source_type": self.source_type,
+            "source_path": self.source_path,
+            "dataset_version": self.dataset_version,
+            "dataset_hash": self.dataset_hash,
+            "join_type": self.join_type,
+        }
+
+
+@dataclass
 class DatasetMetadata:
-    """Metadata about the dataset used."""
+    """Metadata about the dataset(s) used."""
 
     source_type: str = "unknown"
     source_path: Optional[str] = None
@@ -308,10 +331,31 @@ class DatasetMetadata:
     start_index: int = 0
     dataset_version: Optional[str] = None
     dataset_hash: Optional[str] = None
+    # For multi-dataset scenarios: stores metadata per alias
+    sources: dict[str, DataSourceInfo] = field(default_factory=dict)
+
+    def add_source(
+        self,
+        alias: str,
+        source_type: str,
+        source_path: Optional[str] = None,
+        dataset_version: Optional[str] = None,
+        dataset_hash: Optional[str] = None,
+        join_type: Optional[str] = None,
+    ) -> None:
+        """Add or update metadata for a data source by alias."""
+        self.sources[alias] = DataSourceInfo(
+            alias=alias,
+            source_type=source_type,
+            source_path=source_path,
+            dataset_version=dataset_version,
+            dataset_hash=dataset_hash,
+            join_type=join_type,
+        )
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
-        return {
+        result: dict[str, Any] = {
             "source_type": self.source_type,
             "source_path": self.source_path,
             "num_records_processed": self.num_records_processed,
@@ -319,6 +363,10 @@ class DatasetMetadata:
             "dataset_version": self.dataset_version,
             "dataset_hash": self.dataset_hash,
         }
+        # Include multi-source metadata if present
+        if self.sources:
+            result["sources"] = {alias: info.to_dict() for alias, info in self.sources.items()}
+        return result
 
 
 @dataclass
@@ -572,6 +620,41 @@ class MetadataCollector:
             self.dataset_metadata.start_index = start_index
             self.dataset_metadata.dataset_version = dataset_version
             self.dataset_metadata.dataset_hash = dataset_hash
+
+    def add_dataset_source(
+        self,
+        alias: str,
+        source_type: str,
+        source_path: Optional[str] = None,
+        dataset_version: Optional[str] = None,
+        dataset_hash: Optional[str] = None,
+        join_type: Optional[str] = None,
+    ):
+        """Add metadata for a data source in multi-dataset scenarios.
+
+        Args:
+            alias: Unique identifier for this data source
+            source_type: Type of data source (e.g., 'hf', 'disk', 'servicenow')
+            source_path: Path or identifier for the data source
+            dataset_version: Version of the dataset
+            dataset_hash: Hash/fingerprint of the dataset
+            join_type: How this dataset is joined (e.g., 'primary', 'sequential', 'vstack')
+        """
+        if not self._enabled:
+            return
+
+        with self._lock:
+            self.dataset_metadata.add_source(
+                alias=alias,
+                source_type=source_type,
+                source_path=source_path,
+                dataset_version=dataset_version,
+                dataset_hash=dataset_hash,
+                join_type=join_type,
+            )
+            logger.debug(
+                f"Added dataset source metadata: alias={alias}, type={source_type}, path={source_path}"
+            )
 
     def record_model_request(
         self,

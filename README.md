@@ -119,6 +119,8 @@ Data handler is used for reading and writing the data. Currently, it supports fo
  - Huggingface handler: When reading data from huggingface, it can read the whole dataset and process, or it can stream chunk of data.
  - ServiceNow Handler to connect a ServiceNow instance : Currently it reads or writes into a single table per dataset configuration.
 
+The graph configuration supports source and sink configuration, which can be a single configuration or a list. When it is a list of dataset configuration, it allows merging the dataset as column based and row based. Access the dataset keys or columns with alias prefix in the prompt, and finally write into various output dataset in a single flow.
+
 <kbd> ![DataHandler](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/component_data_handler.png) </kbd>
 
 ### Graph Node Module
