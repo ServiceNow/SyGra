@@ -1,5 +1,12 @@
 # Data Handlers
 
+Data handler is used for reading and writing the data. Currently, it supports following handlers:
+
+ - File handler with various file types like JSON, JSONL, CSV, Parquet, Folder with supported type.
+ - Huggingface handler: When reading data from huggingface, it can read the whole dataset and process, or it can stream chunk of data.
+ - ServiceNow Handler to connect a ServiceNow instance : Currently it reads or writes into a single table per dataset configuration.
+
+<kbd> ![DataHandler](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/component_data_handler.png) </kbd>
 
 ## Components
 
