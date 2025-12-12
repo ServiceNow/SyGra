@@ -20,7 +20,7 @@ from huggingface_hub import CommitOperationAdd, DatasetCard, DatasetCardData, Hf
 from sygra.core.dataset.data_handler_base import DataHandler
 from sygra.core.dataset.dataset_config import DataSourceConfig, OutputConfig
 from sygra.logger.logger_config import logger
-from sygra.utils import image_utils, audio_utils
+from sygra.utils import audio_utils, image_utils
 
 hf_token = os.getenv("SYGRA_HF_TOKEN")
 
@@ -151,12 +151,12 @@ class HuggingFaceHandler(DataHandler):
 
     def _detect_media_columns(self, df: pd.DataFrame) -> dict[str, list[tuple[str, bool]]]:
         """Detect which columns contain multimodal data (images or audio).
-        
+
         Uses utility functions from audio_utils and image_utils for consistent detection.
-        
+
         Args:
             df: Pandas DataFrame to analyze
-            
+
         Returns:
             Dictionary with keys: image_str, image_seq, audio_str, audio_seq
             Each value is a list of tuples (column_name, is_file_path) where:

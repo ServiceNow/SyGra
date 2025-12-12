@@ -122,7 +122,9 @@ def is_image_url(val: str) -> bool:
     Returns:
         bool: True if the string is an image URL, False otherwise.
     """
-    return val.startswith(("http://", "https://")) and val.lower().endswith(SUPPORTED_IMAGE_EXTENSIONS)
+    return val.startswith(("http://", "https://")) and val.lower().endswith(
+        SUPPORTED_IMAGE_EXTENSIONS
+    )
 
 
 def is_image_file_path(val: str) -> bool:

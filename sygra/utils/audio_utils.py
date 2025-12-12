@@ -7,7 +7,7 @@ from typing import Any, Tuple, Union, cast
 
 import numpy as np
 import requests  # type: ignore[import-untyped]
-from torchcodec.decoders._audio_decoder import AudioDecoder
+from torchcodec.decoders import AudioDecoder  # type: ignore[import-untyped]
 
 try:
     import soundfile as sf  # type: ignore[import-untyped]
@@ -83,7 +83,9 @@ def is_audio_url(val: str) -> bool:
     Returns:
         bool: True if the string is an audio URL, False otherwise.
     """
-    return val.lower().startswith(("http://", "https://")) and val.lower().endswith(SUPPORTED_AUDIO_EXTENSIONS)
+    return val.lower().startswith(("http://", "https://")) and val.lower().endswith(
+        SUPPORTED_AUDIO_EXTENSIONS
+    )
 
 
 def is_audio_file_path(val: str) -> bool:
