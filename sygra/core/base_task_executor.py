@@ -3,13 +3,13 @@ import copy
 import hashlib
 import json
 import os
-import pandas as pd
 from abc import ABC
 from datetime import datetime
 from typing import Any, Optional, Union, cast
 
 import datasets  # type: ignore[import-untyped]
 import numpy as np
+import pandas as pd  # type: ignore[import-untyped]
 from langgraph.graph import StateGraph
 from PIL import Image
 
@@ -32,6 +32,7 @@ from sygra.processors.output_record_generator import BaseOutputGenerator
 from sygra.tools.toolkits.data_quality.processor import DataQuality
 from sygra.utils import constants, utils
 
+
 class BaseTaskExecutor(ABC):
     def __init__(self, args: Any, graph_config_dict: Optional[dict] = None):
         self.args = args
@@ -39,7 +40,10 @@ class BaseTaskExecutor(ABC):
         logger.info(f"Loading graph config for task {self.task_name}")
         self.output_dir = args.output_dir
         self.source_config: Optional[DataSourceConfig] = None
-        self.output_config: Optional[OutputConfig] = None
+        self.output_config: Optional[Union[OutputConfig, list[OutputConfig]]] = None
+        # Store metadata and source configs per alias for multi-dataset scenarios
+        self._dataset_metadata_by_alias: dict[str, dict] = {}
+        self._source_configs_by_alias: dict[str, DataSourceConfig] = {}
 
         config_file_path = utils.get_file_in_task_dir(self.task_name, "graph_config.yaml")
         self.config = graph_config_dict or utils.load_yaml_file(filepath=config_file_path)
@@ -89,6 +93,7 @@ class BaseTaskExecutor(ABC):
 
         # Set dataset metadata if available
         if self.source_config is not None:
+            # Single dataset scenario
             source_path = None
             # Try to get source path from repo_id (HuggingFace) or file_path (local files)
             if self.source_config.repo_id:
@@ -110,6 +115,52 @@ class BaseTaskExecutor(ABC):
                 start_index=getattr(args, "start_index", 0),
                 dataset_version=dataset_version,
                 dataset_hash=dataset_hash,
+            )
+
+        # Multi-dataset scenario: re-register sources captured during dataset loading
+        # (metadata was captured before reset, so we need to re-register it)
+        if self._source_configs_by_alias:
+            source_types: set[str] = set()
+
+            for alias, source_cfg in self._source_configs_by_alias.items():
+                metadata = self._dataset_metadata_by_alias.get(alias, {})
+
+                # Determine source path
+                source_path = None
+                if source_cfg.repo_id:
+                    source_path = source_cfg.repo_id
+                elif source_cfg.file_path:
+                    source_path = source_cfg.file_path
+                elif source_cfg.table:
+                    source_path = source_cfg.table
+
+                # Get source type as string
+                source_type = (
+                    str(source_cfg.type.value)
+                    if hasattr(source_cfg.type, "value")
+                    else str(source_cfg.type)
+                )
+                source_types.add(source_type)
+
+                collector.add_dataset_source(
+                    alias=alias,
+                    source_type=source_type,
+                    source_path=source_path,
+                    dataset_version=metadata.get("version"),
+                    dataset_hash=metadata.get("hash"),
+                    join_type=source_cfg.join_type,
+                )
+
+            # Set top-level dataset metadata for multi-source scenario
+            # Use clear "multi-source" indicator with human-readable summary
+            len(self._source_configs_by_alias)
+            sorted_types = sorted(source_types)  # Consistent ordering
+            ", ".join(sorted_types)
+
+            collector.set_dataset_metadata(
+                source_type="multi-source",
+                source_path="multi-source",
+                start_index=getattr(args, "start_index", 0),
             )
 
     @staticmethod
@@ -370,7 +421,9 @@ class BaseTaskExecutor(ABC):
             for cfg in sink_config:
                 self.output_config.append(OutputConfig.from_dict(cfg))
         else:
-            logger.error(f"Sink data configuration error. It can only be dict or list if multiple sink.")
+            logger.error(
+                "Sink data configuration error. It can only be dict or list if multiple sink."
+            )
 
     # validation if list of data config set in source or sink
     # rule 1: alias and join_type is mandatory if source/sink config is a list
@@ -381,21 +434,32 @@ class BaseTaskExecutor(ABC):
         is_vstack = False
         if isinstance(source_config, list):
             for source_config_obj in source_config:
-                if not source_config_obj.get(constants.DATASET_JOIN_TYPE) or not source_config_obj.get(constants.DATASET_ALIAS):
+                if not source_config_obj.get(
+                    constants.DATASET_JOIN_TYPE
+                ) or not source_config_obj.get(constants.DATASET_ALIAS):
                     # if the source data config is a list, it should have join_type and alias
-                    logger.error(f"One of the source data config has missing alias or join_type.")
+                    logger.error("One of the source data config has missing alias or join_type.")
                     return False
                 else:
                     alias.add(source_config_obj[constants.DATASET_ALIAS])
                     join_type_list.add(source_config_obj[constants.DATASET_JOIN_TYPE])
-                    is_vstack = (source_config_obj[constants.DATASET_JOIN_TYPE] == constants.JOIN_TYPE_VSTACK) if is_vstack is False else is_vstack
+                    is_vstack = (
+                        (
+                            source_config_obj[constants.DATASET_JOIN_TYPE]
+                            == constants.JOIN_TYPE_VSTACK
+                        )
+                        if is_vstack is False
+                        else is_vstack
+                    )
             if len(alias) != len(source_config):
                 logger.error("Duplicate alias in source data config list.")
 
         # if vstack, all dataset should be set with vstack
         # alias name will not be used for column rename in this case
         if is_vstack and len(join_type_list) > 1:
-            logger.error("All dataset must set with vstack or none should have join_type as vstack.")
+            logger.error(
+                "All dataset must set with vstack or none should have join_type as vstack."
+            )
             return False
 
         alias = set()
@@ -403,7 +467,7 @@ class BaseTaskExecutor(ABC):
             for sink_config_obj in sink_config:
                 if not sink_config_obj.get(constants.DATASET_ALIAS):
                     # if the sink data config is a list, it should have alias name
-                    logger.error(f"One of the sink data config has missing alias.")
+                    logger.error("One of the sink data config has missing alias.")
                     return False
                 else:
                     alias.add(sink_config_obj[constants.DATASET_ALIAS])
@@ -412,21 +476,23 @@ class BaseTaskExecutor(ABC):
         return True
 
     # Rename columns with alias prefix
-    def _rename_dataframe(self, df: pd.DataFrame, alias:str) -> pd.DataFrame:
+    def _rename_dataframe(self, df: pd.DataFrame, alias: str) -> pd.DataFrame:
         column_names = list(df.columns)
         # check if anyone column has alias prefix, skip it
         for column_name in column_names:
             if column_name.startswith(alias + constants.ALIAS_JOINER):
                 return df
 
-        column_rename_map = {c:constants.ALIAS_JOINER.join([alias, c]) for c in list(df.columns)}
+        column_rename_map = {c: constants.ALIAS_JOINER.join([alias, c]) for c in list(df.columns)}
         df = df.rename(columns=column_rename_map)
         return df
 
     # merge dataframes horizontally with repeated secondary rows sequentially if secondary is small
     # if secondary is large, trim to max length of primary and merge
     # primary: a columns, secondary: b columns, merged: a+b columns
-    def _repeat_to_merge_sequentially(self, primary_df: pd.DataFrame, secondary_df:pd.DataFrame) -> pd.DataFrame:
+    def _repeat_to_merge_sequentially(
+        self, primary_df: pd.DataFrame, secondary_df: pd.DataFrame
+    ) -> pd.DataFrame:
         # primary: [1,2,3,4,5] secondary: [a,b] merged[[1,a], [2,b], [3,a], [4,b],[5,a]]
         # primary: [1,2,3] secondary: [a,b,c,d,e] merged[[1,a], [2,b], [3,c]]
         primary_length = len(primary_df)
@@ -466,7 +532,7 @@ class BaseTaskExecutor(ABC):
             logger.info("No data source configured. Generating empty dataset with IDs.")
             return self._generate_empty_dataset()
 
-        full_data = []
+        full_data: list[dict[str, Any]] = []
         if isinstance(source_config, dict):
             # if single dataset configured as dict - existing flow
             source_config_obj = DataSourceConfig.from_dict(source_config)
@@ -485,8 +551,8 @@ class BaseTaskExecutor(ABC):
             primary_config = None
             # if multiple dataset, verify if join_type and alias is defined in each config(@source and @sink)
             if isinstance(source_config, list):
-                sink_config = data_config.get("sink")
-                if not self.validate_data_config(source_config, sink_config):
+                sink_config = data_config.get("sink", [])
+                if not self.validate_data_config(source_config, sink_config if sink_config else []):
                     logger.error("Invalid source or sink config.")
                     return []
 
@@ -498,12 +564,15 @@ class BaseTaskExecutor(ABC):
                 conf_obj = DataSourceConfig.from_dict(conf)
                 reader = self._get_data_reader(conf_obj)
                 # store if join type is vstack(all should be vstack, so checking last element only)
-                is_vstack = (join_type == constants.JOIN_TYPE_VSTACK)
+                is_vstack = join_type == constants.JOIN_TYPE_VSTACK
                 if join_type == constants.JOIN_TYPE_PRIMARY:
                     primary_config = conf
                     # read the dataset
                     primary_dataset = self._read_data(reader, conf_obj)
-                    # todo capture metadata
+                    # Capture metadata for this dataset keyed by alias
+                    self._capture_dataset_metadata_for_alias(
+                        primary_dataset, reader, alias, conf_obj
+                    )
                     # Apply transformations to the dataset
                     primary_dataset = self.apply_transforms(conf_obj, primary_dataset)
                     # convert to dataframe
@@ -513,7 +582,8 @@ class BaseTaskExecutor(ABC):
                 else:
                     # read the dataset
                     sec_dataset = self._read_data(reader, conf_obj)
-                    # todo capture metadata
+                    # Capture metadata for this dataset keyed by alias
+                    self._capture_dataset_metadata_for_alias(sec_dataset, reader, alias, conf_obj)
                     # Apply transformations to the dataset
                     sec_dataset = self.apply_transforms(conf_obj, sec_dataset)
                     # convert to dataframe
@@ -528,7 +598,7 @@ class BaseTaskExecutor(ABC):
                 logger.info("All datasets are vertically stacking.")
                 # fetch all dataframes
                 all_df = [ds.get("dataset") for ds in dataset_list]
-                vmerged_df = pd.concat(all_df, axis=0, join='inner')
+                vmerged_df = pd.concat(all_df, axis=0, join="inner")
                 # now convert dataframe to list of dict (full_data)
                 full_data = vmerged_df.to_dict(orient="records")
             elif primary_df is None or len(primary_dataset) == 0:
@@ -536,21 +606,28 @@ class BaseTaskExecutor(ABC):
             else:
                 # merge datasets into primary
                 for ds in dataset_list:
-                    join_type = ds.get("conf").get(constants.DATASET_JOIN_TYPE)
+                    ds_conf: dict[str, Any] = ds.get("conf", {})
+                    join_type = ds_conf.get(constants.DATASET_JOIN_TYPE)
                     current_df = ds.get("dataset")
                     if join_type == constants.JOIN_TYPE_COLUMN:
-                        sec_alias_name = ds.get("conf").get(constants.DATASET_ALIAS)
-                        pri_alias_name = primary_config.get(constants.DATASET_ALIAS)
+                        sec_alias_name = ds_conf.get(constants.DATASET_ALIAS)
+                        pri_alias_name = (
+                            primary_config.get(constants.DATASET_ALIAS) if primary_config else None
+                        )
                         # convert the keys with alias prefix (table1.column1)
-                        primary_column = constants.ALIAS_JOINER.join([pri_alias_name, ds.get("conf").get(constants.PRIMARY_KEY)])
-                        join_column = constants.ALIAS_JOINER.join([sec_alias_name, ds.get("conf").get(constants.JOIN_KEY)])
+                        primary_column = constants.ALIAS_JOINER.join(
+                            [pri_alias_name or "", ds_conf.get(constants.PRIMARY_KEY, "")]
+                        )
+                        join_column = constants.ALIAS_JOINER.join(
+                            [sec_alias_name or "", ds_conf.get(constants.JOIN_KEY, "")]
+                        )
                         # where_clause = ds.get("conf").get("where_clause")
                         primary_df = pd.merge(
                             primary_df,
                             current_df,
                             left_on=primary_column,
                             right_on=join_column,
-                            how="left"
+                            how="left",
                         )
                     elif join_type == constants.JOIN_TYPE_SEQUENTIAL:
                         primary_df = self._repeat_to_merge_sequentially(primary_df, current_df)
@@ -564,7 +641,7 @@ class BaseTaskExecutor(ABC):
                 # now convert dataframe to list of dict (full_data)
                 full_data = primary_df.to_dict(orient="records")
         else:
-            logger.error(f"Unsupported source config type.")
+            logger.error("Unsupported source config type.")
 
         if isinstance(full_data, list):
             assert len(full_data) > 0, "No data found in the dataset"
@@ -612,13 +689,67 @@ class BaseTaskExecutor(ABC):
         except Exception as e:
             logger.debug(f"Could not capture dataset metadata: {e}")
 
+    def _capture_dataset_metadata_for_alias(
+        self, dataset: Any, reader: Any, alias: str, source_config: DataSourceConfig
+    ) -> None:
+        """Capture dataset version and hash for a specific alias in multi-dataset scenarios.
+
+        Stores metadata locally for later registration with MetadataCollector in
+        _init_metadata_collector (after the collector is reset).
+
+        Args:
+            dataset: The loaded dataset
+            reader: The data reader used to load the dataset
+            alias: The alias identifier for this dataset
+            source_config: The source configuration for this dataset
+        """
+        try:
+            dataset_version: Optional[str] = None
+            dataset_hash: Optional[str] = None
+
+            # First try to get from reader (HuggingFaceHandler stores it before conversion)
+            if hasattr(reader, "dataset_version") and hasattr(reader, "dataset_hash"):
+                dataset_version = reader.dataset_version
+                dataset_hash = reader.dataset_hash
+            else:
+                # Fallback: try to extract from dataset object directly
+                if isinstance(dataset, (datasets.Dataset, datasets.IterableDataset)):
+                    # Try to get version info
+                    if hasattr(dataset, "info") and dataset.info:
+                        version_obj = getattr(dataset.info, "version", None)
+                        if version_obj:
+                            dataset_version = str(version_obj)
+
+                    # Try to get fingerprint/hash
+                    if hasattr(dataset, "_fingerprint"):
+                        dataset_hash = dataset._fingerprint
+                    elif hasattr(dataset, "n_shards"):
+                        dataset_hash = f"iterable_{dataset.n_shards}_shards"
+
+            # Store in instance variables for:
+            # 1. Registration with MetadataCollector in _init_metadata_collector (after reset)
+            # 2. Sink upload source config mapping
+            self._dataset_metadata_by_alias[alias] = {
+                "version": dataset_version,
+                "hash": dataset_hash,
+            }
+            self._source_configs_by_alias[alias] = source_config
+
+            logger.debug(
+                f"Captured metadata for alias '{alias}': version={dataset_version}, hash={dataset_hash}"
+            )
+        except Exception as e:
+            logger.debug(f"Could not capture dataset metadata for alias '{alias}': {e}")
+
     def _generate_empty_dataset(self) -> list[dict]:
         """Generate empty dataset with specified number of records"""
         num_records = self.args.num_records
         logger.info(f"Generating {num_records} empty records")
         return [{} for _ in range(num_records)]
 
-    def _get_data_reader(self, source_config: DataSourceConfig) -> Union[HuggingFaceHandler, FileHandler, ServiceNowHandler]:
+    def _get_data_reader(
+        self, source_config: DataSourceConfig
+    ) -> Union[HuggingFaceHandler, FileHandler, ServiceNowHandler]:
         """Get appropriate data reader based on source type"""
         if source_config is None:
             raise ValueError("source_config must be set to get a data reader")
@@ -632,7 +763,9 @@ class BaseTaskExecutor(ABC):
         else:
             raise ValueError(f"Unsupported data source type: {source_config.type}")
 
-    def _read_data(self, reader, source_config) -> Union[list[dict], datasets.Dataset, datasets.IterableDataset]:
+    def _read_data(
+        self, reader, source_config
+    ) -> Union[list[dict], datasets.Dataset, datasets.IterableDataset]:
         """Read data from the configured source using the provided reader"""
         try:
             if source_config is None:
@@ -910,35 +1043,65 @@ class BaseTaskExecutor(ABC):
                         if out_file_type == "json"
                         else [json.loads(line) for line in f]
                     )
+                # Ensure data is always a list for _split_data_per_alias
+                if isinstance(data, dict):
+                    data = [data]
             except Exception as e:
                 logger.error(f"Error reading generated dataset. failed to write into sink: {e}")
+                data = []
 
             # split the data if it has keys with multi dataset format dataset alias->key
             # store per dataset with key as "alias" name, remaning direct fields can be in "__others__"
             splitted_dataset = self._split_data_per_alias(data)
 
             # now we have multiple dataset under various alias as key including __others__ (default)
-            if isinstance(self.output_config, OutputConfig):
-                # old flow with single output config
-                self._upload_into_sink(self.output_config, splitted_dataset[constants.DEFAULT_ALIAS], self.source_config)
-            elif isinstance(self.output_config, list):
+            if isinstance(self.output_config, list):
+                # multiple output configs - iterate through each
                 for output_cfg in self.output_config:
                     # if alias not defined, it will TRY to push default columns
                     alias = output_cfg.alias if output_cfg.alias else constants.DEFAULT_ALIAS
-                    # TODO do we need to have corresponding source config??
-                    self._upload_into_sink(output_cfg, splitted_dataset[alias], None)
+                    if alias not in splitted_dataset:
+                        logger.warning(f"No data found for alias '{alias}', skipping sink upload.")
+                        continue
+                    # Get corresponding source config by alias for proper schema inference
+                    corresponding_source_config = self._source_configs_by_alias.get(alias)
+                    self._upload_into_sink(
+                        output_cfg, splitted_dataset[alias], corresponding_source_config
+                    )
                     logger.info(f"Successfully uploaded {alias} to sink.")
+            else:
+                # single output config
+                default_data = splitted_dataset.get(constants.DEFAULT_ALIAS, [])
+                if default_data:
+                    self._upload_into_sink(
+                        self.output_config,
+                        default_data,
+                        self.source_config,
+                    )
+                else:
+                    logger.warning("No data found for default alias, skipping sink upload.")
 
         if dataset_processor.resume_manager:
             dataset_processor.resume_manager.force_save_state(is_final=True)
 
         self._save_metadata(dataset_processor)
 
-    def _split_data_per_alias(self, data: list[dict]):
-        splitted_dataset = {}
+    def _split_data_per_alias(self, data: list[dict]) -> dict[str, list[dict]]:
+        """Split data into separate datasets based on column alias prefixes.
+
+        Columns with alias prefix (e.g., 'table1->column1') are grouped by alias.
+        Columns without prefix go to the default alias '__others__'.
+
+        Args:
+            data: List of records with potentially aliased column names
+
+        Returns:
+            Dictionary mapping alias names to their respective record lists
+        """
+        splitted_dataset: dict[str, list[dict[str, Any]]] = {}
         for row in data:
             # split the row into multiple dict with key as alias
-            splitted_row = {}
+            splitted_row: dict[str, dict[str, Any]] = {}
             for col, val in row.items():
                 if constants.ALIAS_JOINER in col:
                     alias = col.split(constants.ALIAS_JOINER)[0]
@@ -959,7 +1122,12 @@ class BaseTaskExecutor(ABC):
                 splitted_dataset[alias].append(splitted_row[alias])
         return splitted_dataset
 
-    def _upload_into_sink(self, output_config:OutputConfig, data:list[dict], source_config:DataSourceConfig = None):
+    def _upload_into_sink(
+        self,
+        output_config: OutputConfig,
+        data: list[dict],
+        source_config: Optional[DataSourceConfig] = None,
+    ) -> None:
         try:
             if output_config.type == OutputType.HUGGINGFACE:
                 HuggingFaceHandler(
@@ -978,9 +1146,7 @@ class BaseTaskExecutor(ABC):
                     source_config=source_config,
                     output_config=output_config,
                 ).write(data, path=output_config.file_path)
-            type_value = (
-                output_config.type.value if output_config.type is not None else "none"
-            )
+            type_value = output_config.type.value if output_config.type is not None else "none"
             logger.info(
                 f"Successfully wrote output to sink: {type_value}, {output_config.model_dump()}"
             )

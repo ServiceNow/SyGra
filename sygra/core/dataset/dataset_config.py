@@ -239,8 +239,6 @@ class OutputConfig(BaseModel):
     """
 
     alias: Optional[str] = None
-    type: OutputType = None
-    repo_id: Optional[str] = None
     type: Optional[OutputType] = None
     repo_id: Optional[str] = None
     config_name: Optional[str] = None
