@@ -105,10 +105,14 @@ DATASET_ALIAS = "alias"
 DATASET_JOIN_TYPE = "join_type"
 PRIMARY_KEY = "primary_key"
 JOIN_KEY = "join_key"
-JOIN_TYPE_VSTACK = "vstack" # verticle stacking with common columns, variables will not have alias prefix and sink should be single
+JOIN_TYPE_VSTACK = "vstack"  # verticle stacking with common columns, variables will not have alias prefix and sink should be single
 # below all are for horizontal concat
-JOIN_TYPE_PRIMARY = "primary" # when joining horizontally, this dataset will be primary
-JOIN_TYPE_SEQUENTIAL = "sequential" # merge column sequentially from secondary, if less rotate to index 0
-JOIN_TYPE_RANDOM = "random" # pick random and join at each primary dataset record in horizontal way(add column)
-JOIN_TYPE_CROSS = "cross" # Each primary will join the secondary record(MxN)
-JOIN_TYPE_COLUMN = "column" # join like RDBMS column based inner join
+JOIN_TYPE_PRIMARY = "primary"  # when joining horizontally, this dataset will be primary
+JOIN_TYPE_SEQUENTIAL = (
+    "sequential"  # merge column sequentially from secondary, if less rotate to index 0
+)
+JOIN_TYPE_RANDOM = (
+    "random"  # pick random and join at each primary dataset record in horizontal way(add column)
+)
+JOIN_TYPE_CROSS = "cross"  # Each primary will join the secondary record(MxN)
+JOIN_TYPE_COLUMN = "column"  # join like RDBMS column based inner join
