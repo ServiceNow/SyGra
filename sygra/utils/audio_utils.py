@@ -45,11 +45,16 @@ def is_hf_audio_dict(val: Any) -> bool:
     Returns:
         bool: True if the value is a HuggingFace audio dict, False otherwise.
     """
-    return (
+    if (
         isinstance(val, dict)
         and isinstance(val.get("array"), np.ndarray)
         and isinstance(val.get("sampling_rate"), (int, float))
-    )
+    ):
+        return True
+    elif isinstance(val, dict) and "bytes" in val and isinstance(val.get("path"), str):
+        return True
+    else:
+        return False
 
 
 def is_raw_audio_bytes(val: Any) -> bool:
@@ -65,6 +70,34 @@ def is_raw_audio_bytes(val: Any) -> bool:
     return isinstance(val, (bytes, bytearray))
 
 
+def is_audio_url(val: str) -> bool:
+    """
+    Check if a string is an HTTP/HTTPS URL pointing to an audio file.
+
+    Args:
+        val (str): The string to check.
+
+    Returns:
+        bool: True if the string is an audio URL, False otherwise.
+    """
+    return val.lower().startswith(("http://", "https://")) and val.lower().endswith(
+        SUPPORTED_AUDIO_EXTENSIONS
+    )
+
+
+def is_audio_file_path(val: str) -> bool:
+    """
+    Check if a string is a local file path with an audio extension that exists.
+
+    Args:
+        val (str): The string to check.
+
+    Returns:
+        bool: True if the string is an existing audio file path, False otherwise.
+    """
+    return os.path.exists(val) and val.lower().endswith(SUPPORTED_AUDIO_EXTENSIONS)
+
+
 def is_audio_path_or_url(val: Any) -> bool:
     """
     Check if a value is a local file path or a URL pointing to a supported audio file.
@@ -78,14 +111,7 @@ def is_audio_path_or_url(val: Any) -> bool:
     if not isinstance(val, str):
         return False
 
-    val_lower = val.lower()
-
-    is_url = val_lower.startswith(("http://", "https://")) and val_lower.endswith(
-        SUPPORTED_AUDIO_EXTENSIONS
-    )
-    is_local = os.path.exists(val) and val_lower.endswith(SUPPORTED_AUDIO_EXTENSIONS)
-
-    return is_url or is_local
+    return is_audio_url(val) or is_audio_file_path(val)
 
 
 def is_audio_like(val: Any) -> bool:
@@ -131,9 +157,28 @@ def load_audio(data: Any, timeout: float = 5.0) -> Union[bytes, None]:
 
         # 2. HuggingFace audio dict
         if is_hf_audio_dict(data):
-            buf = io.BytesIO()
-            sf.write(buf, data["array"], int(data["sampling_rate"]), format="WAV")
-            return buf.getvalue()
+            # Handle dict with "array" and "sampling_rate" fields
+            if "array" in data and "sampling_rate" in data:
+                buf = io.BytesIO()
+                sf.write(buf, data["array"], int(data["sampling_rate"]), format="WAV")
+                return buf.getvalue()
+
+            # Handle dict with "bytes" and "path" fields (HF Audio feature)
+            elif "bytes" in data and "path" in data:
+                # If bytes is available, use it directly
+                if data["bytes"] is not None:
+                    return bytes(data["bytes"])
+                # Otherwise, load from path if it exists
+                elif data["path"] and os.path.exists(data["path"]):
+                    try:
+                        with open(data["path"], "rb") as f:
+                            return f.read()
+                    except Exception as e:
+                        logger.warning(f"Failed to read audio from path {data['path']}: {e}")
+                        return None
+                else:
+                    logger.warning(f"Audio path does not exist: {data.get('path')}")
+                    return None
 
         # 3. Remote URL
         if isinstance(data, str) and data.startswith(("http://", "https://")):

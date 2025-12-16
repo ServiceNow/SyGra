@@ -20,6 +20,7 @@ from huggingface_hub import CommitOperationAdd, DatasetCard, DatasetCardData, Hf
 from sygra.core.dataset.data_handler_base import DataHandler
 from sygra.core.dataset.dataset_config import DataSourceConfig, OutputConfig
 from sygra.logger.logger_config import logger
+from sygra.utils import audio_utils, image_utils
 
 hf_token = os.getenv("SYGRA_HF_TOKEN")
 
@@ -98,13 +99,17 @@ class HuggingFaceHandler(DataHandler):
 
             media_columns = self._detect_media_columns(df)
 
-            for col in media_columns["image_seq"] + media_columns["audio_seq"]:
-                df[col] = df[col].apply(self._decode_base64_media)
+            for col, is_file_path in media_columns["image_seq"] + media_columns["audio_seq"]:
+                if not is_file_path:
+                    # Decode data URLs
+                    df[col] = df[col].apply(self._decode_base64_media)
 
-            for col in media_columns["image_str"] + media_columns["audio_str"]:
-                df[col] = df[col].apply(
-                    lambda x: self._decode_base64_media(x)[0] if isinstance(x, str) else None
-                )
+            for col, is_file_path in media_columns["image_str"] + media_columns["audio_str"]:
+                if not is_file_path:
+                    # Decode data URL
+                    df[col] = df[col].apply(
+                        lambda x: self._decode_base64_media(x)[0] if isinstance(x, str) else None
+                    )
 
             ds = Dataset.from_pandas(df)
 
@@ -144,8 +149,21 @@ class HuggingFaceHandler(DataHandler):
             exist_ok=True,
         )
 
-    def _detect_media_columns(self, df: pd.DataFrame) -> dict[str, list[str]]:
-        media_cols: dict[str, list[str]] = {
+    def _detect_media_columns(self, df: pd.DataFrame) -> dict[str, list[tuple[str, bool]]]:
+        """Detect which columns contain multimodal data (images or audio).
+
+        Uses utility functions from audio_utils and image_utils for consistent detection.
+
+        Args:
+            df: Pandas DataFrame to analyze
+
+        Returns:
+            Dictionary with keys: image_str, image_seq, audio_str, audio_seq
+            Each value is a list of tuples (column_name, is_file_path) where:
+                - column_name: name of the column
+                - is_file_path: True if the column contains file paths, False if data URLs
+        """
+        media_cols: dict[str, list[tuple[str, bool]]] = {
             "image_str": [],
             "image_seq": [],
             "audio_str": [],
@@ -156,15 +174,25 @@ class HuggingFaceHandler(DataHandler):
             sample = df[col].dropna().iloc[0] if not df[col].dropna().empty else None
 
             if isinstance(sample, list):
-                if all(isinstance(x, str) and x.startswith("data:image/") for x in sample):
-                    media_cols["image_seq"].append(col)
-                elif all(isinstance(x, str) and x.startswith("data:audio/") for x in sample):
-                    media_cols["audio_seq"].append(col)
+                if all(image_utils.is_data_url(x) for x in sample if isinstance(x, str)):
+                    media_cols["image_seq"].append((col, False))  # False = data URL
+                elif all(audio_utils.is_data_url(x) for x in sample if isinstance(x, str)):
+                    media_cols["audio_seq"].append((col, False))  # False = data URL
+                elif all(image_utils.is_image_file_path(x) for x in sample if isinstance(x, str)):
+                    media_cols["image_seq"].append((col, True))  # True = file path
+                elif all(audio_utils.is_audio_file_path(x) for x in sample if isinstance(x, str)):
+                    media_cols["audio_seq"].append((col, True))  # True = file path
             elif isinstance(sample, str):
-                if sample.startswith("data:image/"):
-                    media_cols["image_str"].append(col)
-                elif sample.startswith("data:audio/"):
-                    media_cols["audio_str"].append(col)
+                # Check if string is image data URL
+                if image_utils.is_data_url(sample):
+                    media_cols["image_str"].append((col, False))  # False = data URL
+                # Check if string is audio data URL
+                elif audio_utils.is_data_url(sample):
+                    media_cols["audio_str"].append((col, False))  # False = data URL
+                elif image_utils.is_image_file_path(sample):
+                    media_cols["image_str"].append((col, True))  # True = file path
+                elif audio_utils.is_audio_file_path(sample):
+                    media_cols["audio_str"].append((col, True))  # True = file path
 
         return media_cols
 
@@ -185,14 +213,15 @@ class HuggingFaceHandler(DataHandler):
         return results
 
     def _cast_dataset_columns(self, ds: Dataset, media_cols: dict) -> Dataset:
-        for col in media_cols["image_str"]:
+        # Extract column names from tuples (col_name, is_file_path)
+        for col, _ in media_cols["image_str"]:
             ds = ds.cast_column(col, datasets.Image())
-        for col in media_cols["image_seq"]:
+        for col, _ in media_cols["image_seq"]:
             ds = ds.cast_column(col, datasets.Sequence(datasets.Image()))
 
-        for col in media_cols["audio_str"]:
+        for col, _ in media_cols["audio_str"]:
             ds = ds.cast_column(col, datasets.Audio())
-        for col in media_cols["audio_seq"]:
+        for col, _ in media_cols["audio_seq"]:
             ds = ds.cast_column(col, datasets.Sequence(datasets.Audio()))
 
         return ds
