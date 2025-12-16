@@ -1,4 +1,5 @@
 data_config:
+  id_column: sys_id
   source:
     - alias: inc
       join_type: primary
@@ -23,6 +24,7 @@ data_config:
 
       order_by: sys_created_on
       order_desc: true
+
     - alias: ticket
       join_type: random
       primary_key: sys_id
@@ -46,12 +48,10 @@ data_config:
       order_desc: true
 
   sink:
-    - alias: inc
+    - alias: inc_analysis
       type: servicenow
       table: u_ai_incident_analysis
       operation: insert
-
-  id_column: sys_id
 
 graph_config:
   nodes:
@@ -61,24 +61,38 @@ graph_config:
         name: gpt-5
         temperature: 0.1
         max_tokens: 1024
+        structured_output:
+          schema:
+            fields:
+              severity_score:
+                type: int
+                description: "integer from 1-10 indicating severity"
+              predicted_resolution_time:
+                type: int
+                description: "estimated hours to resolve"
+              recommended_action:
+                type: str
+                description: "brief action to take (max 200 chars)"
+              root_cause_category:
+                type: str
+                description: "one of [technical, user, process, other]"
+              confidence:
+                type: float
+                description: "your confidence in this analysis (0.0-1.0)"
 
       input_key: input
-      output_key: ai_analysis
+      output_keys:
+        - severity_score
+        - predicted_resolution_time
+        - recommended_action
+        - root_cause_category
+        - confidence
 
-      post_process: tasks.examples.servicenow_ai_analysis_insert.task_executor.AnalyzerPostProcessor
+      post_process: tasks.examples.multiple_dataset.task_executor.AnalyzerPostProcessor
 
       prompt:
         - system: |
             You are an expert IT incident analyst. Analyze ServiceNow incidents and provide structured insights.
-
-            Provide your analysis as a JSON object with these fields:
-            - severity_score: integer from 1-10 indicating severity
-            - predicted_resolution_time: estimated hours to resolve
-            - recommended_action: brief action to take (max 200 chars)
-            - root_cause_category: one of [technical, user, process, other]
-            - confidence: your confidence in this analysis (0.0-1.0)
-
-            Return ONLY the JSON object, no other text.
         - user: |
             Analyze this ServiceNow incident:
 
@@ -95,3 +109,18 @@ graph_config:
       to: analyzer
     - from: analyzer
       to: END
+
+# this is added to rename the state variables into output format with aliasing (ex: inc_analysis->column_name)
+# column name should match with actual column in the servicenow instance
+output_config:
+  output_map:
+    inc_analysis->u_severity_score:
+      from: "severity_score"
+    inc_analysis->u_predicted_resolution_time:
+      from: "predicted_resolution_time"
+    inc_analysis->u_recommended_action:
+      from: "recommended_action"
+    inc_analysis->u_root_cause_category:
+      from: "root_cause_category"
+    inc_analysis->u_confidence:
+      from: "confidence"

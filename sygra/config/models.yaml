@@ -148,6 +148,6 @@ gpt-5:
   model_type: azure_openai
   model: gpt-5
   # URL and auth_token should be defined at .env file as SYGRA_GPT-4O_URL and SYGRA_GPT-4O_TOKEN
-  api_version: 2024-02-15-preview
+  api_version: 2024-08-01-preview
   parameters:
     max_completion_tokens: 5000
