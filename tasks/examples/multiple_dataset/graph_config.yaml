@@ -1,3 +1,5 @@
+# this graph yaml example shows how 2 tables can be joined with a column
+# below example is using single table for simulating the scenario of 2 tables by giving different alias name and join by sys_id, but they can be different table also
 data_config:
   id_column: sys_id
   source:
@@ -26,7 +28,7 @@ data_config:
       order_desc: true
 
     - alias: ticket
-      join_type: random
+      join_type: column
       primary_key: sys_id
       join_key: sys_id
 
@@ -79,8 +81,6 @@ graph_config:
               confidence:
                 type: float
                 description: "your confidence in this analysis (0.0-1.0)"
-
-      input_key: input
       output_keys:
         - severity_score
         - predicted_resolution_time

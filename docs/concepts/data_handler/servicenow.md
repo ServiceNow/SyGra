@@ -436,6 +436,106 @@ Extra parameters supported for dataset configuration as a list:
 * `primary_key`: Signifies the column of the primary dataset which should match with other dataset column `join_key` when join type is `column`
 * `join_key`: Signifies the column of other dataset which should match with primary dataset column `primary_key` when join type is `column`
 
+##### Example graph YAML for horizontal join
+- Here each primary row is picked and merged(column wise) with one random row from secondary, generates 10 records only.
+- If join_type of secondary is changed to `cross`, each primary row is joined with each secondary row, generates 10 x n rows.
+- If join_type of secondary is changed to `sequential`, each primary row is joined with one secondary row sequentially, generates 10 rows.
+- Example for join_type `column` is given at `tasks/examples/multiple_dataset`
+```yaml
+# This graph config explains how incidents can be created for a role
+# as it is random horizontal join, the output record count is same as incident table(10)
+data_config:
+  id_column: sys_id
+  source:
+    - alias: inc
+      join_type: primary
+
+      type: servicenow
+      table: incident
+
+      filters:
+        active: "true"
+        priority: ["1", "2"]
+
+      fields:
+        - sys_id
+        - short_description
+        - description
+
+      limit: 10
+
+      order_by: sys_created_on
+      order_desc: true
+
+    - alias: roles
+      join_type: random # join the secondary row randomly into primary
+
+      type: "hf"
+      repo_id: "fazni/roles-based-on-skills"
+      config_name: "default"
+      split: "test"
+
+  sink:
+    - alias: new_inc
+      #type: "disk"
+      file_path: "data/new_inc.json"
+      file_type: "json"
+
+graph_config:
+  nodes:
+    incident_generator:
+      node_type: llm
+      model:
+        name: gpt-5
+        temperature: 0.1
+        max_tokens: 1024
+        structured_output:
+          schema:
+            fields:
+              description:
+                type: str
+                description: "Incident detailed description"
+              short_description:
+                type: str
+                description: "Short summary of the incident in one line"
+
+      input_key: input
+      output_keys:
+        - description
+        - short_description
+
+      # below post processor will just parse the string and return dict with description and short_description key
+      post_process: tasks.examples.multiple_dataset_1.task_executor.AnalyzerPostProcessor
+
+      prompt:
+        - system: |
+            You are an expert IT incident analyst. Analyze ServiceNow incidents and provide structured insights.
+        - user: |
+            Analyze this ServiceNow incident and create similar incident for the role {roles->Role}:
+            - Short Description: {inc->short_description}
+            - Full Description: {inc->description}
+
+  edges:
+    - from: START
+      to: incident_generator
+    - from: incident_generator
+      to: END
+
+# this is added to rename the state variables into output format with aliasing (ex: new_inc->column_name)
+# column name should be the output column in the sink
+output_config:
+  output_map:
+    new_inc->description:
+      from: "description" # generated description
+    new_inc->short_description:
+      from: "short_description" # generated short description
+    new_inc->id:
+      from: "inc->sys_id" # sys id from incident table
+    new_inc->role:
+      from: "roles->Role" # role from huggingface dataset
+```
+
+
 
 ## Advanced Features
 
