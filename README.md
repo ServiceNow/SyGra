@@ -109,50 +109,18 @@ workflow.run(num_records=1)
 
 ---
 
-
-## Components
-The SyGra architecture is composed of multiple components. The following diagrams illustrate the four primary components and their associated modules.
-
-### Data Handler
-Data handler is used for reading and writing the data. Currently, it supports following handlers:
- - File handler with various file types like JSON, JSONL, CSV, Parquet, Folder with supported type.
- - Huggingface handler: When reading data from huggingface, it can read the whole dataset and process, or it can stream chunk of data.
- - ServiceNow Handler to connect a ServiceNow instance : Currently it reads or writes into a single table per dataset configuration.
-
-The graph configuration supports source and sink configuration, which can be a single configuration or a list. When it is a list of dataset configuration, it allows merging the dataset as column based and row based. Access the dataset keys or columns with alias prefix in the prompt, and finally write into various output dataset in a single flow.
-
-<kbd> ![DataHandler](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/component_data_handler.png) </kbd>
-
-### Graph Node Module
-This module is responsible for building various kind of nodes like LLM node, Multi-LLM node, Lambda node, Agent node etc.
-Each node is defined for various task, for example multi-llm node is used to load-balance the data among various inference point running same model.
-
-<kbd> ![Nodes](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/component_nodes.png) </kbd>
-
-### Graph Edge Connection
-Once node are built, we can connect them with simple edge or conditional edge.
-Conditional edge uses python code to decide the path. Conditional edge helps implimenting if-else flow as well as loops in the graph.
-
-<kbd> ![Edges](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/component_edges.png) </kbd>
-
-### Model clients
-SyGra doesn't support inference within the framework, but it supports various clients, which helps connecting with different kind of servers.
-For example, openai client is being supported by Huggingface TGI, vLLM server and Azure services. However, model configuration does not allow to change clients, but it can be configured in models code.
-
-<kbd> ![ModelClient](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/component_model_client.png) </kbd>
-
-####  Integration with [LiteLLM](https://github.com/BerriAI/litellm)
-SyGra now integrates with LiteLLM—unlocking more flexibility, expanded model compatibility, and seamless end-to-end integrations.
 ## Task Components
 
 SyGra supports extendability and ease of implementation—most tasks are defined as graph configuration YAML files. Each task consists of two major components: a graph configuration and Python code to define conditions and processors.
 YAML contains various parts:
 
-- **Data configuration** : Configure file or huggingface as source and sink for the task.
+- **Data configuration** : Configure file or huggingface or ServiceNow instance as source and sink for the task. 
 - **Data transformation** : Configuration to transform the data into the format it can be used in the graph.
 - **Node configuration** : Configure nodes and corresponding properties, preprocessor and post processor.
 - **Edge configuration** : Connect the nodes configured above with or without conditions.
 - **Output configuration** : Configuration for data tranformation before writing the data into sink.
+
+The data configuration supports source and sink configuration, which can be a single configuration or a list. When it is a list of dataset configuration, it allows merging the dataset as column based and row based. Access the dataset keys or columns with alias prefix in the prompt, and finally write into various output dataset in a single flow.
 
 A node is defined by the node module, supporting types like LLM call, multiple LLM call, lambda node, and sampler node.  
 
