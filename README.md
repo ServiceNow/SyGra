@@ -114,11 +114,13 @@ workflow.run(num_records=1)
 SyGra supports extendability and ease of implementation—most tasks are defined as graph configuration YAML files. Each task consists of two major components: a graph configuration and Python code to define conditions and processors.
 YAML contains various parts:
 
-- **Data configuration** : Configure file or huggingface as source and sink for the task.
+- **Data configuration** : Configure file or huggingface or ServiceNow instance as source and sink for the task. 
 - **Data transformation** : Configuration to transform the data into the format it can be used in the graph.
 - **Node configuration** : Configure nodes and corresponding properties, preprocessor and post processor.
 - **Edge configuration** : Connect the nodes configured above with or without conditions.
 - **Output configuration** : Configuration for data tranformation before writing the data into sink.
+
+The data configuration supports source and sink configuration, which can be a single configuration or a list. When it is a list of dataset configuration, it allows merging the dataset as column based and row based. Access the dataset keys or columns with alias prefix in the prompt, and finally write into various output dataset in a single flow.
 
 A node is defined by the node module, supporting types like LLM call, multiple LLM call, lambda node, and sampler node.  
 
