@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - "v*"  # Triggers when a new GitHub Tag is published eg: v1.2.3
-  release:
-    types: [published]  # Triggers when a new GitHub Release is published
 
 jobs:
   publish:
