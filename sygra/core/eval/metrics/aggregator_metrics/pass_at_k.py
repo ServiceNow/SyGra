@@ -22,7 +22,7 @@ class PassAtKMetricConfig(BaseModel):
     @classmethod
     def validate_k(cls, v):
         if v is None or v < 0:
-            raise ValueError("value of k is required (cannot be None or 0)")
+            raise ValueError("value of k is required and must be positive (cannot be None or less than equal to 0)")
         return v
 
 

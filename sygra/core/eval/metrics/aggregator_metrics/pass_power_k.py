@@ -54,6 +54,9 @@ class PassPowerKMetric(BaseAggregatorMetric):
         Returns:
             dict: Dictionary containing metrics and related information
                  {"success_rate": float (0.0 to 1.0), "pass^k": float (0.0 to 1.0)}
+
+         Raises:
+            ValueError: If invalid parameters are provided
         """
         if not results:
             logger.warning(f"{self.__class__.__name__}: No results provided")
@@ -65,7 +68,15 @@ class PassPowerKMetric(BaseAggregatorMetric):
         n = len(results)
         # Number of correct solutions
         c = self._count_correct(results)
-        success_rate = self.calculate_success_rate(n, c)
+
+        if n <= 0:
+            raise ValueError("Total attempts (n) must be positive")
+        if c < 0:
+            raise ValueError("Correct solutions (c) must be non-negative")
+        if c > n:
+            raise ValueError("Correct solutions (c) cannot exceed total attempts (n)")
+
+        success_rate = self._safe_divide(c, n)
         pass_power_k_value = self.pass_power_k(success_rate, self.k)
 
         return {
@@ -93,23 +104,3 @@ class PassPowerKMetric(BaseAggregatorMetric):
             raise ValueError("k must be positive")
 
         return success_rate ** k
-
-    @staticmethod
-    def calculate_success_rate(n: int, c: int) -> float:
-        """Calculate raw success rate from total attempts and correct solutions.
-
-        Args:
-            n (int): Total number of attempts
-            c (int): Number of correct solutions
-
-        Returns:
-            float: Success rate (0 to 1)
-        """
-        if n <= 0:
-            raise ValueError("Total attempts (n) must be positive")
-        if c < 0:
-            raise ValueError("Correct solutions (c) must be non-negative")
-        if c > n:
-            raise ValueError("Correct solutions (c) cannot exceed total attempts (n)")
-
-        return c / n
