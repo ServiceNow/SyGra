@@ -1,0 +1,126 @@
+# this graph yaml example shows how 2 tables can be joined with a column
+# below example is using single table for simulating the scenario of 2 tables by giving different alias name and join by sys_id, but they can be different table also
+data_config:
+  id_column: sys_id
+  source:
+    - alias: inc
+      join_type: primary
+
+      type: servicenow
+      table: incident
+
+      filters:
+        active: "true"
+        priority: ["1", "2"]
+
+      fields:
+        - sys_id
+        - number
+        - short_description
+        - description
+        - priority
+        - state
+        - assigned_to
+
+      limit: 10
+
+      order_by: sys_created_on
+      order_desc: true
+
+    - alias: ticket
+      join_type: column
+      primary_key: sys_id
+      join_key: sys_id
+
+      type: servicenow
+      table: incident
+
+      filters:
+        active: "true"
+        priority: ["1", "2"]
+
+      fields:
+        - sys_id
+        - urgency
+        - impact
+
+      limit: 10
+
+      order_by: sys_created_on
+      order_desc: true
+
+  sink:
+    - alias: inc_analysis
+      type: servicenow
+      table: u_ai_incident_analysis
+      operation: insert
+
+graph_config:
+  nodes:
+    analyzer:
+      node_type: llm
+      model:
+        name: gpt-5
+        temperature: 0.1
+        max_tokens: 1024
+        structured_output:
+          schema:
+            fields:
+              severity_score:
+                type: int
+                description: "integer from 1-10 indicating severity"
+              predicted_resolution_time:
+                type: int
+                description: "estimated hours to resolve"
+              recommended_action:
+                type: str
+                description: "brief action to take (max 200 chars)"
+              root_cause_category:
+                type: str
+                description: "one of [technical, user, process, other]"
+              confidence:
+                type: float
+                description: "your confidence in this analysis (0.0-1.0)"
+      output_keys:
+        - severity_score
+        - predicted_resolution_time
+        - recommended_action
+        - root_cause_category
+        - confidence
+
+      post_process: tasks.examples.multiple_dataset.task_executor.AnalyzerPostProcessor
+
+      prompt:
+        - system: |
+            You are an expert IT incident analyst. Analyze ServiceNow incidents and provide structured insights.
+        - user: |
+            Analyze this ServiceNow incident:
+
+            - Number: {inc->number}
+            - Short Description: {inc->short_description}
+            - Full Description: {inc->description}
+            - Priority: {inc->priority}
+            - State: {inc->state}
+            - Urgency: {ticket->urgency}
+            - Impact: {ticket->impact}
+
+  edges:
+    - from: START
+      to: analyzer
+    - from: analyzer
+      to: END
+
+# this is added to rename the state variables into output format with aliasing (ex: inc_analysis->column_name)
+# column name should match with actual column in the servicenow instance
+output_config:
+  output_map:
+    inc_analysis->u_severity_score:
+      from: "severity_score"
+    inc_analysis->u_predicted_resolution_time:
+      from: "predicted_resolution_time"
+    inc_analysis->u_recommended_action:
+      from: "recommended_action"
+    inc_analysis->u_root_cause_category:
+      from: "root_cause_category"
+    inc_analysis->u_confidence:
+      from: "confidence"

@@ -403,6 +403,140 @@ sink = sygra.data.to_servicenow(
 )
 ```
 
+### Working with multiple dataset
+SyGra allow data generation engineer to connect multiple dataset, merge them into single and write into multiple dataset. This usecase can be very useful when working with multiple tables in ServiceNow instance.
+
+Let's look at the below scenario. We have ServiceNow instance with incident table contains 5 records, we want to generate many unique incident records with variety of domains.
+
+First we will configure two datasets: one to fetch incident records and apply transform(`CombineRecords`) to create single record with 5 fewshot example, lets call it ds1(alias name).
+Second, load domain and sub domain from a file(csv or json), lets call it ds2(alias name). Assume we have 100000 records, but we picked only 1000 records. We join the incident table(1 record) with file data as more columns.
+
+Here we can use a 'cross' type join, which multiplies 2 dataset and creates final dataset.
+The result dataset will contain columns or keys with prefix of alias name of the dataset, so column description will become ds1->description and domain will become ds2->domain.
+In the graph yaml file, we can use the variables along with alias prefix like `{ds2->domain}`.
+
+We also need to define multiple sink with alias name, in our case we only need one sink with alias name as ds1 as we are generating only incident records(ds1), however we can have multiple sink configuration to write data into various dataset.
+
+![MultipleDataset](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/multiple_dataset.png)
+
+Here is one example task with multiple dataset: `tasks/examples/multiple_dataset`
+
+Extra parameters supported for dataset configuration as a list:
+* `alias`: This variable gives a name to the dataset, so keys can be accessed in the prompt with alias prefix. The format to access in prompt `alias_name->column`
+* `join_type`: Supports various join type like `primary`, `cross`, `sequential`, `random`, `column`. 
+  * Horizontal or column based: In this join type, one dataset should have `join_type`: `primary`, where other dataset will be able to join in various ways:
+    * `sequential`: Dataset with this join type will sequentially pick one record and merge horizontally with one record from primary dataset. If the primary dataset is small, it will truncate and join, else it will rotate the record index.
+    * `random`: Dataset with this join type will pick one random record and merge horizontally with one record from primary dataset.
+    * `cross`: Dataset with this join type, will multiple with primary dataset. One record from this dataset will merge horizontally with each primary record. So, if this dataset has 10 records and primary has 100, final dataset will be 1000 records.
+    * `column`: This dataset type will use one column(`join_key`) and try to match with one column(`primary_key`) from primary dataset. This is same as RDBMS table join with foreign key.
+  * Vertical stack or row based: This type of joining is possible if there are matching column is the dataset. The `join_key` should be `vstack` for all the dataset in the list. A dataset transformation(rename column) can be applied to match the column name with other dataset.
+    During vstack merged dataset will have common column names, alias name will not be prefixed in the column name. Use variable name directly in the prompt, without the alias prefix.
+    Sink configuration should be a single configuration if aliasing not done in the python code.
+
+* `primary_key`: Signifies the column of the primary dataset which should match with other dataset column `join_key` when join type is `column`
+* `join_key`: Signifies the column of other dataset which should match with primary dataset column `primary_key` when join type is `column`
+
+##### Example graph YAML for horizontal join
+- Here each primary row is picked and merged(column wise) with one random row from secondary, generates 10 records only.
+- If join_type of secondary is changed to `cross`, each primary row is joined with each secondary row, generates 10 x n rows.
+- If join_type of secondary is changed to `sequential`, each primary row is joined with one secondary row sequentially, generates 10 rows.
+- Example for join_type `column` is given at `tasks/examples/multiple_dataset`
+```yaml
+# This graph config explains how incidents can be created for a role
+# as it is random horizontal join, the output record count is same as incident table(10)
+data_config:
+  id_column: sys_id
+  source:
+    - alias: inc
+      join_type: primary
+
+      type: servicenow
+      table: incident
+
+      filters:
+        active: "true"
+        priority: ["1", "2"]
+
+      fields:
+        - sys_id
+        - short_description
+        - description
+
+      limit: 10
+
+      order_by: sys_created_on
+      order_desc: true
+
+    - alias: roles
+      join_type: random # join the secondary row randomly into primary
+
+      type: "hf"
+      repo_id: "fazni/roles-based-on-skills"
+      config_name: "default"
+      split: "test"
+
+  sink:
+    - alias: new_inc
+      #type: "disk"
+      file_path: "data/new_inc.json"
+      file_type: "json"
+
+graph_config:
+  nodes:
+    incident_generator:
+      node_type: llm
+      model:
+        name: gpt-5
+        temperature: 0.1
+        max_tokens: 1024
+        structured_output:
+          schema:
+            fields:
+              description:
+                type: str
+                description: "Incident detailed description"
+              short_description:
+                type: str
+                description: "Short summary of the incident in one line"
+
+      input_key: input
+      output_keys:
+        - description
+        - short_description
+
+      # below post processor will just parse the string and return dict with description and short_description key
+      post_process: tasks.examples.multiple_dataset_1.task_executor.AnalyzerPostProcessor
+
+      prompt:
+        - system: |
+            You are an expert IT incident analyst. Analyze ServiceNow incidents and provide structured insights.
+        - user: |
+            Analyze this ServiceNow incident and create similar incident for the role {roles->Role}:
+            - Short Description: {inc->short_description}
+            - Full Description: {inc->description}
+
+  edges:
+    - from: START
+      to: incident_generator
+    - from: incident_generator
+      to: END
+
+# this is added to rename the state variables into output format with aliasing (ex: new_inc->column_name)
+# column name should be the output column in the sink
+output_config:
+  output_map:
+    new_inc->description:
+      from: "description" # generated description
+    new_inc->short_description:
+      from: "short_description" # generated short description
+    new_inc->id:
+      from: "inc->sys_id" # sys id from incident table
+    new_inc->role:
+      from: "roles->Role" # role from huggingface dataset
+```
+
+
+
 ## Advanced Features
 
 ### 1. Custom Table Field Prefixing
