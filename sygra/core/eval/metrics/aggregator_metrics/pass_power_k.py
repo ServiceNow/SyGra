@@ -60,10 +60,7 @@ class PassPowerKMetric(BaseAggregatorMetric):
         """
         if not results:
             logger.warning(f"{self.__class__.__name__}: No results provided")
-            return {
-                "success_rate": 0.0,
-                "pass^k": 0.0
-            }
+            return {"success_rate": 0.0, "pass^k": 0.0}
         # Total number of attempts/samples
         n = len(results)
         # Number of correct solutions
@@ -79,10 +76,7 @@ class PassPowerKMetric(BaseAggregatorMetric):
         success_rate = self._safe_divide(c, n)
         pass_power_k_value = self.pass_power_k(success_rate, self.k)
 
-        return {
-            "success_rate": success_rate,
-            "pass^k": pass_power_k_value
-        }
+        return {"success_rate": success_rate, "pass^k": pass_power_k_value}
 
     @staticmethod
     def pass_power_k(success_rate: float, k: int) -> float:
@@ -103,4 +97,4 @@ class PassPowerKMetric(BaseAggregatorMetric):
         if k <= 0:
             raise ValueError("k must be positive")
 
-        return success_rate ** k
+        return success_rate**k

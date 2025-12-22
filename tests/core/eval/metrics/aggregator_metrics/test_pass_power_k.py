@@ -190,7 +190,6 @@ class TestPassPowerKMetric:
         output = PassPowerKMetric(k=2).calculate(results)
         assert output["pass^k"] == 0.36
 
-
         # 33.33% pass^k (1 out of 3)
         results = [
             UnitMetricResult(correct=True, golden={}, predicted={}),

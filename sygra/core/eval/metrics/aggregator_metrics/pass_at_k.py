@@ -16,13 +16,16 @@ from sygra.logger.logger_config import logger
 
 class PassAtKMetricConfig(BaseModel):
     """Configuration for PassAtK Metric"""
+
     k: int = Field(..., description="Number of samples to draw")
 
     @field_validator("k")
     @classmethod
     def validate_k(cls, v):
         if v is None or v < 0:
-            raise ValueError("value of k is required and must be positive (cannot be None or less than equal to 0)")
+            raise ValueError(
+                "value of k is required and must be positive (cannot be None or less than equal to 0)"
+            )
         return v
 
 
