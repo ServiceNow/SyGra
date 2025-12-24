@@ -1,0 +1,157 @@
+<script lang="ts">
+	import type { Execution } from '$lib/stores/workflow.svelte';
+	import { uiStore } from '$lib/stores/workflow.svelte';
+	import { Clock, CheckCircle2, XCircle, Loader2, Eye, ChevronUp, GripHorizontal } from 'lucide-svelte';
+
+	interface Props {
+		execution: Execution;
+	}
+
+	let { execution }: Props = $props();
+
+	let expanded = $state(false);
+
+	// Resizable panel state
+	let panelHeight = $state(200); // default height when expanded
+	let isResizing = $state(false);
+	let startY = $state(0);
+	let startHeight = $state(0);
+
+	function handleResizeMouseDown(e: MouseEvent) {
+		isResizing = true;
+		startY = e.clientY;
+		startHeight = panelHeight;
+		document.addEventListener('mousemove', handleResizeMouseMove);
+		document.addEventListener('mouseup', handleResizeMouseUp);
+		document.body.style.cursor = 'ns-resize';
+		document.body.style.userSelect = 'none';
+	}
+
+	function handleResizeMouseMove(e: MouseEvent) {
+		if (!isResizing) return;
+		const diff = startY - e.clientY; // negative because we're dragging up
+		const newHeight = Math.max(100, Math.min(500, startHeight + diff));
+		panelHeight = newHeight;
+	}
+
+	function handleResizeMouseUp() {
+		isResizing = false;
+		document.removeEventListener('mousemove', handleResizeMouseMove);
+		document.removeEventListener('mouseup', handleResizeMouseUp);
+		document.body.style.cursor = '';
+		document.body.style.userSelect = '';
+	}
+
+	let statusColor = $derived(() => {
+		switch (execution.status) {
+			case 'running': return 'bg-blue-500';
+			case 'completed': return 'bg-green-500';
+			case 'failed': return 'bg-red-500';
+			case 'cancelled': return 'bg-yellow-500';
+			default: return 'bg-gray-400';
+		}
+	});
+
+	let StatusIcon = $derived(() => {
+		switch (execution.status) {
+			case 'running': return Loader2;
+			case 'completed': return CheckCircle2;
+			case 'failed': return XCircle;
+			default: return Clock;
+		}
+	});
+
+	let completedNodes = $derived(
+		Object.values(execution.node_states).filter(s => s.status === 'completed').length
+	);
+	let totalNodes = $derived(Object.keys(execution.node_states).length);
+</script>
+
+<footer class="border-t border-gray-200 dark:border-gray-800 bg-surface relative">
+	<!-- Resize handle (only visible when expanded) -->
+	{#if expanded}
+		<div
+			class="absolute top-0 left-0 right-0 h-1 cursor-ns-resize hover:bg-violet-500/50 transition-colors z-20 group"
+			onmousedown={handleResizeMouseDown}
+			role="separator"
+			aria-orientation="horizontal"
+		>
+			<div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 opacity-0 group-hover:opacity-100 transition-opacity">
+				<GripHorizontal size={12} class="text-gray-400" />
+			</div>
+		</div>
+	{/if}
+	<!-- Status bar -->
+	<div class="px-6 py-3 flex items-center justify-between">
+		<div class="flex items-center gap-4">
+			<!-- Status indicator -->
+			<div class="flex items-center gap-2">
+				<div
+					class="w-2.5 h-2.5 rounded-full"
+					class:animate-pulse={execution.status === 'running'}
+					class:bg-gray-400={execution.status === 'pending'}
+					class:bg-blue-500={execution.status === 'running'}
+					class:bg-green-500={execution.status === 'completed'}
+					class:bg-red-500={execution.status === 'failed'}
+					class:bg-yellow-500={execution.status === 'cancelled'}
+				></div>
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+					{execution.status}
+				</span>
+			</div>
+
+			<!-- Progress -->
+			{#if totalNodes > 0}
+				<div class="text-sm text-gray-500">
+					{completedNodes} / {totalNodes} nodes
+				</div>
+			{/if}
+
+			<!-- Duration -->
+			{#if execution.duration_ms}
+				<div class="text-sm text-gray-500">
+					{(execution.duration_ms / 1000).toFixed(2)}s
+				</div>
+			{/if}
+		</div>
+
+		<div class="flex items-center gap-2">
+			{#if execution.status === 'completed' || execution.status === 'failed'}
+				<button
+					onclick={() => uiStore.openResultsModal()}
+					class="flex items-center gap-2 px-3 py-1.5 bg-violet-100 hover:bg-violet-200 dark:bg-violet-900/30 dark:hover:bg-violet-900/50 rounded-lg text-violet-700 dark:text-violet-400 text-sm font-medium transition-colors"
+				>
+					<Eye size={14} />
+					View Results
+				</button>
+			{/if}
+
+			<button
+				onclick={() => expanded = !expanded}
+				class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500"
+			>
+				<span class="transition-transform inline-block {!expanded ? 'rotate-180' : ''}">
+					<ChevronUp size={18} />
+				</span>
+			</button>
+		</div>
+	</div>
+
+	<!-- Expanded logs -->
+	{#if expanded}
+		<div class="px-6 pb-4">
+			<div
+				class="bg-gray-900 rounded-lg p-4 overflow-auto"
+				style="height: {panelHeight}px;"
+			>
+				{#if execution.logs.length > 0}
+					{#each execution.logs as log}
+						<div class="text-xs text-gray-300 font-mono">{log}</div>
+					{/each}
+				{:else}
+					<div class="text-xs text-gray-500 font-mono">No logs available</div>
+				{/if}
+			</div>
+		</div>
+	{/if}
+</footer>

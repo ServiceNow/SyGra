@@ -24,14 +24,15 @@ from sygra.logger.logger_config import logger
 from sygra.utils import constants
 
 
-def load_model_config(config_path: Optional[str] = None) -> Any:
+def load_model_config(config_path: Optional[str] = None, include_custom: bool = True) -> Any:
     """
     Load model configurations from both models.yaml and environment variables.
 
     The function:
-    1. Loads base model configurations from models.yaml
-    2. Loads sensitive data (URL and auth token/API key) from environment variables
-    3. Combines them, with environment variables taking precedence for sensitive fields
+    1. Loads base model configurations from models.yaml (builtin SyGra models)
+    2. Loads custom models from studio/config/custom_models.yaml (if exists)
+    3. Loads sensitive data (URL and auth token/API key) from environment variables
+    4. Combines them, with environment variables taking precedence for sensitive fields
 
     Environment variable naming convention:
     - SYGRA_{MODEL_NAME}_URL: URL for the model (can be a single URL or a pipe-separated list of URLs)
@@ -40,8 +41,10 @@ def load_model_config(config_path: Optional[str] = None) -> Any:
     - SYGRA_{MODEL_NAME}_TOKEN: Authentication token or API key for the model
 
     Args:
-        config_path: Optional path to custom config file.
+        config_path: Optional path to additional custom config file.
                      Custom configs override default models.yaml values.
+        include_custom: If True, automatically load custom models from CUSTOM_MODELS_CONFIG_YAML.
+                       Set to False to only load builtin models.
 
     Returns:
         Dict containing combined model configurations
@@ -51,10 +54,19 @@ def load_model_config(config_path: Optional[str] = None) -> Any:
     # Load environment variables from .env file
     load_dotenv(dotenv_path=".env", override=True)
 
-    # Load base configurations from models.yaml
+    # Load base configurations from models.yaml (builtin SyGra models)
     base_configs = load_yaml_file(constants.MODEL_CONFIG_YAML)
 
-    # Load and merge custom config if provided
+    # Automatically load custom models from studio config (if exists)
+    if include_custom and os.path.exists(constants.CUSTOM_MODELS_CONFIG_YAML):
+        try:
+            custom_studio_configs = load_yaml_file(constants.CUSTOM_MODELS_CONFIG_YAML)
+            if custom_studio_configs:
+                base_configs = {**base_configs, **custom_studio_configs}
+        except Exception:
+            pass  # Silently ignore errors loading custom models
+
+    # Load and merge additional custom config if explicitly provided
     if config_path and os.path.exists(config_path):
         custom_configs = load_yaml_file(config_path)
         base_configs = {**base_configs, **custom_configs}

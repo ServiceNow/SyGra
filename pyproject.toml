@@ -62,6 +62,9 @@ dependencies = [
   "boto3>=1.40.71,<2.0.0",
   "google-auth>=2.43.0,<3.0.0",
   "google-cloud-aiplatform>=1.128.0,<2.0.0",
+  "fastapi (>=0.124.4,<0.125.0)",
+  "uvicorn (>=0.38.0,<0.39.0)",
+  "debugpy (>=1.8.19,<2.0.0)",
 ]
 
 [project.optional-dependencies]
@@ -96,13 +99,16 @@ Issues = "https://github.com/ServiceNow/SyGra/issues"
 Discussions = "https://github.com/ServiceNow/SyGra/discussions"
 
 [tool.hatch.build.targets.wheel]
-packages = ["sygra"]
+packages = ["sygra", "studio"]
 include = [
   "sygra/**/*.yaml",
   "sygra/**/*.yml",
   "sygra/**/*.jinja2",
   "sygra/**/*.j2",
   "sygra/**/*.json",
+  "studio/**/*.yaml",
+  "studio/**/*.yml",
+  "studio/**/*.json",
 ]
 
 # --- Tool configurations ---
@@ -157,3 +163,6 @@ exclude = [
 module = ["tests.*"]
 disallow_untyped_defs = false
 check_untyped_defs = false
+
+[tool.poetry.group.dev.dependencies]
+uvicorn = "^0.38.0"
