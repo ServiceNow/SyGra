@@ -187,6 +187,12 @@
 	// Track node positions locally to preserve user arrangements
 	let nodePositions = new Map<string, { x: number; y: number }>();
 
+	// Check if any node is currently running (for muting other nodes)
+	let hasRunningNode = $derived(() => {
+		if (!execution?.node_states) return false;
+		return Object.values(execution.node_states).some(s => s.status === 'running');
+	});
+
 	// Full sync when workflow changes (new workflow loaded)
 	$effect(() => {
 		if (workflow.id !== lastWorkflowId) {
@@ -210,7 +216,9 @@
 					data: {
 						...node,
 						executionState: execution?.node_states[node.id] ?? null,
-						isCurrentNode: execution?.current_node === node.id
+						isCurrentNode: execution?.current_node === node.id,
+						nodeType: node.node_type,
+						hasRunningNode: hasRunningNode()
 					},
 					sourcePosition: Position.Right,
 					targetPosition: Position.Left,
@@ -231,7 +239,9 @@
 					data: {
 						...node,
 						executionState: execution?.node_states[node.id] ?? null,
-						isCurrentNode: execution?.current_node === node.id
+						isCurrentNode: execution?.current_node === node.id,
+						nodeType: node.node_type,
+						hasRunningNode: hasRunningNode()
 					},
 					sourcePosition: Position.Right,
 					targetPosition: Position.Left,
@@ -252,7 +262,8 @@
 					data: {
 						...node.data,
 						executionState: execution?.node_states[node.id] ?? null,
-						isCurrentNode: execution?.current_node === node.id
+						isCurrentNode: execution?.current_node === node.id,
+						hasRunningNode: hasRunningNode()
 					}
 				}))
 			);

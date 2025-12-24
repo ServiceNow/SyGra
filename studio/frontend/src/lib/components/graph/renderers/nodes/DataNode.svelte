@@ -119,6 +119,8 @@
 	executionState={data.executionState}
 	isCurrentNode={data.isCurrentNode}
 	showTargetHandle={false}
+	nodeType="data"
+	hasRunningNode={data.hasRunningNode}
 >
 	<div class="text-xs space-y-2">
 		<!-- Sources -->

@@ -11,18 +11,23 @@
 	const statusColors: Record<string, string> = {
 		completed: 'bg-emerald-500',
 		failed: 'bg-red-500',
-		running: 'bg-blue-500',
+		running: 'bg-blue-500 animate-pulse',
 		pending: 'bg-gray-300 dark:bg-gray-600',
-		cancelled: 'bg-red-500'
+		cancelled: 'bg-amber-500'
 	};
 
+	// Node IDs to skip (data, output, start, end nodes don't have meaningful durations)
+	const skipNodeIds = ['START', 'END', 'data', 'output'];
+
 	let nodes = $derived(() => {
-		return Object.entries(nodeStates).map(([id, state]) => ({
-			id,
-			status: state.status,
-			duration: state.duration_ms || 0,
-			color: statusColors[state.status] || statusColors.pending
-		}));
+		return Object.entries(nodeStates)
+			.filter(([id]) => !skipNodeIds.some(skip => id.toLowerCase().includes(skip.toLowerCase())))
+			.map(([id, state]) => ({
+				id,
+				status: state.status,
+				duration: state.duration_ms || 0,
+				color: statusColors[state.status] || statusColors.pending
+			}));
 	});
 
 	let totalMs = $derived(() => {

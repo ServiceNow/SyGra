@@ -31,6 +31,9 @@ import json as json_module
 import traceback
 import httpx
 
+from sygra.utils import utils as sygra_utils
+from sygra.utils import constants as sygra_constants
+
 from studio.graph_builder import SygraGraphBuilder
 from studio.converter import SygraToStudioConverter
 from studio.models import (
@@ -79,9 +82,9 @@ _env_vars: Dict[str, str] = {}
 _ENV_FILE = Path(__file__).parent / ".env"  # Local env file for UI-managed vars
 
 # ==================== Models API (Module Level) ====================
-# Models config file paths
-_BUILTIN_MODELS_CONFIG_PATH = Path(__file__).parent.parent / "sygra" / "config" / "models.yaml"
-_CUSTOM_MODELS_CONFIG_PATH = Path(__file__).parent / "config" / "custom_models.yaml"
+# Models config file paths - use library constants for consistency
+_BUILTIN_MODELS_CONFIG_PATH = Path(sygra_constants.MODEL_CONFIG_YAML)
+_CUSTOM_MODELS_CONFIG_PATH = Path(sygra_constants.CUSTOM_MODELS_CONFIG_YAML)
 
 # Legacy path for backwards compatibility
 _MODELS_CONFIG_PATH = _BUILTIN_MODELS_CONFIG_PATH
@@ -139,43 +142,38 @@ _MODEL_TYPES = {
 }
 
 
+# ==================== Model Config Functions (Using Library) ====================
+# These wrapper functions use the sygra library functions with Studio-specific additions
+
 def _load_builtin_models_config() -> Dict[str, Any]:
-    """Load builtin/core models from SyGra's models.yaml (read-only)."""
-    if not _BUILTIN_MODELS_CONFIG_PATH.exists():
-        return {}
-    try:
-        with open(_BUILTIN_MODELS_CONFIG_PATH, 'r') as f:
-            return yaml.safe_load(f) or {}
-    except Exception:
-        return {}
+    """Load builtin/core models from SyGra's models.yaml (read-only).
+    Uses library function: sygra_utils.load_builtin_models()
+    """
+    return sygra_utils.load_builtin_models()
 
 
 def _load_custom_models_config() -> Dict[str, Any]:
-    """Load custom user-defined models from studio config."""
-    if not _CUSTOM_MODELS_CONFIG_PATH.exists():
-        return {}
-    try:
-        with open(_CUSTOM_MODELS_CONFIG_PATH, 'r') as f:
-            return yaml.safe_load(f) or {}
-    except Exception:
-        return {}
+    """Load custom user-defined models from studio config.
+    Uses library function: sygra_utils.load_custom_models()
+    """
+    return sygra_utils.load_custom_models()
 
 
 def _save_custom_models_config(config: Dict[str, Any]) -> None:
-    """Save custom models to studio config file."""
-    _CUSTOM_MODELS_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with open(_CUSTOM_MODELS_CONFIG_PATH, 'w') as f:
-        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+    """Save custom models to studio config file.
+    Uses library function: sygra_utils.save_custom_models()
+    """
+    sygra_utils.save_custom_models(config)
 
 
 def _load_models_config_sync() -> Dict[str, Any]:
-    """Load all models configuration (builtin + custom), synchronous, fast."""
-    # Load builtin models (read-only, from SyGra core)
+    """Load all models configuration (builtin + custom), synchronous, fast.
+
+    Note: This is a simplified version that doesn't inject env vars.
+    For env var injection, use sygra_utils.load_model_config() instead.
+    """
     builtin = _load_builtin_models_config()
-    # Load custom models (user-defined, editable)
     custom = _load_custom_models_config()
-    # Merge: custom models can override builtin (but shouldn't in practice)
-    # We keep them separate in the returned dict via metadata
     merged = {}
     merged.update(builtin)
     merged.update(custom)
@@ -183,26 +181,37 @@ def _load_models_config_sync() -> Dict[str, Any]:
 
 
 def _get_builtin_model_names() -> set:
-    """Get the set of builtin model names."""
-    return set(_load_builtin_models_config().keys())
+    """Get the set of builtin model names.
+    Uses library function: sygra_utils.get_builtin_model_names()
+    """
+    return sygra_utils.get_builtin_model_names()
 
 
 def _get_model_env_value(model_name: str, env_suffix: str) -> tuple:
-    """Get env var value trying multiple prefix formats. Returns (value, key_used)."""
+    """Get env var value trying multiple prefix formats. Returns (value, key_used).
+
+    Studio-specific: Also checks _env_vars (UI-managed env vars) in addition
+    to os.environ.
+    """
+    # First check Studio's UI-managed env vars
     prefixes = [
         f"SYGRA_{model_name.upper()}",  # SYGRA_GPT-4O (keep hyphens)
-        f"SYGRA_{model_name.upper().replace('-', '_').replace('.', '_')}",  # SYGRA_GPT_4O
+        f"SYGRA_{sygra_utils.get_env_name(model_name)}",  # SYGRA_GPT_4O (normalized)
     ]
     for prefix in prefixes:
         env_key = f"{prefix}_{env_suffix}"
-        value = os.environ.get(env_key, _env_vars.get(env_key, ""))
+        # Check Studio's _env_vars first, then os.environ
+        value = _env_vars.get(env_key) or os.environ.get(env_key, "")
         if value:
             return value, env_key
     return "", f"{prefixes[0]}_{env_suffix}"
 
 
 def _get_model_credentials_fast(model_name: str, model_config: Dict[str, Any]) -> Dict[str, Any]:
-    """Get credentials for a model - fast, no heavy operations."""
+    """Get credentials for a model - fast, no heavy operations.
+
+    Studio-specific: Uses Studio's _env_vars in addition to os.environ.
+    """
     model_type = model_config.get("model_type", "")
     type_info = _MODEL_TYPES.get(model_type, {"env_vars": ["URL", "TOKEN"]})
 
@@ -3303,15 +3312,18 @@ def _execute_workflow_subprocess(
     args_dict: dict,
     result_queue: multiprocessing.Queue,
     log_queue: multiprocessing.Queue,
+    node_queue: multiprocessing.Queue = None,
 ):
     """
     Function that runs in a subprocess to execute the workflow.
 
     This allows us to terminate the process mid-execution to save LLM costs.
     Logs are sent back to the main process via log_queue.
+    Node execution events are sent via node_queue for real-time UI updates.
     """
     try:
         from sygra.core.base_task_executor import DefaultTaskExecutor
+        from sygra.core.execution_callbacks import ExecutionCallbacks
         from sygra.utils import utils
         from sygra.logger.logger_config import set_external_logger
         from argparse import Namespace
@@ -3343,9 +3355,41 @@ def _execute_workflow_subprocess(
         # Set current task for SyGra utils
         utils.current_task = task_name
 
+        # Create execution callbacks for real-time node tracking
+        execution_callbacks = None
+        if node_queue is not None:
+            def on_node_start(node_name: str, input_data: dict):
+                node_queue.put({
+                    "event": "node_start",
+                    "node_name": node_name,
+                    "timestamp": datetime.now().isoformat(),
+                })
+
+            def on_node_complete(node_name: str, output_data: dict, duration_ms: int):
+                node_queue.put({
+                    "event": "node_complete",
+                    "node_name": node_name,
+                    "duration_ms": duration_ms,
+                    "timestamp": datetime.now().isoformat(),
+                })
+
+            def on_node_error(node_name: str, error_msg: str, context: dict):
+                node_queue.put({
+                    "event": "node_error",
+                    "node_name": node_name,
+                    "error": error_msg,
+                    "timestamp": datetime.now().isoformat(),
+                })
+
+            execution_callbacks = ExecutionCallbacks(
+                on_node_start=on_node_start,
+                on_node_complete=on_node_complete,
+                on_node_error=on_node_error,
+            )
+
         # Create and run task executor
         executor = DefaultTaskExecutor(args)
-        executor.execute()
+        executor.execute(execution_callbacks=execution_callbacks)
 
         result_queue.put({"status": "completed"})
     except Exception as e:
@@ -3471,10 +3515,11 @@ async def _run_workflow(
         # Create queues for subprocess communication
         result_queue = multiprocessing.Queue()
         log_queue = multiprocessing.Queue()
+        node_queue = multiprocessing.Queue()
 
         process = multiprocessing.Process(
             target=_execute_workflow_subprocess,
-            args=(task_name, args_dict, result_queue, log_queue)
+            args=(task_name, args_dict, result_queue, log_queue, node_queue)
         )
 
         # Store process for potential cancellation
@@ -3492,10 +3537,39 @@ async def _run_workflow(
                 except:
                     break
 
+        # Helper to drain node events and update node states
+        def drain_node_events():
+            while True:
+                try:
+                    event = node_queue.get_nowait()
+                    node_name = event.get("node_name")
+                    event_type = event.get("event")
+
+                    if node_name and node_name in execution.node_states:
+                        node_state = execution.node_states[node_name]
+
+                        if event_type == "node_start":
+                            node_state.status = ExecutionStatus.RUNNING
+                            node_state.started_at = datetime.fromisoformat(event.get("timestamp"))
+                            execution.current_node = node_name
+
+                        elif event_type == "node_complete":
+                            node_state.status = ExecutionStatus.COMPLETED
+                            node_state.completed_at = datetime.fromisoformat(event.get("timestamp"))
+                            node_state.duration_ms = event.get("duration_ms", 0)
+
+                        elif event_type == "node_error":
+                            node_state.status = ExecutionStatus.FAILED
+                            node_state.error = event.get("error")
+                            node_state.completed_at = datetime.fromisoformat(event.get("timestamp"))
+                except:
+                    break
+
         # Poll for completion while checking for cancellation and collecting logs
         while process.is_alive():
-            # Collect any pending logs
+            # Collect any pending logs and node events
             drain_logs()
+            drain_node_events()
 
             if execution_id in _cancelled_executions:
                 execution.logs.append(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - INFO - Cancellation requested, terminating execution...")
@@ -3504,6 +3578,7 @@ async def _run_workflow(
                 if process.is_alive():
                     process.kill()
                 drain_logs()  # Get any final logs
+                drain_node_events()  # Get any final node events
                 execution.status = ExecutionStatus.CANCELLED
                 execution.completed_at = datetime.now()
                 _cancelled_executions.discard(execution_id)
@@ -3513,6 +3588,7 @@ async def _run_workflow(
                 try:
                     log_queue.close()
                     result_queue.close()
+                    node_queue.close()
                 except:
                     pass
                 # Persist execution history
@@ -3522,8 +3598,9 @@ async def _run_workflow(
 
         process.join()
 
-        # Drain any remaining logs
+        # Drain any remaining logs and node events
         drain_logs()
+        drain_node_events()
 
         # Clean up process reference
         if execution_id in _running_processes:
@@ -3539,6 +3616,7 @@ async def _run_workflow(
             try:
                 log_queue.close()
                 result_queue.close()
+                node_queue.close()
             except:
                 pass
             _save_executions()
@@ -3557,6 +3635,8 @@ async def _run_workflow(
             log_queue.join_thread()
             result_queue.close()
             result_queue.join_thread()
+            node_queue.close()
+            node_queue.join_thread()
         except:
             pass
 

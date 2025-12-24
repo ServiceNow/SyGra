@@ -936,7 +936,13 @@ class BaseTaskExecutor(ABC):
         else:
             return state
 
-    def execute(self):
+    def execute(self, execution_callbacks=None):
+        """
+        Execute the task workflow.
+
+        Args:
+            execution_callbacks: Optional ExecutionCallbacks for real-time node tracking.
+        """
         graph = self.init_graph()
         compiled_graph = graph.compile()
         logger.info("Graph compiled successfully")
@@ -1026,6 +1032,7 @@ class BaseTaskExecutor(ABC):
             output_record_generator=self.output_record_generator,
             resumable=self.resumable,
             task_name=self.task_name,
+            execution_callbacks=execution_callbacks,
         )
         dataset_processor.process_and_store_results()
 

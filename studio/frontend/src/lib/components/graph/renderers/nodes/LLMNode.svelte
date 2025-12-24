@@ -28,6 +28,8 @@
 	color="#8b5cf6"
 	executionState={data.executionState}
 	isCurrentNode={data.isCurrentNode}
+	nodeType="llm"
+	hasRunningNode={data.hasRunningNode}
 >
 	<div class="space-y-1">
 		{#if data.model}

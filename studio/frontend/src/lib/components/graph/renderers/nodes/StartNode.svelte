@@ -22,4 +22,6 @@
 	executionState={data.executionState}
 	isCurrentNode={data.isCurrentNode}
 	showTargetHandle={true}
+	nodeType="start"
+	hasRunningNode={data.hasRunningNode}
 />

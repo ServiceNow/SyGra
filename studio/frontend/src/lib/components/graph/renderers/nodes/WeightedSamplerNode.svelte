@@ -38,6 +38,8 @@
 	color="#8b5cf6"
 	executionState={data.executionState}
 	isCurrentNode={data.isCurrentNode}
+	nodeType="weighted_sampler"
+	hasRunningNode={data.hasRunningNode}
 >
 	<div class="text-xs space-y-2">
 		<!-- Attributes Preview -->

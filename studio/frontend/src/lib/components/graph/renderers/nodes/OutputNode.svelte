@@ -57,6 +57,8 @@
 	executionState={data.executionState}
 	isCurrentNode={data.isCurrentNode}
 	showSourceHandle={false}
+	nodeType="output"
+	hasRunningNode={data.hasRunningNode}
 >
 	<div class="text-xs space-y-2">
 		<!-- Generator -->

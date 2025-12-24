@@ -3,11 +3,12 @@
 	import {
 		Search, Filter, RefreshCw, CheckCircle2, XCircle, Clock, Loader2,
 		ChevronDown, ArrowUpDown, Calendar, Timer, DollarSign, Zap, X, GitBranch,
-		Trash2, CheckSquare, Square, MinusSquare, Ban, BarChart3, Table, GitCompare
+		Trash2, CheckSquare, Square, MinusSquare, Ban, BarChart3, Table, GitCompare, Activity
 	} from 'lucide-svelte';
 	import ConfirmationModal from '../common/ConfirmationModal.svelte';
 	import RunsAnalyticsDashboard from './RunsAnalyticsDashboard.svelte';
 	import CustomSelect from '../common/CustomSelect.svelte';
+	import RunTimelineBar from './RunTimelineBar.svelte';
 
 	let executionHistory = $derived(executionStore.executionHistory);
 	let workflows = $derived(workflowStore.workflows);
@@ -664,6 +665,12 @@
 							<ArrowUpDown size={14} class={sortField === 'duration_ms' ? 'text-violet-500' : ''} />
 						</button>
 					</th>
+					<th class="text-left px-6 py-3 min-w-[120px]">
+						<span class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+							<Activity size={12} />
+							Timeline
+						</span>
+					</th>
 					<th class="text-left px-6 py-3">
 						<span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
 							Tokens
@@ -728,6 +735,18 @@
 								<Timer size={14} class="text-gray-400" />
 								{formatDuration(run.duration_ms)}
 							</span>
+						</td>
+						<td class="px-6 py-4">
+							{#if run.node_states && Object.keys(run.node_states).length > 0}
+								<div class="min-w-[100px]">
+									<RunTimelineBar
+										nodeStates={run.node_states}
+										totalDuration={run.duration_ms}
+									/>
+								</div>
+							{:else}
+								<span class="text-xs text-gray-400">-</span>
+							{/if}
 						</td>
 						<td class="px-6 py-4">
 							<span class="text-sm text-gray-900 dark:text-gray-100 flex items-center gap-1">

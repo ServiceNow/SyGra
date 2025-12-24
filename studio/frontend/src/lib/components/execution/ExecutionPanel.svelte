@@ -64,7 +64,42 @@
 	let completedNodes = $derived(
 		Object.values(execution.node_states).filter(s => s.status === 'completed').length
 	);
+	let runningNodes = $derived(
+		Object.values(execution.node_states).filter(s => s.status === 'running').length
+	);
 	let totalNodes = $derived(Object.keys(execution.node_states).length);
+	let progressPercent = $derived(totalNodes > 0 ? (completedNodes / totalNodes) * 100 : 0);
+
+	// Get current running node name
+	let currentNodeName = $derived(() => {
+		if (execution.current_node) {
+			return execution.current_node;
+		}
+		// Fallback: find first running node
+		const runningEntry = Object.entries(execution.node_states).find(([_, s]) => s.status === 'running');
+		return runningEntry ? runningEntry[0] : null;
+	});
+
+	// Status message based on state
+	let statusMessage = $derived(() => {
+		if (execution.status === 'completed') {
+			return `Completed ${completedNodes}/${totalNodes} nodes`;
+		}
+		if (execution.status === 'failed') {
+			return `Failed at ${currentNodeName() || 'unknown'}`;
+		}
+		if (execution.status === 'cancelled') {
+			return 'Cancelled';
+		}
+		if (execution.status === 'running') {
+			const nodeName = currentNodeName();
+			if (nodeName) {
+				return `Running ${nodeName} (${completedNodes + 1}/${totalNodes})`;
+			}
+			return `Running ${completedNodes}/${totalNodes}`;
+		}
+		return 'Pending';
+	});
 </script>
 
 <footer class="border-t border-gray-200 dark:border-gray-800 bg-surface relative">
@@ -81,6 +116,22 @@
 			</div>
 		</div>
 	{/if}
+	<!-- Progress bar (thin bar at top of footer) -->
+	{#if execution.status === 'running' || progressPercent > 0}
+		<div class="absolute top-0 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-700 overflow-hidden">
+			<div
+				class="h-full transition-all duration-300 ease-out"
+				class:bg-blue-500={execution.status === 'running'}
+				class:bg-green-500={execution.status === 'completed'}
+				class:bg-red-500={execution.status === 'failed'}
+				class:bg-yellow-500={execution.status === 'cancelled'}
+				class:bg-gray-400={execution.status === 'pending'}
+				class:animate-pulse={execution.status === 'running'}
+				style="width: {progressPercent}%"
+			></div>
+		</div>
+	{/if}
+
 	<!-- Status bar -->
 	<div class="px-6 py-3 flex items-center justify-between">
 		<div class="flex items-center gap-4">
@@ -95,21 +146,15 @@
 					class:bg-red-500={execution.status === 'failed'}
 					class:bg-yellow-500={execution.status === 'cancelled'}
 				></div>
-				<span class="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
-					{execution.status}
+				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+					{statusMessage()}
 				</span>
 			</div>
 
-			<!-- Progress -->
-			{#if totalNodes > 0}
-				<div class="text-sm text-gray-500">
-					{completedNodes} / {totalNodes} nodes
-				</div>
-			{/if}
-
 			<!-- Duration -->
 			{#if execution.duration_ms}
-				<div class="text-sm text-gray-500">
+				<div class="text-sm text-gray-500 flex items-center gap-1">
+					<Clock size={12} />
 					{(execution.duration_ms / 1000).toFixed(2)}s
 				</div>
 			{/if}

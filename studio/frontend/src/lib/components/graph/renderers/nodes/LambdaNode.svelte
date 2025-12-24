@@ -22,4 +22,6 @@
 	color="#f97316"
 	executionState={data.executionState}
 	isCurrentNode={data.isCurrentNode}
+	nodeType="lambda"
+	hasRunningNode={data.hasRunningNode}
 />

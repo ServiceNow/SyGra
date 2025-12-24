@@ -13,6 +13,8 @@
 		isCurrentNode?: boolean;
 		showSourceHandle?: boolean;
 		showTargetHandle?: boolean;
+		nodeType?: string; // 'data', 'output', 'llm', 'agent', etc.
+		hasRunningNode?: boolean; // true if any node in the graph is currently running
 		children?: import('svelte').Snippet;
 	}
 
@@ -26,8 +28,26 @@
 		isCurrentNode = false,
 		showSourceHandle = true,
 		showTargetHandle = true,
+		nodeType = '',
+		hasRunningNode = false,
 		children
 	}: Props = $props();
+
+	// Don't show status icons for data, output, start, end nodes
+	let showStatusIcon = $derived(() => {
+		const skipTypes = ['data', 'output', 'start', 'end'];
+		return !skipTypes.includes(nodeType.toLowerCase());
+	});
+
+	// Should this node be muted (dimmed)?
+	// Mute when another node is running and this node is not the current one
+	let isMuted = $derived(() => {
+		if (!hasRunningNode) return false;
+		// Don't mute if this is the running node
+		if (executionState?.status === 'running') return false;
+		if (isCurrentNode) return false;
+		return true;
+	});
 
 	let statusColor = $derived(() => {
 		if (!executionState) return '';
@@ -55,6 +75,7 @@
 	class:node-running={executionState?.status === 'running'}
 	class:border-gray-200={!executionState}
 	class:dark:border-gray-700={!executionState}
+	class:opacity-60={isMuted()}
 	style="border-color: {executionState ? '' : ''}"
 	style:border-color={executionState?.status === 'running' ? '#3b82f6' :
 	                    executionState?.status === 'completed' ? '#22c55e' :
@@ -91,8 +112,8 @@
 			{/if}
 		</div>
 
-		<!-- Status indicator -->
-		{#if StatusIcon()}
+		<!-- Status indicator (hidden for data/output/start/end nodes) -->
+		{#if StatusIcon() && showStatusIcon()}
 			<div class="flex-shrink-0">
 				{#if executionState?.status === 'running'}
 					<Loader2 size={18} class="text-blue-500 animate-spin" />
