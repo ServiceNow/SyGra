@@ -15,7 +15,7 @@
 		MarkerType
 	} from '@xyflow/svelte';
 	import { writable, get, derived } from 'svelte/store';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, tick } from 'svelte';
 	import { workflowStore, type Workflow, type Execution } from '$lib/stores/workflow.svelte';
 
 	// Node components
@@ -34,6 +34,9 @@
 
 	// Workflow boundary visualization
 	import WorkflowBoundary from './WorkflowBoundary.svelte';
+
+	// FitView helper (must be inside SvelteFlow to use useSvelteFlow hook)
+	import FitViewHelper from './FitViewHelper.svelte';
 
 	// Import SvelteFlow styles
 	import '@xyflow/svelte/dist/style.css';
@@ -125,6 +128,9 @@
 	const nodes = writable<Node[]>([]);
 	const edges = writable<Edge[]>([]);
 
+	// Store to trigger fitView - increment to trigger
+	const fitViewTrigger = writable(0);
+
 	// Node types that are part of the main workflow (inside the boundary)
 	// Excludes: 'data' (input), 'output' (result), and 'tool' which stay outside
 	const workflowNodeTypes = new Set([
@@ -133,18 +139,20 @@
 	]);
 
 	// Estimated node dimensions for bounding box calculation (based on NodeWrapper styles)
-	// Slightly overestimated to ensure proper margins
+	// These heights account for: header (~56px) + optional content + potential duration display
+	// Overestimated slightly to ensure proper margins around the workflow boundary
 	const nodeDimensions: Record<string, { width: number; height: number }> = {
-		start: { width: 160, height: 60 },
-		end: { width: 160, height: 60 },
-		llm: { width: 240, height: 80 },
-		lambda: { width: 220, height: 75 },
-		subgraph: { width: 260, height: 85 },
-		weighted_sampler: { width: 240, height: 80 },
-		connector: { width: 180, height: 60 },
-		web_agent: { width: 220, height: 75 },
-		data: { width: 200, height: 70 },
-		output: { width: 200, height: 70 }
+		start: { width: 160, height: 70 },
+		end: { width: 160, height: 70 },
+		llm: { width: 240, height: 90 },
+		lambda: { width: 220, height: 85 },
+		subgraph: { width: 260, height: 100 },
+		weighted_sampler: { width: 240, height: 90 },
+		connector: { width: 180, height: 70 },
+		web_agent: { width: 220, height: 85 },
+		agent: { width: 240, height: 90 },
+		data: { width: 200, height: 80 },
+		output: { width: 200, height: 80 }
 	};
 
 	// Derive bounding box for workflow nodes (excluding data and output)
@@ -167,11 +175,11 @@
 		});
 
 		// Add padding around the boundary
-		// Use asymmetric padding: more on right to account for node rendering differences
+		// Use asymmetric padding to account for node rendering differences
 		const paddingLeft = 25;
 		const paddingRight = 45;  // Extra padding on right side
 		const paddingTop = 25;
-		const paddingBottom = 30;
+		const paddingBottom = 40;  // Extra padding on bottom to match visual appearance of other sides
 
 		return {
 			x: minX - paddingLeft,
@@ -226,6 +234,11 @@
 					selectable: true,
 					draggable: true
 				})));
+
+				// Trigger fitView after nodes are loaded
+				tick().then(() => {
+					fitViewTrigger.update(n => n + 1);
+				});
 			}).catch(() => {
 				// Fallback to original positions if layout fails
 				nodePositions = new Map();
@@ -249,6 +262,11 @@
 					selectable: true,
 					draggable: true
 				})));
+
+				// Trigger fitView after nodes are loaded
+				tick().then(() => {
+					fitViewTrigger.update(n => n + 1);
+				});
 			});
 		}
 	});
@@ -438,6 +456,9 @@
 		<ViewportPortal>
 			<WorkflowBoundary bounds={$workflowBounds} {isDarkMode} />
 		</ViewportPortal>
+
+		<!-- FitView helper - responds to fitViewTrigger changes -->
+		<FitViewHelper trigger={fitViewTrigger} />
 
 		<Controls position="bottom-right" />
 		<Background

@@ -67,6 +67,33 @@
 	border-radius: 0.75rem;
 }
 
+/* Hide SvelteFlow attribution */
+.svelte-flow__attribution {
+	display: none !important;
+}
+
+/* SvelteFlow Controls dark mode */
+.dark .svelte-flow__controls {
+	background: #1e293b;
+	border: 1px solid #334155;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+}
+
+.dark .svelte-flow__controls-button {
+	background: #1e293b;
+	border-bottom: 1px solid #334155;
+	fill: #94a3b8;
+}
+
+.dark .svelte-flow__controls-button:hover {
+	background: #334155;
+	fill: #e2e8f0;
+}
+
+.dark .svelte-flow__controls-button:last-child {
+	border-bottom: none;
+}
+
 /* MiniMap interactivity */
 .svelte-flow__panel.bottom.left {
 	z-index: 10;

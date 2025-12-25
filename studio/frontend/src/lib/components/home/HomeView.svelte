@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { workflowStore, executionStore, uiStore, type Execution } from '$lib/stores/workflow.svelte';
+	import { pushState } from '$app/navigation';
 	import {
 		Plus, GitBranch, History, Play, CheckCircle2, XCircle, Clock, Loader2, ArrowRight,
 		Zap, TrendingUp, TrendingDown, Activity, Layers, RefreshCw, Sparkles, Search, Timer,
@@ -77,7 +78,7 @@
 		url.searchParams.set('view', view);
 		url.searchParams.delete('workflow');
 		if (params) Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-		window.history.pushState({}, '', url.toString());
+		pushState(url.toString(), {});
 	}
 
 	function goToWorkflows() { navigate('workflows'); }
@@ -96,7 +97,7 @@
 		const url = new URL(window.location.href);
 		url.searchParams.set('workflow', id);
 		url.searchParams.delete('view');
-		window.history.pushState({}, '', url.toString());
+		pushState(url.toString(), {});
 	}
 
 	function selectRun(run: Execution) {

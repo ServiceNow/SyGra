@@ -2,7 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { X, ArrowRight, GitBranch, Link, Code, GripVertical, Edit2, Save, Trash2, Plus, ChevronUp, ChevronDown, Check } from 'lucide-svelte';
 	import { workflowStore, type WorkflowNode, type EdgeCondition, type WorkflowEdge } from '$lib/stores/workflow.svelte';
-	import MonacoEditor from '$lib/components/editor/MonacoEditor.svelte';
+	import MonacoEditor from '$lib/components/editor/LazyMonacoEditor.svelte';
 	import ConfirmModal from '$lib/components/common/ConfirmModal.svelte';
 	import CustomSelect from '$lib/components/common/CustomSelect.svelte';
 

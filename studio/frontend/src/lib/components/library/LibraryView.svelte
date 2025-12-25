@@ -8,7 +8,7 @@
 	} from 'lucide-svelte';
 	import { recipeStore, RECIPE_CATEGORIES, type Recipe, type RecipeCategory } from '$lib/stores/recipe.svelte';
 	import { toolStore, TOOL_CATEGORIES, DEFAULT_TOOL_CODE, type Tool, type ToolCategory } from '$lib/stores/tool.svelte';
-	import MonacoEditor from '$lib/components/editor/MonacoEditor.svelte';
+	import MonacoEditor from '$lib/components/editor/LazyMonacoEditor.svelte';
 	import ConfirmationModal from '$lib/components/common/ConfirmationModal.svelte';
 	import RecipePreviewModal from './RecipePreviewModal.svelte';
 

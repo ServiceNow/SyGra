@@ -5,7 +5,7 @@
 		Search, Plus, Wrench, Database, Globe, Puzzle, Trash2, Copy,
 		Download, Upload, MoreVertical, X, Code, Edit3, Check
 	} from 'lucide-svelte';
-	import MonacoEditor from '$lib/components/editor/MonacoEditor.svelte';
+	import MonacoEditor from '$lib/components/editor/LazyMonacoEditor.svelte';
 	import ConfirmModal from '$lib/components/common/ConfirmModal.svelte';
 
 	const dispatch = createEventDispatcher();

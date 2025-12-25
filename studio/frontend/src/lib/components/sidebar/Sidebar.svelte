@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { pushState } from '$app/navigation';
 	import { workflowStore, uiStore, executionStore } from '$lib/stores/workflow.svelte';
 	import { recipeStore } from '$lib/stores/recipe.svelte';
 	import { toolStore } from '$lib/stores/tool.svelte';
@@ -29,7 +30,7 @@
 		} else {
 			url.searchParams.set('view', view);
 		}
-		window.history.pushState({}, '', url.toString());
+		pushState(url.toString(), {});
 	}
 
 	function goToHome() {

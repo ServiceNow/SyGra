@@ -10,7 +10,7 @@
 		SkipForward, ArrowDownToLine, ArrowUpFromLine, Pause, Loader2,
 		Code2
 	} from 'lucide-svelte';
-	import MonacoEditor from '$lib/components/editor/MonacoEditor.svelte';
+	import MonacoEditor from '$lib/components/editor/LazyMonacoEditor.svelte';
 	import ExecutionOutputPanel from './ExecutionOutputPanel.svelte';
 
 	interface Props {

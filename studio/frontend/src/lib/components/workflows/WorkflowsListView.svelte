@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { workflowStore, uiStore } from '$lib/stores/workflow.svelte';
+	import { pushState } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import {
 		Search, RefreshCw, GitBranch, ChevronDown, ArrowUpDown, Plus,
@@ -109,7 +110,7 @@
 		const url = new URL(window.location.href);
 		url.searchParams.set('workflow', id);
 		url.searchParams.delete('view');
-		window.history.pushState({}, '', url.toString());
+		pushState(url.toString(), {});
 	}
 
 	function createNewWorkflow() {
@@ -119,7 +120,7 @@
 		const url = new URL(window.location.href);
 		url.searchParams.set('view', 'builder');
 		url.searchParams.delete('workflow');
-		window.history.pushState({}, '', url.toString());
+		pushState(url.toString(), {});
 	}
 
 	// Menu actions
@@ -140,7 +141,7 @@
 			const url = new URL(window.location.href);
 			url.searchParams.set('view', 'builder');
 			url.searchParams.set('workflow', workflowId);
-			window.history.pushState({}, '', url.toString());
+			pushState(url.toString(), {});
 		});
 	}
 
@@ -178,7 +179,7 @@
 		const url = new URL(window.location.href);
 		url.searchParams.set('view', 'builder');
 		url.searchParams.delete('workflow');
-		window.history.pushState({}, '', url.toString());
+		pushState(url.toString(), {});
 	}
 
 	function handleRename(e: MouseEvent, workflow: { id: string; name: string }) {

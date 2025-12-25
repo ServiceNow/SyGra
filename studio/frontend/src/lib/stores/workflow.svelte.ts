@@ -343,14 +343,23 @@ function createWorkflowStore() {
 
 	// Undo/Redo state
 	const MAX_UNDO_STACK = 50;
+	const UNDO_THROTTLE_MS = 100; // Minimum time between undo states
 	let undoStack = $state<Array<{ nodes: WorkflowNode[]; edges: WorkflowEdge[] }>>([]);
 	let redoStack = $state<Array<{ nodes: WorkflowNode[]; edges: WorkflowEdge[] }>>([]);
+	let lastUndoTime = 0;
 
 	// Push current state to undo stack (call before making changes)
 	function pushUndoState() {
 		if (!currentWorkflow) return;
 
-		// Deep clone current state
+		// Throttle rapid undo state creation
+		const now = Date.now();
+		if (now - lastUndoTime < UNDO_THROTTLE_MS) {
+			return; // Skip this state - too soon after the last one
+		}
+		lastUndoTime = now;
+
+		// Deep clone current state using JSON (structuredClone can't handle some Svelte internals)
 		const snapshot = {
 			nodes: JSON.parse(JSON.stringify(currentWorkflow.nodes)),
 			edges: JSON.parse(JSON.stringify(currentWorkflow.edges))
@@ -522,14 +531,12 @@ function createWorkflowStore() {
 			const id = currentWorkflow.id;
 			if (id.startsWith('new_')) return currentWorkflow; // Can't reload new workflows
 
-			console.log('[reloadCurrentWorkflow] Reloading workflow:', id);
 			try {
 				const response = await fetch(`${API_BASE}/workflows/${id}`);
 				if (!response.ok) throw new Error('Failed to reload workflow');
 				const newWorkflow = await response.json();
 				currentWorkflow = newWorkflow;
 				workflowVersion++;
-				console.log('[reloadCurrentWorkflow] Workflow reloaded, version:', workflowVersion);
 				return currentWorkflow;
 			} catch (e) {
 				console.error('[reloadCurrentWorkflow] Error:', e);
@@ -555,8 +562,6 @@ function createWorkflowStore() {
 				console.error('updateNode: No current workflow');
 				return false;
 			}
-
-			console.log('updateNode:', nodeId, nodeData);
 
 			// Extract newId if present (for renaming)
 			const { newId, ...restNodeData } = nodeData;
@@ -605,7 +610,6 @@ function createWorkflowStore() {
 
 					// Increment version to force dependent $derived values to update
 					workflowVersion++;
-					console.log('[updateNode] New workflow updated, version:', workflowVersion);
 				}
 				return true;
 			}
@@ -630,7 +634,6 @@ function createWorkflowStore() {
 				}
 
 				const result = await response.json();
-				console.log('updateNode result:', result);
 
 				// Update local state - create completely new arrays to ensure Svelte 5 reactivity
 				const nodeIndex = currentWorkflow.nodes.findIndex(n => n.id === nodeId);
@@ -654,8 +657,6 @@ function createWorkflowStore() {
 						...(apiNodeData.function_path !== undefined ? { function_path: apiNodeData.function_path } : {}),
 						id: finalId
 					};
-
-					console.log('Updated node:', updatedNode);
 
 					// Create a new nodes array without mutating the original
 					const newNodes = [
@@ -685,14 +686,11 @@ function createWorkflowStore() {
 						};
 					}
 
-					// Force assignment to trigger Svelte 5 reactivity
-					currentWorkflow = null;
-					currentWorkflow = updatedWorkflow;
+					// Use spread to create new reference and trigger Svelte 5 reactivity
+					currentWorkflow = { ...updatedWorkflow };
 
 					// Increment version to force dependent $derived values to update
 					workflowVersion++;
-
-					console.log('Workflow updated, new node count:', currentWorkflow?.nodes.length, 'version:', workflowVersion);
 				}
 
 				return true;
@@ -708,8 +706,6 @@ function createWorkflowStore() {
 				console.error('updateDataConfig: No current workflow');
 				return false;
 			}
-
-			console.log('updateDataConfig:', dataConfig);
 
 			// Check if this is a new workflow (not yet saved to backend)
 			const isNewWorkflow = currentWorkflow.id.startsWith('new_');
@@ -739,8 +735,7 @@ function createWorkflowStore() {
 					throw new Error(errorData.detail || 'Failed to update data config');
 				}
 
-				const result = await response.json();
-				console.log('updateDataConfig result:', result);
+				const _result = await response.json();
 
 				// Update local state
 				currentWorkflow = {
@@ -1333,11 +1328,19 @@ function createExecutionStore() {
 	let executionHistory = $state<Execution[]>([]);
 	let isPolling = $state(false);
 	let pollInterval: ReturnType<typeof setInterval> | null = null;
+	let currentPollingId: string | null = null;
+	let isPaused = $state(false);
+
+	// Adaptive polling intervals
+	const POLL_INTERVAL_FAST = 1000;   // 1 second when running
+	const POLL_INTERVAL_SLOW = 3000;   // 3 seconds when pending/starting
+	let currentPollInterval = POLL_INTERVAL_SLOW;
 
 	return {
 		get currentExecution() { return currentExecution; },
 		get executionHistory() { return executionHistory; },
 		get isPolling() { return isPolling; },
+		get isPaused() { return isPaused; },
 
 		async startExecution(workflowId: string, options: ExecutionOptions) {
 			try {
@@ -1390,12 +1393,33 @@ function createExecutionStore() {
 		startPolling(executionId: string) {
 			if (pollInterval) clearInterval(pollInterval);
 			isPolling = true;
+			isPaused = false;
+			currentPollingId = executionId;
+			currentPollInterval = POLL_INTERVAL_SLOW; // Start with slow polling
 
 			const poll = async () => {
+				// Skip polling if paused
+				if (isPaused) return;
+
 				try {
 					const response = await fetch(`${API_BASE}/executions/${executionId}`);
 					if (response.ok) {
+						const prevStatus = currentExecution?.status;
 						currentExecution = await response.json();
+
+						// Adaptive polling: speed up when running, slow down when pending
+						const newInterval = currentExecution?.status === 'running'
+							? POLL_INTERVAL_FAST
+							: POLL_INTERVAL_SLOW;
+
+						// Restart polling if interval changed
+						if (newInterval !== currentPollInterval) {
+							currentPollInterval = newInterval;
+							if (pollInterval) {
+								clearInterval(pollInterval);
+								pollInterval = setInterval(poll, currentPollInterval);
+							}
+						}
 
 						// Stop polling if execution is done
 						if (currentExecution?.status === 'completed' ||
@@ -1412,7 +1436,7 @@ function createExecutionStore() {
 			};
 
 			poll(); // Initial poll
-			pollInterval = setInterval(poll, 1000);
+			pollInterval = setInterval(poll, currentPollInterval);
 		},
 
 		stopPolling() {
@@ -1421,6 +1445,27 @@ function createExecutionStore() {
 				pollInterval = null;
 			}
 			isPolling = false;
+			isPaused = false;
+			currentPollingId = null;
+		},
+
+		// Pause polling when tab is hidden
+		pausePolling() {
+			if (isPolling && !isPaused) {
+				isPaused = true;
+				if (pollInterval) {
+					clearInterval(pollInterval);
+					pollInterval = null;
+				}
+			}
+		},
+
+		// Resume polling when tab becomes visible
+		resumePolling() {
+			if (isPaused && currentPollingId) {
+				isPaused = false;
+				this.startPolling(currentPollingId);
+			}
 		},
 
 		async cancelExecution() {

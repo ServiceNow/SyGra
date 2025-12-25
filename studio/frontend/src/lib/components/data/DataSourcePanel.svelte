@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { workflowStore, type DataSourceConfig, type DataSourceDetails, type OutputConfig } from '$lib/stores/workflow.svelte';
-	import MonacoEditor from '$lib/components/editor/MonacoEditor.svelte';
+	import MonacoEditor from '$lib/components/editor/LazyMonacoEditor.svelte';
 	import {
 		Database, FileJson, Cloud, Server, ChevronDown, ChevronUp,
 		File, FileText, Table, Filter, Columns, Hash, ArrowRight,

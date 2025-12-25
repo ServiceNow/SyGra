@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { executionStore, uiStore, workflowStore, type Execution } from '$lib/stores/workflow.svelte';
+	import { pushState } from '$app/navigation';
 	import {
 		Search, Filter, RefreshCw, CheckCircle2, XCircle, Clock, Loader2,
 		ChevronDown, ArrowUpDown, Calendar, Timer, DollarSign, Zap, X, GitBranch,
@@ -175,7 +176,7 @@
 		const url = new URL(window.location.href);
 		url.searchParams.set('view', 'runs');
 		url.searchParams.set('run', run.id);
-		window.history.pushState({}, '', url.toString());
+		pushState(url.toString(), {});
 	}
 
 	function toggleSort(field: typeof sortField) {

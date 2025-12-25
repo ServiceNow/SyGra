@@ -52,6 +52,17 @@
 		handleUrlNavigation();
 	}
 
+	// Visibility change handler for pausing/resuming polling
+	function handleVisibilityChange() {
+		if (document.hidden) {
+			// Tab is hidden - pause polling to save resources
+			executionStore.pausePolling();
+		} else {
+			// Tab is visible again - resume polling if needed
+			executionStore.resumePolling();
+		}
+	}
+
 	onMount(async () => {
 		// Initialize theme from localStorage/system preference
 		themeStore.init();
@@ -68,11 +79,15 @@
 
 		// Listen for browser back/forward navigation
 		window.addEventListener('popstate', handlePopState);
+
+		// Listen for visibility changes to pause/resume polling
+		document.addEventListener('visibilitychange', handleVisibilityChange);
 	});
 
 	onDestroy(() => {
 		if (typeof window !== 'undefined') {
 			window.removeEventListener('popstate', handlePopState);
+			document.removeEventListener('visibilitychange', handleVisibilityChange);
 		}
 	});
 

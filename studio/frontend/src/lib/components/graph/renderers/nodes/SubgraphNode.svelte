@@ -141,8 +141,10 @@
 			class="!w-3 !h-3 !bg-blue-400 !border-2 !border-white dark:!border-gray-800 !-left-1.5"
 		/>
 
-		<!-- Subgraph header -->
-		<div class="flex items-center gap-3 px-4 py-3 bg-blue-500/10 border-b border-blue-200 dark:border-blue-800">
+		<!-- Inner content wrapper to clip backgrounds to rounded corners -->
+		<div class="overflow-hidden rounded-[10px]">
+			<!-- Subgraph header -->
+			<div class="flex items-center gap-3 px-4 py-3 bg-blue-500/10 border-b border-blue-200 dark:border-blue-800">
 			<div class="w-8 h-8 rounded-lg flex items-center justify-center text-white bg-blue-500">
 				<Boxes size={18} />
 			</div>
@@ -245,11 +247,13 @@
 		</div>
 
 		<!-- Duration display -->
-		{#if data.executionState?.duration_ms}
-			<div class="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500">
-				Duration: {data.executionState.duration_ms}ms
-			</div>
-		{/if}
+			{#if data.executionState?.duration_ms}
+				<div class="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500">
+					Duration: {data.executionState.duration_ms}ms
+				</div>
+			{/if}
+		</div>
+		<!-- End inner content wrapper -->
 
 		<!-- Source handle (right) -->
 		<Handle
@@ -275,36 +279,40 @@
 			class="!w-3 !h-3 !bg-gray-400 dark:!bg-gray-500 !border-2 !border-white dark:!border-gray-800"
 		/>
 
-		<!-- Node header -->
-		<div class="flex items-center gap-3 px-4 py-3 rounded-t-lg bg-blue-500/10">
-			<div class="w-8 h-8 rounded-lg flex items-center justify-center text-white bg-blue-500">
-				<Boxes size={18} />
-			</div>
-			<div class="flex-1 min-w-0">
-				<div class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
-					{data.summary || data.id}
+		<!-- Inner content wrapper to clip backgrounds to rounded corners -->
+		<div class="overflow-hidden rounded-[10px]">
+			<!-- Node header -->
+			<div class="flex items-center gap-3 px-4 py-3 bg-blue-500/10">
+				<div class="w-8 h-8 rounded-lg flex items-center justify-center text-white bg-blue-500">
+					<Boxes size={18} />
 				</div>
-				<div class="text-xs text-gray-500 dark:text-gray-400 truncate">
-					{data.subgraph_path || 'Subgraph'}
+				<div class="flex-1 min-w-0">
+					<div class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
+						{data.summary || data.id}
+					</div>
+					<div class="text-xs text-gray-500 dark:text-gray-400 truncate">
+						{data.subgraph_path || 'Subgraph'}
+					</div>
 				</div>
+
+				<!-- Status indicator -->
+				{#if data.executionState?.status === 'running'}
+					<Loader2 size={18} class="text-blue-500 animate-spin flex-shrink-0" />
+				{:else if data.executionState?.status === 'completed'}
+					<CheckCircle2 size={18} class="text-green-500 flex-shrink-0" />
+				{:else if data.executionState?.status === 'failed'}
+					<XCircle size={18} class="text-red-500 flex-shrink-0" />
+				{/if}
 			</div>
 
-			<!-- Status indicator -->
-			{#if data.executionState?.status === 'running'}
-				<Loader2 size={18} class="text-blue-500 animate-spin flex-shrink-0" />
-			{:else if data.executionState?.status === 'completed'}
-				<CheckCircle2 size={18} class="text-green-500 flex-shrink-0" />
-			{:else if data.executionState?.status === 'failed'}
-				<XCircle size={18} class="text-red-500 flex-shrink-0" />
+			<!-- Duration display -->
+			{#if data.executionState?.duration_ms}
+				<div class="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500">
+					Duration: {data.executionState.duration_ms}ms
+				</div>
 			{/if}
 		</div>
-
-		<!-- Duration display -->
-		{#if data.executionState?.duration_ms}
-			<div class="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500">
-				Duration: {data.executionState.duration_ms}ms
-			</div>
-		{/if}
+		<!-- End inner content wrapper -->
 
 		<!-- Source handle (right) -->
 		<Handle

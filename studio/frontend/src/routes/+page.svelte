@@ -1,29 +1,120 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { workflowStore, executionStore, uiStore, type Execution } from '$lib/stores/workflow.svelte';
-	import SygraFlow from '$lib/components/graph/SygraFlow.svelte';
-	import NodeDetailsPanel from '$lib/components/graph/NodeDetailsPanel.svelte';
-	import EdgeDetailsPanel from '$lib/components/graph/EdgeDetailsPanel.svelte';
-	import ExecutionPanel from '$lib/components/execution/ExecutionPanel.svelte';
-	import ResultsModal from '$lib/components/execution/ResultsModal.svelte';
-	import RunWorkflowModal from '$lib/components/execution/RunWorkflowModal.svelte';
-	import RunsListView from '$lib/components/runs/RunsListViewEnhanced.svelte';
-	import RunDetailsView from '$lib/components/runs/RunDetailsViewEnhanced.svelte';
-	import WorkflowsListView from '$lib/components/workflows/WorkflowsListView.svelte';
-	import HomeView from '$lib/components/home/HomeView.svelte';
-	import WorkflowBuilder from '$lib/components/builder/WorkflowBuilder.svelte';
-	import LibraryView from '$lib/components/library/LibraryView.svelte';
-	import ModelsView from '$lib/components/models/ModelsView.svelte';
-	import WorkflowCodePanel from '$lib/components/code/WorkflowCodePanel.svelte';
+	// Keep lightweight/always-needed imports static
 	import UnsavedChangesModal from '$lib/components/builder/UnsavedChangesModal.svelte';
-	import { Play, StopCircle, LayoutGrid } from 'lucide-svelte';
+	// WorkflowBuilder needs static import for proper drag-drop functionality
+	import WorkflowBuilder from '$lib/components/builder/WorkflowBuilder.svelte';
+	import { Play, StopCircle, LayoutGrid, Loader2 } from 'lucide-svelte';
+
+	// Dynamic component types
+	type SvelteComponent = typeof import('svelte').SvelteComponent;
+
+	// Lazy-loaded component references
+	let SygraFlow: SvelteComponent | null = $state(null);
+	let NodeDetailsPanel: SvelteComponent | null = $state(null);
+	let EdgeDetailsPanel: SvelteComponent | null = $state(null);
+	let ExecutionPanel: SvelteComponent | null = $state(null);
+	let ResultsModal: SvelteComponent | null = $state(null);
+	let RunWorkflowModal: SvelteComponent | null = $state(null);
+	let RunsListView: SvelteComponent | null = $state(null);
+	let RunDetailsView: SvelteComponent | null = $state(null);
+	let WorkflowsListView: SvelteComponent | null = $state(null);
+	let HomeView: SvelteComponent | null = $state(null);
+	let LibraryView: SvelteComponent | null = $state(null);
+	let ModelsView: SvelteComponent | null = $state(null);
+	let WorkflowCodePanel: SvelteComponent | null = $state(null);
+
+	// Loading state for views
+	let viewLoading = $state(false);
+
+	// Load components based on current view
+	async function loadComponentsForView(view: string) {
+		viewLoading = true;
+		try {
+			switch (view) {
+				case 'home':
+					if (!HomeView) {
+						HomeView = (await import('$lib/components/home/HomeView.svelte')).default;
+					}
+					break;
+				case 'runs':
+					if (!RunsListView) {
+						RunsListView = (await import('$lib/components/runs/RunsListViewEnhanced.svelte')).default;
+					}
+					if (!RunDetailsView) {
+						RunDetailsView = (await import('$lib/components/runs/RunDetailsViewEnhanced.svelte')).default;
+					}
+					break;
+				case 'workflows':
+					if (!WorkflowsListView) {
+						WorkflowsListView = (await import('$lib/components/workflows/WorkflowsListView.svelte')).default;
+					}
+					break;
+				case 'library':
+					if (!LibraryView) {
+						LibraryView = (await import('$lib/components/library/LibraryView.svelte')).default;
+					}
+					break;
+				case 'models':
+					if (!ModelsView) {
+						ModelsView = (await import('$lib/components/models/ModelsView.svelte')).default;
+					}
+					break;
+				case 'builder':
+					// WorkflowBuilder is statically imported for proper drag-drop functionality
+					if (!NodeDetailsPanel) {
+						NodeDetailsPanel = (await import('$lib/components/graph/NodeDetailsPanel.svelte')).default;
+					}
+					if (!EdgeDetailsPanel) {
+						EdgeDetailsPanel = (await import('$lib/components/graph/EdgeDetailsPanel.svelte')).default;
+					}
+					if (!WorkflowCodePanel) {
+						WorkflowCodePanel = (await import('$lib/components/code/WorkflowCodePanel.svelte')).default;
+					}
+					break;
+				case 'workflow':
+				default:
+					// Workflow view components
+					if (!SygraFlow) {
+						SygraFlow = (await import('$lib/components/graph/SygraFlow.svelte')).default;
+					}
+					if (!NodeDetailsPanel) {
+						NodeDetailsPanel = (await import('$lib/components/graph/NodeDetailsPanel.svelte')).default;
+					}
+					if (!EdgeDetailsPanel) {
+						EdgeDetailsPanel = (await import('$lib/components/graph/EdgeDetailsPanel.svelte')).default;
+					}
+					if (!ExecutionPanel) {
+						ExecutionPanel = (await import('$lib/components/execution/ExecutionPanel.svelte')).default;
+					}
+					if (!ResultsModal) {
+						ResultsModal = (await import('$lib/components/execution/ResultsModal.svelte')).default;
+					}
+					if (!RunWorkflowModal) {
+						RunWorkflowModal = (await import('$lib/components/execution/RunWorkflowModal.svelte')).default;
+					}
+					if (!WorkflowCodePanel) {
+						WorkflowCodePanel = (await import('$lib/components/code/WorkflowCodePanel.svelte')).default;
+					}
+					break;
+			}
+		} finally {
+			viewLoading = false;
+		}
+	}
+
+	// React to view changes and load components
+	$effect(() => {
+		const view = uiStore.currentView;
+		loadComponentsForView(view);
+	});
 
 	// Read version to force re-evaluation when workflow is updated
 	let _version = $derived(workflowStore.workflowVersion);
 	let currentWorkflow = $derived.by(() => {
 		// Depend on version to force re-evaluation on updates
-		const v = workflowStore.workflowVersion;
-		console.log('[+page] Getting currentWorkflow, version:', v);
+		const _v = workflowStore.workflowVersion;
 		return workflowStore.currentWorkflow;
 	});
 	let currentExecution = $derived(executionStore.currentExecution);
@@ -283,6 +374,16 @@
 	}
 </script>
 
+<!-- Loading spinner component -->
+{#snippet loadingSpinner()}
+	<div class="flex-1 flex items-center justify-center">
+		<div class="flex flex-col items-center gap-3">
+			<Loader2 size={32} class="animate-spin text-violet-500" />
+			<span class="text-sm text-gray-500">Loading...</span>
+		</div>
+	</div>
+{/snippet}
+
 {#if currentView === 'builder'}
 	<!-- Workflow Builder View -->
 	<div class="flex-1 flex flex-col h-full overflow-hidden">
@@ -299,10 +400,11 @@
 			</div>
 
 			<!-- Right panel for editing selected node/edge -->
-			{#if selectedNodeId && currentWorkflow}
+			{#if selectedNodeId && currentWorkflow && NodeDetailsPanel}
 				{@const selectedNode = currentWorkflow.nodes.find(n => n.id === selectedNodeId)}
 				{#if selectedNode}
-					<NodeDetailsPanel
+					<svelte:component
+						this={NodeDetailsPanel}
 						node={selectedNode}
 						startInEditMode={true}
 						on:close={() => uiStore.selectNode(null)}
@@ -310,8 +412,9 @@
 						on:delete={handleBuilderNodeDelete}
 					/>
 				{/if}
-			{:else if selectedEdge && currentWorkflow}
-				<EdgeDetailsPanel
+			{:else if selectedEdge && currentWorkflow && EdgeDetailsPanel}
+				<svelte:component
+					this={EdgeDetailsPanel}
 					edge={selectedEdge}
 					sourceNode={currentWorkflow.nodes.find(n => n.id === selectedEdge.source)}
 					targetNode={currentWorkflow.nodes.find(n => n.id === selectedEdge.target)}
@@ -324,8 +427,9 @@
 		</div>
 
 		<!-- Code Panel (YAML and Python code) for builder view -->
-		{#if currentWorkflow && !currentWorkflow.id.startsWith('new_')}
-			<WorkflowCodePanel
+		{#if currentWorkflow && !currentWorkflow.id.startsWith('new_') && WorkflowCodePanel}
+			<svelte:component
+				this={WorkflowCodePanel}
 				bind:this={codePanelRef}
 				workflowId={currentWorkflow.id}
 				bind:isCollapsed={codePanelCollapsed}
@@ -337,74 +441,93 @@
 {:else if currentView === 'home'}
 	<!-- Home Dashboard View -->
 	<div class="flex-1 w-full h-full">
-		<HomeView />
+		{#if HomeView}
+			<svelte:component this={HomeView} />
+		{:else}
+			{@render loadingSpinner()}
+		{/if}
 	</div>
 {:else if currentView === 'runs'}
 	<!-- Runs View -->
 	<div class="flex-1 w-full h-full">
-		{#if selectedRun}
+		{#if selectedRun && RunDetailsView}
 			<!-- Run Details View -->
-			<RunDetailsView execution={selectedRun} />
-		{:else}
+			<svelte:component this={RunDetailsView} execution={selectedRun} />
+		{:else if RunsListView}
 			<!-- Runs List View -->
-			<RunsListView />
+			<svelte:component this={RunsListView} />
+		{:else}
+			{@render loadingSpinner()}
 		{/if}
 	</div>
 {:else if currentView === 'workflows'}
 	<!-- Workflows List View -->
 	<div class="flex-1 w-full h-full">
-		<WorkflowsListView />
+		{#if WorkflowsListView}
+			<svelte:component this={WorkflowsListView} />
+		{:else}
+			{@render loadingSpinner()}
+		{/if}
 	</div>
 {:else if currentView === 'library'}
 	<!-- Library View (Recipes & Tools) -->
 	<div class="flex-1 w-full h-full">
-		<LibraryView
-			on:addRecipe={async (e) => {
-				const recipe = e.detail.recipe;
-				console.log('[Add to Workflow] Recipe:', recipe.name, 'Nodes:', recipe.nodes?.length, 'Edges:', recipe.edges?.length);
+		{#if LibraryView}
+			<svelte:component
+				this={LibraryView}
+				on:addRecipe={async (e) => {
+					const recipe = e.detail.recipe;
+					console.log('[Add to Workflow] Recipe:', recipe.name, 'Nodes:', recipe.nodes?.length, 'Edges:', recipe.edges?.length);
 
-				// Validate recipe has nodes
-				if (!recipe.nodes || recipe.nodes.length === 0) {
-					console.error('[Add to Workflow] Recipe has no nodes!');
-					return;
-				}
+					// Validate recipe has nodes
+					if (!recipe.nodes || recipe.nodes.length === 0) {
+						console.error('[Add to Workflow] Recipe has no nodes!');
+						return;
+					}
 
-				// Check if we have an existing workflow to append to
-				const existingWorkflow = workflowStore.currentWorkflow;
-				if (!existingWorkflow) {
-					console.log('[Add to Workflow] Creating new workflow...');
-					workflowStore.createNewWorkflow();
-				} else {
-					console.log('[Add to Workflow] Appending to existing workflow:', existingWorkflow.name, 'with', existingWorkflow.nodes.length, 'nodes');
-				}
+					// Check if we have an existing workflow to append to
+					const existingWorkflow = workflowStore.currentWorkflow;
+					if (!existingWorkflow) {
+						console.log('[Add to Workflow] Creating new workflow...');
+						workflowStore.createNewWorkflow();
+					} else {
+						console.log('[Add to Workflow] Appending to existing workflow:', existingWorkflow.name, 'with', existingWorkflow.nodes.length, 'nodes');
+					}
 
-				// Add recipe nodes and edges to the current workflow as a subgraph
-				const result = workflowStore.addRecipeToWorkflow(recipe.nodes, recipe.edges, undefined, recipe.name);
-				console.log('[Add to Workflow] Added subgraph, result:', result);
+					// Add recipe nodes and edges to the current workflow as a subgraph
+					const result = workflowStore.addRecipeToWorkflow(recipe.nodes, recipe.edges, undefined, recipe.name);
+					console.log('[Add to Workflow] Added subgraph, result:', result);
 
-				// Switch to builder to see the result
-				uiStore.setView('builder');
-				console.log('[Add to Workflow] Switched to builder view');
+					// Switch to builder to see the result
+					uiStore.setView('builder');
+					console.log('[Add to Workflow] Switched to builder view');
 
-				// Wait for the DOM to update (WorkflowBuilder needs to mount)
-				await tick();
-				await tick(); // Double tick to ensure full render cycle
+					// Wait for the DOM to update (WorkflowBuilder needs to mount)
+					await tick();
+					await tick(); // Double tick to ensure full render cycle
 
-				// Sync the builder after it has mounted
-				if (workflowBuilderRef) {
-					workflowBuilderRef.syncNodesFromStore();
-					workflowBuilderRef.syncEdgesFromStore();
-					console.log('[Add to Workflow] Synced builder');
-				} else {
-					console.log('[Add to Workflow] No builder ref yet, relying on $effect');
-				}
-			}}
-		/>
+					// Sync the builder after it has mounted
+					if (workflowBuilderRef) {
+						workflowBuilderRef.syncNodesFromStore();
+						workflowBuilderRef.syncEdgesFromStore();
+						console.log('[Add to Workflow] Synced builder');
+					} else {
+						console.log('[Add to Workflow] No builder ref yet, relying on $effect');
+					}
+				}}
+			/>
+		{:else}
+			{@render loadingSpinner()}
+		{/if}
 	</div>
 {:else if currentView === 'models'}
 	<!-- Models View -->
 	<div class="flex-1 w-full h-full">
-		<ModelsView />
+		{#if ModelsView}
+			<svelte:component this={ModelsView} />
+		{:else}
+			{@render loadingSpinner()}
+		{/if}
 	</div>
 {:else}
 	<!-- Workflow View -->
@@ -463,14 +586,17 @@
 			<div class="flex-1 flex overflow-hidden relative min-h-0">
 				<!-- Graph canvas -->
 				<div class="flex-1 relative">
-					{#if currentWorkflow}
-						<SygraFlow
+					{#if currentWorkflow && SygraFlow}
+						<svelte:component
+							this={SygraFlow}
 							bind:this={sygraFlowRef}
 							workflow={currentWorkflow}
 							execution={currentExecution}
 							on:nodeSelect={handleNodeSelect}
 							on:edgeSelect={handleEdgeSelect}
 						/>
+					{:else if currentWorkflow && !SygraFlow}
+						{@render loadingSpinner()}
 					{:else}
 						<div class="h-full flex items-center justify-center">
 							<div class="text-center">
@@ -489,8 +615,9 @@
 				</div>
 
 				<!-- Node details panel -->
-				{#if selectedNodeId && currentWorkflow}
-					<NodeDetailsPanel
+				{#if selectedNodeId && currentWorkflow && NodeDetailsPanel}
+					<svelte:component
+						this={NodeDetailsPanel}
 						node={currentWorkflow.nodes.find(n => n.id === selectedNodeId)}
 						nodeState={currentExecution?.node_states[selectedNodeId]}
 						on:close={() => uiStore.selectNode(null)}
@@ -498,9 +625,10 @@
 				{/if}
 
 				<!-- Edge details panel -->
-				{#if selectedEdge && currentWorkflow}
+				{#if selectedEdge && currentWorkflow && EdgeDetailsPanel}
 					{@const edge = selectedEdge}
-					<EdgeDetailsPanel
+					<svelte:component
+						this={EdgeDetailsPanel}
 						edge={edge}
 						sourceNode={currentWorkflow.nodes.find(n => n.id === edge.source)}
 						targetNode={currentWorkflow.nodes.find(n => n.id === edge.target)}
@@ -510,8 +638,9 @@
 			</div>
 
 			<!-- Code Panel (YAML and Python code) - always visible at bottom -->
-			{#if currentWorkflow}
-				<WorkflowCodePanel
+			{#if currentWorkflow && WorkflowCodePanel}
+				<svelte:component
+					this={WorkflowCodePanel}
 					bind:this={codePanelRef}
 					workflowId={currentWorkflow.id}
 					bind:isCollapsed={codePanelCollapsed}
@@ -522,14 +651,15 @@
 		</div>
 
 		<!-- Execution status bar -->
-		{#if currentExecution}
-			<ExecutionPanel execution={currentExecution} />
+		{#if currentExecution && ExecutionPanel}
+			<svelte:component this={ExecutionPanel} execution={currentExecution} />
 		{/if}
 	</div>
 
 	<!-- Modals -->
-	{#if showRunModal && currentWorkflow}
-		<RunWorkflowModal
+	{#if showRunModal && currentWorkflow && RunWorkflowModal}
+		<svelte:component
+			this={RunWorkflowModal}
 			workflowName={currentWorkflow.name}
 			workflowId={currentWorkflow.id}
 			dataConfig={currentWorkflow.data_config}
@@ -539,8 +669,9 @@
 		/>
 	{/if}
 
-	{#if showResultsModal && currentExecution}
-		<ResultsModal
+	{#if showResultsModal && currentExecution && ResultsModal}
+		<svelte:component
+			this={ResultsModal}
 			execution={currentExecution}
 			on:close={() => uiStore.closeResultsModal()}
 		/>

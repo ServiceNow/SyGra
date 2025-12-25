@@ -3,7 +3,7 @@
 	import { X, Bot, Zap, Link, Play, Square, Globe, Boxes, Save, ChevronDown, Code, Settings, MessageSquare, Info, GitBranch, Plus, Trash2, Edit3, GripVertical, Database, Download, Cloud, Server, HardDrive, ArrowRight, Map, Shuffle, Wrench, AlertCircle, Library, Eye, EyeOff, Loader2 } from 'lucide-svelte';
 	import { workflowStore, type WorkflowNode, type NodeExecutionState, type PromptMessage } from '$lib/stores/workflow.svelte';
 	import { toolStore } from '$lib/stores/tool.svelte';
-	import MonacoEditor from '$lib/components/editor/MonacoEditor.svelte';
+	import MonacoEditor from '$lib/components/editor/LazyMonacoEditor.svelte';
 	import ConfirmModal from '$lib/components/common/ConfirmModal.svelte';
 	import CustomSelect from '$lib/components/common/CustomSelect.svelte';
 	import ToolPickerModal from '$lib/components/builder/ToolPickerModal.svelte';

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import { pushState } from '$app/navigation';
 	import type { Execution } from '$lib/stores/workflow.svelte';
 	import { uiStore } from '$lib/stores/workflow.svelte';
 	import {
@@ -82,7 +83,7 @@
 		const url = new URL(window.location.href);
 		url.searchParams.set('view', 'runs');
 		url.searchParams.set('run', execution.id);
-		window.history.pushState({}, '', url.toString());
+		pushState(url.toString(), {});
 		dispatch('close');
 	}
 

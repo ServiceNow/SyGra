@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+	import { createEventDispatcher, onMount, onDestroy, tick } from 'svelte';
 	import {
 		SvelteFlow,
 		Controls,
@@ -42,6 +42,9 @@
 	import SaveRecipeModal from './SaveRecipeModal.svelte';
 	import RecipePickerModal from './RecipePickerModal.svelte';
 	import SaveWorkflowModal from './SaveWorkflowModal.svelte';
+
+	// FitView helper (must be inside SvelteFlow to use useSvelteFlow hook)
+	import FitViewHelper from '../graph/FitViewHelper.svelte';
 
 	// Recipe store
 	import { recipeStore, type Recipe } from '$lib/stores/recipe.svelte';
@@ -157,7 +160,6 @@
 				try {
 					const draft = JSON.parse(savedDraft);
 					if (draft.workflow) {
-						console.log('Restoring draft from:', new Date(draft.savedAt).toLocaleString());
 						workflowStore.setCurrentWorkflow(draft.workflow);
 						workflowName = draft.workflow.name || 'Untitled Workflow';
 						workflowDescription = draft.workflow.description || '';
@@ -170,7 +172,6 @@
 			}
 		} else if (workflow && !draftRestored) {
 			// Workflow already exists (e.g., recipe was added), don't restore draft
-			console.log('Workflow already exists, skipping draft restoration');
 			draftRestored = true;
 		}
 
@@ -197,7 +198,6 @@
 		try {
 			localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
 			lastAutoSave = new Date();
-			console.log('Draft auto-saved at:', lastAutoSave.toLocaleTimeString());
 		} catch (e) {
 			console.error('Failed to save draft:', e);
 		}
@@ -289,6 +289,9 @@
 	const nodes = writable<Node[]>([]);
 	const edges = writable<Edge[]>([]);
 
+	// Store to trigger fitView - increment to trigger
+	const fitViewTrigger = writable(0);
+
 	// Track workflow ID to detect when we need to re-sync
 	let lastWorkflowId = $state<string | null>(null);
 
@@ -346,6 +349,13 @@
 				lastEdgesCount = workflow.edges.length;
 				nodes.set(workflowNodesToFlowNodes(workflow.nodes));
 				edges.set(workflowEdgesToFlowEdges(workflow.edges));
+
+				// Trigger fitView when a new workflow is loaded
+				if (isNewWorkflow) {
+					tick().then(() => {
+						fitViewTrigger.update(n => n + 1);
+					});
+				}
 			}
 		}
 	});
@@ -356,7 +366,6 @@
 		// Read directly from store to ensure we get the latest data
 		const currentWf = workflowStore.currentWorkflow;
 		if (currentVersion > lastWorkflowVersion && currentWf) {
-			console.log('[WorkflowBuilder] Version changed:', lastWorkflowVersion, '->', currentVersion, 'syncing nodes...');
 			lastWorkflowVersion = currentVersion;
 			// Sync nodes when version changes (handles data updates within nodes)
 			nodes.set(workflowNodesToFlowNodes(currentWf.nodes));
@@ -377,17 +386,8 @@
 	export function syncNodesFromStore() {
 		// Read directly from store to ensure we get the latest data
 		const currentWf = workflowStore.currentWorkflow;
-		console.log('[syncNodesFromStore] Current workflow from store:', currentWf?.id);
-		console.log('[syncNodesFromStore] Nodes count:', currentWf?.nodes?.length);
 		if (currentWf) {
-			// Log first node's model for debugging
-			const firstLLMNode = currentWf.nodes.find(n => n.node_type === 'llm');
-			if (firstLLMNode) {
-				console.log('[syncNodesFromStore] First LLM node model:', firstLLMNode.model?.name);
-			}
-			const flowNodes = workflowNodesToFlowNodes(currentWf.nodes);
-			console.log('[syncNodesFromStore] Setting SvelteFlow nodes:', flowNodes.length);
-			nodes.set(flowNodes);
+			nodes.set(workflowNodesToFlowNodes(currentWf.nodes));
 		}
 	}
 
@@ -979,7 +979,6 @@
 
 	// Handle recipe saved
 	function handleRecipeSaved(event: CustomEvent<{ recipeId: string }>) {
-		console.log('Recipe saved with ID:', event.detail.recipeId);
 		showRecipeModal = false;
 		recipeNodes = [];
 		recipeEdges = [];
@@ -1281,8 +1280,6 @@
 						Tips
 					</h3>
 					<div class="text-xs text-gray-500 dark:text-gray-400 space-y-1.5">
-						<p>• <strong>Tool</strong> → <strong>LLM/Agent</strong>: Connect tools to AI nodes</p>
-						<p>• <strong>Agent</strong>: ReAct agent with tool calling</p>
 						<p>• Connect by dragging handle to handle</p>
 						<p>• <strong>⌘/Ctrl+Click</strong> to multi-select</p>
 						<p>• <strong>Delete/Backspace</strong> to delete selected</p>
@@ -1330,6 +1327,9 @@
 					on:nodedragstop={handleNodeDragStop}
 					onconnect={handleConnect}
 				>
+					<!-- FitView helper - responds to fitViewTrigger changes -->
+					<FitViewHelper trigger={fitViewTrigger} />
+
 					<Controls position="bottom-right" />
 					<Background
 							gap={20}

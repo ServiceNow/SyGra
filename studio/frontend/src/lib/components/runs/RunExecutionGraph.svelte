@@ -15,7 +15,7 @@
 	} from '@xyflow/svelte';
 	import { writable } from 'svelte/store';
 	import { workflowStore, type Execution, type Workflow, type NodeExecutionState } from '$lib/stores/workflow.svelte';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { autoLayout } from '$lib/utils/layoutUtils';
 	import {
 		CheckCircle2, XCircle, Clock, Loader2, Ban, AlertTriangle,
@@ -35,6 +35,9 @@
 
 	// Reuse edge component
 	import SygraEdge from '$lib/components/graph/renderers/edges/SygraEdge.svelte';
+
+	// FitView helper (must be inside SvelteFlow to use useSvelteFlow hook)
+	import FitViewHelper from '$lib/components/graph/FitViewHelper.svelte';
 
 	import '@xyflow/svelte/dist/style.css';
 
@@ -98,6 +101,12 @@
 	// Create Svelte stores for SvelteFlow
 	const nodes = writable<Node[]>([]);
 	const edges = writable<Edge[]>([]);
+
+	// Store to trigger fitView - increment to trigger
+	const fitViewTrigger = writable(0);
+
+	// Track if we've triggered initial fitView
+	let hasTriggeredInitialFitView = false;
 
 	// Load workflow data
 	onMount(async () => {
@@ -211,6 +220,14 @@
 
 		nodes.set(flowNodes);
 		edges.set(flowEdges);
+
+		// Trigger fitView only on initial load
+		if (!hasTriggeredInitialFitView) {
+			hasTriggeredInitialFitView = true;
+			tick().then(() => {
+				fitViewTrigger.update(n => n + 1);
+			});
+		}
 	});
 
 	// Timeline nodes (filtered and ordered)
@@ -316,6 +333,9 @@
 				zoomOnScroll={true}
 				on:nodeclick={(e) => handleNodeClick(e.detail.node.id)}
 			>
+				<!-- FitView helper - responds to fitViewTrigger changes -->
+				<FitViewHelper trigger={fitViewTrigger} />
+
 				<!-- Auto Layout button -->
 				<Panel position="top-left" class="!m-3">
 					<button

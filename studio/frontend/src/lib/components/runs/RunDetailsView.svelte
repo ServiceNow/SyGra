@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { pushState } from '$app/navigation';
 	import { uiStore } from '$lib/stores/workflow.svelte';
 	import type { Execution, ExecutionMetadata } from '$lib/stores/workflow.svelte';
 	import {
@@ -8,9 +9,11 @@
 		Activity, Layers, ArrowRight, DollarSign, Zap, Cpu, GitBranch,
 		BarChart3, Server, Box, TrendingUp, ArrowLeft, PieChart, Gauge
 	} from 'lucide-svelte';
-	import { Chart, registerables } from 'chart.js';
+	import type { Chart as ChartType } from 'chart.js';
 
-	Chart.register(...registerables);
+	// Chart.js will be lazy loaded
+	let ChartJS: typeof ChartType | null = null;
+	let chartJsLoaded = $state(false);
 
 	interface Props {
 		execution: Execution;
@@ -83,12 +86,20 @@
 	let modelTokensCanvas: HTMLCanvasElement;
 
 	// Chart instances
-	let tokenPieChart: Chart | null = null;
-	let nodeLatencyChart: Chart | null = null;
-	let modelTokensChart: Chart | null = null;
+	let tokenPieChart: ChartType | null = null;
+	let nodeLatencyChart: ChartType | null = null;
+	let modelTokensChart: ChartType | null = null;
 
-	function initCharts() {
+	async function initCharts() {
 		if (!metadata) return;
+
+		// Lazy load Chart.js if not already loaded
+		if (!ChartJS) {
+			const { Chart, registerables } = await import('chart.js');
+			Chart.register(...registerables);
+			ChartJS = Chart;
+			chartJsLoaded = true;
+		}
 
 		// Token distribution pie chart
 		if (tokenPieCanvas && metadata.aggregate_statistics) {
@@ -96,7 +107,7 @@
 			const completionTokens = metadata.aggregate_statistics.tokens.total_completion_tokens;
 
 			if (tokenPieChart) tokenPieChart.destroy();
-			tokenPieChart = new Chart(tokenPieCanvas, {
+			tokenPieChart = new ChartJS(tokenPieCanvas, {
 				type: 'doughnut',
 				data: {
 					labels: ['Prompt Tokens', 'Completion Tokens'],
@@ -132,7 +143,7 @@
 			});
 
 			if (nodeLatencyChart) nodeLatencyChart.destroy();
-			nodeLatencyChart = new Chart(nodeLantencyCanvas, {
+			nodeLatencyChart = new ChartJS(nodeLantencyCanvas, {
 				type: 'bar',
 				data: {
 					labels: nodeNames,
@@ -160,7 +171,7 @@
 			const completionTokens = modelNames.map(n => metadata.models[n].token_statistics.total_completion_tokens);
 
 			if (modelTokensChart) modelTokensChart.destroy();
-			modelTokensChart = new Chart(modelTokensCanvas, {
+			modelTokensChart = new ChartJS(modelTokensCanvas, {
 				type: 'bar',
 				data: {
 					labels: modelNames,
@@ -232,7 +243,7 @@
 		// Update URL to remove run param
 		const url = new URL(window.location.href);
 		url.searchParams.delete('run');
-		window.history.pushState({}, '', url.toString());
+		pushState(url.toString(), {});
 	}
 </script>
 

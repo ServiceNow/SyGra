@@ -6,9 +6,11 @@
 		BarChart3, PieChart, LineChart, Cpu, Server, Timer, Layers, Target, Gauge,
 		AlertTriangle, Award, Lightbulb, Sparkles, Info, Calendar, Database, CircleDollarSign
 	} from 'lucide-svelte';
-	import { Chart, registerables } from 'chart.js';
+	import type { Chart as ChartType } from 'chart.js';
 
-	Chart.register(...registerables);
+	// Chart.js will be lazy loaded
+	let ChartJS: typeof ChartType | null = null;
+	let chartJsLoaded = $state(false);
 
 	interface Props { runs: Execution[]; totalRuns: number; }
 	let { runs, totalRuns }: Props = $props();
@@ -24,7 +26,7 @@
 	let throughputChartCanvas: HTMLCanvasElement;
 	let costTrendCanvas: HTMLCanvasElement;
 
-	let charts: Record<string, Chart | null> = {};
+	let charts: Record<string, ChartType | null> = {};
 
 	let stats = $derived(() => {
 		const completedRuns = runs.filter(r => r.status === 'completed' && r.metadata);
@@ -128,48 +130,56 @@
 	const chartColors = [colors.violet.bg, colors.blue.bg, colors.emerald.bg, colors.amber.bg, colors.pink.bg, colors.red.bg];
 	const commonOpts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' as const, labels: { boxWidth: 12, padding: 12, font: { size: 11 }, usePointStyle: true } } } };
 
-	function initCharts() {
+	async function initCharts() {
+		// Lazy load Chart.js if not already loaded
+		if (!ChartJS) {
+			const { Chart, registerables } = await import('chart.js');
+			Chart.register(...registerables);
+			ChartJS = Chart;
+			chartJsLoaded = true;
+		}
+
 		const s = stats(); const completedRuns = runs.filter(r => r.status === 'completed' && r.metadata);
 
 		if (activeTab === 'overview' || activeTab === 'models') {
 			if (tokenChartCanvas && completedRuns.length > 0) {
 				const recent = completedRuns.slice(-12);
 				if (charts.token) charts.token.destroy();
-				charts.token = new Chart(tokenChartCanvas, { type: 'bar', data: { labels: recent.map(r => r.workflow_name?.slice(0, 10) || r.id.slice(0, 6)), datasets: [{ label: 'Prompt', data: recent.map(r => r.metadata?.aggregate_statistics.tokens.total_prompt_tokens || 0), backgroundColor: colors.violet.bg, borderRadius: 4 }, { label: 'Completion', data: recent.map(r => r.metadata?.aggregate_statistics.tokens.total_completion_tokens || 0), backgroundColor: colors.blue.bg, borderRadius: 4 }] }, options: { ...commonOpts, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true } } } });
+				charts.token = new ChartJS(tokenChartCanvas, { type: 'bar', data: { labels: recent.map(r => r.workflow_name?.slice(0, 10) || r.id.slice(0, 6)), datasets: [{ label: 'Prompt', data: recent.map(r => r.metadata?.aggregate_statistics.tokens.total_prompt_tokens || 0), backgroundColor: colors.violet.bg, borderRadius: 4 }, { label: 'Completion', data: recent.map(r => r.metadata?.aggregate_statistics.tokens.total_completion_tokens || 0), backgroundColor: colors.blue.bg, borderRadius: 4 }] }, options: { ...commonOpts, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true } } } });
 			}
 			if (runsTimelineCanvas && runs.length > 0) {
 				const groups: Record<string, { completed: number; failed: number }> = {};
 				runs.forEach(r => { if (r.started_at) { const d = new Date(r.started_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); if (!groups[d]) groups[d] = { completed: 0, failed: 0 }; if (r.status === 'completed') groups[d].completed++; else if (r.status === 'failed') groups[d].failed++; } });
 				const dates = Object.keys(groups).slice(-10);
 				if (charts.timeline) charts.timeline.destroy();
-				charts.timeline = new Chart(runsTimelineCanvas, { type: 'bar', data: { labels: dates, datasets: [{ label: 'Completed', data: dates.map(d => groups[d].completed), backgroundColor: colors.emerald.bg, borderRadius: 4 }, { label: 'Failed', data: dates.map(d => groups[d].failed), backgroundColor: colors.red.bg, borderRadius: 4 }] }, options: { ...commonOpts, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true } } } });
+				charts.timeline = new ChartJS(runsTimelineCanvas, { type: 'bar', data: { labels: dates, datasets: [{ label: 'Completed', data: dates.map(d => groups[d].completed), backgroundColor: colors.emerald.bg, borderRadius: 4 }, { label: 'Failed', data: dates.map(d => groups[d].failed), backgroundColor: colors.red.bg, borderRadius: 4 }] }, options: { ...commonOpts, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true } } } });
 			}
 			if (latencyChartCanvas && completedRuns.length > 0) {
 				const recent = completedRuns.slice(-15); const latencies = recent.map(r => (r.duration_ms || 0) / 1000);
 				if (charts.latency) charts.latency.destroy();
-				charts.latency = new Chart(latencyChartCanvas, { type: 'line', data: { labels: recent.map((_, i) => `${i + 1}`), datasets: [{ label: 'Duration (s)', data: latencies, borderColor: colors.amber.main, backgroundColor: colors.amber.light, fill: true, tension: 0.4, pointRadius: 3 }] }, options: { ...commonOpts, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } } });
+				charts.latency = new ChartJS(latencyChartCanvas, { type: 'line', data: { labels: recent.map((_, i) => `${i + 1}`), datasets: [{ label: 'Duration (s)', data: latencies, borderColor: colors.amber.main, backgroundColor: colors.amber.light, fill: true, tension: 0.4, pointRadius: 3 }] }, options: { ...commonOpts, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } } });
 			}
 			if (costChartCanvas && Object.keys(s.modelStats).length > 0) {
 				const names = Object.keys(s.modelStats);
 				if (charts.cost) charts.cost.destroy();
-				charts.cost = new Chart(costChartCanvas, { type: 'doughnut', data: { labels: names, datasets: [{ data: names.map(n => s.modelStats[n].cost), backgroundColor: chartColors.slice(0, names.length), borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } } } } });
+				charts.cost = new ChartJS(costChartCanvas, { type: 'doughnut', data: { labels: names, datasets: [{ data: names.map(n => s.modelStats[n].cost), backgroundColor: chartColors.slice(0, names.length), borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } } } } });
 			}
 		}
 		if (activeTab === 'models' && modelLatencyCanvas && Object.keys(s.modelStats).length > 0) {
 			const names = Object.keys(s.modelStats);
 			if (charts.modelLatency) charts.modelLatency.destroy();
-			charts.modelLatency = new Chart(modelLatencyCanvas, { type: 'bar', data: { labels: names, datasets: [{ label: 'Avg Latency (ms)', data: names.map(n => { const m = s.modelStats[n]; return m.requests > 0 ? (m.latency / m.requests) * 1000 : 0; }), backgroundColor: chartColors.slice(0, names.length), borderRadius: 4 }] }, options: { ...commonOpts, indexAxis: 'y', plugins: { legend: { display: false } } } });
+			charts.modelLatency = new ChartJS(modelLatencyCanvas, { type: 'bar', data: { labels: names, datasets: [{ label: 'Avg Latency (ms)', data: names.map(n => { const m = s.modelStats[n]; return m.requests > 0 ? (m.latency / m.requests) * 1000 : 0; }), backgroundColor: chartColors.slice(0, names.length), borderRadius: 4 }] }, options: { ...commonOpts, indexAxis: 'y', plugins: { legend: { display: false } } } });
 		}
 		if (activeTab === 'performance' && throughputChartCanvas && completedRuns.length > 0) {
 			const recent = completedRuns.slice(-15); const throughputs = recent.map(r => r.metadata && r.duration_ms ? r.metadata.aggregate_statistics.tokens.total_tokens / (r.duration_ms / 1000) : 0);
 			if (charts.throughput) charts.throughput.destroy();
-			charts.throughput = new Chart(throughputChartCanvas, { type: 'line', data: { labels: recent.map((_, i) => `${i + 1}`), datasets: [{ label: 'Tokens/sec', data: throughputs, borderColor: colors.emerald.main, backgroundColor: colors.emerald.light, fill: true, tension: 0.4, pointRadius: 3 }] }, options: { ...commonOpts, plugins: { legend: { display: false } } } });
+			charts.throughput = new ChartJS(throughputChartCanvas, { type: 'line', data: { labels: recent.map((_, i) => `${i + 1}`), datasets: [{ label: 'Tokens/sec', data: throughputs, borderColor: colors.emerald.main, backgroundColor: colors.emerald.light, fill: true, tension: 0.4, pointRadius: 3 }] }, options: { ...commonOpts, plugins: { legend: { display: false } } } });
 		}
 		if (activeTab === 'cost' && costTrendCanvas && completedRuns.length > 0) {
 			const recent = completedRuns.slice(-15); const costs = recent.map(r => r.metadata?.aggregate_statistics.cost.total_cost_usd || 0);
 			let cum = 0; const cumCosts = costs.map(c => { cum += c; return cum; });
 			if (charts.costTrend) charts.costTrend.destroy();
-			charts.costTrend = new Chart(costTrendCanvas, { type: 'line', data: { labels: recent.map((_, i) => `${i + 1}`), datasets: [{ label: 'Per Run ($)', data: costs, borderColor: colors.emerald.main, backgroundColor: colors.emerald.light, fill: true, tension: 0.4, yAxisID: 'y' }, { label: 'Cumulative ($)', data: cumCosts, borderColor: colors.violet.main, borderDash: [5, 5], fill: false, tension: 0.4, yAxisID: 'y1' }] }, options: { ...commonOpts, scales: { y: { beginAtZero: true, position: 'left' }, y1: { beginAtZero: true, position: 'right', grid: { display: false } }, x: { grid: { display: false } } } } });
+			charts.costTrend = new ChartJS(costTrendCanvas, { type: 'line', data: { labels: recent.map((_, i) => `${i + 1}`), datasets: [{ label: 'Per Run ($)', data: costs, borderColor: colors.emerald.main, backgroundColor: colors.emerald.light, fill: true, tension: 0.4, yAxisID: 'y' }, { label: 'Cumulative ($)', data: cumCosts, borderColor: colors.violet.main, borderDash: [5, 5], fill: false, tension: 0.4, yAxisID: 'y1' }] }, options: { ...commonOpts, scales: { y: { beginAtZero: true, position: 'left' }, y1: { beginAtZero: true, position: 'right', grid: { display: false } }, x: { grid: { display: false } } } } });
 		}
 	}
 

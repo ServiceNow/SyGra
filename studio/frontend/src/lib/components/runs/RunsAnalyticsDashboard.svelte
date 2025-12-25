@@ -6,9 +6,11 @@
 		XCircle, Activity, BarChart3, PieChart, LineChart, Cpu, Server,
 		ArrowRight, Timer, Hash, Layers, GitCompare, Target, Gauge
 	} from 'lucide-svelte';
-	import { Chart, registerables } from 'chart.js';
+	import type { Chart as ChartType } from 'chart.js';
 
-	Chart.register(...registerables);
+	// Chart.js will be lazy loaded
+	let ChartJS: typeof ChartType | null = null;
+	let chartJsLoaded = $state(false);
 
 	interface Props {
 		runs: Execution[];
@@ -26,12 +28,12 @@
 	let nodeHeatmapCanvas: HTMLCanvasElement;
 
 	// Chart instances
-	let tokenChart: Chart | null = null;
-	let costChart: Chart | null = null;
-	let latencyChart: Chart | null = null;
-	let runsTimelineChart: Chart | null = null;
-	let modelComparisonChart: Chart | null = null;
-	let nodeHeatmapChart: Chart | null = null;
+	let tokenChart: ChartType | null = null;
+	let costChart: ChartType | null = null;
+	let latencyChart: ChartType | null = null;
+	let runsTimelineChart: ChartType | null = null;
+	let modelComparisonChart: ChartType | null = null;
+	let nodeHeatmapChart: ChartType | null = null;
 
 	// Computed stats from filtered runs
 	let stats = $derived(() => {
@@ -151,7 +153,15 @@
 	}
 
 	// Initialize charts
-	function initCharts() {
+	async function initCharts() {
+		// Lazy load Chart.js if not already loaded
+		if (!ChartJS) {
+			const { Chart, registerables } = await import('chart.js');
+			Chart.register(...registerables);
+			ChartJS = Chart;
+			chartJsLoaded = true;
+		}
+
 		const s = stats();
 		const completedRuns = runs.filter(r => r.status === 'completed' && r.metadata);
 
@@ -162,7 +172,7 @@
 			const completionTokens = completedRuns.slice(-10).map(r => r.metadata?.aggregate_statistics.tokens.total_completion_tokens || 0);
 
 			if (tokenChart) tokenChart.destroy();
-			tokenChart = new Chart(tokenChartCanvas, {
+			tokenChart = new ChartJS(tokenChartCanvas, {
 				type: 'bar',
 				data: {
 					labels,
@@ -201,7 +211,7 @@
 			const modelCosts = modelNames.map(n => s.modelStats[n].cost);
 
 			if (costChart) costChart.destroy();
-			costChart = new Chart(costChartCanvas, {
+			costChart = new ChartJS(costChartCanvas, {
 				type: 'doughnut',
 				data: {
 					labels: modelNames,
@@ -234,7 +244,7 @@
 			const latencies = completedRuns.slice(-15).map(r => (r.duration_ms || 0) / 1000);
 
 			if (latencyChart) latencyChart.destroy();
-			latencyChart = new Chart(latencyChartCanvas, {
+			latencyChart = new ChartJS(latencyChartCanvas, {
 				type: 'line',
 				data: {
 					labels,
@@ -280,7 +290,7 @@
 			const failed = dates.map(d => dateGroups[d].failed);
 
 			if (runsTimelineChart) runsTimelineChart.destroy();
-			runsTimelineChart = new Chart(runsTimelineCanvas, {
+			runsTimelineChart = new ChartJS(runsTimelineCanvas, {
 				type: 'bar',
 				data: {
 					labels: dates,
@@ -322,7 +332,7 @@
 			});
 
 			if (modelComparisonChart) modelComparisonChart.destroy();
-			modelComparisonChart = new Chart(modelComparisonCanvas, {
+			modelComparisonChart = new ChartJS(modelComparisonCanvas, {
 				type: 'bar',
 				data: {
 					labels: modelNames,
@@ -362,7 +372,7 @@
 			});
 
 			if (nodeHeatmapChart) nodeHeatmapChart.destroy();
-			nodeHeatmapChart = new Chart(nodeHeatmapCanvas, {
+			nodeHeatmapChart = new ChartJS(nodeHeatmapCanvas, {
 				type: 'bar',
 				data: {
 					labels: nodeNames,

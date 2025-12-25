@@ -8,9 +8,11 @@
 		Trophy, Medal, Award, Target, Gauge, PieChart, Layers, ChevronDown,
 		ArrowUpRight, ArrowDownRight, Equal
 	} from 'lucide-svelte';
-	import { Chart, registerables } from 'chart.js';
+	import type { Chart as ChartType } from 'chart.js';
 
-	Chart.register(...registerables);
+	// Chart.js will be lazy loaded
+	let ChartJS: typeof ChartType | null = null;
+	let chartJsLoaded = $state(false);
 
 	interface Props {
 		runs: Execution[];
@@ -37,14 +39,14 @@
 	let nodeLatencyCanvas: HTMLCanvasElement;
 
 	// Chart instances
-	let metricsBarChart: Chart | null = null;
-	let tokenCompareChart: Chart | null = null;
-	let costCompareChart: Chart | null = null;
-	let latencyCompareChart: Chart | null = null;
-	let radarChart: Chart | null = null;
-	let modelTokensChart: Chart | null = null;
-	let modelLatencyChart: Chart | null = null;
-	let nodeLatencyChart: Chart | null = null;
+	let metricsBarChart: ChartType | null = null;
+	let tokenCompareChart: ChartType | null = null;
+	let costCompareChart: ChartType | null = null;
+	let latencyCompareChart: ChartType | null = null;
+	let radarChart: ChartType | null = null;
+	let modelTokensChart: ChartType | null = null;
+	let modelLatencyChart: ChartType | null = null;
+	let nodeLatencyChart: ChartType | null = null;
 
 	// Status config
 	const statusConfig: Record<string, { icon: typeof Clock; color: string; bg: string }> = {
@@ -201,14 +203,22 @@
 	}
 
 	// Initialize charts
-	function initCharts() {
+	async function initCharts() {
+		// Lazy load Chart.js if not already loaded
+		if (!ChartJS) {
+			const { Chart, registerables } = await import('chart.js');
+			Chart.register(...registerables);
+			ChartJS = Chart;
+			chartJsLoaded = true;
+		}
+
 		const labels = runs.map((r, i) => getShortLabel(r));
 		const metrics = runs.map(getMetrics);
 
 		// Metrics comparison bar chart
 		if (metricsBarCanvas) {
 			if (metricsBarChart) metricsBarChart.destroy();
-			metricsBarChart = new Chart(metricsBarCanvas, {
+			metricsBarChart = new ChartJS(metricsBarCanvas, {
 				type: 'bar',
 				data: {
 					labels,
@@ -246,7 +256,7 @@
 		// Token distribution stacked bar
 		if (tokenCompareCanvas) {
 			if (tokenCompareChart) tokenCompareChart.destroy();
-			tokenCompareChart = new Chart(tokenCompareCanvas, {
+			tokenCompareChart = new ChartJS(tokenCompareCanvas, {
 				type: 'bar',
 				data: {
 					labels,
@@ -277,7 +287,7 @@
 		// Cost comparison
 		if (costCompareCanvas) {
 			if (costCompareChart) costCompareChart.destroy();
-			costCompareChart = new Chart(costCompareCanvas, {
+			costCompareChart = new ChartJS(costCompareCanvas, {
 				type: 'bar',
 				data: {
 					labels,
@@ -300,7 +310,7 @@
 		// Latency comparison
 		if (latencyCompareCanvas) {
 			if (latencyCompareChart) latencyCompareChart.destroy();
-			latencyCompareChart = new Chart(latencyCompareCanvas, {
+			latencyCompareChart = new ChartJS(latencyCompareCanvas, {
 				type: 'bar',
 				data: {
 					labels,
@@ -330,7 +340,7 @@
 			const maxRequests = Math.max(...metrics.map(m => m.requests)) || 1;
 
 			if (radarChart) radarChart.destroy();
-			radarChart = new Chart(radarCanvas, {
+			radarChart = new ChartJS(radarCanvas, {
 				type: 'radar',
 				data: {
 					labels: ['Speed', 'Token Efficiency', 'Cost Efficiency', 'Success Rate', 'Throughput'],
@@ -373,7 +383,7 @@
 			}));
 
 			if (modelTokensChart) modelTokensChart.destroy();
-			modelTokensChart = new Chart(modelTokensCanvas, {
+			modelTokensChart = new ChartJS(modelTokensCanvas, {
 				type: 'bar',
 				data: { labels, datasets },
 				options: {
@@ -398,7 +408,7 @@
 			}));
 
 			if (modelLatencyChart) modelLatencyChart.destroy();
-			modelLatencyChart = new Chart(modelLatencyCanvas, {
+			modelLatencyChart = new ChartJS(modelLatencyCanvas, {
 				type: 'bar',
 				data: { labels, datasets },
 				options: {
@@ -428,7 +438,7 @@
 			}));
 
 			if (nodeLatencyChart) nodeLatencyChart.destroy();
-			nodeLatencyChart = new Chart(nodeLatencyCanvas, {
+			nodeLatencyChart = new ChartJS(nodeLatencyCanvas, {
 				type: 'bar',
 				data: { labels, datasets },
 				options: {

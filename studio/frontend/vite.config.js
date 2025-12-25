@@ -18,5 +18,23 @@ export default defineConfig({
 	},
 	optimizeDeps: {
 		include: ['monaco-editor']
+	},
+	build: {
+		rollupOptions: {
+			output: {
+				manualChunks(id) {
+					// Split heavy vendor libraries into separate chunks
+					if (id.includes('chart.js')) {
+						return 'vendor-chartjs';
+					}
+					if (id.includes('@xyflow/svelte') || id.includes('@xyflow/system')) {
+						return 'vendor-xyflow';
+					}
+					if (id.includes('d3-dag') || id.includes('d3-array') || id.includes('d3-shape')) {
+						return 'vendor-d3';
+					}
+				}
+			}
+		}
 	}
 });
