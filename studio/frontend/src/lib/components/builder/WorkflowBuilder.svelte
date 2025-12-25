@@ -831,15 +831,21 @@
 			return;
 		}
 
-		// Cmd/Ctrl + Z to undo
+		// Cmd/Ctrl + Z to undo (but not when in input fields - let browser handle native undo)
 		if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+				return; // Let browser handle native text undo
+			}
 			e.preventDefault();
 			handleUndo();
 			return;
 		}
 
-		// Cmd/Ctrl + Shift + Z or Cmd/Ctrl + Y to redo
+		// Cmd/Ctrl + Shift + Z or Cmd/Ctrl + Y to redo (but not when in input fields)
 		if ((e.metaKey || e.ctrlKey) && ((e.key === 'z' && e.shiftKey) || e.key === 'y')) {
+			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+				return; // Let browser handle native text redo
+			}
 			e.preventDefault();
 			handleRedo();
 			return;
@@ -992,14 +998,18 @@
 		showSaveModal = false;
 
 		try {
+			// Use the normalized task name from the modal as the workflow name
+			// This ensures the backend creates the directory with the correct name
 			const success = await workflowStore.saveWorkflow({
-				name: workflowName,
+				name: filename,  // Use the normalized task name
 				description: workflowDescription,
 				savePath: path,
 				filename: filename
 			});
 
 			if (success) {
+				// Update the workflow name in the header to match saved name
+				workflowName = filename;
 				hasChanges = false;
 				clearDraft();
 				dispatch('save');
