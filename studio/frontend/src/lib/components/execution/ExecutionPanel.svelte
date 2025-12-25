@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Execution } from '$lib/stores/workflow.svelte';
 	import { uiStore } from '$lib/stores/workflow.svelte';
-	import { Clock, CheckCircle2, XCircle, Loader2, Eye, ChevronDown, GripHorizontal } from 'lucide-svelte';
+	import { Clock, CheckCircle2, XCircle, Loader2, Eye, ChevronUp, GripHorizontal } from 'lucide-svelte';
 
 	interface Props {
 		execution: Execution;
@@ -10,6 +10,48 @@
 	let { execution }: Props = $props();
 
 	let expanded = $state(false);
+
+	// Auto-scroll state
+	let logsContainer = $state<HTMLDivElement | null>(null);
+	let shouldAutoScroll = $state(true); // Track if we should auto-scroll
+	let previousLogCount = $state(0);
+
+	// Check if user is at bottom of logs (with threshold)
+	function isNearBottom(element: HTMLElement, threshold = 50): boolean {
+		return element.scrollHeight - element.scrollTop - element.clientHeight < threshold;
+	}
+
+	// Handle scroll to detect if user scrolled away from bottom
+	function handleLogsScroll(e: Event) {
+		const target = e.target as HTMLElement;
+		shouldAutoScroll = isNearBottom(target);
+	}
+
+	// Auto-scroll to bottom when new logs arrive
+	$effect(() => {
+		const logCount = execution.logs.length;
+		if (logsContainer && logCount > previousLogCount && shouldAutoScroll) {
+			// Use requestAnimationFrame for smooth scrolling after DOM update
+			requestAnimationFrame(() => {
+				if (logsContainer) {
+					logsContainer.scrollTop = logsContainer.scrollHeight;
+				}
+			});
+		}
+		previousLogCount = logCount;
+	});
+
+	// Scroll to bottom when panel is first expanded
+	$effect(() => {
+		if (expanded && logsContainer) {
+			requestAnimationFrame(() => {
+				if (logsContainer) {
+					logsContainer.scrollTop = logsContainer.scrollHeight;
+					shouldAutoScroll = true;
+				}
+			});
+		}
+	});
 
 	// Resizable panel state
 	let panelHeight = $state(200); // default height when expanded
@@ -177,7 +219,7 @@
 				title={expanded ? 'Collapse logs' : 'Expand logs'}
 			>
 				<span class="transition-transform inline-block {expanded ? 'rotate-180' : ''}">
-					<ChevronDown size={18} />
+					<ChevronUp size={18} />
 				</span>
 			</button>
 		</div>
@@ -187,7 +229,9 @@
 	{#if expanded}
 		<div class="px-6 pb-4">
 			<div
-				class="bg-gray-900 rounded-lg p-4 overflow-auto"
+				bind:this={logsContainer}
+				onscroll={handleLogsScroll}
+				class="bg-gray-900 rounded-lg p-4 overflow-auto scroll-smooth"
 				style="height: {panelHeight}px;"
 			>
 				{#if execution.logs.length > 0}

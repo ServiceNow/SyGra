@@ -117,6 +117,20 @@
 		const _v = workflowStore.workflowVersion;
 		return workflowStore.currentWorkflow;
 	});
+
+	// Track workflow ID to detect workflow switches
+	let previousWorkflowId = $state<string | null>(null);
+
+	// Clear execution state when switching to a different workflow
+	$effect(() => {
+		const currentId = currentWorkflow?.id ?? null;
+		if (previousWorkflowId !== null && currentId !== previousWorkflowId) {
+			// Workflow changed - clear the execution state
+			executionStore.clearExecution();
+		}
+		previousWorkflowId = currentId;
+	});
+
 	let currentExecution = $derived(executionStore.currentExecution);
 	let selectedNodeId = $derived(uiStore.selectedNodeId);
 	let showResultsModal = $derived(uiStore.showResultsModal);

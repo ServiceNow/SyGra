@@ -19,7 +19,8 @@
 	import { autoLayout } from '$lib/utils/layoutUtils';
 	import {
 		CheckCircle2, XCircle, Clock, Loader2, Ban, AlertTriangle,
-		GitBranch, Timer, ChevronRight, Activity, LayoutGrid
+		GitBranch, Timer, ChevronRight, Activity, LayoutGrid,
+		Map as MapIcon, EyeOff
 	} from 'lucide-svelte';
 
 	// Reuse the same node components as SygraFlow for consistency
@@ -57,6 +58,9 @@
 
 	// Selected node in timeline
 	let selectedNodeId = $state<string | null>(null);
+
+	// Minimap visibility state
+	let showMinimap = $state(true);
 
 	// Node type mapping - same as SygraFlow
 	const nodeTypes = {
@@ -354,16 +358,39 @@
 					bgColor={isDarkMode ? '#1e293b' : '#f9fafb'}
 					patternColor={isDarkMode ? '#334155' : '#e5e7eb'}
 				/>
-				<MiniMap
-					position="bottom-left"
-					width={160}
-					height={100}
-					nodeColor={(node) => nodeColors[node.type ?? 'llm'] ?? '#6b7280'}
-					bgColor={isDarkMode ? '#1e293b' : '#ffffff'}
-					maskColor={isDarkMode ? 'rgba(30, 41, 59, 0.6)' : 'rgba(240, 240, 240, 0.6)'}
-					pannable={true}
-					zoomable={true}
-				/>
+				<!-- Minimap with toggle button -->
+				<Panel position="bottom-left" class="!m-0 !p-0">
+					<div class="flex flex-col items-start gap-1 m-2">
+						<!-- Toggle button -->
+						<button
+							onclick={() => showMinimap = !showMinimap}
+							class="flex items-center justify-center w-6 h-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+							title={showMinimap ? 'Hide minimap' : 'Show minimap'}
+						>
+							{#if showMinimap}
+								<EyeOff size={12} class="text-gray-500 dark:text-gray-400" />
+							{:else}
+								<MapIcon size={12} class="text-gray-500 dark:text-gray-400" />
+							{/if}
+						</button>
+
+						<!-- Minimap -->
+						{#if showMinimap}
+							<div class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
+								<MiniMap
+									width={140}
+									height={90}
+									nodeColor={(node) => nodeColors[node.type ?? 'llm'] ?? '#6b7280'}
+									bgColor={isDarkMode ? '#1e293b' : '#ffffff'}
+									maskColor={isDarkMode ? 'rgba(30, 41, 59, 0.6)' : 'rgba(240, 240, 240, 0.6)'}
+									pannable={true}
+									zoomable={true}
+									class="!relative !m-0"
+								/>
+							</div>
+						{/if}
+					</div>
+				</Panel>
 			</SvelteFlow>
 		{/if}
 	</div>

@@ -39,7 +39,7 @@
 	let previousHeight = $state(defaultHeight);
 
 	// Tab state - now includes 'output'
-	let activeTab = $state<'yaml' | 'code' | 'output'>('code');
+	let activeTab = $state<'yaml' | 'code' | 'output'>('yaml');
 	let selectedCodeFile = $state<string>('task_executor.py');
 
 	// Content state
@@ -109,7 +109,7 @@
 	let startHeight = $state(0);
 
 	// File sidebar state
-	let showFileSidebar = $state(true);
+	let showFileSidebar = $state(false);
 	let sidebarWidth = $state(220);
 
 	// Referenced files (extracted from YAML and code)
@@ -881,13 +881,13 @@
 							</button>
 							<button
 								onclick={() => runCode(true)}
-								class="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium transition-colors relative"
+								class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors relative"
 								title={breakpoints.length > 0 ? `Debug with ${breakpoints.length} breakpoint(s)` : 'Debug code (click line numbers to set breakpoints)'}
 							>
 								<Bug size={14} />
 								Debug
 								{#if breakpoints.length > 0}
-									<span class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+									<span class="absolute -top-1.5 -right-1.5 bg-amber-700 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
 										{breakpoints.length}
 									</span>
 								{/if}
