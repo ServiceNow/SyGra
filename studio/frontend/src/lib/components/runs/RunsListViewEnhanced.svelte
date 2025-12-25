@@ -136,8 +136,26 @@
 		running: { icon: Loader2, color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30' },
 		completed: { icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-100 dark:bg-emerald-900/30' },
 		failed: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30' },
-		cancelled: { icon: Ban, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30' }
+		cancelled: { icon: Ban, color: 'text-orange-500', bg: 'bg-orange-100 dark:bg-orange-900/30' }
 	};
+
+	// Get effective status - checks if any node failed
+	function getEffectiveStatus(run: Execution): string {
+		// If the run's status is already failed/cancelled, use that
+		if (run.status === 'failed' || run.status === 'cancelled') {
+			return run.status;
+		}
+		// Check if any node failed
+		if (run.node_states) {
+			const hasFailedNode = Object.values(run.node_states).some(
+				(state: any) => state.status === 'failed' || state.status === 'cancelled'
+			);
+			if (hasFailedNode) {
+				return 'failed';
+			}
+		}
+		return run.status;
+	}
 
 	// Row action menu state
 	let activeMenuRunId = $state<string | null>(null);
@@ -829,7 +847,8 @@
 				</thead>
 				<tbody class="divide-y divide-gray-100 dark:divide-gray-800">
 					{#each filteredRuns() as run (run.id)}
-						{@const status = statusConfig[run.status] || statusConfig.pending}
+						{@const effectiveStatus = getEffectiveStatus(run)}
+						{@const status = statusConfig[effectiveStatus] || statusConfig.pending}
 						{@const StatusIcon = status.icon}
 						{@const isSelected = selectedRunIds.has(run.id)}
 						{@const isPinned = pinnedRunIds.has(run.id)}
@@ -871,8 +890,8 @@
 							</td>
 							<td class="px-4 py-3">
 								<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium {status.color} {status.bg}">
-									<StatusIcon size={12} class={run.status === 'running' ? 'animate-spin' : ''} />
-									{run.status}
+									<StatusIcon size={12} class={effectiveStatus === 'running' ? 'animate-spin' : ''} />
+									{effectiveStatus}
 								</span>
 							</td>
 							<td class="px-4 py-3">

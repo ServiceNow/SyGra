@@ -874,9 +874,13 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 				isEditing = false;
 				// Dispatch save event for parent to sync SvelteFlow
 				// Include newId if the node ID was changed so parent can update selection
+				console.log('[NodeDetailsPanel] Dispatching save event for node:', originalNodeId);
 				dispatch('save', { nodeId: originalNodeId, newId: updates.newId, updates });
+			} else {
+				console.error('[NodeDetailsPanel] updateNode returned false');
 			}
 		} else {
+			console.log('[NodeDetailsPanel] No updates to save');
 			hasChanges = false;
 			isEditing = false;
 		}

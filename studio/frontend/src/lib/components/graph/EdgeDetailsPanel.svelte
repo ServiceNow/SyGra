@@ -136,8 +136,8 @@
 		showDeleteConfirm = true;
 	}
 
-	function confirmDeleteEdge() {
-		workflowStore.removeEdge(edge.id);
+	async function confirmDeleteEdge() {
+		await workflowStore.removeEdge(edge.id);
 		dispatch('delete', edge.id);
 		showDeleteConfirm = false;
 		dispatch('close');

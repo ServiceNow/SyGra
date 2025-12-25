@@ -1467,6 +1467,14 @@ def _register_routes(app: FastAPI) -> None:
             with open(config_path, 'w') as f:
                 f.write(content)
 
+            # Reload the workflow from disk to update in-memory cache
+            try:
+                graph = app.state.graph_builder.build_from_yaml(str(config_path))
+                _workflows[workflow_id] = graph
+            except Exception as reload_error:
+                print(f"Warning: Could not reload workflow after YAML save: {reload_error}")
+                # Still return success since file was saved
+
             return {"status": "saved", "path": str(config_path)}
         except yaml.YAMLError as e:
             raise HTTPException(status_code=400, detail=f"Invalid YAML: {str(e)}")
@@ -1624,6 +1632,8 @@ def _register_routes(app: FastAPI) -> None:
             node_id: The node ID to update.
             node_data: The updated node data.
         """
+        import yaml
+
         if workflow_id not in _workflows:
             await list_workflows()
 
@@ -1637,7 +1647,7 @@ def _register_routes(app: FastAPI) -> None:
         if not node:
             raise HTTPException(status_code=404, detail=f"Node {node_id} not found in workflow")
 
-        # Update node fields
+        # Update in-memory node fields
         if "summary" in node_data:
             node.summary = node_data["summary"]
         if "description" in node_data:
@@ -1660,7 +1670,355 @@ def _register_routes(app: FastAPI) -> None:
         if "metadata" in node_data:
             node.metadata.update(node_data["metadata"])
 
-        return {"status": "updated", "node_id": node_id}
+        # Persist changes to the YAML file
+        if workflow.source_path:
+            yaml_path = Path(workflow.source_path)
+            if yaml_path.exists():
+                try:
+                    with open(yaml_path, 'r') as f:
+                        config = yaml.safe_load(f)
+
+                    # Update the node in the config
+                    if 'graph_config' in config and 'nodes' in config['graph_config']:
+                        yaml_node = config['graph_config']['nodes'].get(node_id)
+                        if yaml_node is not None:
+                            # Update fields that were changed
+                            if "summary" in node_data:
+                                yaml_node['summary'] = node_data["summary"]
+                            if "description" in node_data:
+                                yaml_node['description'] = node_data["description"]
+                            if "prompt" in node_data:
+                                yaml_node['prompt'] = node_data["prompt"]
+                            if "model" in node_data:
+                                yaml_node['model'] = {
+                                    'name': node_data["model"].get("name"),
+                                    'parameters': node_data["model"].get("parameters", {})
+                                }
+                                # Remove empty parameters
+                                if not yaml_node['model']['parameters']:
+                                    del yaml_node['model']['parameters']
+                            if "pre_process" in node_data:
+                                if node_data["pre_process"]:
+                                    yaml_node['pre_process'] = node_data["pre_process"]
+                                elif 'pre_process' in yaml_node:
+                                    del yaml_node['pre_process']
+                            if "post_process" in node_data:
+                                if node_data["post_process"]:
+                                    yaml_node['post_process'] = node_data["post_process"]
+                                elif 'post_process' in yaml_node:
+                                    del yaml_node['post_process']
+                            if "function_path" in node_data:
+                                if node_data["function_path"]:
+                                    yaml_node['function_path'] = node_data["function_path"]
+                                elif 'function_path' in yaml_node:
+                                    del yaml_node['function_path']
+
+                    with open(yaml_path, 'w') as f:
+                        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+
+                    # Reload workflow from disk to ensure in-memory cache is consistent
+                    try:
+                        graph = app.state.graph_builder.build_from_yaml(str(yaml_path))
+                        _workflows[workflow_id] = graph
+                        # Update node reference to the reloaded node
+                        node = next((n for n in graph.nodes if n.id == node_id), node)
+                    except Exception as reload_error:
+                        print(f"Warning: Could not reload workflow after node update: {reload_error}")
+                except Exception as e:
+                    raise HTTPException(status_code=500, detail=f"Failed to persist node update to file: {str(e)}")
+
+        # Return updated node data for frontend sync
+        return {
+            "status": "updated",
+            "node_id": node_id,
+            "node": {
+                "id": node.id,
+                "summary": node.summary,
+                "description": node.description,
+                "model": {"name": node.model.name, "parameters": node.model.parameters} if node.model else None,
+                "prompt": node.prompt,
+                "pre_process": node.pre_process,
+                "post_process": node.post_process,
+                "function_path": node.function_path,
+            }
+        }
+
+    @app.delete("/api/workflows/{workflow_id}/nodes/{node_id}")
+    async def delete_node(workflow_id: str, node_id: str):
+        """
+        Delete a node from the workflow.
+
+        Args:
+            workflow_id: The workflow ID.
+            node_id: The node ID to delete.
+        """
+        import yaml
+
+        if workflow_id not in _workflows:
+            await list_workflows()
+
+        if workflow_id not in _workflows:
+            raise HTTPException(status_code=404, detail=f"Workflow {workflow_id} not found")
+
+        workflow = _workflows[workflow_id]
+
+        # Find the node
+        node = next((n for n in workflow.nodes if n.id == node_id), None)
+        if not node:
+            raise HTTPException(status_code=404, detail=f"Node {node_id} not found in workflow")
+
+        # Persist changes to the YAML file
+        if workflow.source_path:
+            yaml_path = Path(workflow.source_path)
+            if yaml_path.exists():
+                try:
+                    with open(yaml_path, 'r') as f:
+                        config = yaml.safe_load(f)
+
+                    # Delete the node from config
+                    if 'graph_config' in config and 'nodes' in config['graph_config']:
+                        if node_id in config['graph_config']['nodes']:
+                            del config['graph_config']['nodes'][node_id]
+
+                    # Delete edges connected to this node
+                    if 'graph_config' in config and 'edges' in config['graph_config']:
+                        config['graph_config']['edges'] = [
+                            e for e in config['graph_config']['edges']
+                            if e.get('from') != node_id and e.get('to') != node_id
+                        ]
+
+                    with open(yaml_path, 'w') as f:
+                        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+
+                    # Reload workflow from disk to update cache
+                    try:
+                        graph = app.state.graph_builder.build_from_yaml(str(yaml_path))
+                        _workflows[workflow_id] = graph
+                    except Exception as reload_error:
+                        print(f"Warning: Could not reload workflow after node delete: {reload_error}")
+
+                except Exception as e:
+                    raise HTTPException(status_code=500, detail=f"Failed to delete node from file: {str(e)}")
+
+        return {"status": "deleted", "node_id": node_id}
+
+    @app.post("/api/workflows/{workflow_id}/nodes")
+    async def add_node(workflow_id: str, node_data: Dict[str, Any]):
+        """
+        Add a new node to the workflow.
+
+        Args:
+            workflow_id: The workflow ID.
+            node_data: The node configuration including id, node_type, etc.
+        """
+        import yaml
+
+        if workflow_id not in _workflows:
+            await list_workflows()
+
+        if workflow_id not in _workflows:
+            raise HTTPException(status_code=404, detail=f"Workflow {workflow_id} not found")
+
+        workflow = _workflows[workflow_id]
+
+        node_id = node_data.get("id")
+        if not node_id:
+            raise HTTPException(status_code=400, detail="Node ID is required")
+
+        # Check if node already exists
+        existing = next((n for n in workflow.nodes if n.id == node_id), None)
+        if existing:
+            raise HTTPException(status_code=400, detail=f"Node {node_id} already exists")
+
+        # Persist changes to the YAML file
+        if workflow.source_path:
+            yaml_path = Path(workflow.source_path)
+            if yaml_path.exists():
+                try:
+                    with open(yaml_path, 'r') as f:
+                        config = yaml.safe_load(f)
+
+                    # Initialize graph_config.nodes if not present
+                    if 'graph_config' not in config:
+                        config['graph_config'] = {}
+                    if 'nodes' not in config['graph_config']:
+                        config['graph_config']['nodes'] = {}
+
+                    # Create the node config
+                    yaml_node = {
+                        'node_type': node_data.get('node_type', 'llm'),
+                    }
+                    if 'summary' in node_data:
+                        yaml_node['summary'] = node_data['summary']
+                    if 'description' in node_data:
+                        yaml_node['description'] = node_data['description']
+                    if 'model' in node_data and node_data['model']:
+                        yaml_node['model'] = {
+                            'name': node_data['model'].get('name'),
+                        }
+                        if node_data['model'].get('parameters'):
+                            yaml_node['model']['parameters'] = node_data['model']['parameters']
+                    if 'prompt' in node_data:
+                        yaml_node['prompt'] = node_data['prompt']
+                    if 'pre_process' in node_data:
+                        yaml_node['pre_process'] = node_data['pre_process']
+                    if 'post_process' in node_data:
+                        yaml_node['post_process'] = node_data['post_process']
+                    if 'function_path' in node_data:
+                        yaml_node['function_path'] = node_data['function_path']
+                    if 'data_config' in node_data:
+                        yaml_node['data_config'] = node_data['data_config']
+                    if 'output_config' in node_data:
+                        yaml_node['output_config'] = node_data['output_config']
+                    if 'tools' in node_data:
+                        yaml_node['tools'] = node_data['tools']
+                    if 'tool_choice' in node_data:
+                        yaml_node['tool_choice'] = node_data['tool_choice']
+
+                    config['graph_config']['nodes'][node_id] = yaml_node
+
+                    with open(yaml_path, 'w') as f:
+                        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+
+                    # Reload workflow from disk to update cache
+                    try:
+                        graph = app.state.graph_builder.build_from_yaml(str(yaml_path))
+                        _workflows[workflow_id] = graph
+                    except Exception as reload_error:
+                        print(f"Warning: Could not reload workflow after node add: {reload_error}")
+
+                except Exception as e:
+                    raise HTTPException(status_code=500, detail=f"Failed to add node to file: {str(e)}")
+
+        return {"status": "added", "node_id": node_id}
+
+    @app.post("/api/workflows/{workflow_id}/edges")
+    async def add_edge(workflow_id: str, edge_data: Dict[str, Any]):
+        """
+        Add a new edge to the workflow.
+
+        Args:
+            workflow_id: The workflow ID.
+            edge_data: The edge configuration including source, target, etc.
+        """
+        import yaml
+
+        if workflow_id not in _workflows:
+            await list_workflows()
+
+        if workflow_id not in _workflows:
+            raise HTTPException(status_code=404, detail=f"Workflow {workflow_id} not found")
+
+        workflow = _workflows[workflow_id]
+
+        source = edge_data.get("source") or edge_data.get("from")
+        target = edge_data.get("target") or edge_data.get("to")
+        if not source or not target:
+            raise HTTPException(status_code=400, detail="Source and target are required")
+
+        # Persist changes to the YAML file
+        if workflow.source_path:
+            yaml_path = Path(workflow.source_path)
+            if yaml_path.exists():
+                try:
+                    with open(yaml_path, 'r') as f:
+                        config = yaml.safe_load(f)
+
+                    # Initialize graph_config.edges if not present
+                    if 'graph_config' not in config:
+                        config['graph_config'] = {}
+                    if 'edges' not in config['graph_config']:
+                        config['graph_config']['edges'] = []
+
+                    # Create the edge config
+                    yaml_edge = {
+                        'from': source,
+                        'to': target,
+                    }
+                    if 'label' in edge_data:
+                        yaml_edge['label'] = edge_data['label']
+                    if edge_data.get('is_conditional') or edge_data.get('condition'):
+                        if 'condition' in edge_data:
+                            yaml_edge['condition'] = edge_data['condition'].get('condition_path')
+                        if 'path_map' in edge_data.get('condition', {}):
+                            yaml_edge['path_map'] = edge_data['condition']['path_map']
+
+                    config['graph_config']['edges'].append(yaml_edge)
+
+                    with open(yaml_path, 'w') as f:
+                        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+
+                    # Reload workflow from disk to update cache
+                    try:
+                        graph = app.state.graph_builder.build_from_yaml(str(yaml_path))
+                        _workflows[workflow_id] = graph
+                    except Exception as reload_error:
+                        print(f"Warning: Could not reload workflow after edge add: {reload_error}")
+
+                except Exception as e:
+                    raise HTTPException(status_code=500, detail=f"Failed to add edge to file: {str(e)}")
+
+        return {"status": "added", "source": source, "target": target}
+
+    @app.delete("/api/workflows/{workflow_id}/edges/{edge_id}")
+    async def delete_edge(workflow_id: str, edge_id: str):
+        """
+        Delete an edge from the workflow.
+
+        Args:
+            workflow_id: The workflow ID.
+            edge_id: The edge ID to delete (format: source-target or the edge's id).
+        """
+        import yaml
+
+        if workflow_id not in _workflows:
+            await list_workflows()
+
+        if workflow_id not in _workflows:
+            raise HTTPException(status_code=404, detail=f"Workflow {workflow_id} not found")
+
+        workflow = _workflows[workflow_id]
+
+        # Persist changes to the YAML file
+        if workflow.source_path:
+            yaml_path = Path(workflow.source_path)
+            if yaml_path.exists():
+                try:
+                    with open(yaml_path, 'r') as f:
+                        config = yaml.safe_load(f)
+
+                    # Delete matching edges
+                    if 'graph_config' in config and 'edges' in config['graph_config']:
+                        original_count = len(config['graph_config']['edges'])
+                        # Try to match by edge_id (source-target pattern) or exact id
+                        config['graph_config']['edges'] = [
+                            e for e in config['graph_config']['edges']
+                            if not (
+                                f"{e.get('from')}-{e.get('to')}" == edge_id or
+                                e.get('id') == edge_id
+                            )
+                        ]
+                        deleted_count = original_count - len(config['graph_config']['edges'])
+
+                        if deleted_count == 0:
+                            raise HTTPException(status_code=404, detail=f"Edge {edge_id} not found")
+
+                    with open(yaml_path, 'w') as f:
+                        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+
+                    # Reload workflow from disk to update cache
+                    try:
+                        graph = app.state.graph_builder.build_from_yaml(str(yaml_path))
+                        _workflows[workflow_id] = graph
+                    except Exception as reload_error:
+                        print(f"Warning: Could not reload workflow after edge delete: {reload_error}")
+
+                except HTTPException:
+                    raise
+                except Exception as e:
+                    raise HTTPException(status_code=500, detail=f"Failed to delete edge from file: {str(e)}")
+
+        return {"status": "deleted", "edge_id": edge_id}
 
     # ==================== Code Execution & Debug Endpoints ====================
 
@@ -3721,12 +4079,21 @@ async def _run_workflow(
         execution.error = error_msg
         execution.completed_at = datetime.now()
 
-        # Mark current node as failed
-        if execution.current_node:
-            node_state = execution.node_states.get(execution.current_node)
-            if node_state:
+        # Mark current node as failed, and all pending nodes as cancelled
+        for node_id, node_state in execution.node_states.items():
+            if node_id == execution.current_node:
+                # The node that failed
                 node_state.status = ExecutionStatus.FAILED
                 node_state.error = error_msg
+                node_state.completed_at = datetime.now()
+            elif node_state.status == ExecutionStatus.PENDING:
+                # Nodes that never ran due to the failure - mark as cancelled
+                node_state.status = ExecutionStatus.CANCELLED
+            elif node_state.status == ExecutionStatus.RUNNING:
+                # Any running node should also be marked as failed
+                node_state.status = ExecutionStatus.FAILED
+                node_state.error = "Execution aborted due to failure"
+                node_state.completed_at = datetime.now()
 
         # Clean up process if it exists
         if execution_id in _running_processes:

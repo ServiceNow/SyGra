@@ -78,6 +78,29 @@
 			tabSize: 4,
 			insertSpaces: true,
 			glyphMargin: breakpointsEnabled,
+			// Enable find/replace widget
+			find: {
+				addExtraSpaceOnTop: false,
+				autoFindInSelection: 'multiline',
+				seedSearchStringFromSelection: 'selection',
+			},
+			// Enable context menu with all actions
+			contextmenu: true,
+			// Enable quick suggestions
+			quickSuggestions: !readonly,
+			// Enable parameter hints
+			parameterHints: { enabled: !readonly },
+			// Enable bracket matching
+			matchBrackets: 'always',
+			// Enable auto closing brackets
+			autoClosingBrackets: 'languageDefined',
+			autoClosingQuotes: 'languageDefined',
+			// Enable indentation guides
+			renderIndentGuides: true,
+			// Enable selection clipboard
+			selectionClipboard: true,
+			// Enable multiCursorModifier for multi-cursor editing
+			multiCursorModifier: 'ctrlCmd',
 		});
 
 		editor.onDidChangeModelContent(() => {
@@ -256,6 +279,41 @@
 
 	export function format() {
 		editor?.getAction('editor.action.formatDocument')?.run();
+	}
+
+	// Undo the last edit
+	export function undo() {
+		editor?.trigger('keyboard', 'undo', null);
+	}
+
+	// Redo the last undone edit
+	export function redo() {
+		editor?.trigger('keyboard', 'redo', null);
+	}
+
+	// Open find dialog (Ctrl+F)
+	export function find() {
+		editor?.getAction('actions.find')?.run();
+	}
+
+	// Open find and replace dialog (Ctrl+H)
+	export function findAndReplace() {
+		editor?.getAction('editor.action.startFindReplaceAction')?.run();
+	}
+
+	// Go to line (Ctrl+G)
+	export function goToLine() {
+		editor?.getAction('editor.action.gotoLine')?.run();
+	}
+
+	// Select all (Ctrl+A)
+	export function selectAll() {
+		editor?.getAction('editor.action.selectAll')?.run();
+	}
+
+	// Get the underlying editor instance (for advanced use cases)
+	export function getEditor() {
+		return editor;
 	}
 </script>
 

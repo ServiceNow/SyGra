@@ -298,7 +298,8 @@
 			id: node.id,
 			type: node.node_type,
 			position: node.position,
-			data: { ...node },
+			// Add _version to force SvelteFlow to detect data changes
+			data: { ...node, _version: Date.now() },
 			sourcePosition: Position.Right,
 			targetPosition: Position.Left,
 			selectable: true,
@@ -330,6 +331,7 @@
 	// Track workflow nodes/edges count to detect deletions and additions
 	let lastNodesCount = $state(0);
 	let lastEdgesCount = $state(0);
+	let lastWorkflowVersion = $state(0);
 
 	// Sync from workflow to stores when workflow changes (ID, nodes count, or edges count)
 	$effect(() => {
@@ -348,6 +350,20 @@
 		}
 	});
 
+	// Also sync when workflowVersion changes (node data updates like model changes)
+	$effect(() => {
+		const currentVersion = workflowStore.workflowVersion;
+		// Read directly from store to ensure we get the latest data
+		const currentWf = workflowStore.currentWorkflow;
+		if (currentVersion > lastWorkflowVersion && currentWf) {
+			console.log('[WorkflowBuilder] Version changed:', lastWorkflowVersion, '->', currentVersion, 'syncing nodes...');
+			lastWorkflowVersion = currentVersion;
+			// Sync nodes when version changes (handles data updates within nodes)
+			nodes.set(workflowNodesToFlowNodes(currentWf.nodes));
+			edges.set(workflowEdgesToFlowEdges(currentWf.edges));
+		}
+	});
+
 	// Force sync edges from workflow store to SvelteFlow
 	export function syncEdgesFromStore() {
 		// Read directly from store to ensure we get the latest data
@@ -361,8 +377,17 @@
 	export function syncNodesFromStore() {
 		// Read directly from store to ensure we get the latest data
 		const currentWf = workflowStore.currentWorkflow;
+		console.log('[syncNodesFromStore] Current workflow from store:', currentWf?.id);
+		console.log('[syncNodesFromStore] Nodes count:', currentWf?.nodes?.length);
 		if (currentWf) {
-			nodes.set(workflowNodesToFlowNodes(currentWf.nodes));
+			// Log first node's model for debugging
+			const firstLLMNode = currentWf.nodes.find(n => n.node_type === 'llm');
+			if (firstLLMNode) {
+				console.log('[syncNodesFromStore] First LLM node model:', firstLLMNode.model?.name);
+			}
+			const flowNodes = workflowNodesToFlowNodes(currentWf.nodes);
+			console.log('[syncNodesFromStore] Setting SvelteFlow nodes:', flowNodes.length);
+			nodes.set(flowNodes);
 		}
 	}
 
@@ -848,7 +873,7 @@
 	}
 
 	// Delete selected nodes and edges
-	function handleDeleteSelected() {
+	async function handleDeleteSelected() {
 		const nodesToDelete = selectedNodeIds.filter(id => id !== 'START' && id !== 'END');
 		const edgesToDelete = selectedEdgeIds;
 
@@ -862,15 +887,15 @@
 
 		workflowStore.pushUndo();
 
-		// Delete edges first
-		edgesToDelete.forEach(edgeId => {
-			workflowStore.removeEdge(edgeId);
-		});
+		// Delete edges first (async)
+		for (const edgeId of edgesToDelete) {
+			await workflowStore.removeEdge(edgeId);
+		}
 
-		// Delete nodes (this will also remove connected edges)
-		nodesToDelete.forEach(nodeId => {
-			workflowStore.removeNode(nodeId);
-		});
+		// Delete nodes (async - this will also remove connected edges)
+		for (const nodeId of nodesToDelete) {
+			await workflowStore.deleteNode(nodeId);
+		}
 
 		// Clear selection
 		selectedNodeIds = [];

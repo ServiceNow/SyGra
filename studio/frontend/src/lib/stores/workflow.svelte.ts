@@ -338,6 +338,9 @@ function createWorkflowStore() {
 	let availableModels = $state<AvailableModel[]>([]);
 	let loading = $state(false);
 
+	// Version counter to force reactivity updates
+	let workflowVersion = $state(0);
+
 	// Undo/Redo state
 	const MAX_UNDO_STACK = 50;
 	let undoStack = $state<Array<{ nodes: WorkflowNode[]; edges: WorkflowEdge[] }>>([]);
@@ -362,6 +365,7 @@ function createWorkflowStore() {
 	return {
 		get workflows() { return workflows; },
 		get currentWorkflow() { return currentWorkflow; },
+		get workflowVersion() { return workflowVersion; },
 		get availableModels() { return availableModels; },
 		get loading() { return loading; },
 		get error() { return error; },
@@ -502,12 +506,35 @@ function createWorkflowStore() {
 				const response = await fetch(`${API_BASE}/workflows/${id}`);
 				if (!response.ok) throw new Error('Failed to load workflow');
 				currentWorkflow = await response.json();
+				workflowVersion++;
 				return currentWorkflow;
 			} catch (e) {
 				error = e instanceof Error ? e.message : 'Unknown error';
 				return null;
 			} finally {
 				loading = false;
+			}
+		},
+
+		// Reload the current workflow from the backend (useful after YAML edits)
+		async reloadCurrentWorkflow(): Promise<Workflow | null> {
+			if (!currentWorkflow) return null;
+			const id = currentWorkflow.id;
+			if (id.startsWith('new_')) return currentWorkflow; // Can't reload new workflows
+
+			console.log('[reloadCurrentWorkflow] Reloading workflow:', id);
+			try {
+				const response = await fetch(`${API_BASE}/workflows/${id}`);
+				if (!response.ok) throw new Error('Failed to reload workflow');
+				const newWorkflow = await response.json();
+				currentWorkflow = newWorkflow;
+				workflowVersion++;
+				console.log('[reloadCurrentWorkflow] Workflow reloaded, version:', workflowVersion);
+				return currentWorkflow;
+			} catch (e) {
+				console.error('[reloadCurrentWorkflow] Error:', e);
+				error = e instanceof Error ? e.message : 'Unknown error';
+				return null;
 			}
 		},
 
@@ -541,13 +568,21 @@ function createWorkflowStore() {
 			if (isNewWorkflow) {
 				const nodeIndex = currentWorkflow.nodes.findIndex(n => n.id === nodeId);
 				if (nodeIndex !== -1) {
-					const updatedNodes = [...currentWorkflow.nodes];
 					const finalId = newId || nodeId;
-					updatedNodes[nodeIndex] = {
-						...updatedNodes[nodeIndex],
+
+					// Create a new node object with updated data
+					const updatedNode: WorkflowNode = {
+						...currentWorkflow.nodes[nodeIndex],
 						...restNodeData,
 						id: finalId
 					};
+
+					// Create a new nodes array without mutating the original
+					const newNodes = [
+						...currentWorkflow.nodes.slice(0, nodeIndex),
+						updatedNode,
+						...currentWorkflow.nodes.slice(nodeIndex + 1)
+					];
 
 					// If ID changed, update all edges referencing this node
 					if (newId && newId !== nodeId) {
@@ -558,15 +593,19 @@ function createWorkflowStore() {
 						}));
 						currentWorkflow = {
 							...currentWorkflow,
-							nodes: updatedNodes,
+							nodes: newNodes,
 							edges: updatedEdges
 						};
 					} else {
 						currentWorkflow = {
 							...currentWorkflow,
-							nodes: updatedNodes
+							nodes: newNodes
 						};
 					}
+
+					// Increment version to force dependent $derived values to update
+					workflowVersion++;
+					console.log('[updateNode] New workflow updated, version:', workflowVersion);
 				}
 				return true;
 			}
@@ -593,35 +632,67 @@ function createWorkflowStore() {
 				const result = await response.json();
 				console.log('updateNode result:', result);
 
-				// Update local state
+				// Update local state - create completely new arrays to ensure Svelte 5 reactivity
 				const nodeIndex = currentWorkflow.nodes.findIndex(n => n.id === nodeId);
 				if (nodeIndex !== -1) {
 					const finalId = newId || nodeId;
-					currentWorkflow.nodes[nodeIndex] = {
+
+					// Use API response data if available, otherwise fall back to sent data
+					const apiNodeData = result.node || {};
+
+					// Create a new node object with updated data (don't mutate existing)
+					// Merge: existing node -> sent data -> API response data (most authoritative)
+					const updatedNode: WorkflowNode = {
 						...currentWorkflow.nodes[nodeIndex],
 						...restNodeData,
+						...(apiNodeData.model ? { model: apiNodeData.model } : {}),
+						...(apiNodeData.summary !== undefined ? { summary: apiNodeData.summary } : {}),
+						...(apiNodeData.description !== undefined ? { description: apiNodeData.description } : {}),
+						...(apiNodeData.prompt !== undefined ? { prompt: apiNodeData.prompt } : {}),
+						...(apiNodeData.pre_process !== undefined ? { pre_process: apiNodeData.pre_process } : {}),
+						...(apiNodeData.post_process !== undefined ? { post_process: apiNodeData.post_process } : {}),
+						...(apiNodeData.function_path !== undefined ? { function_path: apiNodeData.function_path } : {}),
 						id: finalId
 					};
 
+					console.log('Updated node:', updatedNode);
+
+					// Create a new nodes array without mutating the original
+					const newNodes = [
+						...currentWorkflow.nodes.slice(0, nodeIndex),
+						updatedNode,
+						...currentWorkflow.nodes.slice(nodeIndex + 1)
+					];
+
 					// If ID changed, update all edges referencing this node
+					let updatedWorkflow: Workflow;
 					if (newId && newId !== nodeId) {
 						const updatedEdges = currentWorkflow.edges.map(edge => ({
 							...edge,
 							source: edge.source === nodeId ? newId : edge.source,
 							target: edge.target === nodeId ? newId : edge.target
 						}));
-						currentWorkflow = {
+						updatedWorkflow = {
 							...currentWorkflow,
-							nodes: [...currentWorkflow.nodes],
+							nodes: newNodes,
 							edges: updatedEdges
 						};
 					} else {
-						// Trigger reactivity by creating new array and workflow object
-						currentWorkflow = {
+						// Assign new workflow object with new nodes array
+						updatedWorkflow = {
 							...currentWorkflow,
-							nodes: [...currentWorkflow.nodes]
+							nodes: newNodes
 						};
 					}
+
+					// Force assignment to trigger Svelte 5 reactivity
+					currentWorkflow = null;
+					currentWorkflow = updatedWorkflow;
+
+					// Increment version to force dependent $derived values to update
+					workflowVersion++;
+
+					console.log('Workflow updated, new node count:', currentWorkflow?.nodes.length, 'version:', workflowVersion);
 				}
 
 				return true;
@@ -897,12 +968,35 @@ function createWorkflowStore() {
 			if (!currentWorkflow) return false;
 			if (nodeId === 'START' || nodeId === 'END') return false; // Can't remove start/end
 
+			// Check if this is a new workflow (not yet saved to backend)
+			const isNewWorkflow = currentWorkflow.id.startsWith('new_');
+
 			try {
+				// For existing workflows, call the API to persist changes
+				if (!isNewWorkflow) {
+					const response = await fetch(`${API_BASE}/workflows/${currentWorkflow.id}/nodes/${nodeId}`, {
+						method: 'DELETE'
+					});
+					if (!response.ok) {
+						const errorData = await response.json().catch(() => ({}));
+						throw new Error(errorData.detail || 'Failed to delete node');
+					}
+					// Reload workflow from backend to get consistent state
+					const reloadResponse = await fetch(`${API_BASE}/workflows/${currentWorkflow.id}`);
+					if (reloadResponse.ok) {
+						currentWorkflow = await reloadResponse.json();
+						workflowVersion++;
+						return true;
+					}
+				}
+
+				// For new workflows or as fallback, update local state
 				currentWorkflow = {
 					...currentWorkflow,
 					nodes: currentWorkflow.nodes.filter(n => n.id !== nodeId),
 					edges: currentWorkflow.edges.filter(e => e.source !== nodeId && e.target !== nodeId)
 				};
+				workflowVersion++;
 				return true;
 			} catch (e) {
 				console.error('Failed to delete node:', e);
@@ -911,8 +1005,8 @@ function createWorkflowStore() {
 		},
 
 		// Remove an edge from the current workflow
-		removeEdge(edgeId: string) {
-			if (!currentWorkflow) return;
+		async removeEdge(edgeId: string): Promise<boolean> {
+			if (!currentWorkflow) return false;
 
 			// Try to find the edge with various ID formats
 			let edgeToRemove = currentWorkflow.edges.find(e => e.id === edgeId);
@@ -934,11 +1028,42 @@ function createWorkflowStore() {
 				}
 			}
 
-			if (edgeToRemove) {
+			if (!edgeToRemove) return false;
+
+			// Check if this is a new workflow (not yet saved to backend)
+			const isNewWorkflow = currentWorkflow.id.startsWith('new_');
+
+			try {
+				// For existing workflows, call the API to persist changes
+				if (!isNewWorkflow) {
+					// Use source-target format for edge ID
+					const apiEdgeId = `${edgeToRemove.source}-${edgeToRemove.target}`;
+					const response = await fetch(`${API_BASE}/workflows/${currentWorkflow.id}/edges/${apiEdgeId}`, {
+						method: 'DELETE'
+					});
+					if (!response.ok) {
+						const errorData = await response.json().catch(() => ({}));
+						throw new Error(errorData.detail || 'Failed to delete edge');
+					}
+					// Reload workflow from backend to get consistent state
+					const reloadResponse = await fetch(`${API_BASE}/workflows/${currentWorkflow.id}`);
+					if (reloadResponse.ok) {
+						currentWorkflow = await reloadResponse.json();
+						workflowVersion++;
+						return true;
+					}
+				}
+
+				// For new workflows or as fallback, update local state
 				currentWorkflow = {
 					...currentWorkflow,
 					edges: currentWorkflow.edges.filter(e => e.id !== edgeToRemove!.id)
 				};
+				workflowVersion++;
+				return true;
+			} catch (e) {
+				console.error('Failed to delete edge:', e);
+				return false;
 			}
 		},
 

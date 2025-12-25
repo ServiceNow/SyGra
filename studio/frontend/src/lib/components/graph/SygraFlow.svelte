@@ -16,7 +16,7 @@
 	} from '@xyflow/svelte';
 	import { writable, get, derived } from 'svelte/store';
 	import { createEventDispatcher } from 'svelte';
-	import type { Workflow, Execution } from '$lib/stores/workflow.svelte';
+	import { workflowStore, type Workflow, type Execution } from '$lib/stores/workflow.svelte';
 
 	// Node components
 	import StartNode from './renderers/nodes/StartNode.svelte';
@@ -183,6 +183,7 @@
 
 	// Track workflow ID to know when we need a full resync
 	let lastWorkflowId = '';
+	let lastWorkflowVersion = 0;
 
 	// Track node positions locally to preserve user arrangements
 	let nodePositions = new Map<string, { x: number; y: number }>();
@@ -267,6 +268,63 @@
 					}
 				}))
 			);
+		}
+	});
+
+	// Also sync when workflowVersion changes (node data updates like model changes)
+	$effect(() => {
+		const currentVersion = workflowStore.workflowVersion;
+		// Read directly from store to ensure we get the latest data
+		const currentWf = workflowStore.currentWorkflow;
+		if (currentVersion > lastWorkflowVersion && currentWf && lastWorkflowId === currentWf.id) {
+			console.log('[SygraFlow] Version changed:', lastWorkflowVersion, '->', currentVersion, 'syncing nodes/edges...');
+			lastWorkflowVersion = currentVersion;
+			// Sync node data when version changes (handles data updates within nodes)
+			// Preserve positions from nodePositions map
+			nodes.update(currentNodes =>
+				currentWf.nodes.map(workflowNode => {
+					const existingNode = currentNodes.find(n => n.id === workflowNode.id);
+					return {
+						id: workflowNode.id,
+						type: workflowNode.node_type,
+						position: nodePositions.get(workflowNode.id) || existingNode?.position || workflowNode.position,
+						data: {
+							...workflowNode,
+							executionState: execution?.node_states[workflowNode.id] ?? null,
+							isCurrentNode: execution?.current_node === workflowNode.id,
+							nodeType: workflowNode.node_type,
+							hasRunningNode: hasRunningNode(),
+							_version: Date.now()  // Force re-render
+						},
+						sourcePosition: Position.Right,
+						targetPosition: Position.Left,
+						selectable: true,
+						draggable: true
+					};
+				})
+			);
+			// Also sync edges
+			edges.set(currentWf.edges.map(edge => ({
+				id: edge.id,
+				source: edge.source,
+				target: edge.target,
+				type: 'sygra',
+				selectable: true,
+				animated: execution?.status === 'running' &&
+					(execution.node_states[edge.source]?.status === 'completed' &&
+					 execution.node_states[edge.target]?.status === 'running'),
+				markerEnd: {
+					type: MarkerType.ArrowClosed,
+					width: 16,
+					height: 16,
+					color: edge.is_conditional ? '#f59e0b' : '#6b7280'
+				},
+				data: {
+					label: edge.label,
+					isConditional: edge.is_conditional,
+					condition: edge.condition
+				}
+			})));
 		}
 	});
 

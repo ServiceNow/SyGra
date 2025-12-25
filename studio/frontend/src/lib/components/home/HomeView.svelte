@@ -11,11 +11,23 @@
 	let loading = $derived(workflowStore.loading);
 	let searchQuery = $state('');
 
-	// Stats with more detail
+	// Helper to get effective status for stats
+	function getEffectiveStatusForRun(run: Execution): string {
+		if (run.status === 'failed' || run.status === 'cancelled') return run.status;
+		if (run.node_states) {
+			const hasFailedNode = Object.values(run.node_states).some(
+				(state: any) => state.status === 'failed' || state.status === 'cancelled'
+			);
+			if (hasFailedNode) return 'failed';
+		}
+		return run.status;
+	}
+
+	// Stats with more detail - uses effective status
 	let stats = $derived(() => {
-		const completed = executionHistory.filter(e => e.status === 'completed');
-		const failed = executionHistory.filter(e => e.status === 'failed').length;
-		const running = executionHistory.filter(e => e.status === 'running').length;
+		const completed = executionHistory.filter(e => getEffectiveStatusForRun(e) === 'completed');
+		const failed = executionHistory.filter(e => getEffectiveStatusForRun(e) === 'failed' || getEffectiveStatusForRun(e) === 'cancelled').length;
+		const running = executionHistory.filter(e => getEffectiveStatusForRun(e) === 'running').length;
 		const total = executionHistory.length;
 		const successRate = total > 0 ? Math.round((completed.length / total) * 100) : 0;
 
@@ -130,7 +142,8 @@
 		if (usd < 0.01) return `<$0.01`;
 		return `$${usd.toFixed(2)}`;
 	}
-</script>
+
+	</script>
 
 <div class="h-full w-full overflow-auto bg-gray-50 dark:bg-gray-900">
 	<div class="max-w-7xl mx-auto px-6 py-8">
@@ -309,12 +322,13 @@
 				</div>
 				<div class="divide-y divide-gray-200 dark:divide-gray-700">
 					{#each recentRuns as run (run.id)}
-						{@const status = statusConfig[run.status] || statusConfig.pending}
+						{@const effectiveStatus = getEffectiveStatusForRun(run)}
+						{@const status = statusConfig[effectiveStatus] || statusConfig.pending}
 						{@const StatusIcon = status.icon}
 						<button onclick={() => selectRun(run)} class="group w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left">
 							<div class="flex items-center gap-3 flex-1 min-w-0">
 								<div class="w-10 h-10 rounded-lg {status.bg} flex items-center justify-center flex-shrink-0">
-									<StatusIcon size={18} class="{status.color} {run.status === 'running' ? 'animate-spin' : ''}" />
+									<StatusIcon size={18} class="{status.color} {effectiveStatus === 'running' ? 'animate-spin' : ''}" />
 								</div>
 								<div class="flex-1 min-w-0">
 									<p class="font-medium text-gray-900 dark:text-gray-100 truncate">{run.workflow_name || 'Unknown'}</p>

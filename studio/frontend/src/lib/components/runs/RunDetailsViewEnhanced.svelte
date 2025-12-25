@@ -5,14 +5,14 @@
 	import {
 		X, CheckCircle2, XCircle, Clock, Loader2, FileJson, FileText,
 		Calendar, Timer, Hash, Database, ChevronDown, Copy, Check,
-		Activity, Layers, ArrowRight, DollarSign, Zap, Cpu, GitBranch,
+		Activity, ArrowRight, DollarSign, Zap, Cpu, GitBranch,
 		BarChart3, Server, Box, TrendingUp, ArrowLeft, PieChart, Gauge,
 		Download, Star, Play, Share2, ExternalLink, RefreshCw
 	} from 'lucide-svelte';
 	import { Chart, registerables } from 'chart.js';
 	import LogViewer from './LogViewer.svelte';
-	import NodeExecutionTimeline from './NodeExecutionTimeline.svelte';
 	import DataTableViewer from '$lib/components/common/DataTableViewer.svelte';
+	import RunExecutionGraph from './RunExecutionGraph.svelte';
 
 	Chart.register(...registerables);
 
@@ -23,7 +23,7 @@
 	let { execution }: Props = $props();
 
 	// Tab state
-	type TabId = 'overview' | 'timeline' | 'output' | 'logs' | 'metadata';
+	type TabId = 'overview' | 'execution' | 'output' | 'logs' | 'metadata';
 	let activeTab = $state<TabId>('overview');
 
 	// Copy state
@@ -307,7 +307,7 @@
 		<div class="flex gap-1 px-6 py-2 border-t border-gray-200 dark:border-gray-700">
 			{#each [
 				{ id: 'overview', label: 'Overview', icon: Activity },
-				{ id: 'timeline', label: 'Timeline', icon: Layers },
+				{ id: 'execution', label: 'Execution Flow', icon: GitBranch },
 				{ id: 'output', label: 'Output', icon: FileJson, count: outputCount() },
 				{ id: 'logs', label: 'Logs', icon: FileText, count: execution.logs.length },
 				{ id: 'metadata', label: 'Metadata', icon: BarChart3 }
@@ -500,27 +500,10 @@
 				{/if}
 			</div>
 
-		{:else if activeTab === 'timeline'}
-			<!-- Timeline Tab -->
-			<div class="">
-				<h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
-					<Layers size={20} class="text-violet-500" />
-					Node Execution Timeline
-				</h3>
-
-				{#if Object.keys(execution.node_states).length > 0}
-					<div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6">
-						<NodeExecutionTimeline
-							nodeStates={execution.node_states}
-							totalDuration={execution.duration_ms}
-						/>
-					</div>
-				{:else}
-					<div class="text-center py-12 text-gray-500">
-						<Layers size={48} class="mx-auto mb-4 opacity-50" />
-						<p class="text-sm">No node execution data available</p>
-					</div>
-				{/if}
+		{:else if activeTab === 'execution'}
+			<!-- Execution Flow Tab - Graph with Timeline sidebar -->
+			<div class="h-[600px] bg-gray-50 dark:bg-gray-800/50 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+				<RunExecutionGraph {execution} />
 			</div>
 
 		{:else if activeTab === 'output'}

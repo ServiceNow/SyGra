@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Execution } from '$lib/stores/workflow.svelte';
 	import { uiStore } from '$lib/stores/workflow.svelte';
-	import { Clock, CheckCircle2, XCircle, Loader2, Eye, ChevronUp, GripHorizontal } from 'lucide-svelte';
+	import { Clock, CheckCircle2, XCircle, Loader2, Eye, ChevronDown, GripHorizontal } from 'lucide-svelte';
 
 	interface Props {
 		execution: Execution;
@@ -174,9 +174,10 @@
 			<button
 				onclick={() => expanded = !expanded}
 				class="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500"
+				title={expanded ? 'Collapse logs' : 'Expand logs'}
 			>
-				<span class="transition-transform inline-block {!expanded ? 'rotate-180' : ''}">
-					<ChevronUp size={18} />
+				<span class="transition-transform inline-block {expanded ? 'rotate-180' : ''}">
+					<ChevronDown size={18} />
 				</span>
 			</button>
 		</div>

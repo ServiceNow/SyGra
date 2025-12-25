@@ -18,7 +18,14 @@
 	import UnsavedChangesModal from '$lib/components/builder/UnsavedChangesModal.svelte';
 	import { Play, StopCircle, LayoutGrid } from 'lucide-svelte';
 
-	let currentWorkflow = $derived(workflowStore.currentWorkflow);
+	// Read version to force re-evaluation when workflow is updated
+	let _version = $derived(workflowStore.workflowVersion);
+	let currentWorkflow = $derived.by(() => {
+		// Depend on version to force re-evaluation on updates
+		const v = workflowStore.workflowVersion;
+		console.log('[+page] Getting currentWorkflow, version:', v);
+		return workflowStore.currentWorkflow;
+	});
 	let currentExecution = $derived(executionStore.currentExecution);
 	let selectedNodeId = $derived(uiStore.selectedNodeId);
 	let showResultsModal = $derived(uiStore.showResultsModal);
@@ -52,6 +59,11 @@
 		getHasChanges: () => boolean;
 		saveDraftNow: () => void;
 		clearDraftNow: () => void;
+	} | undefined>(undefined);
+
+	// Reference to WorkflowCodePanel for refreshing after UI changes
+	let codePanelRef = $state<{
+		refresh: () => void;
 	} | undefined>(undefined);
 
 	// Show unsaved changes modal when pending navigation exists
@@ -228,11 +240,22 @@
 	}
 
 	function handleBuilderNodeSave(event: CustomEvent<{ nodeId: string; newId?: string; updates: Partial<import('$lib/stores/workflow.svelte').WorkflowNode> }>) {
+		console.log('[handleBuilderNodeSave] Called with:', event.detail);
+
 		// Sync nodes from workflow store to SvelteFlow store
 		if (workflowBuilderRef) {
+			console.log('[handleBuilderNodeSave] Calling syncNodesFromStore...');
 			workflowBuilderRef.syncNodesFromStore();
 			// Also sync edges in case the node ID changed and affected edge references
 			workflowBuilderRef.syncEdgesFromStore();
+		} else {
+			console.warn('[handleBuilderNodeSave] workflowBuilderRef is undefined!');
+		}
+
+		// Refresh the code panel to show updated YAML
+		if (codePanelRef) {
+			console.log('[handleBuilderNodeSave] Refreshing code panel...');
+			codePanelRef.refresh();
 		}
 
 		// If node ID was changed, update the selection to the new ID
@@ -246,42 +269,68 @@
 		// Just clear the selection
 		uiStore.selectNode(null);
 	}
+
+	// Handle YAML saved in code panel - reload workflow and sync visual UI
+	async function handleYamlSaved() {
+		console.log('[handleYamlSaved] YAML saved, reloading workflow...');
+		// Reload workflow from backend to get updated data
+		await workflowStore.reloadCurrentWorkflow();
+		// Sync the visual UI
+		if (workflowBuilderRef) {
+			workflowBuilderRef.syncNodesFromStore();
+			workflowBuilderRef.syncEdgesFromStore();
+		}
+	}
 </script>
 
 {#if currentView === 'builder'}
 	<!-- Workflow Builder View -->
-	<div class="flex-1 flex h-full overflow-hidden relative">
-		<div class="flex-1 relative">
-			<WorkflowBuilder
-				bind:this={workflowBuilderRef}
-				on:nodeSelect={handleBuilderNodeSelect}
-				on:edgeSelect={handleBuilderEdgeSelect}
-				on:save={handleBuilderSave}
-				on:cancel={handleBuilderCancel}
-			/>
-		</div>
+	<div class="flex-1 flex flex-col h-full overflow-hidden">
+		<!-- Main builder area -->
+		<div class="flex-1 flex overflow-hidden relative min-h-0">
+			<div class="flex-1 relative">
+				<WorkflowBuilder
+					bind:this={workflowBuilderRef}
+					on:nodeSelect={handleBuilderNodeSelect}
+					on:edgeSelect={handleBuilderEdgeSelect}
+					on:save={handleBuilderSave}
+					on:cancel={handleBuilderCancel}
+				/>
+			</div>
 
-		<!-- Right panel for editing selected node/edge -->
-		{#if selectedNodeId && currentWorkflow}
-			{@const selectedNode = currentWorkflow.nodes.find(n => n.id === selectedNodeId)}
-			{#if selectedNode}
-				<NodeDetailsPanel
-					node={selectedNode}
-					startInEditMode={true}
-					on:close={() => uiStore.selectNode(null)}
-					on:save={handleBuilderNodeSave}
-					on:delete={handleBuilderNodeDelete}
+			<!-- Right panel for editing selected node/edge -->
+			{#if selectedNodeId && currentWorkflow}
+				{@const selectedNode = currentWorkflow.nodes.find(n => n.id === selectedNodeId)}
+				{#if selectedNode}
+					<NodeDetailsPanel
+						node={selectedNode}
+						startInEditMode={true}
+						on:close={() => uiStore.selectNode(null)}
+						on:save={handleBuilderNodeSave}
+						on:delete={handleBuilderNodeDelete}
+					/>
+				{/if}
+			{:else if selectedEdge && currentWorkflow}
+				<EdgeDetailsPanel
+					edge={selectedEdge}
+					sourceNode={currentWorkflow.nodes.find(n => n.id === selectedEdge.source)}
+					targetNode={currentWorkflow.nodes.find(n => n.id === selectedEdge.target)}
+					editable={true}
+					on:close={() => selectedEdge = null}
+					on:update={handleBuilderEdgeUpdate}
+					on:delete={handleBuilderEdgeDelete}
 				/>
 			{/if}
-		{:else if selectedEdge && currentWorkflow}
-			<EdgeDetailsPanel
-				edge={selectedEdge}
-				sourceNode={currentWorkflow.nodes.find(n => n.id === selectedEdge.source)}
-				targetNode={currentWorkflow.nodes.find(n => n.id === selectedEdge.target)}
-				editable={true}
-				on:close={() => selectedEdge = null}
-				on:update={handleBuilderEdgeUpdate}
-				on:delete={handleBuilderEdgeDelete}
+		</div>
+
+		<!-- Code Panel (YAML and Python code) for builder view -->
+		{#if currentWorkflow && !currentWorkflow.id.startsWith('new_')}
+			<WorkflowCodePanel
+				bind:this={codePanelRef}
+				workflowId={currentWorkflow.id}
+				bind:isCollapsed={codePanelCollapsed}
+				on:close={() => codePanelCollapsed = true}
+				on:yamlSaved={handleYamlSaved}
 			/>
 		{/if}
 	</div>
@@ -463,9 +512,11 @@
 			<!-- Code Panel (YAML and Python code) - always visible at bottom -->
 			{#if currentWorkflow}
 				<WorkflowCodePanel
+					bind:this={codePanelRef}
 					workflowId={currentWorkflow.id}
 					bind:isCollapsed={codePanelCollapsed}
 					on:close={() => codePanelCollapsed = true}
+					on:yamlSaved={handleYamlSaved}
 				/>
 			{/if}
 		</div>

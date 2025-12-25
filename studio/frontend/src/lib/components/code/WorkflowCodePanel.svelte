@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, createEventDispatcher } from 'svelte';
+	import { workflowStore } from '$lib/stores/workflow.svelte';
 	import {
 		ChevronDown, ChevronUp, FileCode2, FileText,
 		Maximize2, Minimize2, RefreshCw, Copy, Check,
@@ -28,6 +29,8 @@
 		collapse: boolean;
 		resize: number;
 		close: void;
+		yamlSaved: void;  // Dispatched when YAML is saved, for syncing UI
+		codeSaved: void;  // Dispatched when code is saved
 	}>();
 
 	// Panel state
@@ -209,6 +212,8 @@
 			}
 
 			yamlOriginal = yamlContent;  // Update original after save
+			// Dispatch event so parent can reload workflow and sync UI
+			dispatch('yamlSaved');
 			return true;
 		} catch (e) {
 			yamlError = e instanceof Error ? e.message : 'Failed to save YAML';
@@ -410,6 +415,25 @@
 		}
 	});
 
+	// Track version for auto-refresh when workflow is updated from UI
+	let lastKnownVersion = 0;
+
+	// Auto-refresh when workflowVersion changes (node updates from visual UI)
+	$effect(() => {
+		const currentVersion = workflowStore.workflowVersion;
+		// Only refresh if version increased and we don't have unsaved changes
+		if (currentVersion > lastKnownVersion && !hasUnsavedChanges) {
+			console.log('[WorkflowCodePanel] Version changed:', lastKnownVersion, '->', currentVersion, 'auto-refreshing...');
+			lastKnownVersion = currentVersion;
+			// Reload content to reflect changes made in visual UI
+			loadYaml();
+			loadCode();
+		} else if (currentVersion > lastKnownVersion) {
+			// Update version tracker but don't reload if user has unsaved changes
+			lastKnownVersion = currentVersion;
+		}
+	});
+
 	// Extract referenced files when content changes
 	$effect(() => {
 		// Reference yamlContent and codeFiles to track changes
@@ -488,8 +512,14 @@
 		setTimeout(() => copied = false, 2000);
 	}
 
-	// Refresh content
-	function refresh() {
+	// Refresh content - exported so parent can call it after UI changes
+	export function refresh() {
+		loadYaml();
+		loadCode();
+	}
+
+	// Refresh current tab only (for the refresh button)
+	function refreshCurrent() {
 		if (activeTab === 'yaml') {
 			loadYaml();
 		} else {
@@ -890,7 +920,7 @@
 				{/if}
 
 				<button
-					onclick={refresh}
+					onclick={refreshCurrent}
 					class="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
 					title="Refresh"
 					disabled={yamlLoading || codeLoading}

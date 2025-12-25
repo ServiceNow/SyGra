@@ -10,6 +10,7 @@ logs/*
 *.egg-info/*
 site/
 dist/
+**/metadata/*.json
 
 # Studio frontend build artifacts
 **/node_modules/*
@@ -18,3 +19,6 @@ studio/frontend/build/
 
 # Studio runtime data
 studio/.executions_history.json
+
+# Studio config
+studio/config/custom_models.yaml
