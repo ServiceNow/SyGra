@@ -12,6 +12,9 @@
 	import RunTimelineBar from './RunTimelineBar.svelte';
 
 	let executionHistory = $derived(executionStore.executionHistory);
+	let totalExecutions = $derived(executionStore.totalExecutions);
+	let hasMoreExecutions = $derived(executionStore.hasMoreExecutions);
+	let isLoadingMore = $derived(executionStore.isLoadingMore);
 	let workflows = $derived(workflowStore.workflows);
 	let selectedRunId = $derived(uiStore.selectedRunId);
 
@@ -189,7 +192,12 @@
 	}
 
 	async function refresh() {
-		await executionStore.loadExecutionHistory();
+		// Force refresh to detect files added/deleted externally on disk
+		await executionStore.loadExecutionHistory(undefined, 50, true);
+	}
+
+	async function loadMore() {
+		await executionStore.loadMoreExecutions();
 	}
 
 	function formatDate(date?: string): string {
@@ -274,8 +282,11 @@
 		showDeleteConfirm = true;
 	}
 
-	function confirmDeleteRuns() {
-		executionStore.removeMultipleFromHistory(Array.from(selectedRunIds));
+	async function confirmDeleteRuns() {
+		const success = await executionStore.removeMultipleFromHistory(Array.from(selectedRunIds));
+		if (!success) {
+			console.error('Some executions failed to delete');
+		}
 		selectedRunIds = new Set();
 		showDeleteConfirm = false;
 		deleteCount = 0;
@@ -306,7 +317,10 @@
 			<div>
 				<h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Runs</h1>
 				<p class="text-sm text-gray-500 dark:text-gray-400">
-					{filteredRuns().length} of {executionHistory.length} runs
+					{filteredRuns().length} of {totalExecutions || executionHistory.length} runs
+					{#if hasMoreExecutions}
+						<span class="text-violet-500"> (more available)</span>
+					{/if}
 					{#if selectionCount > 0}
 						<span class="ml-2 text-violet-600 dark:text-violet-400">• {selectionCount} selected</span>
 					{/if}
@@ -764,7 +778,7 @@
 					</tr>
 				{:else}
 					<tr>
-						<td colspan="7" class="px-6 py-12 text-center">
+						<td colspan="8" class="px-6 py-12 text-center">
 							<div class="text-gray-500 dark:text-gray-400">
 								{#if searchQuery || statusFilter !== 'all'}
 									<p class="text-lg font-medium mb-1">No matching runs</p>
@@ -779,6 +793,25 @@
 				{/each}
 			</tbody>
 		</table>
+
+		<!-- Load More Button -->
+		{#if hasMoreExecutions}
+			<div class="flex justify-center py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+				<button
+					onclick={loadMore}
+					disabled={isLoadingMore}
+					class="flex items-center gap-2 px-6 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+				>
+					{#if isLoadingMore}
+						<Loader2 size={16} class="animate-spin" />
+						Loading...
+					{:else}
+						<ChevronDown size={16} />
+						Load More ({totalExecutions - executionHistory.length} remaining)
+					{/if}
+				</button>
+			</div>
+		{/if}
 		</div>
 	{/if}
 </div>

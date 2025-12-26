@@ -11,6 +11,7 @@
 	import MonacoEditor from '$lib/components/editor/LazyMonacoEditor.svelte';
 	import ConfirmationModal from '$lib/components/common/ConfirmationModal.svelte';
 	import RecipePreviewModal from './RecipePreviewModal.svelte';
+	import CustomSelect from '$lib/components/common/CustomSelect.svelte';
 
 	const dispatch = createEventDispatcher<{
 		addRecipe: { recipe: Recipe };
@@ -155,7 +156,26 @@
 		e.preventDefault();
 		e.stopPropagation();
 		contextMenuId = id;
-		contextMenuPosition = { x: e.clientX, y: e.clientY };
+
+		// Calculate position with viewport boundary detection
+		const menuWidth = 160;
+		const menuHeight = 200; // Approximate menu height
+		const padding = 8;
+
+		let x = e.clientX;
+		let y = e.clientY;
+
+		// Adjust if menu would go off right edge
+		if (x + menuWidth + padding > window.innerWidth) {
+			x = window.innerWidth - menuWidth - padding;
+		}
+
+		// Adjust if menu would go off bottom edge
+		if (y + menuHeight + padding > window.innerHeight) {
+			y = window.innerHeight - menuHeight - padding;
+		}
+
+		contextMenuPosition = { x, y };
 	}
 
 	function hideContextMenu() {
@@ -423,9 +443,9 @@
 	</div>
 
 	<!-- Content -->
-	<div class="flex-1 overflow-auto p-6">
+	<div class="flex-1 overflow-auto">
 		{#if currentItems.length === 0}
-			<div class="flex flex-col items-center justify-center h-full text-center">
+			<div class="flex flex-col items-center justify-center h-full text-center p-6">
 				{#if activeTab === 'recipes'}
 					<Boxes size={48} class="text-gray-300 dark:text-gray-600 mb-4" />
 				{:else}
@@ -459,7 +479,7 @@
 			</div>
 		{:else if viewMode === 'card'}
 			<!-- Card View -->
-			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
 				{#each currentItems as item (item.id)}
 					{@const isRecipe = activeTab === 'recipes'}
 					{@const Icon = isRecipe ? recipeCategoryIcons[(item as Recipe).category] : toolCategoryIcons[(item as Tool).category]}
@@ -520,7 +540,7 @@
 			<table class="w-full">
 				<thead class="sticky top-0 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
 					<tr>
-						<th class="text-left px-4 py-3 w-10">
+						<th class="text-left px-6 py-3 w-10">
 							<button onclick={toggleSelectAll} class="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700">
 								{#if allSelected()}
 									<CheckSquare size={18} class="text-violet-600" />
@@ -531,11 +551,11 @@
 								{/if}
 							</button>
 						</th>
-						<th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
-						<th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
-						<th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{activeTab === 'recipes' ? 'Nodes' : 'Path'}</th>
-						<th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Updated</th>
-						<th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+						<th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+						<th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
+						<th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{activeTab === 'recipes' ? 'Nodes' : 'Path'}</th>
+						<th class="text-left px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Updated</th>
+						<th class="text-right px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-gray-200 dark:divide-gray-800">
@@ -545,7 +565,7 @@
 						{@const color = getCategoryColor(isRecipe ? (item as Recipe).category : (item as Tool).category, isRecipe ? 'recipe' : 'tool')}
 						{@const catLabel = isRecipe ? RECIPE_CATEGORIES.find(c => c.value === (item as Recipe).category)?.label : TOOL_CATEGORIES.find(c => c.value === (item as Tool).category)?.label}
 						<tr class="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer" onclick={() => isRecipe ? (previewRecipe = item as Recipe) : handleEdit(item.id)}>
-							<td class="px-4 py-3">
+							<td class="px-6 py-4">
 								<button onclick={(e) => toggleSelect(item.id, e)} class="p-0.5 rounded hover:bg-gray-200">
 									{#if selectedIds.has(item.id)}
 										<CheckSquare size={18} class="text-violet-600" />
@@ -554,40 +574,40 @@
 									{/if}
 								</button>
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-6 py-4">
 								<div class="flex items-center gap-3">
-									<div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: {color}20">
-										<Icon size={16} style="color: {color}" />
+									<div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background-color: {color}20">
+										<Icon size={20} style="color: {color}" />
 									</div>
-									<div>
-										<div class="font-medium text-gray-900 dark:text-gray-100">{item.name}</div>
+									<div class="flex flex-col">
+										<span class="font-medium text-gray-900 dark:text-gray-100">{item.name}</span>
 										{#if item.description}
-											<div class="text-xs text-gray-500 truncate max-w-xs">{item.description}</div>
+											<span class="text-xs text-gray-500 dark:text-gray-500 truncate max-w-xs">{item.description}</span>
 										{/if}
 									</div>
 								</div>
 							</td>
-							<td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{catLabel}</td>
-							<td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+							<td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{catLabel}</td>
+							<td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
 								{#if isRecipe}
-									<span class="flex items-center gap-1"><Layers size={14} class="text-violet-500" />{(item as Recipe).nodeCount}</span>
+									<span class="inline-flex items-center gap-1.5"><Layers size={14} class="text-violet-500" />{(item as Recipe).nodeCount} nodes</span>
 								{:else}
 									<span class="font-mono text-xs">{(item as Tool).import_path}</span>
 								{/if}
 							</td>
-							<td class="px-4 py-3 text-sm text-gray-500">{formatDate(item.updatedAt)}</td>
-							<td class="px-4 py-3 text-right">
+							<td class="px-6 py-4 text-sm text-gray-500">{formatDate(item.updatedAt)}</td>
+							<td class="px-6 py-4 text-right">
 								<div class="flex items-center justify-end gap-2">
 									{#if isRecipe}
-										<button onclick={(e) => { e.stopPropagation(); handleAddRecipe(item as Recipe); }} class="px-3 py-1.5 text-sm font-medium text-violet-600 hover:bg-violet-100 rounded-lg">
-											<Plus size={14} class="inline mr-1" />Add
+										<button onclick={(e) => { e.stopPropagation(); handleAddRecipe(item as Recipe); }} class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30 rounded-lg transition-colors">
+											<Plus size={14} />Add
 										</button>
 									{:else}
-										<button onclick={(e) => { e.stopPropagation(); handleEdit(item.id); }} class="px-3 py-1.5 text-sm font-medium text-violet-600 hover:bg-violet-100 rounded-lg">
-											<Edit3 size={14} class="inline mr-1" />Edit
+										<button onclick={(e) => { e.stopPropagation(); handleEdit(item.id); }} class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30 rounded-lg transition-colors">
+											<Edit3 size={14} />Edit
 										</button>
 									{/if}
-									<button onclick={(e) => showContextMenu(e, item.id)} class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500">
+									<button onclick={(e) => showContextMenu(e, item.id)} class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors">
 										<MoreVertical size={16} />
 									</button>
 								</div>
@@ -635,34 +655,39 @@
 					<X size={18} />
 				</button>
 			</div>
-			<div class="flex-1 overflow-y-auto p-6">
+			<!-- Form Fields (non-scrolling for dropdown to work) -->
+			<div class="flex-shrink-0 px-6 pt-6 pb-4">
 				<div class="grid grid-cols-2 gap-4 mb-4">
 					<div>
 						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Name *</label>
 						<input type="text" bind:value={toolFormName} placeholder="My Search Tool" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500" />
 					</div>
-					<div>
+					<div class="relative z-10">
 						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Category</label>
-						<select bind:value={toolFormCategory} class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500">
-							{#each TOOL_CATEGORIES as cat}
-								<option value={cat.value}>{cat.label}</option>
-							{/each}
-						</select>
+						<CustomSelect
+							options={TOOL_CATEGORIES.map(c => ({ value: c.value, label: c.label }))}
+							bind:value={toolFormCategory}
+							placeholder="Select category"
+							searchable={false}
+						/>
 					</div>
 				</div>
-				<div class="mb-4">
-					<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Description</label>
-					<input type="text" bind:value={toolFormDescription} placeholder="A tool that searches..." class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500" />
-				</div>
-				<div class="mb-4">
-					<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Import Path *</label>
-					<input type="text" bind:value={toolFormImportPath} placeholder="mypackage.tools.search_tool" class="w-full px-3 py-2 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500" />
-				</div>
-				<div>
-					<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Code</label>
-					<div class="h-64 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
-						<MonacoEditor bind:value={toolFormCode} language="python" theme="vs-dark" />
+				<div class="grid grid-cols-2 gap-4">
+					<div>
+						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Description</label>
+						<input type="text" bind:value={toolFormDescription} placeholder="A tool that searches..." class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500" />
 					</div>
+					<div>
+						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Import Path *</label>
+						<input type="text" bind:value={toolFormImportPath} placeholder="mypackage.tools.search_tool" class="w-full px-3 py-2 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500" />
+					</div>
+				</div>
+			</div>
+			<!-- Code Editor -->
+			<div class="flex-1 min-h-0 px-6 pb-6">
+				<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Code</label>
+				<div class="h-64 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+					<MonacoEditor bind:value={toolFormCode} language="python" theme="vs-dark" />
 				</div>
 			</div>
 			<div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-800">

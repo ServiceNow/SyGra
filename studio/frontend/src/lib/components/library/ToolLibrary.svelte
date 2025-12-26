@@ -7,6 +7,7 @@
 	} from 'lucide-svelte';
 	import MonacoEditor from '$lib/components/editor/LazyMonacoEditor.svelte';
 	import ConfirmModal from '$lib/components/common/ConfirmModal.svelte';
+	import CustomSelect from '$lib/components/common/CustomSelect.svelte';
 
 	const dispatch = createEventDispatcher();
 
@@ -392,8 +393,8 @@
 				</button>
 			</div>
 
-			<!-- Modal Body -->
-			<div class="flex-1 overflow-y-auto p-6">
+			<!-- Modal Body - Form Fields (non-scrolling for dropdown to work) -->
+			<div class="flex-shrink-0 px-6 pt-6 pb-4">
 				<div class="grid grid-cols-2 gap-4 mb-4">
 					<div>
 						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
@@ -406,61 +407,60 @@
 							class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
 						/>
 					</div>
-					<div>
+					<div class="relative z-10">
 						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
 							Category
 						</label>
-						<select
+						<CustomSelect
+							options={TOOL_CATEGORIES.map(c => ({ value: c.value, label: c.label }))}
 							bind:value={formCategory}
-							class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
-						>
-							{#each TOOL_CATEGORIES as cat}
-								<option value={cat.value}>{cat.label}</option>
-							{/each}
-						</select>
-					</div>
-				</div>
-
-				<div class="mb-4">
-					<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
-						Description
-					</label>
-					<input
-						type="text"
-						bind:value={formDescription}
-						placeholder="A tool that searches for information..."
-						class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
-					/>
-				</div>
-
-				<div class="mb-4">
-					<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
-						Import Path *
-					</label>
-					<input
-						type="text"
-						bind:value={formImportPath}
-						placeholder="mypackage.tools.search_tool"
-						class="w-full px-3 py-2 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
-					/>
-					<p class="text-xs text-gray-400 mt-1">The Python import path where this tool will be available</p>
-				</div>
-
-				<div>
-					<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
-						Code
-					</label>
-					<div class="h-64 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
-						<MonacoEditor
-							bind:value={formCode}
-							language="python"
-							theme="vs-dark"
+							placeholder="Select category"
+							searchable={false}
 						/>
 					</div>
-					<p class="text-xs text-gray-400 mt-1">
-						Define your tool using the <code class="px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">@tool</code> decorator from langchain
-					</p>
 				</div>
+
+				<div class="grid grid-cols-2 gap-4">
+					<div>
+						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
+							Description
+						</label>
+						<input
+							type="text"
+							bind:value={formDescription}
+							placeholder="A tool that searches for information..."
+							class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
+						/>
+					</div>
+					<div>
+						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
+							Import Path *
+						</label>
+						<input
+							type="text"
+							bind:value={formImportPath}
+							placeholder="mypackage.tools.search_tool"
+							class="w-full px-3 py-2 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
+						/>
+					</div>
+				</div>
+			</div>
+
+			<!-- Modal Body - Code Editor (scrollable if needed) -->
+			<div class="flex-1 min-h-0 px-6 pb-6">
+				<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
+					Code
+				</label>
+				<div class="h-64 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+					<MonacoEditor
+						bind:value={formCode}
+						language="python"
+						theme="vs-dark"
+					/>
+				</div>
+				<p class="text-xs text-gray-400 mt-1">
+					Define your tool using the <code class="px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">@tool</code> decorator from langchain
+				</p>
 			</div>
 
 			<!-- Modal Footer -->

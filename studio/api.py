@@ -47,10 +47,22 @@ from studio.models import (
     WorkflowListItem,
     WorkflowSaveResponse,
 )
+from studio.execution_storage import get_storage, ExecutionStorage
 
 
-# Store for active executions
+# Store for active executions (in-memory cache for running executions)
+# Persistent storage is handled by ExecutionStorage class
 _executions: Dict[str, WorkflowExecution] = {}
+
+# Scalable execution storage instance (lazy initialized)
+_execution_storage: ExecutionStorage = None
+
+def _get_execution_storage() -> ExecutionStorage:
+    """Get the execution storage instance (lazy initialization)."""
+    global _execution_storage
+    if _execution_storage is None:
+        _execution_storage = get_storage()
+    return _execution_storage
 
 # Store for discovered workflows
 _workflows: Dict[str, WorkflowGraph] = {}
@@ -335,16 +347,25 @@ class DebugAction(BaseModel):
 
 
 def _save_executions():
-    """Save executions to persistent storage."""
+    """
+    Save executions to persistent storage using the new scalable storage.
+
+    Also cleans up completed executions from in-memory dict to prevent memory leaks.
+    """
     try:
-        # Only save completed/failed/cancelled executions (not running ones)
-        to_save = {
-            k: v.model_dump(mode='json')
-            for k, v in _executions.items()
-            if v.status in ('completed', 'failed', 'cancelled')
-        }
-        with open(_EXECUTIONS_FILE, 'w') as f:
-            json_module.dump(to_save, f, default=str)
+        storage = _get_execution_storage()
+        to_remove = []
+
+        # Save completed/failed/cancelled executions to scalable storage
+        for exec_id, execution in _executions.items():
+            if execution.status in (ExecutionStatus.COMPLETED, ExecutionStatus.FAILED, ExecutionStatus.CANCELLED):
+                storage.save_execution(execution)
+                to_remove.append(exec_id)
+
+        # Clean up from in-memory dict after saving to storage
+        for exec_id in to_remove:
+            del _executions[exec_id]
+
     except Exception as e:
         print(f"Warning: Failed to save executions: {e}")
 
@@ -352,32 +373,28 @@ def _save_executions():
 _executions_loaded = False
 
 def _load_executions():
-    """Load executions from persistent storage."""
-    global _executions, _executions_loaded
+    """
+    Initialize execution storage (will automatically migrate from legacy format if needed).
+
+    This function now delegates to the scalable ExecutionStorage class which:
+    - Uses per-run files instead of a monolithic JSON
+    - Maintains a lightweight index for fast listing
+    - Supports pagination and lazy loading
+    - Automatically migrates from legacy .executions_history.json
+    """
+    global _executions_loaded
 
     # Prevent duplicate loading
     if _executions_loaded:
         return
     _executions_loaded = True
 
-    if _EXECUTIONS_FILE.exists():
-        try:
-            with open(_EXECUTIONS_FILE, 'r') as f:
-                data = json_module.load(f)
-                for exec_id, exec_data in data.items():
-                    try:
-                        # Convert node_states dict values to NodeExecutionState objects
-                        if 'node_states' in exec_data and exec_data['node_states']:
-                            exec_data['node_states'] = {
-                                k: NodeExecutionState(**v) if isinstance(v, dict) else v
-                                for k, v in exec_data['node_states'].items()
-                            }
-                        # Reconstruct WorkflowExecution objects
-                        _executions[exec_id] = WorkflowExecution(**exec_data)
-                    except Exception as item_err:
-                        pass  # Silently skip invalid executions
-        except Exception:
-            pass  # Silently handle load failures
+    # Initialize storage (handles migration from legacy format automatically)
+    storage = _get_execution_storage()
+
+    # Note: We no longer load all executions into memory.
+    # Executions are loaded on-demand via storage.get_execution()
+    # and listed via storage.list_executions() with pagination.
 
 
 async def _process_execution_queue():
@@ -1091,13 +1108,22 @@ def _register_routes(app: FastAPI) -> None:
         """
         Get execution status and details.
 
+        First checks in-memory cache (for running executions), then storage (for completed).
+
         Args:
             execution_id: The execution ID to retrieve.
         """
-        if execution_id not in _executions:
-            raise HTTPException(status_code=404, detail=f"Execution {execution_id} not found")
+        # First check in-memory cache (for running/pending executions)
+        if execution_id in _executions:
+            return _executions[execution_id]
 
-        return _executions[execution_id]
+        # Then check scalable storage (for completed/failed/cancelled)
+        storage = _get_execution_storage()
+        execution = storage.get_execution(execution_id)
+        if execution:
+            return execution
+
+        raise HTTPException(status_code=404, detail=f"Execution {execution_id} not found")
 
     @app.post("/api/executions/{execution_id}/cancel")
     async def cancel_execution(execution_id: str):
@@ -1139,32 +1165,164 @@ def _register_routes(app: FastAPI) -> None:
 
         return {"status": "cancelled", "execution_id": execution_id}
 
-    @app.get("/api/executions", response_model=List[WorkflowExecution])
+    @app.get("/api/executions")
     async def list_executions(
         workflow_id: Optional[str] = None,
         status: Optional[ExecutionStatus] = None,
         limit: int = 50,
+        offset: int = 0,
     ):
         """
-        List workflow executions with optional filtering.
+        List workflow executions with optional filtering and pagination.
+
+        Uses scalable storage with per-run files for efficient handling of large datasets.
 
         Args:
             workflow_id: Filter by workflow ID.
             status: Filter by execution status.
-            limit: Maximum number of results.
+            limit: Maximum number of results (default 50).
+            offset: Number of results to skip for pagination (default 0).
+
+        Returns:
+            Dict with executions list, total count, pagination info.
         """
-        executions = list(_executions.values())
+        storage = _get_execution_storage()
+        status_str = status.value if status else None
 
-        if workflow_id:
-            executions = [e for e in executions if e.workflow_id == workflow_id]
+        # Get paginated executions from storage
+        executions, total = storage.list_executions_full(
+            workflow_id=workflow_id,
+            status=status_str,
+            limit=limit,
+            offset=offset,
+        )
 
-        if status:
-            executions = [e for e in executions if e.status == status]
+        # Also include currently running executions from in-memory cache
+        # (they may not be persisted to storage yet)
+        running_executions = []
+        for exec_id, exec in _executions.items():
+            if exec.status in (ExecutionStatus.RUNNING, ExecutionStatus.PENDING):
+                # Apply filters
+                if workflow_id and exec.workflow_id != workflow_id:
+                    continue
+                if status_str and exec.status.value != status_str:
+                    continue
+                # Check if not already in list (avoid duplicates)
+                if not any(e.id == exec_id for e in executions):
+                    running_executions.append(exec)
 
-        # Sort by start time, newest first
-        executions.sort(key=lambda e: e.started_at or datetime.min, reverse=True)
+        # Merge running executions at the top if on first page
+        if offset == 0 and running_executions:
+            # Sort running executions by start time
+            running_executions.sort(key=lambda e: e.started_at or datetime.min, reverse=True)
+            executions = running_executions + executions
+            total += len(running_executions)
 
-        return executions[:limit]
+        return {
+            "executions": executions,
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "has_more": (offset + len(executions)) < total,
+        }
+
+    @app.post("/api/executions/storage/refresh")
+    async def refresh_execution_storage():
+        """
+        Refresh the execution storage index.
+
+        Detects files deleted or added externally and updates the index.
+        Call this after manually modifying files on disk.
+
+        Returns:
+            Number of changes detected.
+        """
+        storage = _get_execution_storage()
+        changes = storage.refresh_index()
+
+        return {
+            "status": "refreshed",
+            "changes_detected": changes,
+            "total_executions": len(storage._index_cache)
+        }
+
+    @app.get("/api/executions/storage/stats")
+    async def get_execution_storage_stats():
+        """
+        Get execution storage statistics.
+
+        Useful for monitoring and debugging storage health.
+        """
+        storage = _get_execution_storage()
+        stats = storage.get_stats()
+
+        # Add info about in-memory executions
+        stats["in_memory_executions"] = len(_executions)
+        stats["in_memory_running"] = sum(
+            1 for e in _executions.values()
+            if e.status in (ExecutionStatus.RUNNING, ExecutionStatus.PENDING)
+        )
+
+        return stats
+
+    @app.delete("/api/executions/{execution_id}")
+    async def delete_execution(execution_id: str):
+        """
+        Delete an execution from storage.
+
+        Removes both the per-run file and index entry.
+
+        Args:
+            execution_id: The execution ID to delete.
+
+        Returns:
+            Success status and message.
+        """
+        # Remove from in-memory cache if present
+        if execution_id in _executions:
+            del _executions[execution_id]
+
+        # Remove from storage
+        storage = _get_execution_storage()
+        success = storage.delete_execution(execution_id)
+
+        if not success:
+            raise HTTPException(status_code=404, detail=f"Execution {execution_id} not found")
+
+        return {"status": "deleted", "execution_id": execution_id}
+
+    @app.delete("/api/executions")
+    async def delete_multiple_executions(execution_ids: List[str]):
+        """
+        Delete multiple executions from storage.
+
+        Args:
+            execution_ids: List of execution IDs to delete.
+
+        Returns:
+            Success status with count of deleted executions.
+        """
+        storage = _get_execution_storage()
+        deleted_count = 0
+        failed_ids = []
+
+        for exec_id in execution_ids:
+            # Remove from in-memory cache if present
+            if exec_id in _executions:
+                del _executions[exec_id]
+
+            # Remove from storage
+            if storage.delete_execution(exec_id):
+                deleted_count += 1
+            else:
+                failed_ids.append(exec_id)
+
+        return {
+            "status": "deleted",
+            "deleted_count": deleted_count,
+            "total_requested": len(execution_ids),
+            "failed_ids": failed_ids
+        }
 
     @app.get("/api/tasks")
     async def list_task_directories():

@@ -306,7 +306,7 @@
 	}
 
 	async function refresh() {
-		await executionStore.loadExecutionHistory();
+		await executionStore.loadExecutionHistory(undefined, 50, true);
 	}
 
 	function formatDate(date?: string): string {

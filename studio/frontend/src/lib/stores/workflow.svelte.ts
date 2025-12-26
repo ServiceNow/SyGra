@@ -1331,6 +1331,12 @@ function createExecutionStore() {
 	let currentPollingId: string | null = null;
 	let isPaused = $state(false);
 
+	// Pagination state
+	let totalExecutions = $state(0);
+	let hasMoreExecutions = $state(false);
+	let isLoadingMore = $state(false);
+	const PAGE_SIZE = 50;
+
 	// Adaptive polling intervals
 	const POLL_INTERVAL_FAST = 1000;   // 1 second when running
 	const POLL_INTERVAL_SLOW = 3000;   // 3 seconds when pending/starting
@@ -1341,6 +1347,9 @@ function createExecutionStore() {
 		get executionHistory() { return executionHistory; },
 		get isPolling() { return isPolling; },
 		get isPaused() { return isPaused; },
+		get totalExecutions() { return totalExecutions; },
+		get hasMoreExecutions() { return hasMoreExecutions; },
+		get isLoadingMore() { return isLoadingMore; },
 
 		async startExecution(workflowId: string, options: ExecutionOptions) {
 			try {
@@ -1493,17 +1502,67 @@ function createExecutionStore() {
 			currentExecution = null;
 		},
 
-		async loadExecutionHistory(workflowId?: string) {
+		async loadExecutionHistory(workflowId?: string, limit: number = PAGE_SIZE, forceRefresh: boolean = false) {
 			try {
+				// Optionally refresh the storage index first (detects files added/deleted externally)
+				if (forceRefresh) {
+					await fetch(`${API_BASE}/executions/storage/refresh`, { method: 'POST' });
+				}
+
 				const url = workflowId
-					? `${API_BASE}/executions?workflow_id=${workflowId}`
-					: `${API_BASE}/executions`;
+					? `${API_BASE}/executions?workflow_id=${workflowId}&limit=${limit}`
+					: `${API_BASE}/executions?limit=${limit}`;
 				const response = await fetch(url);
 				if (response.ok) {
-					executionHistory = await response.json();
+					const data = await response.json();
+					// Handle both new paginated response and legacy array response
+					if (Array.isArray(data)) {
+						// Legacy response format (backward compatibility)
+						executionHistory = data;
+						totalExecutions = data.length;
+						hasMoreExecutions = false;
+					} else {
+						// New paginated response format
+						executionHistory = data.executions || [];
+						totalExecutions = data.total || 0;
+						hasMoreExecutions = data.has_more || false;
+					}
 				}
 			} catch (e) {
 				console.error('Failed to load execution history:', e);
+			}
+		},
+
+		async loadMoreExecutions(workflowId?: string) {
+			if (!hasMoreExecutions || isLoadingMore) return;
+
+			isLoadingMore = true;
+			try {
+				const offset = executionHistory.length;
+				const params = new URLSearchParams({
+					limit: String(PAGE_SIZE),
+					offset: String(offset)
+				});
+				if (workflowId) {
+					params.set('workflow_id', workflowId);
+				}
+
+				const url = `${API_BASE}/executions?${params.toString()}`;
+				const response = await fetch(url);
+				if (response.ok) {
+					const data = await response.json();
+					if (!Array.isArray(data)) {
+						// Append new executions to existing list
+						const newExecutions = data.executions || [];
+						executionHistory = [...executionHistory, ...newExecutions];
+						totalExecutions = data.total || executionHistory.length;
+						hasMoreExecutions = data.has_more || false;
+					}
+				}
+			} catch (e) {
+				console.error('Failed to load more executions:', e);
+			} finally {
+				isLoadingMore = false;
 			}
 		},
 
@@ -1536,20 +1595,66 @@ function createExecutionStore() {
 			currentExecution = execution;
 		},
 
-		removeFromHistory(executionId: string) {
-			executionHistory = executionHistory.filter(e => e.id !== executionId);
-			// If the current execution is being removed, clear it
-			if (currentExecution?.id === executionId) {
-				currentExecution = null;
+		async removeFromHistory(executionId: string): Promise<boolean> {
+			try {
+				// Call API to delete from disk storage
+				const response = await fetch(`${API_BASE}/executions/${executionId}`, {
+					method: 'DELETE'
+				});
+
+				if (!response.ok) {
+					console.error('Failed to delete execution from storage:', await response.text());
+					return false;
+				}
+
+				// Update local state
+				executionHistory = executionHistory.filter(e => e.id !== executionId);
+				totalExecutions = Math.max(0, totalExecutions - 1);
+
+				// If the current execution is being removed, clear it
+				if (currentExecution?.id === executionId) {
+					currentExecution = null;
+				}
+
+				return true;
+			} catch (e) {
+				console.error('Failed to delete execution:', e);
+				return false;
 			}
 		},
 
-		removeMultipleFromHistory(executionIds: string[]) {
-			const idsSet = new Set(executionIds);
-			executionHistory = executionHistory.filter(e => !idsSet.has(e.id));
-			// If the current execution is being removed, clear it
-			if (currentExecution && idsSet.has(currentExecution.id)) {
-				currentExecution = null;
+		async removeMultipleFromHistory(executionIds: string[]): Promise<boolean> {
+			if (executionIds.length === 0) return true;
+
+			try {
+				// Call API to delete multiple executions from disk storage
+				const response = await fetch(`${API_BASE}/executions`, {
+					method: 'DELETE',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(executionIds)
+				});
+
+				if (!response.ok) {
+					console.error('Failed to delete executions from storage:', await response.text());
+					return false;
+				}
+
+				const result = await response.json();
+
+				// Update local state
+				const idsSet = new Set(executionIds);
+				executionHistory = executionHistory.filter(e => !idsSet.has(e.id));
+				totalExecutions = Math.max(0, totalExecutions - result.deleted_count);
+
+				// If the current execution is being removed, clear it
+				if (currentExecution && idsSet.has(currentExecution.id)) {
+					currentExecution = null;
+				}
+
+				return result.deleted_count === executionIds.length;
+			} catch (e) {
+				console.error('Failed to delete executions:', e);
+				return false;
 			}
 		}
 	};
