@@ -256,8 +256,18 @@ class SygraGraphBuilder:
         # For subgraph nodes, try to load and expand the inner graph
         inner_graph = None
         subgraph_path = node_config.get("subgraph")
-        if node_type == NodeType.SUBGRAPH and subgraph_path and expand_subgraphs and depth < max_depth:
-            inner_graph = self._load_subgraph(subgraph_path, depth + 1, max_depth)
+        inline_inner_graph = node_config.get("inner_graph")
+
+        if node_type == NodeType.SUBGRAPH:
+            if inline_inner_graph:
+                # Load inline inner_graph data (from grouped subgraphs)
+                inner_graph = self._parse_inline_inner_graph(inline_inner_graph, depth + 1, max_depth)
+            elif subgraph_path and expand_subgraphs and depth < max_depth:
+                # Load from external subgraph path
+                inner_graph = self._load_subgraph(subgraph_path, depth + 1, max_depth)
+
+        # Extract node_config_map for subgraph nodes (allows overriding inner node configs)
+        node_config_map = node_config.get("node_config_map") if node_type == NodeType.SUBGRAPH else None
 
         return WorkflowNode(
             id=node_name,
@@ -270,6 +280,7 @@ class SygraGraphBuilder:
             post_process=node_config.get("post_process"),
             subgraph_path=subgraph_path,
             inner_graph=inner_graph,
+            node_config_map=node_config_map,
             function_path=node_config.get("lambda") or node_config.get("function"),
             metadata={
                 "original_config": node_config,
@@ -460,6 +471,90 @@ class SygraGraphBuilder:
             print(f"Warning: Could not load YAML subgraph '{yaml_path}': {e}")
             return None
 
+    def _parse_inline_inner_graph(
+        self,
+        inner_graph_data: Dict[str, Any],
+        depth: int = 0,
+        max_depth: int = 5
+    ) -> Optional[InnerGraph]:
+        """
+        Parse inline inner_graph data from YAML config.
+
+        This handles subgraphs that were created by grouping nodes in the builder
+        and saved inline in the workflow config.
+        """
+        try:
+            name = inner_graph_data.get("name", "Subgraph")
+            nodes_config = inner_graph_data.get("nodes", {})
+            edges_config = inner_graph_data.get("edges", [])
+
+            # Build inner nodes
+            inner_nodes = []
+            for node_id, node_config in nodes_config.items():
+                # Parse node type
+                node_type_str = node_config.get("node_type", "llm")
+                try:
+                    node_type = NodeType(node_type_str)
+                except ValueError:
+                    node_type = NodeType.LLM
+
+                # Parse position
+                pos_data = node_config.get("position", {})
+                position = NodePosition(
+                    x=pos_data.get("x", 0),
+                    y=pos_data.get("y", 0)
+                )
+
+                # Parse size
+                size_data = node_config.get("size", {})
+                size = NodeSize(
+                    width=size_data.get("width", 150),
+                    height=size_data.get("height", 60)
+                )
+
+                # Handle nested inner_graph recursively
+                nested_inner_graph = None
+                if node_config.get("inner_graph") and depth < max_depth:
+                    nested_inner_graph = self._parse_inline_inner_graph(
+                        node_config["inner_graph"],
+                        depth + 1,
+                        max_depth
+                    )
+
+                inner_node = WorkflowNode(
+                    id=node_id,
+                    node_type=node_type,
+                    summary=node_config.get("summary", node_id.replace("_", " ").title()),
+                    position=position,
+                    size=size,
+                    inner_graph=nested_inner_graph,
+                )
+                inner_nodes.append(inner_node)
+
+            # Build inner edges
+            inner_edges = []
+            for idx, edge_config in enumerate(edges_config):
+                source = edge_config.get("from", "")
+                target = edge_config.get("to", "")
+                if source and target:
+                    edge_id = f"inner_edge_{source}_{target}_{idx}"
+                    inner_edges.append(WorkflowEdge(
+                        id=edge_id,
+                        source=source,
+                        target=target,
+                        edge_type="default",
+                    ))
+
+            return InnerGraph(
+                name=name,
+                nodes=inner_nodes,
+                edges=inner_edges,
+            )
+
+        except Exception as e:
+            print(f"Warning: Could not parse inline inner_graph: {e}")
+            return None
+
     def _build_inner_edges(
         self,
         edges_config: List[Dict[str, Any]],
@@ -493,16 +588,23 @@ class SygraGraphBuilder:
         self,
         nodes: List[WorkflowNode],
         edges: List[WorkflowEdge]
-    ) -> None:
-        """Calculate layout for inner subgraph nodes with smaller spacing."""
-        if not nodes:
-            return
+    ) -> Tuple[int, int]:
+        """
+        Calculate layout for inner subgraph nodes with smaller spacing.
 
-        # Use smaller spacing for inner graphs
-        inner_h_spacing = 180
-        inner_v_spacing = 80
-        inner_start_x = 20
-        inner_start_y = 20
+        Returns:
+            Tuple of (width, height) - the bounding dimensions of the inner graph
+        """
+        if not nodes:
+            return (200, 60)  # Minimum dimensions
+
+        # Use compact spacing for inner graphs (matching frontend layoutUtils.ts)
+        inner_node_width = 140
+        inner_node_height = 44
+        inner_h_spacing = 30
+        inner_v_spacing = 20
+        inner_start_x = 0  # No start offset - padding applied separately
+        inner_start_y = 0
 
         # Build adjacency
         adjacency: Dict[str, List[str]] = {node.id: [] for node in nodes}
@@ -515,7 +617,7 @@ class SygraGraphBuilder:
                 reverse_adj[edge.target].append(edge.source)
                 in_degree[edge.target] += 1
 
-        # Layer assignment
+        # Layer assignment using topological sort
         layers: Dict[int, List[str]] = {}
         node_layer: Dict[str, int] = {}
         queue = [nid for nid, deg in in_degree.items() if deg == 0]
@@ -526,6 +628,8 @@ class SygraGraphBuilder:
 
         while queue:
             current = queue.pop(0)
+            if current in node_layer:
+                continue
             pred_layers = [node_layer.get(p, -1) for p in reverse_adj.get(current, [])]
             layer = max(pred_layers, default=-1) + 1
 
@@ -536,10 +640,10 @@ class SygraGraphBuilder:
 
             for successor in adjacency.get(current, []):
                 in_degree[successor] -= 1
-                if in_degree[successor] == 0 and successor not in node_layer:
+                if in_degree[successor] <= 0 and successor not in node_layer:
                     queue.append(successor)
 
-        # Handle remaining nodes
+        # Handle remaining nodes (cycles or disconnected)
         for node in nodes:
             if node.id not in node_layer:
                 max_layer = max(layers.keys()) if layers else 0
@@ -548,17 +652,34 @@ class SygraGraphBuilder:
                     layers[max_layer + 1] = []
                 layers[max_layer + 1].append(node.id)
 
-        # Assign positions
+        # Calculate positions with proper vertical centering
+        max_layer_size = max(len(l) for l in layers.values()) if layers else 1
+        total_layer_height = max_layer_size * (inner_node_height + inner_v_spacing)
+
+        max_x = 0
+        max_y = 0
+
         for layer_idx, layer_nodes in sorted(layers.items()):
+            # Center this layer vertically
+            layer_height = len(layer_nodes) * (inner_node_height + inner_v_spacing)
+            start_y = inner_start_y + (total_layer_height - layer_height) / 2
+
             for node_idx, node_id in enumerate(layer_nodes):
-                x = inner_start_x + (layer_idx * inner_h_spacing)
-                y = inner_start_y + (node_idx * inner_v_spacing)
+                x = inner_start_x + (layer_idx * (inner_node_width + inner_h_spacing))
+                y = start_y + (node_idx * (inner_node_height + inner_v_spacing))
 
                 for node in nodes:
                     if node.id == node_id:
                         node.position = NodePosition(x=x, y=y)
-                        node.size = NodeSize(width=150, height=60)
+                        node.size = NodeSize(width=inner_node_width, height=inner_node_height)
+
+                        # Track max dimensions
+                        max_x = max(max_x, x + inner_node_width)
+                        max_y = max(max_y, y + inner_node_height)
                         break
+
+        # Return content dimensions (padding applied by caller)
+        return (max_x, max_y)
 
     def _parse_prompts(self, prompt_config: List[Dict[str, str]]) -> List[PromptMessage]:
         """Parse prompt configuration into PromptMessage objects."""

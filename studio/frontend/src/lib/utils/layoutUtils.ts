@@ -25,18 +25,69 @@ const DEFAULT_CONFIG: LayoutConfig = {
 	direction: 'LR'
 };
 
-// Subgraph nodes are larger
-const SUBGRAPH_CONFIG = {
-	nodeWidth: 350,
-	nodeHeight: 250
+// Inner graph layout config (compact spacing for subgraph content)
+const INNER_GRAPH_CONFIG: LayoutConfig = {
+	nodeWidth: 140,
+	nodeHeight: 44,
+	horizontalGap: 30,
+	verticalGap: 20,
+	direction: 'LR'
 };
 
+// Subgraph sizing constants - SINGLE source of truth for padding
+const INNER_PADDING = 12; // Padding around inner nodes
+const HEADER_HEIGHT = 44; // Header height (py-1.5 + content)
+const MIN_INNER_WIDTH = 200; // Minimum content area width
+const MIN_INNER_HEIGHT = 60; // Minimum content area height
+
 /**
- * Get the dimensions for a node based on its type
+ * Calculate the dimensions of a subgraph based on its inner graph content.
+ * Returns total width and height including header.
+ */
+export function calculateSubgraphDimensions(
+	innerGraph: { nodes: WorkflowNode[]; edges: WorkflowEdge[] } | undefined | null
+): { width: number; height: number } {
+	if (!innerGraph?.nodes?.length) {
+		return { width: MIN_INNER_WIDTH, height: MIN_INNER_HEIGHT + HEADER_HEIGHT };
+	}
+
+	let maxX = 0;
+	let maxY = 0;
+
+	for (const node of innerGraph.nodes) {
+		const nodeWidth = node.size?.width || INNER_GRAPH_CONFIG.nodeWidth;
+		const nodeHeight = node.size?.height || INNER_GRAPH_CONFIG.nodeHeight;
+		const x = node.position?.x || 0;
+		const y = node.position?.y || 0;
+
+		maxX = Math.max(maxX, x + nodeWidth);
+		maxY = Math.max(maxY, y + nodeHeight);
+	}
+
+	// Content area = node extent + padding on each side
+	// Total = content area width, content area height + header
+	return {
+		width: Math.max(MIN_INNER_WIDTH, maxX + INNER_PADDING * 2),
+		height: Math.max(MIN_INNER_HEIGHT, maxY + INNER_PADDING * 2) + HEADER_HEIGHT
+	};
+}
+
+/**
+ * Get the dimensions for a node based on its type.
+ * For subgraph nodes, calculates actual size based on inner content.
  */
 function getNodeDimensions(node: WorkflowNode, cfg: LayoutConfig): { width: number; height: number } {
 	if (node.node_type === 'subgraph') {
-		return { width: SUBGRAPH_CONFIG.nodeWidth, height: SUBGRAPH_CONFIG.nodeHeight };
+		// Use actual inner graph dimensions if available
+		if (node.inner_graph?.nodes?.length) {
+			return calculateSubgraphDimensions(node.inner_graph);
+		}
+		// Use explicit size if set
+		if (node.size?.width && node.size?.height) {
+			return { width: node.size.width, height: node.size.height };
+		}
+		// Fallback to minimum
+		return { width: MIN_SUBGRAPH_WIDTH, height: MIN_SUBGRAPH_HEIGHT };
 	}
 	return { width: cfg.nodeWidth, height: cfg.nodeHeight };
 }
@@ -50,6 +101,9 @@ export interface LayoutResult {
 /**
  * Apply Sugiyama (layered) layout to workflow nodes using d3-dag.
  * This creates a clean, hierarchical visualization of the DAG.
+ *
+ * For graphs with subgraph nodes (which have variable sizes), this function
+ * falls back to the simple layout which handles variable sizes properly.
  */
 export function applyDagLayout(
 	nodes: WorkflowNode[],
@@ -60,6 +114,17 @@ export function applyDagLayout(
 
 	if (nodes.length === 0) {
 		return { nodes: [], width: 0, height: 0 };
+	}
+
+	// Check if any nodes have variable sizes (subgraphs with inner_graph)
+	// If so, use simple layout which handles variable sizes better
+	const hasVariableSizeNodes = nodes.some(n =>
+		n.node_type === 'subgraph' && (n.inner_graph?.nodes?.length || n.size)
+	);
+
+	if (hasVariableSizeNodes) {
+		console.log('Graph has variable-size subgraph nodes, using simple layout');
+		return applySimpleLayout(nodes, edges, cfg);
 	}
 
 	// Build adjacency structure for d3-dag
@@ -482,4 +547,128 @@ export function autoLayout(
 ): LayoutResult {
 	// Try d3-dag first, fall back to simple layout
 	return applyDagLayout(nodes, edges, config);
+}
+
+/**
+ * Apply auto-layout to inner graph nodes (compact spacing for subgraph content).
+ * Returns the laid out nodes and the content bounding dimensions (without padding).
+ * Normalizes positions to start at (0, 0) for consistent padding in subgraph rendering.
+ */
+export function layoutInnerGraph(
+	nodes: WorkflowNode[],
+	edges: WorkflowEdge[]
+): { nodes: WorkflowNode[]; width: number; height: number } {
+	if (nodes.length === 0) {
+		return { nodes: [], width: MIN_INNER_WIDTH, height: MIN_INNER_HEIGHT };
+	}
+
+	// Use compact config for inner graphs
+	const result = applySimpleLayout(nodes, edges, INNER_GRAPH_CONFIG);
+
+	// Find minimum x and y to normalize positions to start at (0, 0)
+	let minX = Infinity;
+	let minY = Infinity;
+	let maxX = 0;
+	let maxY = 0;
+
+	for (const node of result.nodes) {
+		const x = node.position?.x || 0;
+		const y = node.position?.y || 0;
+		const w = node.size?.width || INNER_GRAPH_CONFIG.nodeWidth;
+		const h = node.size?.height || INNER_GRAPH_CONFIG.nodeHeight;
+
+		minX = Math.min(minX, x);
+		minY = Math.min(minY, y);
+		maxX = Math.max(maxX, x + w);
+		maxY = Math.max(maxY, y + h);
+	}
+
+	// Handle edge case of single node or no valid positions
+	if (minX === Infinity) minX = 0;
+	if (minY === Infinity) minY = 0;
+
+	// Normalize positions so nodes start at (0, 0)
+	const normalizedNodes = result.nodes.map(node => ({
+		...node,
+		position: {
+			x: (node.position?.x || 0) - minX,
+			y: (node.position?.y || 0) - minY
+		}
+	}));
+
+	// Content dimensions = extent of nodes (without extra padding from applySimpleLayout)
+	const contentWidth = maxX - minX;
+	const contentHeight = maxY - minY;
+
+	return {
+		nodes: normalizedNodes,
+		width: Math.max(MIN_INNER_WIDTH, contentWidth),
+		height: Math.max(MIN_INNER_HEIGHT, contentHeight)
+	};
+}
+
+/**
+ * Recursively apply layout to all inner graphs in a workflow.
+ * This ensures all nested subgraphs have proper layouts and sizes.
+ */
+export function layoutAllInnerGraphs(nodes: WorkflowNode[]): WorkflowNode[] {
+	return nodes.map(node => {
+		if (node.node_type === 'subgraph' && node.inner_graph?.nodes?.length) {
+			// First, recursively layout any nested subgraphs within this inner graph
+			const innerNodesWithLayouts = layoutAllInnerGraphs(node.inner_graph.nodes);
+
+			// Then layout this subgraph's inner nodes
+			const { nodes: layoutedInnerNodes, width: contentWidth, height: contentHeight } = layoutInnerGraph(
+				innerNodesWithLayouts,
+				node.inner_graph.edges || []
+			);
+
+			// Calculate total size: content + padding + header
+			const totalWidth = Math.max(MIN_INNER_WIDTH, contentWidth + INNER_PADDING * 2);
+			const totalHeight = Math.max(MIN_INNER_HEIGHT, contentHeight + INNER_PADDING * 2) + HEADER_HEIGHT;
+
+			return {
+				...node,
+				inner_graph: {
+					...node.inner_graph,
+					nodes: layoutedInnerNodes
+				},
+				size: { width: totalWidth, height: totalHeight }
+			};
+		}
+		return node;
+	});
+}
+
+/**
+ * Get inner graph layout configuration (exported for use in components).
+ */
+export function getInnerGraphConfig(): LayoutConfig {
+	return { ...INNER_GRAPH_CONFIG };
+}
+
+/**
+ * Get edge path for inner graph visualization (smooth bezier curve).
+ * This creates curved edges similar to the main canvas.
+ */
+export function getInnerEdgePath(
+	sourceX: number,
+	sourceY: number,
+	targetX: number,
+	targetY: number
+): string {
+	// Calculate control points for smooth bezier curve
+	const dx = targetX - sourceX;
+	const dy = targetY - sourceY;
+
+	// Control point offset based on distance
+	const cpOffset = Math.min(Math.abs(dx) * 0.4, 80);
+
+	// Control points for horizontal flow
+	const cp1x = sourceX + cpOffset;
+	const cp1y = sourceY;
+	const cp2x = targetX - cpOffset;
+	const cp2y = targetY;
+
+	return `M ${sourceX} ${sourceY} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${targetX} ${targetY}`;
 }

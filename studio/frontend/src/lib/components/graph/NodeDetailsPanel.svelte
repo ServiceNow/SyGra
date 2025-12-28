@@ -1,25 +1,48 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
-	import { X, Bot, Zap, Link, Play, Square, Globe, Boxes, Save, ChevronDown, Code, Settings, MessageSquare, Info, GitBranch, Plus, Trash2, Edit3, GripVertical, Database, Download, Cloud, Server, HardDrive, ArrowRight, Map, Shuffle, Wrench, AlertCircle, Library, Eye, EyeOff, Loader2 } from 'lucide-svelte';
-	import { workflowStore, type WorkflowNode, type NodeExecutionState, type PromptMessage } from '$lib/stores/workflow.svelte';
+	import { X, Bot, Zap, Link, Play, Square, Globe, Boxes, Save, ChevronDown, ChevronRight, Code, Settings, MessageSquare, Info, GitBranch, Plus, Trash2, Edit3, GripVertical, Database, Download, Cloud, Server, HardDrive, ArrowRight, Map, Shuffle, Wrench, AlertCircle, Library, Eye, EyeOff, Loader2, Layers, Copy } from 'lucide-svelte';
+	import { workflowStore, type WorkflowNode, type NodeExecutionState, type PromptMessage, type NodeConfigOverride, type InnerGraph } from '$lib/stores/workflow.svelte';
 	import { toolStore } from '$lib/stores/tool.svelte';
+	import { panelStore } from '$lib/stores/panel.svelte';
 	import MonacoEditor from '$lib/components/editor/LazyMonacoEditor.svelte';
 	import ConfirmModal from '$lib/components/common/ConfirmModal.svelte';
 	import CustomSelect from '$lib/components/common/CustomSelect.svelte';
 	import ToolPickerModal from '$lib/components/builder/ToolPickerModal.svelte';
+	import PanelHeader from '$lib/components/panel/PanelHeader.svelte';
+	import PanelTabs from '$lib/components/panel/PanelTabs.svelte';
+	import PanelSection from '$lib/components/panel/PanelSection.svelte';
+	import ConnectionPreview from '$lib/components/panel/ConnectionPreview.svelte';
 
 	interface Props {
 		node?: WorkflowNode;
 		nodeState?: NodeExecutionState;
 		startInEditMode?: boolean;
+		// Navigation support
+		showNavigation?: boolean;
+		hasPrevious?: boolean;
+		hasNext?: boolean;
+		onPrevious?: () => void;
+		onNext?: () => void;
+		onDuplicate?: () => void;
 	}
 
-	let { node, nodeState, startInEditMode = false }: Props = $props();
+	let {
+		node,
+		nodeState,
+		startInEditMode = false,
+		showNavigation = false,
+		hasPrevious = false,
+		hasNext = false,
+		onPrevious,
+		onNext,
+		onDuplicate
+	}: Props = $props();
 
 	const dispatch = createEventDispatcher<{
 		close: void;
 		save: { nodeId: string; newId?: string; updates: Partial<WorkflowNode> };
 		delete: { nodeId: string };
+		navigate: string; // Navigate to another node
 	}>();
 
 	// Delete node
@@ -56,7 +79,7 @@
 	}
 
 	// Tab state
-	type TabId = 'details' | 'prompt' | 'tools' | 'code' | 'settings';
+	type TabId = 'details' | 'prompt' | 'tools' | 'code' | 'overrides' | 'settings';
 	let activeTab = $state<TabId>('details');
 
 	// Edit state
@@ -126,11 +149,21 @@
 	let showAddToolInput = $state(false);
 	let showToolPicker = $state(false);
 
+	// Output keys edit state (for LLM/Agent/Lambda/Branch nodes)
+	let editOutputKeys = $state<string[]>([]);
+	let newOutputKeyInput = $state('');
+	let outputKeyError = $state('');
+
 	// Data preview state (for data nodes)
 	let showDataPreview = $state(false);
 	let dataPreviewLoading = $state(false);
 	let dataPreviewData = $state<{ records: unknown[]; total: number | string | null; message: string | null } | null>(null);
 	let expandedPreviewRows = $state<Set<number>>(new Set());
+
+	// Subgraph node_config_map edit state
+	let editNodeConfigMap = $state<Record<string, NodeConfigOverride>>({});
+	let expandedOverrideNodes = $state<Set<string>>(new Set());
+	let overrideSearchQuery = $state('');
 
 	// Source type options for CustomSelect
 	const sourceTypeOptions = [
@@ -178,8 +211,8 @@
 		}
 	}
 
-	// Resizable panel state - increased by ~40% from 384px to 540px
-	let panelWidth = $state(540); // default increased for better usability
+	// Resizable panel state - use panel store for persistence
+	let panelWidth = $state(panelStore.nodeWidth); // 640px default from store
 	let isResizing = $state(false);
 	let startX = $state(0);
 	let startWidth = $state(0);
@@ -197,7 +230,7 @@
 	function handleResizeMouseMove(e: MouseEvent) {
 		if (!isResizing) return;
 		const diff = startX - e.clientX;
-		const newWidth = Math.max(400, Math.min(900, startWidth + diff));
+		const newWidth = Math.max(480, Math.min(1000, startWidth + diff));
 		panelWidth = newWidth;
 	}
 
@@ -207,6 +240,8 @@
 		document.removeEventListener('mouseup', handleResizeMouseUp);
 		document.body.style.cursor = '';
 		document.body.style.userSelect = '';
+		// Persist width to store
+		panelStore.setNodeWidth(panelWidth);
 	}
 
 	// Available models from API
@@ -279,6 +314,49 @@
 		node?.post_process ||
 		(isEditing && node?.node_type !== 'start' && node?.node_type !== 'end')
 	);
+	// Show overrides tab for subgraph nodes with inner_graph
+	let showOverridesTab = $derived(node?.node_type === 'subgraph' && (node?.inner_graph?.nodes?.length ?? 0) > 0);
+	// Inner graph nodes for override editing
+	let innerGraphNodes = $derived(node?.inner_graph?.nodes ?? []);
+	// Count of current overrides
+	let overrideCount = $derived(Object.keys(editNodeConfigMap).length);
+	// Filtered inner nodes based on search
+	let filteredInnerNodes = $derived(() => {
+		if (!overrideSearchQuery.trim()) return innerGraphNodes;
+		const query = overrideSearchQuery.toLowerCase();
+		return innerGraphNodes.filter(n =>
+			n.id.toLowerCase().includes(query) ||
+			(n.summary ?? '').toLowerCase().includes(query) ||
+			n.node_type.toLowerCase().includes(query)
+		);
+	});
+
+	// Tabs configuration for PanelTabs component
+	let tabsConfig = $derived([
+		{ id: 'details', label: 'Overview', icon: Info, hidden: false },
+		{ id: 'prompt', label: 'Prompt', icon: MessageSquare, badge: editPrompts.length || undefined, hidden: !showPromptTab },
+		{ id: 'tools', label: 'Tools', icon: Wrench, badge: editTools.length || undefined, hidden: !showToolsTab },
+		{ id: 'code', label: 'Code', icon: Code, hidden: !showCodeTab },
+		{ id: 'overrides', label: 'Overrides', icon: Layers, badge: overrideCount || undefined, hidden: !showOverridesTab },
+		{ id: 'settings', label: 'Settings', icon: Settings, hidden: false }
+	]);
+
+	// Handle tab change
+	function handleTabChange(tabId: string) {
+		activeTab = tabId as TabId;
+		if (node?.node_type) {
+			panelStore.setLastTab(node.node_type, tabId);
+		}
+	}
+
+	// Handle connection navigation
+	function handleConnectionNavigate(event: CustomEvent<string>) {
+		dispatch('navigate', event.detail);
+	}
+
+	// Get workflow nodes and edges for ConnectionPreview
+	let workflowNodes = $derived(workflowStore.currentWorkflow?.nodes ?? []);
+	let workflowEdges = $derived(workflowStore.currentWorkflow?.edges ?? []);
 
 	// Execution nodes that can have pre/post processors (NOT data or output)
 	const executionNodeTypes = ['llm', 'lambda', 'web_agent', 'connector', 'subgraph'];
@@ -386,6 +464,16 @@
 			editToolChoice = (node.tool_choice as 'auto' | 'required' | 'none') ?? 'auto';
 			newToolPath = '';
 			showAddToolInput = false;
+			// Initialize output_keys state (normalize to array for editing)
+			editOutputKeys = node.output_keys
+				? (Array.isArray(node.output_keys) ? [...node.output_keys] : [node.output_keys])
+				: [];
+			newOutputKeyInput = '';
+			outputKeyError = '';
+			// Initialize node_config_map for subgraph nodes
+			editNodeConfigMap = node.node_config_map ? JSON.parse(JSON.stringify(node.node_config_map)) : {};
+			expandedOverrideNodes = new Set();
+			overrideSearchQuery = '';
 			hasChanges = false;
 			// Start in edit mode if prop is set (useful in builder context)
 			isEditing = startInEditMode && node.node_type !== 'start' && node.node_type !== 'end';
@@ -395,16 +483,10 @@
 			postProcessCodeLoaded = false;
 			lambdaCodeLoaded = false;
 
-			// Try to load existing code from files first
-			if (node.pre_process || node.post_process || node.function_path) {
-				loadExistingCode();
-			}
-
-			// Initialize code content with proper stub code based on actual SyGra patterns
-			// (will be overwritten by loadExistingCode if files exist)
+			// Generate stub code helper (used if loading fails or no file exists)
 			const nodeClassName = (node.id || 'Node').replace(/-/g, '_').replace(/\s+/g, '').replace(/[^a-zA-Z0-9_]/g, '');
 
-			preProcessCode = `"""Pre-processor for ${node.summary || node.id}."""
+			const generatePreProcessStub = () => `"""Pre-processor for ${node.summary || node.id}."""
 from sygra.core.graph.functions.node_processor import NodePreProcessor
 from sygra.core.graph.sygra_state import SygraState
 
@@ -422,17 +504,12 @@ class ${nodeClassName}PreProcessor(NodePreProcessor):
             SygraState: The modified state object
         """
         # Example: Transform or prepare data before node execution
-        # if not state.get("messages"):
-        #     state["messages"] = []
-        #
-        # Access and modify state variables:
         # state["variable_name"] = new_value
-        # state.update({"key": "value"})
 
         return state
 `;
 
-			postProcessCode = `"""Post-processor for ${node.summary || node.id}."""
+			const generatePostProcessStub = () => `"""Post-processor for ${node.summary || node.id}."""
 from sygra.core.graph.functions.node_processor import NodePostProcessor
 from sygra.core.graph.sygra_message import SygraMessage
 from sygra.core.graph.sygra_state import SygraState
@@ -446,24 +523,14 @@ class ${nodeClassName}PostProcessor(NodePostProcessor):
 
         Args:
             resp: Response from the node (wrapped in SygraMessage)
-                  Access content via: resp.message.content
 
         Returns:
             SygraState: Dictionary of state updates to apply
         """
-        # Example: Extract and transform the LLM response
-        # content = resp.message.content
-        #
-        # Return a dict of state updates:
-        # return {
-        #     "output_key": content,
-        #     "messages": [HumanMessage(content)],
-        # }
-
         return {"response": resp.message.content}
 `;
 
-			lambdaCode = `"""Lambda function for ${node.summary || node.id}."""
+			const generateLambdaStub = () => `"""Lambda function for ${node.summary || node.id}."""
 from typing import Any
 from sygra.core.graph.sygra_state import SygraState
 
@@ -475,22 +542,12 @@ def ${nodeClassName}_function(state: SygraState) -> Any:
         state: Current workflow state containing all variables
 
     Returns:
-        Any: Result to be stored in state (can be dict for multiple updates)
+        Any: Result to be stored in state
     """
-    # Example: Process data and return results
-    # input_data = state.get("input_variable")
-    #
-    # processed_result = do_something(input_data)
-    #
-    # Return single value or dict for state updates:
-    # return processed_result
-    # or
-    # return {"output_key": processed_result, "status": "complete"}
-
     return state
 `;
 
-			branchConditionCode = `"""Branch condition for ${node.summary || node.id}."""
+			const generateBranchStub = () => `"""Branch condition for ${node.summary || node.id}."""
 from sygra.core.graph.functions.edge_condition import EdgeCondition
 from sygra.core.graph.sygra_state import SygraState
 from sygra.utils import constants
@@ -508,23 +565,34 @@ class ${nodeClassName}Condition(EdgeCondition):
 
         Returns:
             str: Branch key matching one of the configured edge targets
-                 Use constants.SYGRA_END to end the workflow
         """
-        # Example: Route based on iteration count or response content
-        # messages = state.get("messages", [])
-        #
-        # End after max iterations or when complete:
-        # if len(messages) > 8:
-        #     return constants.SYGRA_END
-        #
-        # Route based on content:
-        # if "success" in state.get("response", "").lower():
-        #     return "success_path"
-        #
-        # return "continue"  # Default path
-
+        # Return branch key or constants.SYGRA_END to end workflow
         return "default"
 `;
+
+			// Try to load existing code from files first, use stubs as fallback
+			if (node.pre_process || node.post_process || node.function_path) {
+				loadExistingCode().then(() => {
+					// After loading, set stubs only for code that wasn't loaded
+					if (!preProcessCodeLoaded) {
+						preProcessCode = generatePreProcessStub();
+					}
+					if (!postProcessCodeLoaded) {
+						postProcessCode = generatePostProcessStub();
+					}
+					if (!lambdaCodeLoaded) {
+						lambdaCode = generateLambdaStub();
+					}
+				});
+			} else {
+				// No code paths configured, use stubs immediately
+				preProcessCode = generatePreProcessStub();
+				postProcessCode = generatePostProcessStub();
+				lambdaCode = generateLambdaStub();
+			}
+
+			// Always set branch stub (loaded separately if needed)
+			branchConditionCode = generateBranchStub();
 
 			// Initialize data node edit state
 			if (node.node_type === 'data') {
@@ -720,6 +788,16 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 			editToolChoice = (node.tool_choice as 'auto' | 'required' | 'none') ?? 'auto';
 			newToolPath = '';
 			showAddToolInput = false;
+			// Reset output_keys state
+			editOutputKeys = node.output_keys
+				? (Array.isArray(node.output_keys) ? [...node.output_keys] : [node.output_keys])
+				: [];
+			newOutputKeyInput = '';
+			outputKeyError = '';
+			// Reset node_config_map for subgraph nodes
+			editNodeConfigMap = node.node_config_map ? JSON.parse(JSON.stringify(node.node_config_map)) : {};
+			expandedOverrideNodes = new Set();
+			overrideSearchQuery = '';
 		}
 		hasChanges = false;
 		isEditing = false;
@@ -770,6 +848,25 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 			}
 			if (editToolChoice !== (node.tool_choice ?? 'auto')) {
 				updates.tool_choice = editToolChoice;
+			}
+		}
+
+		// Handle output_keys updates for LLM/Agent/Lambda/Branch nodes
+		if (['llm', 'agent', 'lambda', 'branch'].includes(node.node_type)) {
+			// Normalize current value to array for comparison
+			const currentKeys = node.output_keys
+				? (Array.isArray(node.output_keys) ? node.output_keys : [node.output_keys])
+				: [];
+
+			if (JSON.stringify(editOutputKeys) !== JSON.stringify(currentKeys)) {
+				// Convert to appropriate format for saving
+				if (editOutputKeys.length === 0) {
+					updates.output_keys = undefined; // Use default
+				} else if (editOutputKeys.length === 1) {
+					updates.output_keys = editOutputKeys[0]; // Single string
+				} else {
+					updates.output_keys = editOutputKeys; // Array
+				}
 			}
 		}
 
@@ -867,6 +964,16 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 			updates.sampler_config = samplerConfig;
 		}
 
+		// Handle subgraph node_config_map updates
+		if (node.node_type === 'subgraph') {
+			const originalConfigMap = node.node_config_map ?? {};
+			const hasConfigMapChanges = JSON.stringify(editNodeConfigMap) !== JSON.stringify(originalConfigMap);
+			if (hasConfigMapChanges) {
+				// Only include if there are actual overrides, otherwise set to undefined
+				updates.node_config_map = Object.keys(editNodeConfigMap).length > 0 ? editNodeConfigMap : undefined;
+			}
+		}
+
 		if (Object.keys(updates).length > 0) {
 			const success = await workflowStore.updateNode(originalNodeId, updates);
 			if (success) {
@@ -924,6 +1031,147 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 
 	function markChanged() {
 		hasChanges = true;
+	}
+
+	// Output keys helpers
+	function addOutputKey() {
+		const key = newOutputKeyInput.trim();
+		if (!key) return;
+
+		// Validate identifier pattern (must be valid Python/JS identifier)
+		if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key)) {
+			outputKeyError = 'Must be a valid identifier (letters, numbers, underscores, cannot start with number)';
+			return;
+		}
+
+		// Check for duplicates
+		if (editOutputKeys.includes(key)) {
+			outputKeyError = 'Key already exists';
+			return;
+		}
+
+		editOutputKeys = [...editOutputKeys, key];
+		newOutputKeyInput = '';
+		outputKeyError = '';
+		markChanged();
+	}
+
+	function removeOutputKey(key: string) {
+		editOutputKeys = editOutputKeys.filter(k => k !== key);
+		markChanged();
+	}
+
+	// Node config map (subgraph override) helpers
+	function toggleOverrideNode(nodeId: string) {
+		const newSet = new Set(expandedOverrideNodes);
+		if (newSet.has(nodeId)) {
+			newSet.delete(nodeId);
+		} else {
+			newSet.add(nodeId);
+		}
+		expandedOverrideNodes = newSet;
+	}
+
+	function hasOverride(nodeId: string): boolean {
+		return nodeId in editNodeConfigMap;
+	}
+
+	function addOverrideForNode(nodeId: string) {
+		if (!editNodeConfigMap[nodeId]) {
+			editNodeConfigMap[nodeId] = {};
+			editNodeConfigMap = { ...editNodeConfigMap };
+			// Auto-expand the node
+			expandedOverrideNodes = new Set([...expandedOverrideNodes, nodeId]);
+			markChanged();
+		}
+	}
+
+	function removeOverrideForNode(nodeId: string) {
+		if (editNodeConfigMap[nodeId]) {
+			delete editNodeConfigMap[nodeId];
+			editNodeConfigMap = { ...editNodeConfigMap };
+			markChanged();
+		}
+	}
+
+	function updateOverrideField(nodeId: string, field: keyof NodeConfigOverride, value: unknown) {
+		if (!editNodeConfigMap[nodeId]) {
+			editNodeConfigMap[nodeId] = {};
+		}
+		if (value === '' || value === undefined || (typeof value === 'object' && Object.keys(value as object).length === 0)) {
+			delete editNodeConfigMap[nodeId][field];
+		} else {
+			editNodeConfigMap[nodeId][field] = value;
+		}
+		// Clean up empty override objects
+		if (Object.keys(editNodeConfigMap[nodeId]).length === 0) {
+			delete editNodeConfigMap[nodeId];
+		}
+		editNodeConfigMap = { ...editNodeConfigMap };
+		markChanged();
+	}
+
+	function addPlaceholderMapping(nodeId: string) {
+		if (!editNodeConfigMap[nodeId]) {
+			editNodeConfigMap[nodeId] = {};
+		}
+		if (!editNodeConfigMap[nodeId].prompt_placeholder_map) {
+			editNodeConfigMap[nodeId].prompt_placeholder_map = {};
+		}
+		const newKey = `placeholder_${Object.keys(editNodeConfigMap[nodeId].prompt_placeholder_map!).length + 1}`;
+		editNodeConfigMap[nodeId].prompt_placeholder_map![newKey] = '';
+		editNodeConfigMap = { ...editNodeConfigMap };
+		markChanged();
+	}
+
+	function removePlaceholderMapping(nodeId: string, key: string) {
+		if (editNodeConfigMap[nodeId]?.prompt_placeholder_map) {
+			delete editNodeConfigMap[nodeId].prompt_placeholder_map![key];
+			if (Object.keys(editNodeConfigMap[nodeId].prompt_placeholder_map!).length === 0) {
+				delete editNodeConfigMap[nodeId].prompt_placeholder_map;
+			}
+			// Clean up empty override objects
+			if (Object.keys(editNodeConfigMap[nodeId]).length === 0) {
+				delete editNodeConfigMap[nodeId];
+			}
+			editNodeConfigMap = { ...editNodeConfigMap };
+			markChanged();
+		}
+	}
+
+	function updatePlaceholderMapping(nodeId: string, oldKey: string, newKey: string, value: string) {
+		if (editNodeConfigMap[nodeId]?.prompt_placeholder_map) {
+			if (oldKey !== newKey) {
+				delete editNodeConfigMap[nodeId].prompt_placeholder_map![oldKey];
+			}
+			editNodeConfigMap[nodeId].prompt_placeholder_map![newKey] = value;
+			editNodeConfigMap = { ...editNodeConfigMap };
+			markChanged();
+		}
+	}
+
+	// Get inner node icon and color
+	function getInnerNodeStyle(nodeType: string): { icon: typeof Bot; color: string } {
+		const iconMap: Record<string, typeof Bot> = {
+			llm: Bot,
+			lambda: Zap,
+			subgraph: Boxes,
+			data: Database,
+			branch: GitBranch,
+			weighted_sampler: Shuffle
+		};
+		const colorMap: Record<string, string> = {
+			llm: '#8b5cf6',
+			lambda: '#f97316',
+			subgraph: '#3b82f6',
+			data: '#0ea5e9',
+			branch: '#eab308',
+			weighted_sampler: '#a855f7'
+		};
+		return {
+			icon: iconMap[nodeType] ?? Bot,
+			color: colorMap[nodeType] ?? '#6b7280'
+		};
 	}
 
 	function updatePromptContent(index: number, content: string) {
@@ -1002,169 +1250,39 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 		</div>
 	</div>
 	<!-- Header -->
-	<div class="sticky top-0 bg-surface border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between z-10">
-		<div class="flex items-center gap-2">
-			{#if node}
-				<div
-					class="w-8 h-8 rounded-lg flex items-center justify-center text-white"
-					style="background-color: {color}"
-				>
-					<Icon size={16} />
-				</div>
-				<div>
-					<h3 class="font-semibold text-gray-800 dark:text-gray-200 text-sm">
-						{node.summary || node.id}
-					</h3>
-					<div class="text-xs text-gray-500 capitalize">
-						{node.node_type.replace('_', ' ')}
-					</div>
-				</div>
-			{:else}
-				<h3 class="font-semibold text-gray-800 dark:text-gray-200">Node Details</h3>
-			{/if}
-		</div>
-
-		<!-- Action buttons -->
-		<div class="flex items-center gap-1">
-			{#if node && node.node_type !== 'start' && node.node_type !== 'end'}
-				{#if isEditing}
-					<button
-						onclick={cancelEditing}
-						class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-						title="Cancel"
-					>
-						<X size={16} />
-					</button>
-					<button
-						onclick={saveChanges}
-						disabled={!hasChanges || isSaving}
-						class="p-1.5 rounded-lg text-violet-600 hover:text-violet-700 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-colors disabled:opacity-50"
-						title="Save changes"
-					>
-						{#if isSaving}
-							<div class="w-4 h-4 border-2 border-violet-600 border-t-transparent rounded-full animate-spin"></div>
-						{:else}
-							<Save size={16} />
-						{/if}
-					</button>
-				{:else}
-					<button
-						onclick={startEditing}
-						class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
-						title="Edit node"
-					>
-						<Edit3 size={16} />
-					</button>
-					<button
-						onclick={requestDeleteNode}
-						disabled={isDeleting}
-						class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors disabled:opacity-50"
-						title="Delete node"
-					>
-						{#if isDeleting}
-							<div class="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
-						{:else}
-							<Trash2 size={16} />
-						{/if}
-					</button>
-				{/if}
-			{/if}
-			<button
-				onclick={() => dispatch('close')}
-				class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-				title="Close"
-			>
-				<X size={18} />
-			</button>
-		</div>
-	</div>
+	<PanelHeader
+		title={node?.summary || node?.id || 'Node Details'}
+		subtitle={node ? node.node_type.replace('_', ' ') : undefined}
+		icon={Icon}
+		iconColor={color}
+		nodeId={node?.id}
+		{showNavigation}
+		{hasPrevious}
+		{hasNext}
+		onPrevious={onPrevious}
+		onNext={onNext}
+		{isEditing}
+		{hasChanges}
+		{isSaving}
+		canEdit={node ? node.node_type !== 'start' && node.node_type !== 'end' : false}
+		onStartEdit={startEditing}
+		onCancelEdit={cancelEditing}
+		onSave={saveChanges}
+		showCopyId={!!node}
+		showDuplicate={!!node && !!onDuplicate && node.node_type !== 'start' && node.node_type !== 'end'}
+		showDelete={!!node && node.node_type !== 'start' && node.node_type !== 'end' && !isEditing}
+		{onDuplicate}
+		onDelete={requestDeleteNode}
+		onClose={() => dispatch('close')}
+	/>
 
 	{#if node}
 		<!-- Tabs -->
-		<div class="border-b border-gray-200 dark:border-gray-800 px-2">
-			<div class="flex gap-1">
-				<button
-					onclick={() => activeTab = 'details'}
-					class="px-3 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-1.5"
-					class:text-violet-600={activeTab === 'details'}
-					class:dark:text-violet-400={activeTab === 'details'}
-					class:border-b-2={activeTab === 'details'}
-					class:border-violet-600={activeTab === 'details'}
-					class:text-gray-500={activeTab !== 'details'}
-					class:hover:text-gray-700={activeTab !== 'details'}
-				>
-					<Info size={14} />
-					Details
-				</button>
-
-				{#if showPromptTab}
-					<button
-						onclick={() => activeTab = 'prompt'}
-						class="px-3 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-1.5"
-						class:text-violet-600={activeTab === 'prompt'}
-						class:dark:text-violet-400={activeTab === 'prompt'}
-						class:border-b-2={activeTab === 'prompt'}
-						class:border-violet-600={activeTab === 'prompt'}
-						class:text-gray-500={activeTab !== 'prompt'}
-						class:hover:text-gray-700={activeTab !== 'prompt'}
-					>
-						<MessageSquare size={14} />
-						Prompt
-					</button>
-				{/if}
-
-				{#if showToolsTab}
-					<button
-						onclick={() => activeTab = 'tools'}
-						class="px-3 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-1.5"
-						class:text-violet-600={activeTab === 'tools'}
-						class:dark:text-violet-400={activeTab === 'tools'}
-						class:border-b-2={activeTab === 'tools'}
-						class:border-violet-600={activeTab === 'tools'}
-						class:text-gray-500={activeTab !== 'tools'}
-						class:hover:text-gray-700={activeTab !== 'tools'}
-					>
-						<Wrench size={14} />
-						Tools
-						{#if editTools.length > 0}
-							<span class="px-1.5 py-0.5 text-xs bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300 rounded-full">
-								{editTools.length}
-							</span>
-						{/if}
-					</button>
-				{/if}
-
-				{#if showCodeTab}
-					<button
-						onclick={() => activeTab = 'code'}
-						class="px-3 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-1.5"
-						class:text-violet-600={activeTab === 'code'}
-						class:dark:text-violet-400={activeTab === 'code'}
-						class:border-b-2={activeTab === 'code'}
-						class:border-violet-600={activeTab === 'code'}
-						class:text-gray-500={activeTab !== 'code'}
-						class:hover:text-gray-700={activeTab !== 'code'}
-					>
-						<Code size={14} />
-						Code
-					</button>
-				{/if}
-
-				<button
-					onclick={() => activeTab = 'settings'}
-					class="px-3 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-1.5"
-					class:text-violet-600={activeTab === 'settings'}
-					class:dark:text-violet-400={activeTab === 'settings'}
-					class:border-b-2={activeTab === 'settings'}
-					class:border-violet-600={activeTab === 'settings'}
-					class:text-gray-500={activeTab !== 'settings'}
-					class:hover:text-gray-700={activeTab !== 'settings'}
-				>
-					<Settings size={14} />
-					Settings
-				</button>
-			</div>
-		</div>
+		<PanelTabs
+			tabs={tabsConfig}
+			{activeTab}
+			onTabChange={handleTabChange}
+		/>
 
 		<!-- Tab Content -->
 		<div class="flex-1 overflow-y-auto p-4">
@@ -1239,6 +1357,16 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 						</div>
 					{/if}
 
+					<!-- Connections section -->
+					<PanelSection title="Connections" icon={ArrowRight} defaultOpen={true} collapsible={true}>
+						<ConnectionPreview
+							nodeId={node.id}
+							nodes={workflowNodes}
+							edges={workflowEdges}
+							on:navigate={handleConnectionNavigate}
+						/>
+					</PanelSection>
+
 					<!-- Model info (for LLM nodes) -->
 					{#if node.node_type === 'llm'}
 						<div>
@@ -1258,6 +1386,82 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 									{node.model?.name ?? 'Not set'}
 								</div>
 							{/if}
+						</div>
+					{/if}
+
+					<!-- Output Keys (for LLM, Agent, Lambda, Branch nodes) -->
+					{#if ['llm', 'agent', 'lambda', 'branch'].includes(node.node_type)}
+						<div class="space-y-2">
+							<div class="flex items-center justify-between">
+								<div class="text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+									<Download size={12} />
+									Output Keys
+								</div>
+								<button
+									type="button"
+									class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+									title={"Output keys define the state variable name(s) where this node's output will be stored. Use {key_name} in downstream prompts to reference these values."}
+								>
+									<Info size={14} />
+								</button>
+							</div>
+
+							<!-- Tags display -->
+							<div class="flex flex-wrap gap-1.5 min-h-[28px]">
+								{#if editOutputKeys.length > 0}
+									{#each editOutputKeys as key}
+										<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+											<code class="font-mono">{key}</code>
+											{#if isEditing}
+												<button
+													type="button"
+													onclick={() => removeOutputKey(key)}
+													class="ml-0.5 hover:text-red-500 transition-colors"
+													title="Remove key"
+												>
+													<X size={12} />
+												</button>
+											{/if}
+										</span>
+									{/each}
+								{:else}
+									<span class="text-xs text-gray-400 dark:text-gray-500 italic py-1">
+										No keys configured (default: "messages")
+									</span>
+								{/if}
+							</div>
+
+							<!-- Add input (edit mode only) -->
+							{#if isEditing}
+								<div class="flex gap-2">
+									<input
+										type="text"
+										bind:value={newOutputKeyInput}
+										onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addOutputKey(); } }}
+										placeholder="Add output key..."
+										class="flex-1 px-3 py-1.5 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+									/>
+									<button
+										type="button"
+										onclick={addOutputKey}
+										class="px-3 py-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors flex items-center gap-1"
+									>
+										<Plus size={14} />
+										Add
+									</button>
+								</div>
+								{#if outputKeyError}
+									<p class="text-xs text-red-500 flex items-center gap-1">
+										<AlertCircle size={12} />
+										{outputKeyError}
+									</p>
+								{/if}
+							{/if}
+
+							<!-- Helper text -->
+							<p class="text-xs text-gray-400 dark:text-gray-500">
+								Use <code class="px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded font-mono text-emerald-600 dark:text-emerald-400">{'{'}key_name{'}'}</code> in downstream prompts to reference output values.
+							</p>
 						</div>
 					{/if}
 
@@ -2165,7 +2369,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 
 			<!-- Code Tab -->
 			{#if activeTab === 'code' && showCodeTab}
-				<div class="space-y-4">
+				<div class="space-y-4 code-tab-content">
 					<!-- Loading indicator -->
 					{#if isLoadingCode}
 						<div class="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
@@ -2207,15 +2411,17 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 							<div class="text-xs text-gray-500 mb-2">
 								Transform data records during processing. This code will be saved to task_executor.py.
 							</div>
-							<MonacoEditor
-								bind:value={editTransformCode}
-								language="python"
-								height="300px"
-								theme="vs-dark"
-								fontSize={12}
-								readonly={!isEditing}
-								on:change={() => markChanged()}
-							/>
+							<div class="monaco-editor-wrapper">
+								<MonacoEditor
+									bind:value={editTransformCode}
+									language="python"
+									height="clamp(250px, 35vh, 450px)"
+									theme="vs-dark"
+									fontSize={12}
+									readonly={!isEditing}
+									on:change={() => markChanged()}
+								/>
+							</div>
 						</div>
 					{/if}
 
@@ -2248,15 +2454,17 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 							<div class="text-xs text-gray-500 mb-2">
 								Generate output records from workflow state. This code will be saved to task_executor.py.
 							</div>
-							<MonacoEditor
-								bind:value={editOutputGeneratorCode}
-								language="python"
-								height="300px"
-								theme="vs-dark"
-								fontSize={12}
-								readonly={!isEditing}
-								on:change={() => markChanged()}
-							/>
+							<div class="monaco-editor-wrapper">
+								<MonacoEditor
+									bind:value={editOutputGeneratorCode}
+									language="python"
+									height="clamp(250px, 35vh, 450px)"
+									theme="vs-dark"
+									fontSize={12}
+									readonly={!isEditing}
+									on:change={() => markChanged()}
+								/>
+							</div>
 						</div>
 					{/if}
 
@@ -2283,12 +2491,12 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 								</div>
 							{/if}
 							<!-- Monaco Editor - read-only when not editing -->
-							<div class="mt-2">
+							<div class="mt-2 monaco-editor-wrapper">
 								<div class="text-xs text-gray-500 mb-1">{isEditing ? 'Code Editor:' : 'Code Preview:'}</div>
 								<MonacoEditor
 									bind:value={preProcessCode}
 									language="python"
-									height="180px"
+									height="clamp(200px, 25vh, 350px)"
 									theme="vs-dark"
 									fontSize={12}
 									readonly={!isEditing}
@@ -2321,12 +2529,12 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 								</div>
 							{/if}
 							<!-- Monaco Editor - read-only when not editing -->
-							<div class="mt-2">
+							<div class="mt-2 monaco-editor-wrapper">
 								<div class="text-xs text-gray-500 mb-1">{isEditing ? 'Code Editor:' : 'Code Preview:'}</div>
 								<MonacoEditor
 									bind:value={postProcessCode}
 									language="python"
-									height="180px"
+									height="clamp(200px, 25vh, 350px)"
 									theme="vs-dark"
 									fontSize={12}
 									readonly={!isEditing}
@@ -2369,15 +2577,17 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 							<div class="text-xs text-gray-500 mb-2">
 								{isEditing ? 'Edit the lambda function code. This will be saved to task_executor.py.' : 'Lambda function code.'}
 							</div>
-							<MonacoEditor
-								bind:value={lambdaCode}
-								language="python"
-								height="300px"
-								theme="vs-dark"
-								fontSize={12}
-								readonly={!isEditing}
-								on:change={() => markChanged()}
-							/>
+							<div class="monaco-editor-wrapper">
+								<MonacoEditor
+									bind:value={lambdaCode}
+									language="python"
+									height="clamp(250px, 35vh, 450px)"
+									theme="vs-dark"
+									fontSize={12}
+									readonly={!isEditing}
+									on:change={() => markChanged()}
+								/>
+							</div>
 						</div>
 					{/if}
 
@@ -2393,15 +2603,17 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 							<div class="text-xs text-gray-500 mb-2">
 								{isEditing ? 'Edit the condition logic that determines which path to take.' : 'Condition logic that determines which path to take. This code will be saved to task_executor.py.'}
 							</div>
-							<MonacoEditor
-								bind:value={branchConditionCode}
-								language="python"
-								height="300px"
-								theme="vs-dark"
-								fontSize={12}
-								readonly={!isEditing}
-								on:change={() => markChanged()}
-							/>
+							<div class="monaco-editor-wrapper">
+								<MonacoEditor
+									bind:value={branchConditionCode}
+									language="python"
+									height="clamp(250px, 35vh, 450px)"
+									theme="vs-dark"
+									fontSize={12}
+									readonly={!isEditing}
+									on:change={() => markChanged()}
+								/>
+							</div>
 						</div>
 					{/if}
 
@@ -2413,9 +2625,417 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 				</div>
 			{/if}
 
+			<!-- Overrides Tab (for subgraph nodes) -->
+			{#if activeTab === 'overrides' && showOverridesTab}
+				<div class="space-y-4">
+					<!-- Header with search and info -->
+					<div class="flex items-center justify-between gap-3">
+						<div class="flex-1">
+							<div class="relative">
+								<input
+									type="text"
+									bind:value={overrideSearchQuery}
+									placeholder="Search inner nodes..."
+									class="w-full pl-3 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+								/>
+								{#if overrideSearchQuery}
+									<button
+										onclick={() => overrideSearchQuery = ''}
+										class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+									>
+										<X size={14} />
+									</button>
+								{/if}
+							</div>
+						</div>
+					</div>
+
+					<!-- Info banner -->
+					<div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+						<div class="flex items-start gap-2">
+							<Info size={16} class="text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+							<div class="text-xs text-blue-700 dark:text-blue-300">
+								<strong>Node Configuration Overrides</strong> allow you to customize inner node settings without modifying the original subgraph. Add overrides for model, placeholders, or processors.
+							</div>
+						</div>
+					</div>
+
+					<!-- Inner nodes list -->
+					<div class="space-y-2">
+						{#each filteredInnerNodes() as innerNode (innerNode.id)}
+							{@const nodeStyle = getInnerNodeStyle(innerNode.node_type)}
+							{@const NodeIcon = nodeStyle.icon}
+							{@const isExpanded = expandedOverrideNodes.has(innerNode.id)}
+							{@const nodeHasOverride = hasOverride(innerNode.id)}
+							{@const override = editNodeConfigMap[innerNode.id]}
+
+							<div
+								class="rounded-lg border transition-all {nodeHasOverride ? 'border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/10' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'}"
+							>
+								<!-- Node header (collapsible) -->
+								<button
+									onclick={() => toggleOverrideNode(innerNode.id)}
+									class="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
+								>
+									<!-- Expand/collapse chevron -->
+									<div class="text-gray-400 transition-transform" class:rotate-90={isExpanded}>
+										<ChevronRight size={16} />
+									</div>
+
+									<!-- Node icon -->
+									<div
+										class="w-7 h-7 rounded-md flex items-center justify-center text-white flex-shrink-0"
+										style="background-color: {nodeStyle.color}"
+									>
+										<NodeIcon size={14} />
+									</div>
+
+									<!-- Node info -->
+									<div class="flex-1 min-w-0">
+										<div class="flex items-center gap-2">
+											<span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+												{innerNode.summary || innerNode.id}
+											</span>
+											{#if nodeHasOverride}
+												<span class="px-1.5 py-0.5 text-xs bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 rounded font-medium">
+													Overridden
+												</span>
+											{/if}
+										</div>
+										<div class="text-xs text-gray-500 font-mono truncate">
+											{innerNode.id}
+										</div>
+									</div>
+
+									<!-- Quick action button -->
+									{#if !nodeHasOverride && isEditing}
+										<span
+											role="button"
+											tabindex="0"
+											onclick={(e) => { e.stopPropagation(); addOverrideForNode(innerNode.id); }}
+											onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); addOverrideForNode(innerNode.id); } }}
+											class="px-2 py-1 text-xs font-medium text-violet-600 hover:text-violet-700 bg-violet-100 hover:bg-violet-200 dark:bg-violet-900/30 dark:hover:bg-violet-900/50 dark:text-violet-400 rounded transition-colors cursor-pointer"
+										>
+											+ Add Override
+										</span>
+									{/if}
+								</button>
+
+								<!-- Expanded override editor -->
+								{#if isExpanded}
+									<div class="px-3 pb-3 pt-1 border-t border-gray-100 dark:border-gray-700/50">
+										{#if nodeHasOverride && override}
+											{#if isEditing}
+												<!-- Edit mode: Override configuration form -->
+												<div class="space-y-4 mt-3">
+													<!-- Model Override -->
+													{#if innerNode.node_type === 'llm' || innerNode.node_type === 'agent'}
+														<div class="space-y-2">
+															<label class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+																<Bot size={12} />
+																Model Override
+															</label>
+															<input
+																type="text"
+																value={override.model?.name ?? ''}
+																oninput={(e) => updateOverrideField(innerNode.id, 'model', e.currentTarget.value ? { name: e.currentTarget.value } : undefined)}
+																placeholder="e.g., gpt-4o, claude-3-5-sonnet"
+																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 font-mono"
+															/>
+														</div>
+													{/if}
+
+													<!-- Prompt Placeholder Map -->
+													<div class="space-y-2">
+														<div class="flex items-center justify-between">
+															<label class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+																<Copy size={12} />
+																Placeholder Mappings
+															</label>
+															<button
+																onclick={() => addPlaceholderMapping(innerNode.id)}
+																class="flex items-center gap-1 px-2 py-1 text-xs font-medium text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded transition-colors"
+															>
+																<Plus size={12} />
+																Add
+															</button>
+														</div>
+
+														{#if override.prompt_placeholder_map && Object.keys(override.prompt_placeholder_map).length > 0}
+															<div class="space-y-2">
+																{#each Object.entries(override.prompt_placeholder_map) as [key, value]}
+																	<div class="flex items-center gap-2">
+																		<input
+																			type="text"
+																			value={key}
+																			onblur={(e) => {
+																				const newKey = e.currentTarget.value;
+																				if (newKey && newKey !== key) {
+																					updatePlaceholderMapping(innerNode.id, key, newKey, value);
+																				}
+																			}}
+																			placeholder="placeholder_name"
+																			class="flex-1 px-2 py-1.5 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+																		/>
+																		<ArrowRight size={14} class="text-gray-400 flex-shrink-0" />
+																		<input
+																			type="text"
+																			value={value}
+																			oninput={(e) => updatePlaceholderMapping(innerNode.id, key, key, e.currentTarget.value)}
+																			placeholder="mapped_value"
+																			class="flex-1 px-2 py-1.5 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+																		/>
+																		<button
+																			onclick={() => removePlaceholderMapping(innerNode.id, key)}
+																			class="p-1 text-gray-400 hover:text-red-500 transition-colors"
+																		>
+																			<Trash2 size={14} />
+																		</button>
+																	</div>
+																{/each}
+															</div>
+														{:else}
+															<div class="text-xs text-gray-400 italic py-2">
+																No placeholder mappings. Click "Add" to create one.
+															</div>
+														{/if}
+													</div>
+
+													<!-- Pre/Post Process Overrides -->
+													{#if innerNode.node_type !== 'data' && innerNode.node_type !== 'output'}
+														<div class="grid grid-cols-2 gap-3">
+															<div class="space-y-2">
+																<label class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+																	<Code size={12} />
+																	Pre-process
+																</label>
+																<input
+																	type="text"
+																	value={override.pre_process ?? ''}
+																	oninput={(e) => updateOverrideField(innerNode.id, 'pre_process', e.currentTarget.value || undefined)}
+																	placeholder="path.to.pre_processor"
+																	class="w-full px-2 py-1.5 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+																/>
+															</div>
+															<div class="space-y-2">
+																<label class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+																	<Code size={12} />
+																	Post-process
+																</label>
+																<input
+																	type="text"
+																	value={override.post_process ?? ''}
+																	oninput={(e) => updateOverrideField(innerNode.id, 'post_process', e.currentTarget.value || undefined)}
+																	placeholder="path.to.post_processor"
+																	class="w-full px-2 py-1.5 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+																/>
+															</div>
+														</div>
+													{/if}
+
+													<!-- Remove override button -->
+													<div class="pt-2 border-t border-gray-200 dark:border-gray-700">
+														<button
+															onclick={() => removeOverrideForNode(innerNode.id)}
+															class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+														>
+															<Trash2 size={12} />
+															Remove Override
+														</button>
+													</div>
+												</div>
+											{:else}
+												<!-- View mode: Display current overrides -->
+												<div class="space-y-3 mt-3">
+													{#if override.model}
+														<div class="flex items-start gap-2">
+															<Bot size={14} class="text-gray-400 mt-0.5" />
+															<div>
+																<div class="text-xs text-gray-500">Model</div>
+																<div class="text-sm font-mono text-gray-800 dark:text-gray-200">{override.model.name}</div>
+															</div>
+														</div>
+													{/if}
+
+													{#if override.prompt_placeholder_map && Object.keys(override.prompt_placeholder_map).length > 0}
+														<div class="flex items-start gap-2">
+															<Copy size={14} class="text-gray-400 mt-0.5" />
+															<div class="flex-1">
+																<div class="text-xs text-gray-500 mb-1">Placeholder Mappings</div>
+																<div class="space-y-1">
+																	{#each Object.entries(override.prompt_placeholder_map) as [key, value]}
+																		<div class="flex items-center gap-2 text-xs">
+																			<code class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-violet-600 dark:text-violet-400">{key}</code>
+																			<ArrowRight size={12} class="text-gray-400" />
+																			<code class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">{value}</code>
+																		</div>
+																	{/each}
+																</div>
+															</div>
+														</div>
+													{/if}
+
+													{#if override.pre_process}
+														<div class="flex items-start gap-2">
+															<Code size={14} class="text-gray-400 mt-0.5" />
+															<div>
+																<div class="text-xs text-gray-500">Pre-process</div>
+																<div class="text-xs font-mono text-gray-800 dark:text-gray-200">{override.pre_process}</div>
+															</div>
+														</div>
+													{/if}
+
+													{#if override.post_process}
+														<div class="flex items-start gap-2">
+															<Code size={14} class="text-gray-400 mt-0.5" />
+															<div>
+																<div class="text-xs text-gray-500">Post-process</div>
+																<div class="text-xs font-mono text-gray-800 dark:text-gray-200">{override.post_process}</div>
+															</div>
+														</div>
+													{/if}
+
+													{#if !override.model && !override.prompt_placeholder_map && !override.pre_process && !override.post_process}
+														<div class="text-xs text-gray-400 italic">
+															Override exists but no specific configurations set.
+														</div>
+													{/if}
+												</div>
+											{/if}
+										{:else}
+											<!-- No override - show add prompt -->
+											<div class="py-4 text-center">
+												{#if isEditing}
+													<button
+														onclick={() => addOverrideForNode(innerNode.id)}
+														class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-violet-600 hover:text-violet-700 bg-violet-100 hover:bg-violet-200 dark:bg-violet-900/30 dark:hover:bg-violet-900/50 dark:text-violet-400 rounded-lg transition-colors"
+													>
+														<Plus size={16} />
+														Add Configuration Override
+													</button>
+												{:else}
+													<div class="text-xs text-gray-400">
+														No overrides configured for this node.
+														<br />
+														<span class="text-gray-500">Click Edit to add overrides.</span>
+													</div>
+												{/if}
+											</div>
+										{/if}
+									</div>
+								{/if}
+							</div>
+						{/each}
+
+						{#if filteredInnerNodes().length === 0}
+							<div class="text-center py-8 text-gray-500 text-sm">
+								{#if overrideSearchQuery}
+									No inner nodes match "{overrideSearchQuery}"
+								{:else}
+									No inner nodes available
+								{/if}
+							</div>
+						{/if}
+					</div>
+
+					<!-- Summary footer -->
+					{#if overrideCount > 0}
+						<div class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+							<div class="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
+								<Wrench size={14} />
+								<span><strong>{overrideCount}</strong> node{overrideCount !== 1 ? 's' : ''} with configuration overrides</span>
+							</div>
+						</div>
+					{/if}
+				</div>
+			{/if}
+
 			<!-- Settings Tab -->
 			{#if activeTab === 'settings'}
 				<div class="space-y-4">
+					<!-- Node Configuration Overview -->
+					<div class="p-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+						<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+							Configuration Overview
+						</div>
+						<div class="grid grid-cols-2 gap-2 text-xs">
+							<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded">
+								<span class="text-gray-500">Node Type</span>
+								<span class="font-medium text-gray-800 dark:text-gray-200">{node.node_type}</span>
+							</div>
+							<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded">
+								<span class="text-gray-500">Node ID</span>
+								<span class="font-mono text-gray-800 dark:text-gray-200 truncate max-w-[120px]" title={node.id}>{node.id}</span>
+							</div>
+							{#if node.model?.name}
+								<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded">
+									<span class="text-gray-500">Model</span>
+									<span class="font-medium text-violet-600 dark:text-violet-400">{node.model.name}</span>
+								</div>
+							{/if}
+							{#if node.model?.provider}
+								<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded">
+									<span class="text-gray-500">Provider</span>
+									<span class="text-gray-800 dark:text-gray-200">{node.model.provider}</span>
+								</div>
+							{/if}
+							{#if node.tools && node.tools.length > 0}
+								<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded">
+									<span class="text-gray-500">Tools</span>
+									<span class="text-gray-800 dark:text-gray-200">{node.tools.length} configured</span>
+								</div>
+							{/if}
+							{#if node.tool_choice}
+								<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded">
+									<span class="text-gray-500">Tool Choice</span>
+									<span class="text-gray-800 dark:text-gray-200">{node.tool_choice}</span>
+								</div>
+							{/if}
+							{#if node.pre_process}
+								<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded col-span-2">
+									<span class="text-gray-500">Pre-processor</span>
+									<span class="font-mono text-xs text-gray-800 dark:text-gray-200 truncate max-w-[200px]" title={node.pre_process}>{node.pre_process}</span>
+								</div>
+							{/if}
+							{#if node.post_process}
+								<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded col-span-2">
+									<span class="text-gray-500">Post-processor</span>
+									<span class="font-mono text-xs text-gray-800 dark:text-gray-200 truncate max-w-[200px]" title={node.post_process}>{node.post_process}</span>
+								</div>
+							{/if}
+							{#if node.function_path}
+								<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded col-span-2">
+									<span class="text-gray-500">Function Path</span>
+									<span class="font-mono text-xs text-gray-800 dark:text-gray-200 truncate max-w-[200px]" title={node.function_path}>{node.function_path}</span>
+								</div>
+							{/if}
+						</div>
+					</div>
+
+					<!-- Execution State (if available) -->
+					{#if nodeState}
+						<div>
+							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+								Execution State
+							</div>
+							<div class="p-3 rounded-lg border {nodeState.status === 'completed' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : nodeState.status === 'error' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : nodeState.status === 'running' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'}">
+								<div class="flex items-center justify-between mb-2">
+									<span class="text-xs font-medium {nodeState.status === 'completed' ? 'text-green-700 dark:text-green-400' : nodeState.status === 'error' ? 'text-red-700 dark:text-red-400' : nodeState.status === 'running' ? 'text-blue-700 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'}">
+										{nodeState.status?.toUpperCase() ?? 'UNKNOWN'}
+									</span>
+									{#if nodeState.duration_ms}
+										<span class="text-xs text-gray-500">{nodeState.duration_ms}ms</span>
+									{/if}
+								</div>
+								{#if nodeState.error}
+									<div class="text-xs text-red-600 dark:text-red-400 font-mono bg-red-100 dark:bg-red-900/30 p-2 rounded mt-2">
+										{nodeState.error}
+									</div>
+								{/if}
+							</div>
+						</div>
+					{/if}
+
 					<!-- Model Parameters (for LLM nodes) -->
 					{#if node.node_type === 'llm'}
 						<div>
@@ -2505,23 +3125,98 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 						</div>
 					{/if}
 
-					<!-- Metadata (read-only display with JSON) -->
-					{#if node.metadata && Object.keys(node.metadata).length > 0}
+					<!-- Data Source Config (for data nodes) -->
+					{#if node.node_type === 'data' && node.data_source}
 						<div>
 							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
-								Metadata
+								Data Source Configuration
 							</div>
-							<div class="text-sm font-mono bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg overflow-x-auto max-h-48">
-								<pre class="text-gray-800 dark:text-gray-200 text-xs">{JSON.stringify(node.metadata, null, 2)}</pre>
+							<div class="space-y-2 text-xs">
+								{#if node.data_source.source_type}
+									<div class="flex justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+										<span class="text-gray-500">Source Type</span>
+										<span class="font-medium text-gray-800 dark:text-gray-200">{node.data_source.source_type}</span>
+									</div>
+								{/if}
+								{#if node.data_source.repo_id}
+									<div class="flex justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+										<span class="text-gray-500">Repository</span>
+										<span class="font-mono text-gray-800 dark:text-gray-200">{node.data_source.repo_id}</span>
+									</div>
+								{/if}
+								{#if node.data_source.file_path}
+									<div class="flex justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+										<span class="text-gray-500">File Path</span>
+										<span class="font-mono text-gray-800 dark:text-gray-200">{node.data_source.file_path}</span>
+									</div>
+								{/if}
+								{#if node.data_source.split}
+									<div class="flex justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+										<span class="text-gray-500">Split</span>
+										<span class="text-gray-800 dark:text-gray-200">{node.data_source.split}</span>
+									</div>
+								{/if}
 							</div>
 						</div>
 					{/if}
 
-					{#if node.node_type !== 'llm' && (!node.metadata || Object.keys(node.metadata).length === 0)}
-						<div class="text-center py-8 text-gray-500 text-sm">
-							No additional settings for this node
+					<!-- Subgraph Config -->
+					{#if node.node_type === 'subgraph' && node.subgraph}
+						<div>
+							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+								Subgraph Configuration
+							</div>
+							<div class="space-y-2 text-xs">
+								<div class="flex justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+									<span class="text-gray-500">Subgraph Path</span>
+									<span class="font-mono text-gray-800 dark:text-gray-200 truncate max-w-[200px]" title={node.subgraph}>{node.subgraph}</span>
+								</div>
+								{#if node.node_config_map && Object.keys(node.node_config_map).length > 0}
+									<div class="flex justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
+										<span class="text-gray-500">Overrides</span>
+										<span class="text-gray-800 dark:text-gray-200">{Object.keys(node.node_config_map).length} nodes</span>
+									</div>
+								{/if}
+							</div>
 						</div>
 					{/if}
+
+					<!-- Metadata (expandable JSON) -->
+					{#if node.metadata && Object.keys(node.metadata).length > 0}
+						<div>
+							<div class="flex items-center justify-between mb-2">
+								<div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+									Metadata
+								</div>
+								<span class="text-xs text-gray-400">{Object.keys(node.metadata).length} fields</span>
+							</div>
+							<details class="group">
+								<summary class="cursor-pointer text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300">
+									View full metadata
+								</summary>
+								<div class="mt-2 text-sm font-mono bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg overflow-x-auto max-h-64">
+									<pre class="text-gray-800 dark:text-gray-200 text-xs">{JSON.stringify(node.metadata, null, 2)}</pre>
+								</div>
+							</details>
+						</div>
+					{/if}
+
+					<!-- Full Node Configuration (expandable) -->
+					<div>
+						<div class="flex items-center justify-between mb-2">
+							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+								Full Configuration
+							</div>
+						</div>
+						<details class="group">
+							<summary class="cursor-pointer text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300">
+								View raw node configuration (JSON)
+							</summary>
+							<div class="mt-2 text-sm font-mono bg-gray-900 dark:bg-gray-950 px-3 py-2 rounded-lg overflow-x-auto max-h-80">
+								<pre class="text-green-400 text-xs">{JSON.stringify(node, null, 2)}</pre>
+							</div>
+						</details>
+					</div>
 				</div>
 			{/if}
 		</div>

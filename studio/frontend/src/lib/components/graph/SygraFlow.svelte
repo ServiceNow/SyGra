@@ -146,24 +146,158 @@
 	]);
 
 	// Estimated node dimensions for bounding box calculation (based on NodeWrapper styles)
-	// These heights account for: header (~56px) + optional content + potential duration display
-	// Overestimated slightly to ensure proper margins around the workflow boundary
+	// These are fallback values when measured dimensions aren't available yet
+	// NodeWrapper has min-w-[180px], so actual nodes can be wider based on content
 	const nodeDimensions: Record<string, { width: number; height: number }> = {
-		start: { width: 160, height: 70 },
-		end: { width: 160, height: 70 },
-		llm: { width: 240, height: 90 },
-		lambda: { width: 220, height: 85 },
-		subgraph: { width: 260, height: 100 },
-		weighted_sampler: { width: 240, height: 90 },
+		start: { width: 140, height: 60 },
+		end: { width: 140, height: 60 },
+		llm: { width: 240, height: 120 },      // Larger to account for content
+		lambda: { width: 220, height: 100 },
+		subgraph: { width: 200, height: 100 }, // Default, actual size from data
+		weighted_sampler: { width: 240, height: 100 },
 		connector: { width: 180, height: 70 },
-		web_agent: { width: 220, height: 85 },
-		agent: { width: 240, height: 90 },
-		data: { width: 200, height: 80 },
-		output: { width: 200, height: 80 }
+		web_agent: { width: 220, height: 100 },
+		agent: { width: 240, height: 120 },
+		data: { width: 200, height: 90 },
+		output: { width: 200, height: 90 }
 	};
 
-	// Derive bounding box for workflow nodes (excluding data and output)
-	const workflowBounds = derived(nodes, ($nodes) => {
+	// Constants matching SubgraphNode.svelte and layoutUtils.ts
+	const INNER_PADDING = 12;
+	const HEADER_HEIGHT = 44;
+	const INNER_NODE_WIDTH = 140;
+	const INNER_NODE_HEIGHT = 44;
+
+	// Arc edge constants
+	const ARC_PADDING = 60; // Padding from the nearest node for arc edges
+	const MIN_ARC_DISTANCE = 200; // Minimum horizontal distance to consider arc edges
+
+	/**
+	 * Get node dimensions (width and height), using measured if available.
+	 */
+	function getNodeDims(node: Node): { width: number; height: number } {
+		const measured = (node as any).measured;
+		if (measured?.width && measured?.height) {
+			return { width: measured.width, height: measured.height };
+		}
+		return nodeDimensions[node.type || 'llm'] || { width: 200, height: 100 };
+	}
+
+	/**
+	 * Arc edge data returned from calculation
+	 */
+	interface ArcEdgeData {
+		arcApexY: number;           // Y coordinate of the arc apex (horizontal segment)
+		arcDirection: 'top' | 'bottom';  // Direction the arc goes
+		blockingNodes: string[];    // IDs of nodes that triggered the arc
+	}
+
+	/**
+	 * Calculate arc edge data for conditional edges that skip over intermediate nodes.
+	 * Determines optimal direction (top or bottom) based on available space.
+	 *
+	 * Algorithm:
+	 * 1. Only apply to conditional edges (semantic "skip" edges)
+	 * 2. Only consider edges with significant horizontal distance
+	 * 3. Find nodes in the horizontal path between source and target
+	 * 4. Calculate clearance for both top and bottom directions
+	 * 5. Choose direction with less deviation from edge's natural Y
+	 */
+	function calculateArcEdgeData(
+		sourceId: string,
+		targetId: string,
+		allNodes: Node[],
+		isConditional: boolean = false
+	): ArcEdgeData | null {
+		// Only apply arcs to conditional edges - these are semantic "skip" connections
+		if (!isConditional) return null;
+
+		const sourceNode = allNodes.find(n => n.id === sourceId);
+		const targetNode = allNodes.find(n => n.id === targetId);
+
+		if (!sourceNode || !targetNode) return null;
+
+		const sourceDims = getNodeDims(sourceNode);
+		const targetDims = getNodeDims(targetNode);
+
+		// Edge connection points (right side of source, left side of target)
+		const edgeStartX = sourceNode.position.x + sourceDims.width;
+		const edgeStartY = sourceNode.position.y + sourceDims.height / 2;
+		const edgeEndX = targetNode.position.x;
+		const edgeEndY = targetNode.position.y + targetDims.height / 2;
+
+		// Only consider left-to-right edges for arcing
+		if (edgeEndX <= edgeStartX) return null;
+
+		// Only consider edges with significant horizontal distance
+		const horizontalDistance = edgeEndX - edgeStartX;
+		if (horizontalDistance < MIN_ARC_DISTANCE) return null;
+
+		// Find ALL nodes that are horizontally between source and target
+		// These are nodes we need to arc over/under
+		const nodesInRange: Node[] = [];
+
+		for (const node of allNodes) {
+			if (node.id === sourceId || node.id === targetId) continue;
+
+			const dims = getNodeDims(node);
+			const nodeLeft = node.position.x;
+			const nodeRight = node.position.x + dims.width;
+
+			// Check if node's horizontal range overlaps with the edge's range
+			const horizontallyInRange = nodeRight > edgeStartX && nodeLeft < edgeEndX;
+
+			if (horizontallyInRange) {
+				nodesInRange.push(node);
+			}
+		}
+
+		// If no nodes in range, no arc needed
+		if (nodesInRange.length === 0) return null;
+
+		// Calculate bounds for all nodes (for top/bottom clearance)
+		let globalMinY = Infinity;  // Top of all nodes
+		let globalMaxY = -Infinity; // Bottom of all nodes
+
+		for (const node of allNodes) {
+			if (node.id === sourceId || node.id === targetId) continue;
+			const dims = getNodeDims(node);
+			globalMinY = Math.min(globalMinY, node.position.y);
+			globalMaxY = Math.max(globalMaxY, node.position.y + dims.height);
+		}
+
+		// Include source and target in bounds
+		globalMinY = Math.min(globalMinY, sourceNode.position.y, targetNode.position.y);
+		globalMaxY = Math.max(
+			globalMaxY,
+			sourceNode.position.y + sourceDims.height,
+			targetNode.position.y + targetDims.height
+		);
+
+		// Calculate apex positions for top and bottom arcs
+		const topApexY = globalMinY - ARC_PADDING;
+		const bottomApexY = globalMaxY + ARC_PADDING;
+
+		// Edge's natural Y (midpoint between source and target connection points)
+		const edgeMidY = (edgeStartY + edgeEndY) / 2;
+
+		// Calculate deviation for each direction
+		const topDeviation = Math.abs(edgeMidY - topApexY);
+		const bottomDeviation = Math.abs(bottomApexY - edgeMidY);
+
+		// Choose direction with less deviation (more natural path)
+		const arcDirection: 'top' | 'bottom' = topDeviation <= bottomDeviation ? 'top' : 'bottom';
+		const arcApexY = arcDirection === 'top' ? topApexY : bottomApexY;
+
+		return {
+			arcApexY,
+			arcDirection,
+			blockingNodes: nodesInRange.map(n => n.id)
+		};
+	}
+
+	// Derive bounding box for workflow nodes (excluding data and output) AND arc edges
+	const workflowBounds = derived([nodes, edges], ([$nodes, $edges]) => {
 		const workflowNodes = $nodes.filter(n => workflowNodeTypes.has(n.type || ''));
 
 		if (workflowNodes.length === 0) return null;
@@ -171,7 +305,46 @@
 		let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
 		workflowNodes.forEach(node => {
-			const dims = nodeDimensions[node.type || 'llm'] || { width: 180, height: 70 };
+			// Use measured dimensions from SvelteFlow if available (actual rendered size)
+			// Fall back to estimated dimensions from nodeDimensions map
+			const measured = (node as any).measured;
+			let dims = nodeDimensions[node.type || 'llm'] || { width: 180, height: 70 };
+
+			if (measured?.width && measured?.height) {
+				// Use actual measured dimensions from DOM
+				dims = { width: measured.width, height: measured.height };
+			} else if (node.type === 'subgraph' && node.data) {
+				// For subgraphs without measured dims, calculate from inner graph
+				const nodeData = node.data as { size?: { width: number; height: number }; inner_graph?: { nodes: unknown[] } };
+				if (nodeData.size?.width && nodeData.size?.height) {
+					dims = { width: nodeData.size.width, height: nodeData.size.height };
+				} else if (nodeData.inner_graph?.nodes?.length) {
+					// Calculate from inner graph with proper normalization
+					const innerNodes = nodeData.inner_graph.nodes as Array<{ position?: { x: number; y: number }; size?: { width: number; height: number } }>;
+					let innerMinX = Infinity, innerMinY = Infinity;
+					let innerMaxX = 0, innerMaxY = 0;
+					innerNodes.forEach(innerNode => {
+						const ix = innerNode.position?.x || 0;
+						const iy = innerNode.position?.y || 0;
+						const iw = innerNode.size?.width || INNER_NODE_WIDTH;
+						const ih = innerNode.size?.height || INNER_NODE_HEIGHT;
+						innerMinX = Math.min(innerMinX, ix);
+						innerMinY = Math.min(innerMinY, iy);
+						innerMaxX = Math.max(innerMaxX, ix + iw);
+						innerMaxY = Math.max(innerMaxY, iy + ih);
+					});
+					// Normalize: content extent = (max - min)
+					if (innerMinX === Infinity) innerMinX = 0;
+					if (innerMinY === Infinity) innerMinY = 0;
+					const contentWidth = innerMaxX - innerMinX;
+					const contentHeight = innerMaxY - innerMinY;
+					dims = {
+						width: Math.max(200, contentWidth + INNER_PADDING * 2),
+						height: Math.max(60, contentHeight + INNER_PADDING * 2) + HEADER_HEIGHT
+					};
+				}
+			}
+
 			const x = node.position.x;
 			const y = node.position.y;
 
@@ -181,18 +354,31 @@
 			maxY = Math.max(maxY, y + dims.height);
 		});
 
+		// Include arc edge apex points in the boundary calculation
+		// This ensures the dotted boundary encompasses the arc paths
+		$edges.forEach(edge => {
+			const edgeData = edge.data as { isArcEdge?: boolean; arcApexY?: number; arcDirection?: string } | undefined;
+			if (edgeData?.isArcEdge && edgeData.arcApexY !== undefined) {
+				// Extend bounds to include arc apex with some margin
+				const arcMargin = 16; // Margin around the arc path
+				if (edgeData.arcDirection === 'top') {
+					// Top arc - extends above (lower Y)
+					minY = Math.min(minY, edgeData.arcApexY - arcMargin);
+				} else {
+					// Bottom arc - extends below (higher Y)
+					maxY = Math.max(maxY, edgeData.arcApexY + arcMargin);
+				}
+			}
+		});
+
 		// Add padding around the boundary
-		// Use asymmetric padding to account for node rendering differences
-		const paddingLeft = 25;
-		const paddingRight = 45;  // Extra padding on right side
-		const paddingTop = 25;
-		const paddingBottom = 40;  // Extra padding on bottom to match visual appearance of other sides
+		const padding = 24;
 
 		return {
-			x: minX - paddingLeft,
-			y: minY - paddingTop,
-			width: (maxX - minX) + paddingLeft + paddingRight,
-			height: (maxY - minY) + paddingTop + paddingBottom
+			x: minX - padding,
+			y: minY - padding,
+			width: (maxX - minX) + (padding * 2),
+			height: (maxY - minY) + (padding * 2)
 		};
 	});
 
@@ -215,8 +401,12 @@
 			lastWorkflowId = workflow.id;
 
 			// Apply auto-layout for better initial positioning
-			import('$lib/utils/layoutUtils').then(({ autoLayout }) => {
-				const result = autoLayout(workflow.nodes, workflow.edges);
+			import('$lib/utils/layoutUtils').then(({ autoLayout, layoutAllInnerGraphs }) => {
+				// First layout all inner graphs to get proper subgraph sizes
+				const nodesWithInnerLayouts = layoutAllInnerGraphs(workflow.nodes);
+
+				// Then apply the main layout with accurate subgraph sizes
+				const result = autoLayout(nodesWithInnerLayouts, workflow.edges);
 
 				// Reset position cache with layouted positions
 				nodePositions = new Map();
@@ -224,8 +414,8 @@
 					nodePositions.set(node.id, node.position);
 				});
 
-				// Full node sync with layouted positions
-				nodes.set(result.nodes.map(node => ({
+				// Full node sync with layouted positions (including inner_graph and size)
+				const layoutedNodes = result.nodes.map(node => ({
 					id: node.id,
 					type: node.node_type,
 					position: nodePositions.get(node.id) || node.position,
@@ -240,7 +430,35 @@
 					targetPosition: Position.Left,
 					selectable: true,
 					draggable: true
-				})));
+				}));
+				nodes.set(layoutedNodes);
+
+				// Sync edges with arc data AFTER nodes are positioned
+				edges.set(workflow.edges.map(edge => {
+					const arcData = calculateArcEdgeData(edge.source, edge.target, layoutedNodes, edge.is_conditional);
+					return {
+						id: edge.id,
+						source: edge.source,
+						target: edge.target,
+						type: 'sygra',
+						selectable: true,
+						animated: false,
+						markerEnd: {
+							type: MarkerType.ArrowClosed,
+							width: 12,
+							height: 12,
+							color: edge.is_conditional ? '#f59e0b' : '#6b7280'
+						},
+						data: {
+							label: edge.label,
+							isConditional: edge.is_conditional,
+							condition: edge.condition,
+							arcApexY: arcData?.arcApexY,
+							arcDirection: arcData?.arcDirection,
+							isArcEdge: !!arcData
+						}
+					};
+				}));
 
 				// Trigger fitView after nodes are loaded
 				tick().then(() => {
@@ -253,7 +471,7 @@
 					nodePositions.set(node.id, node.position);
 				});
 
-				nodes.set(workflow.nodes.map(node => ({
+				const fallbackNodes = workflow.nodes.map(node => ({
 					id: node.id,
 					type: node.node_type,
 					position: nodePositions.get(node.id) || node.position,
@@ -268,7 +486,35 @@
 					targetPosition: Position.Left,
 					selectable: true,
 					draggable: true
-				})));
+				}));
+				nodes.set(fallbackNodes);
+
+				// Sync edges with arc data
+				edges.set(workflow.edges.map(edge => {
+					const arcData = calculateArcEdgeData(edge.source, edge.target, fallbackNodes, edge.is_conditional);
+					return {
+						id: edge.id,
+						source: edge.source,
+						target: edge.target,
+						type: 'sygra',
+						selectable: true,
+						animated: false,
+						markerEnd: {
+							type: MarkerType.ArrowClosed,
+							width: 12,
+							height: 12,
+							color: edge.is_conditional ? '#f59e0b' : '#6b7280'
+						},
+						data: {
+							label: edge.label,
+							isConditional: edge.is_conditional,
+							condition: edge.condition,
+							arcApexY: arcData?.arcApexY,
+							arcDirection: arcData?.arcDirection,
+							isArcEdge: !!arcData
+						}
+					};
+				}));
 
 				// Trigger fitView after nodes are loaded
 				tick().then(() => {
@@ -328,28 +574,35 @@
 					};
 				})
 			);
-			// Also sync edges
-			edges.set(currentWf.edges.map(edge => ({
-				id: edge.id,
-				source: edge.source,
-				target: edge.target,
-				type: 'sygra',
-				selectable: true,
-				animated: execution?.status === 'running' &&
-					(execution.node_states[edge.source]?.status === 'completed' &&
-					 execution.node_states[edge.target]?.status === 'running'),
-				markerEnd: {
-					type: MarkerType.ArrowClosed,
-					width: 16,
-					height: 16,
-					color: edge.is_conditional ? '#f59e0b' : '#6b7280'
-				},
-				data: {
-					label: edge.label,
-					isConditional: edge.is_conditional,
-					condition: edge.condition
-				}
-			})));
+			// Also sync edges with arc data
+			const currentNodes = get(nodes);
+			edges.set(currentWf.edges.map(edge => {
+				const arcData = calculateArcEdgeData(edge.source, edge.target, currentNodes, edge.is_conditional);
+				return {
+					id: edge.id,
+					source: edge.source,
+					target: edge.target,
+					type: 'sygra',
+					selectable: true,
+					animated: execution?.status === 'running' &&
+						(execution.node_states[edge.source]?.status === 'completed' &&
+						 execution.node_states[edge.target]?.status === 'running'),
+					markerEnd: {
+						type: MarkerType.ArrowClosed,
+						width: 16,
+						height: 16,
+						color: edge.is_conditional ? '#f59e0b' : '#6b7280'
+					},
+					data: {
+						label: edge.label,
+						isConditional: edge.is_conditional,
+						condition: edge.condition,
+						arcApexY: arcData?.arcApexY,
+						arcDirection: arcData?.arcDirection,
+						isArcEdge: !!arcData
+					}
+				};
+			}));
 		}
 	});
 
@@ -357,7 +610,7 @@
 	export async function applyAutoLayout() {
 		console.log('applyAutoLayout called');
 		try {
-			const { autoLayout } = await import('$lib/utils/layoutUtils');
+			const { autoLayout, layoutAllInnerGraphs } = await import('$lib/utils/layoutUtils');
 
 			// Get current node data from store for layout calculation
 			const currentNodes = get(nodes);
@@ -367,10 +620,16 @@
 				position: n.position,
 				summary: n.data?.summary || n.id,
 				description: n.data?.description || '',
-				config: n.data?.config || {}
+				config: n.data?.config || {},
+				inner_graph: n.data?.inner_graph,
+				size: n.data?.size
 			}));
 
-			const result = autoLayout(workflowNodes as any, workflow.edges);
+			// First layout all inner graphs to get proper subgraph sizes
+			const nodesWithInnerLayouts = layoutAllInnerGraphs(workflowNodes as any);
+
+			// Then apply the main layout with accurate subgraph sizes
+			const result = autoLayout(nodesWithInnerLayouts, workflow.edges);
 
 			console.log('Auto-layout result:', result);
 
@@ -380,12 +639,25 @@
 				nodePositions.set(node.id, node.position);
 			});
 
-			// Update nodes with new positions
+			// Update nodes with new positions and inner graph data
 			nodes.update(currentNodes =>
 				currentNodes.map(node => {
 					const newPosition = nodePositions.get(node.id);
+					const layoutedNode = result.nodes.find(n => n.id === node.id);
 					console.log(`Node ${node.id}: old=${JSON.stringify(node.position)}, new=${JSON.stringify(newPosition)}`);
-					return newPosition ? { ...node, position: newPosition } : node;
+
+					if (newPosition) {
+						return {
+							...node,
+							position: newPosition,
+							data: {
+								...node.data,
+								inner_graph: layoutedNode?.inner_graph || node.data?.inner_graph,
+								size: layoutedNode?.size || node.data?.size
+							}
+						};
+					}
+					return node;
 				})
 			);
 		} catch (e) {
@@ -396,27 +668,37 @@
 	// Sync edges - only on workflow change, not execution state
 	$effect(() => {
 		if (workflow.id === lastWorkflowId || !lastWorkflowId) {
-			edges.set(workflow.edges.map(edge => ({
-				id: edge.id,
-				source: edge.source,
-				target: edge.target,
-				type: 'sygra',
-				selectable: true,
-				animated: execution?.status === 'running' &&
-					(execution.node_states[edge.source]?.status === 'completed' &&
-					 execution.node_states[edge.target]?.status === 'running'),
-				markerEnd: {
-					type: MarkerType.ArrowClosed,
-					width: 12,
-					height: 12,
-					color: edge.is_conditional ? '#f59e0b' : '#6b7280'
-				},
-				data: {
-					label: edge.label,
-					isConditional: edge.is_conditional,
-					condition: edge.condition
-				}
-			})));
+			const currentNodes = get(nodes);
+			edges.set(workflow.edges.map(edge => {
+				// Calculate arc data for conditional edges that skip over intermediate nodes
+				const arcData = calculateArcEdgeData(edge.source, edge.target, currentNodes, edge.is_conditional);
+
+				return {
+					id: edge.id,
+					source: edge.source,
+					target: edge.target,
+					type: 'sygra',
+					selectable: true,
+					animated: execution?.status === 'running' &&
+						(execution.node_states[edge.source]?.status === 'completed' &&
+						 execution.node_states[edge.target]?.status === 'running'),
+					markerEnd: {
+						type: MarkerType.ArrowClosed,
+						width: 12,
+						height: 12,
+						color: edge.is_conditional ? '#f59e0b' : '#6b7280'
+					},
+					data: {
+						label: edge.label,
+						isConditional: edge.is_conditional,
+						condition: edge.condition,
+						// Arc edge data for skip connections
+						arcApexY: arcData?.arcApexY,
+						arcDirection: arcData?.arcDirection,
+						isArcEdge: !!arcData
+					}
+				};
+			}));
 		}
 	});
 

@@ -78,6 +78,33 @@
 		setTimeout(() => copiedField = null, 2000);
 	}
 
+	// Generate HuggingFace dataset URL
+	function getHuggingFaceUrl(datasetPath: string): string | null {
+		if (!datasetPath) return null;
+		const cleanPath = datasetPath.trim();
+		if (cleanPath.includes('/') || /^[a-zA-Z0-9_-]+$/.test(cleanPath)) {
+			return `https://huggingface.co/datasets/${cleanPath}`;
+		}
+		return null;
+	}
+
+	// Generate GitHub commit URL
+	function getGitHubCommitUrl(gitInfo: { commit_hash?: string; remote_url?: string }): string | null {
+		if (!gitInfo?.commit_hash) return null;
+		if (gitInfo.remote_url) {
+			let repoUrl = gitInfo.remote_url;
+			if (repoUrl.startsWith('git@github.com:')) {
+				repoUrl = repoUrl.replace('git@github.com:', 'https://github.com/').replace(/\.git$/, '');
+			} else if (repoUrl.startsWith('https://github.com/')) {
+				repoUrl = repoUrl.replace(/\.git$/, '');
+			} else {
+				return null;
+			}
+			return `${repoUrl}/commit/${gitInfo.commit_hash}`;
+		}
+		return null;
+	}
+
 	let sampleOutput = $derived(() => {
 		if (!execution.output_data) return null;
 		if (Array.isArray(execution.output_data)) {
@@ -422,34 +449,86 @@
 							Execution Details
 						</h3>
 						<div class="space-y-3 text-sm">
-							<div class="flex justify-between">
-								<span class="text-gray-500">Run ID</span>
-								<span class="text-gray-800 dark:text-gray-200 font-mono text-xs">{execution.id}</span>
+							<div class="flex justify-between items-start gap-2">
+								<span class="text-gray-500 flex-shrink-0">Run ID</span>
+								<button
+									onclick={() => copyToClipboard(execution.id, 'run_id')}
+									class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-violet-600 dark:hover:text-violet-400 flex items-center gap-1 text-right break-all"
+									title="Click to copy: {execution.id}"
+								>
+									{execution.id}
+									{#if copiedField === 'run_id'}
+										<Check size={10} class="text-green-500 flex-shrink-0" />
+									{:else}
+										<Copy size={10} class="opacity-50 flex-shrink-0" />
+									{/if}
+								</button>
 							</div>
-							<div class="flex justify-between">
-								<span class="text-gray-500">Workflow</span>
-								<span class="text-gray-800 dark:text-gray-200">{execution.workflow_name || '-'}</span>
+							<div class="flex justify-between items-start gap-2">
+								<span class="text-gray-500 flex-shrink-0">Workflow</span>
+								<span class="text-gray-800 dark:text-gray-200 text-right break-all">{execution.workflow_name || '-'}</span>
 							</div>
 							<div class="flex justify-between">
 								<span class="text-gray-500">Started</span>
 								<span class="text-gray-800 dark:text-gray-200">{formatDate(execution.started_at)}</span>
 							</div>
 							{#if execution.output_file}
-								<div class="flex justify-between">
-									<span class="text-gray-500">Output File</span>
-									<span class="text-gray-800 dark:text-gray-200 font-mono text-xs truncate max-w-48" title={execution.output_file}>
+								<div class="flex justify-between items-start gap-2">
+									<span class="text-gray-500 flex-shrink-0">Output File</span>
+									<button
+										onclick={() => copyToClipboard(execution.output_file, 'output_file')}
+										class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-violet-600 dark:hover:text-violet-400 flex items-center gap-1 text-right break-all"
+										title="Click to copy full path: {execution.output_file}"
+									>
 										{execution.output_file.split('/').pop()}
-									</span>
+										{#if copiedField === 'output_file'}
+											<Check size={10} class="text-green-500 flex-shrink-0" />
+										{:else}
+											<Copy size={10} class="opacity-50 flex-shrink-0" />
+										{/if}
+									</button>
 								</div>
 							{/if}
 							{#if metadata?.execution?.git}
-								<div class="flex justify-between items-center">
-									<span class="text-gray-500 flex items-center gap-1">
+								<div class="flex justify-between items-start gap-2">
+									<span class="text-gray-500 flex items-center gap-1 flex-shrink-0">
 										<GitBranch size={12} /> Git
 									</span>
-									<span class="text-gray-800 dark:text-gray-200 font-mono text-xs">
-										{metadata.execution.git.branch} @ {metadata.execution.git.commit_hash.slice(0, 7)}
-									</span>
+									<div class="flex items-center gap-1.5 flex-wrap justify-end">
+										<span class="text-gray-800 dark:text-gray-200 font-mono text-xs">{metadata.execution.git.branch}</span>
+										<span class="text-gray-400">@</span>
+										{#if metadata.execution.git.commit_hash}
+											{@const gitUrl = getGitHubCommitUrl(metadata.execution.git)}
+											{#if gitUrl}
+												<a
+													href={gitUrl}
+													target="_blank"
+													rel="noopener noreferrer"
+													class="font-mono text-xs text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1"
+													title="View commit on GitHub: {metadata.execution.git.commit_hash}"
+												>
+													{metadata.execution.git.commit_hash.slice(0, 7)}
+													<ExternalLink size={10} />
+												</a>
+											{:else}
+												<button
+													onclick={() => copyToClipboard(metadata.execution.git.commit_hash, 'git')}
+													class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-violet-600 dark:hover:text-violet-400 flex items-center gap-1"
+													title="Click to copy: {metadata.execution.git.commit_hash}"
+												>
+													{metadata.execution.git.commit_hash.slice(0, 7)}
+													{#if copiedField === 'git'}
+														<Check size={10} class="text-green-500" />
+													{:else}
+														<Copy size={10} class="opacity-50" />
+													{/if}
+												</button>
+											{/if}
+										{/if}
+										{#if metadata.execution.git.is_dirty}
+											<span class="text-amber-600 dark:text-amber-400 text-xs">(dirty)</span>
+										{/if}
+									</div>
 								</div>
 							{/if}
 						</div>
@@ -469,20 +548,58 @@
 										{metadata.dataset.source_type === 'hf' ? 'HuggingFace' : metadata.dataset.source_type === 'servicenow' ? 'ServiceNow' : 'Local'}
 									</span>
 								</div>
-								<div class="flex justify-between">
-									<span class="text-gray-500">Source</span>
-									<span class="text-gray-800 dark:text-gray-200 font-mono text-xs truncate max-w-48" title={metadata.dataset.source_path}>
-										{metadata.dataset.source_path}
-									</span>
+								<div class="flex justify-between items-start gap-2">
+									<span class="text-gray-500 flex-shrink-0">Source</span>
+									{#if metadata.dataset.source_type === 'hf'}
+										{@const hfUrl = getHuggingFaceUrl(metadata.dataset.source_path)}
+										{#if hfUrl}
+											<a
+												href={hfUrl}
+												target="_blank"
+												rel="noopener noreferrer"
+												class="font-mono text-xs text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1 break-all text-right"
+											>
+												{metadata.dataset.source_path}
+												<ExternalLink size={10} class="flex-shrink-0" />
+											</a>
+										{:else}
+											<span class="text-gray-800 dark:text-gray-200 font-mono text-xs break-all text-right">
+												{metadata.dataset.source_path}
+											</span>
+										{/if}
+									{:else}
+										<span class="text-gray-800 dark:text-gray-200 font-mono text-xs break-all text-right">
+											{metadata.dataset.source_path}
+										</span>
+									{/if}
 								</div>
+								{#if metadata.dataset.dataset_version}
+									<div class="flex justify-between items-start gap-2">
+										<span class="text-gray-500 flex-shrink-0">Version</span>
+										<span class="text-gray-800 dark:text-gray-200 font-mono text-xs break-all text-right">
+											{metadata.dataset.dataset_version}
+										</span>
+									</div>
+								{/if}
 								<div class="flex justify-between">
 									<span class="text-gray-500">Records</span>
 									<span class="text-gray-800 dark:text-gray-200">{metadata.dataset.num_records_processed}</span>
 								</div>
 								{#if metadata.dataset.dataset_hash}
-									<div class="flex justify-between">
-										<span class="text-gray-500">Hash</span>
-										<span class="text-gray-800 dark:text-gray-200 font-mono text-xs">{metadata.dataset.dataset_hash.slice(0, 12)}...</span>
+									<div class="flex justify-between items-start gap-2">
+										<span class="text-gray-500 flex-shrink-0">Hash</span>
+										<button
+											onclick={() => copyToClipboard(metadata.dataset.dataset_hash, 'dataset_hash')}
+											class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-violet-600 dark:hover:text-violet-400 flex items-center gap-1 break-all text-right"
+											title="Click to copy: {metadata.dataset.dataset_hash}"
+										>
+											{metadata.dataset.dataset_hash}
+											{#if copiedField === 'dataset_hash'}
+												<Check size={10} class="text-green-500 flex-shrink-0" />
+											{:else}
+												<Copy size={10} class="opacity-50 flex-shrink-0" />
+											{/if}
+										</button>
 									</div>
 								{/if}
 							</div>

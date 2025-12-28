@@ -144,6 +144,33 @@
 	);
 
 	let showRunModal = $derived(uiStore.showRunModal);
+
+	// Node navigation - get sorted list of node IDs for prev/next navigation
+	let sortedNodeIds = $derived(() => {
+		if (!currentWorkflow) return [];
+		// Sort nodes by position (top to bottom, left to right)
+		return [...currentWorkflow.nodes]
+			.sort((a, b) => {
+				const posA = a.position || { x: 0, y: 0 };
+				const posB = b.position || { x: 0, y: 0 };
+				// Primary sort by Y (top to bottom), secondary by X (left to right)
+				if (Math.abs(posA.y - posB.y) > 50) return posA.y - posB.y;
+				return posA.x - posB.x;
+			})
+			.map(n => n.id);
+	});
+
+	// Navigation state for selected node
+	let selectedNodeIndex = $derived(() => {
+		if (!selectedNodeId) return -1;
+		return sortedNodeIds().indexOf(selectedNodeId);
+	});
+
+	let hasPreviousNode = $derived(() => selectedNodeIndex() > 0);
+	let hasNextNode = $derived(() => {
+		const ids = sortedNodeIds();
+		return selectedNodeIndex() >= 0 && selectedNodeIndex() < ids.length - 1;
+	});
 	let codePanelCollapsed = $state(true);  // Start collapsed by default
 	let sygraFlowRef = $state<{ applyAutoLayout: () => Promise<void> } | undefined>(undefined);
 	let selectedEdge = $state<{
@@ -375,6 +402,67 @@
 		uiStore.selectNode(null);
 	}
 
+	// Node navigation handlers
+	function handleNavigateToPreviousNode() {
+		const ids = sortedNodeIds();
+		const currentIndex = selectedNodeIndex();
+		if (currentIndex > 0) {
+			uiStore.selectNode(ids[currentIndex - 1]);
+		}
+	}
+
+	function handleNavigateToNextNode() {
+		const ids = sortedNodeIds();
+		const currentIndex = selectedNodeIndex();
+		if (currentIndex >= 0 && currentIndex < ids.length - 1) {
+			uiStore.selectNode(ids[currentIndex + 1]);
+		}
+	}
+
+	function handleNavigateToNode(event: CustomEvent<string>) {
+		const nodeId = event.detail;
+		uiStore.selectNode(nodeId);
+		selectedEdge = null;
+	}
+
+	function handleDuplicateNode(event: CustomEvent<string>) {
+		const nodeId = event.detail;
+		const node = currentWorkflow?.nodes.find(n => n.id === nodeId);
+		if (!node || !currentWorkflow) return;
+
+		// Generate incremental ID for the duplicate node
+		const nodeType = node.node_type;
+		const existingIds = currentWorkflow.nodes
+			.filter(n => n.id.startsWith(`${nodeType}_`))
+			.map(n => {
+				const match = n.id.match(new RegExp(`^${nodeType}_(\\d+)$`));
+				return match ? parseInt(match[1], 10) : 0;
+			});
+		const nextNum = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+		const newId = `${nodeType}_${nextNum}`;
+
+		const newNode = {
+			...structuredClone(node),
+			id: newId,
+			summary: `${node.summary} (Copy)`,
+			position: node.position ? {
+				x: node.position.x + 100,
+				y: node.position.y + 50
+			} : undefined
+		};
+
+		// Add the duplicated node to the workflow
+		workflowStore.updateNode(newId, newNode);
+
+		// Sync the builder UI
+		if (workflowBuilderRef) {
+			workflowBuilderRef.syncNodesFromStore();
+		}
+
+		// Select the new node
+		uiStore.selectNode(newId);
+	}
+
 	// Handle YAML saved in code panel - reload workflow and sync visual UI
 	async function handleYamlSaved() {
 		console.log('[handleYamlSaved] YAML saved, reloading workflow...');
@@ -421,9 +509,16 @@
 						this={NodeDetailsPanel}
 						node={selectedNode}
 						startInEditMode={true}
+						showNavigation={true}
+						hasPrevious={hasPreviousNode()}
+						hasNext={hasNextNode()}
+						onPrevious={handleNavigateToPreviousNode}
+						onNext={handleNavigateToNextNode}
+						onDuplicate={() => handleDuplicateNode({ detail: selectedNodeId } as CustomEvent<string>)}
 						on:close={() => uiStore.selectNode(null)}
 						on:save={handleBuilderNodeSave}
 						on:delete={handleBuilderNodeDelete}
+						on:navigate={handleNavigateToNode}
 					/>
 				{/if}
 			{:else if selectedEdge && currentWorkflow && EdgeDetailsPanel}
@@ -436,6 +531,7 @@
 					on:close={() => selectedEdge = null}
 					on:update={handleBuilderEdgeUpdate}
 					on:delete={handleBuilderEdgeDelete}
+					on:navigate={handleNavigateToNode}
 				/>
 			{/if}
 		</div>
@@ -634,7 +730,13 @@
 						this={NodeDetailsPanel}
 						node={currentWorkflow.nodes.find(n => n.id === selectedNodeId)}
 						nodeState={currentExecution?.node_states[selectedNodeId]}
+						showNavigation={true}
+						hasPrevious={hasPreviousNode()}
+						hasNext={hasNextNode()}
+						onPrevious={handleNavigateToPreviousNode}
+						onNext={handleNavigateToNextNode}
 						on:close={() => uiStore.selectNode(null)}
+						on:navigate={handleNavigateToNode}
 					/>
 				{/if}
 
@@ -647,6 +749,7 @@
 						sourceNode={currentWorkflow.nodes.find(n => n.id === edge.source)}
 						targetNode={currentWorkflow.nodes.find(n => n.id === edge.target)}
 						on:close={() => selectedEdge = null}
+						on:navigate={handleNavigateToNode}
 					/>
 				{/if}
 			</div>

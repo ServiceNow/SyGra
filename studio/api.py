@@ -3494,6 +3494,62 @@ def _reset_used_names():
     _used_names = set()
 
 
+def _serialize_inner_graph(inner_graph) -> dict:
+    """
+    Recursively serialize an inner_graph structure for YAML storage.
+
+    Args:
+        inner_graph: InnerGraph model or dict
+
+    Returns:
+        Dictionary ready for YAML serialization
+    """
+    result = {
+        'name': inner_graph.name if hasattr(inner_graph, 'name') else inner_graph.get('name', 'Subgraph'),
+        'nodes': {},
+        'edges': []
+    }
+
+    inner_nodes = inner_graph.nodes if hasattr(inner_graph, 'nodes') else inner_graph.get('nodes', [])
+    for inner_node in inner_nodes:
+        inner_node_id = inner_node.id if hasattr(inner_node, 'id') else inner_node.get('id')
+        inner_node_type = inner_node.node_type if hasattr(inner_node, 'node_type') else inner_node.get('node_type')
+        inner_node_config = {
+            'node_type': inner_node_type,
+            'summary': inner_node.summary if hasattr(inner_node, 'summary') else inner_node.get('summary'),
+        }
+        # Save position
+        inner_pos = inner_node.position if hasattr(inner_node, 'position') else inner_node.get('position', {})
+        if inner_pos:
+            inner_node_config['position'] = {
+                'x': inner_pos.x if hasattr(inner_pos, 'x') else inner_pos.get('x', 0),
+                'y': inner_pos.y if hasattr(inner_pos, 'y') else inner_pos.get('y', 0)
+            }
+        # Save size
+        inner_size = inner_node.size if hasattr(inner_node, 'size') else inner_node.get('size')
+        if inner_size:
+            inner_node_config['size'] = {
+                'width': inner_size.width if hasattr(inner_size, 'width') else inner_size.get('width', 150),
+                'height': inner_size.height if hasattr(inner_size, 'height') else inner_size.get('height', 60)
+            }
+        # Recursively handle nested inner_graph
+        nested_inner_graph = inner_node.inner_graph if hasattr(inner_node, 'inner_graph') else inner_node.get('inner_graph')
+        if nested_inner_graph:
+            inner_node_config['inner_graph'] = _serialize_inner_graph(nested_inner_graph)
+        result['nodes'][inner_node_id] = inner_node_config
+
+    inner_edges = inner_graph.edges if hasattr(inner_graph, 'edges') else inner_graph.get('edges', [])
+    for inner_edge in inner_edges:
+        edge_source = inner_edge.source if hasattr(inner_edge, 'source') else inner_edge.get('source')
+        edge_target = inner_edge.target if hasattr(inner_edge, 'target') else inner_edge.get('target')
+        result['edges'].append({
+            'from': edge_source,
+            'to': edge_target
+        })
+
+    return result
+
+
 def _generate_graph_config(request: WorkflowCreateRequest, task_name: str) -> dict:
     """
     Generate graph_config.yaml content from workflow request.
@@ -3560,6 +3616,52 @@ def _generate_graph_config(request: WorkflowCreateRequest, task_name: str) -> di
         elif node.node_type == 'subgraph':
             if node.subgraph_path:
                 node_config['subgraph'] = node.subgraph_path
+            elif node.inner_graph:
+                # Save inline subgraph data for grouped nodes
+                inner_graph_data = {
+                    'name': node.inner_graph.name if hasattr(node.inner_graph, 'name') else node.inner_graph.get('name', 'Subgraph'),
+                    'nodes': {},
+                    'edges': []
+                }
+                # Convert inner nodes
+                inner_nodes = node.inner_graph.nodes if hasattr(node.inner_graph, 'nodes') else node.inner_graph.get('nodes', [])
+                for inner_node in inner_nodes:
+                    inner_node_id = inner_node.id if hasattr(inner_node, 'id') else inner_node.get('id')
+                    inner_node_type = inner_node.node_type if hasattr(inner_node, 'node_type') else inner_node.get('node_type')
+                    inner_node_config = {
+                        'node_type': inner_node_type,
+                        'summary': inner_node.summary if hasattr(inner_node, 'summary') else inner_node.get('summary'),
+                    }
+                    # Save position for inner nodes
+                    inner_pos = inner_node.position if hasattr(inner_node, 'position') else inner_node.get('position', {})
+                    if inner_pos:
+                        inner_node_config['position'] = {
+                            'x': inner_pos.x if hasattr(inner_pos, 'x') else inner_pos.get('x', 0),
+                            'y': inner_pos.y if hasattr(inner_pos, 'y') else inner_pos.get('y', 0)
+                        }
+                    # Save size for inner nodes
+                    inner_size = inner_node.size if hasattr(inner_node, 'size') else inner_node.get('size')
+                    if inner_size:
+                        inner_node_config['size'] = {
+                            'width': inner_size.width if hasattr(inner_size, 'width') else inner_size.get('width', 150),
+                            'height': inner_size.height if hasattr(inner_size, 'height') else inner_size.get('height', 60)
+                        }
+                    # Handle nested subgraphs recursively
+                    inner_inner_graph = inner_node.inner_graph if hasattr(inner_node, 'inner_graph') else inner_node.get('inner_graph')
+                    if inner_inner_graph:
+                        # Recursively store nested inner_graph (simplified - just store the raw data)
+                        inner_node_config['inner_graph'] = _serialize_inner_graph(inner_inner_graph)
+                    inner_graph_data['nodes'][inner_node_id] = inner_node_config
+                # Convert inner edges
+                inner_edges = node.inner_graph.edges if hasattr(node.inner_graph, 'edges') else node.inner_graph.get('edges', [])
+                for inner_edge in inner_edges:
+                    edge_source = inner_edge.source if hasattr(inner_edge, 'source') else inner_edge.get('source')
+                    edge_target = inner_edge.target if hasattr(inner_edge, 'target') else inner_edge.get('target')
+                    inner_graph_data['edges'].append({
+                        'from': edge_source,
+                        'to': edge_target
+                    })
+                node_config['inner_graph'] = inner_graph_data
 
         elif node.node_type == 'connector':
             if node.metadata:

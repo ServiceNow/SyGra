@@ -91,6 +91,7 @@ class WorkflowNode(BaseModel):
     # For subgraph nodes
     subgraph_path: Optional[str] = None
     inner_graph: Optional["InnerGraph"] = None  # Expanded subgraph contents
+    node_config_map: Optional[Dict[str, Dict[str, Any]]] = None  # Override configs for inner nodes
 
     # For lambda nodes
     function_path: Optional[str] = None

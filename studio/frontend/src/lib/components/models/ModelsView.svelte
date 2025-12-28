@@ -5,7 +5,7 @@
 		Clock, Zap, Settings, Trash2, Edit3, ChevronDown, ChevronRight,
 		Activity, Cloud, Cpu, Brain, MoreVertical, ExternalLink,
 		LayoutList, LayoutGrid, CheckCircle2, XCircle, HelpCircle, AlertOctagon,
-		Shield, Lock
+		Shield, Lock, ArrowUpDown, Info, Copy, Loader2, Eye
 	} from 'lucide-svelte';
 	import ConfirmationModal from '$lib/components/common/ConfirmationModal.svelte';
 	import CustomSelect from '$lib/components/common/CustomSelect.svelte';
@@ -53,8 +53,22 @@
 	let showDeleteConfirm = $state(false);
 	let modelToDelete = $state<string | null>(null);
 
+	// Context menu state
+	let openMenuId = $state<string | null>(null);
+
+	// Details modal state
+	let showDetails = $state(false);
+	let detailsModel = $state<Model | null>(null);
+
+	// Recently checked models (for visual feedback)
+	let recentlyChecked = $state<Map<string, 'success' | 'error'>>(new Map());
+
 	// View mode (persisted)
 	let viewMode = $state<'card' | 'list'>('card');
+
+	// Sorting state
+	let sortField = $state<'name' | 'model_type' | 'status' | 'latency'>('name');
+	let sortDirection = $state<'asc' | 'desc'>('asc');
 
 	// Form state
 	let formName = $state('');
@@ -113,6 +127,33 @@
 				m.model_type_label.toLowerCase().includes(q)
 			);
 		}
+
+		// Sort
+		result.sort((a, b) => {
+			let comparison = 0;
+			switch (sortField) {
+				case 'name':
+					comparison = a.name.localeCompare(b.name);
+					break;
+				case 'model_type':
+					comparison = a.model_type_label.localeCompare(b.model_type_label);
+					break;
+				case 'status':
+					// Order: online > configured > needs_config > error
+					const statusOrder = (m: Model) => {
+						if (m.status === 'online') return 0;
+						if (m.credentials_configured && m.status !== 'error') return 1;
+						if (!m.credentials_configured) return 2;
+						return 3;
+					};
+					comparison = statusOrder(a) - statusOrder(b);
+					break;
+				case 'latency':
+					comparison = (a.latency_ms || 9999999) - (b.latency_ms || 9999999);
+					break;
+			}
+			return sortDirection === 'asc' ? comparison : -comparison;
+		});
 
 		return result;
 	});
@@ -208,6 +249,15 @@
 		typeFilter = 'all';
 	}
 
+	function toggleSort(field: typeof sortField) {
+		if (sortField === field) {
+			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+		} else {
+			sortField = field;
+			sortDirection = 'asc';
+		}
+	}
+
 	async function loadModels() {
 		loading = true;
 		try {
@@ -242,6 +292,13 @@
 		// Track this specific model as pinging
 		pingingModels = new Set([...pingingModels, modelName]);
 
+		// Clear any previous "recently checked" state
+		const newRecentMap = new Map(recentlyChecked);
+		newRecentMap.delete(modelName);
+		recentlyChecked = newRecentMap;
+
+		let checkResult: 'success' | 'error' = 'success';
+
 		try {
 			const controller = new AbortController();
 			const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
@@ -262,7 +319,10 @@
 					? { ...m, status: data.status, status_code: data.status_code, latency_ms: data.latency_ms, last_checked: data.last_checked, error: data.error }
 					: m
 			);
+
+			checkResult = data.status === 'online' ? 'success' : 'error';
 		} catch (e: any) {
+			checkResult = 'error';
 			if (e.name === 'AbortError') {
 				// Update with timeout error
 				models = models.map(m =>
@@ -283,7 +343,33 @@
 			const newSet = new Set(pingingModels);
 			newSet.delete(modelName);
 			pingingModels = newSet;
+
+			// Mark as recently checked for visual feedback
+			const updatedRecentMap = new Map(recentlyChecked);
+			updatedRecentMap.set(modelName, checkResult);
+			recentlyChecked = updatedRecentMap;
+
+			// Clear the "recently checked" state after 3 seconds
+			setTimeout(() => {
+				const clearMap = new Map(recentlyChecked);
+				clearMap.delete(modelName);
+				recentlyChecked = clearMap;
+			}, 3000);
 		}
+	}
+
+	function openDetails(model: Model) {
+		detailsModel = model;
+		showDetails = true;
+	}
+
+	function closeDetails() {
+		showDetails = false;
+		detailsModel = null;
+	}
+
+	function copyToClipboard(text: string) {
+		navigator.clipboard.writeText(text);
 	}
 
 	async function pingAllModels() {
@@ -526,6 +612,61 @@
 		}
 	}
 
+	// Context menu functions
+	let menuPosition = $state<{ x: number; top?: number; bottom?: number } | null>(null);
+
+	function toggleMenu(e: MouseEvent, modelName: string) {
+		e.stopPropagation();
+
+		if (openMenuId === modelName) {
+			openMenuId = null;
+			menuPosition = null;
+			return;
+		}
+
+		// Calculate position with viewport boundary detection
+		const menuWidth = 208; // w-52 = 13rem = 208px
+		const menuHeight = 280; // Approximate menu height
+		const padding = 8;
+
+		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+		let x = rect.right;
+
+		// Adjust if menu would go off right edge
+		if (x + menuWidth + padding > window.innerWidth) {
+			x = rect.left - menuWidth;
+		}
+		// Ensure x is not negative
+		if (x < padding) {
+			x = padding;
+		}
+
+		// Check if menu would go off bottom edge
+		const spaceBelow = window.innerHeight - rect.bottom;
+		const openUpward = spaceBelow < menuHeight + padding;
+
+		openMenuId = modelName;
+
+		if (openUpward) {
+			// Use bottom positioning - menu's bottom aligns near button's top
+			menuPosition = { x, bottom: window.innerHeight - rect.top + 4 };
+		} else {
+			// Use top positioning - menu's top aligns with button's bottom
+			menuPosition = { x, top: rect.bottom + 4 };
+		}
+	}
+
+	function closeMenu() {
+		openMenuId = null;
+		menuPosition = null;
+	}
+
+	function handleWindowClick() {
+		if (openMenuId) {
+			closeMenu();
+		}
+	}
+
 	function toggleExpand(modelName: string) {
 		const newSet = new Set(expandedModels);
 		if (newSet.has(modelName)) {
@@ -605,6 +746,8 @@
 		}
 	});
 </script>
+
+<svelte:window onclick={handleWindowClick} />
 
 <div class="h-full w-full flex flex-col bg-white dark:bg-gray-900">
 	<!-- Header -->
@@ -719,13 +862,13 @@
 	</div>
 
 	<!-- Models List -->
-	<div class="flex-1 overflow-auto p-6">
+	<div class="flex-1 overflow-auto">
 		{#if loading}
-			<div class="flex items-center justify-center h-full">
+			<div class="flex items-center justify-center h-full p-6">
 				<RefreshCw size={24} class="animate-spin text-violet-500" />
 			</div>
 		{:else if filteredModels.length === 0}
-			<div class="flex flex-col items-center justify-center h-full text-center">
+			<div class="flex flex-col items-center justify-center h-full text-center p-6">
 				<Brain size={48} class="text-gray-300 dark:text-gray-600 mb-4" />
 				{#if models.length === 0}
 					<h3 class="text-lg font-medium text-gray-600 dark:text-gray-400 mb-2">No models configured</h3>
@@ -749,18 +892,50 @@
 			<table class="w-full">
 				<thead class="sticky top-0 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
 					<tr>
-						<th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Model</th>
-						<th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
-						<th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-						<th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Latency</th>
-						<th class="text-right px-4 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+						<th class="text-left px-6 py-3">
+							<button
+								onclick={() => toggleSort('name')}
+								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+							>
+								Model
+								<ArrowUpDown size={14} class={sortField === 'name' ? 'text-violet-500' : ''} />
+							</button>
+						</th>
+						<th class="text-left px-6 py-3">
+							<button
+								onclick={() => toggleSort('model_type')}
+								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+							>
+								Type
+								<ArrowUpDown size={14} class={sortField === 'model_type' ? 'text-violet-500' : ''} />
+							</button>
+						</th>
+						<th class="text-left px-6 py-3">
+							<button
+								onclick={() => toggleSort('status')}
+								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+							>
+								Status
+								<ArrowUpDown size={14} class={sortField === 'status' ? 'text-violet-500' : ''} />
+							</button>
+						</th>
+						<th class="text-left px-6 py-3">
+							<button
+								onclick={() => toggleSort('latency')}
+								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+							>
+								Latency
+								<ArrowUpDown size={14} class={sortField === 'latency' ? 'text-violet-500' : ''} />
+							</button>
+						</th>
+						<th class="text-right px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-gray-200 dark:divide-gray-800">
 					{#each filteredModels as model (model.name)}
 						{@const Icon = getModelIcon(model.model_type)}
 						<tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-							<td class="px-4 py-3">
+							<td class="px-6 py-4">
 								<div class="flex items-center gap-3">
 									<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center">
 										<Icon size={20} class="text-violet-600 dark:text-violet-400" />
@@ -779,11 +954,31 @@
 									</div>
 								</div>
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-6 py-4">
 								<span class="text-sm text-gray-600 dark:text-gray-400">{model.model_type_label}</span>
 							</td>
-							<td class="px-4 py-3">
-								{#if !model.credentials_configured}
+							<td class="px-6 py-4">
+								{#if pingingModels.has(model.name)}
+									<!-- Checking status -->
+									<span class="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 animate-pulse">
+										<Loader2 size={12} class="animate-spin" />
+										Checking...
+									</span>
+								{:else if recentlyChecked.has(model.name)}
+									<!-- Just checked - show result briefly -->
+									{@const result = recentlyChecked.get(model.name)}
+									{#if result === 'success'}
+										<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 ring-2 ring-green-300 dark:ring-green-600 ring-opacity-50">
+											<CheckCircle2 size={12} />
+											Online
+										</span>
+									{:else}
+										<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 ring-2 ring-red-300 dark:ring-red-600 ring-opacity-50">
+											<XCircle size={12} />
+											{model.status}
+										</span>
+									{/if}
+								{:else if !model.credentials_configured}
 									<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
 										<AlertTriangle size={12} />
 										Needs Config
@@ -805,26 +1000,23 @@
 									</span>
 								{/if}
 							</td>
-							<td class="px-4 py-3 text-sm text-gray-500">
-								{model.latency_ms ? formatLatency(model.latency_ms) : '-'}
+							<td class="px-6 py-4 text-sm text-gray-500">
+								{#if pingingModels.has(model.name)}
+									<span class="text-violet-500 animate-pulse">...</span>
+								{:else}
+									{model.latency_ms ? formatLatency(model.latency_ms) : '-'}
+								{/if}
 							</td>
-							<td class="px-4 py-3">
-								<div class="flex items-center justify-end gap-1">
-									<button onclick={() => pingModel(model.name)} disabled={pingingModels.has(model.name) || pingingAll} class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 disabled:opacity-50" title="Check Status">
-										<Activity size={16} class={pingingModels.has(model.name) ? 'animate-pulse' : ''} />
+							<td class="px-6 py-4">
+								<div class="flex items-center justify-end gap-2">
+									<!-- Three-dot menu -->
+									<button
+										onclick={(e) => toggleMenu(e, model.name)}
+										class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors"
+										title="More options"
+									>
+										<MoreVertical size={16} />
 									</button>
-									{#if model.is_builtin}
-										<span class="p-1.5 text-gray-300 dark:text-gray-600 cursor-not-allowed" title="Builtin SyGra models cannot be edited">
-											<Lock size={16} />
-										</span>
-									{:else}
-										<button onclick={() => openEditor(model)} class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500" title="Edit">
-											<Edit3 size={16} />
-										</button>
-										<button onclick={() => requestDelete(model.name)} class="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-500 hover:text-red-600" title="Delete">
-											<Trash2 size={16} />
-										</button>
-									{/if}
 								</div>
 							</td>
 						</tr>
@@ -833,7 +1025,7 @@
 			</table>
 		{:else}
 			<!-- Card View with Groups -->
-			<div class="space-y-8">
+			<div class="space-y-8 p-6">
 				<!-- Online Models -->
 				{#if onlineModels.length > 0}
 					<div>
@@ -844,7 +1036,17 @@
 						<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
 							{#each onlineModels as model (model.name)}
 								{@const Icon = getModelIcon(model.model_type)}
-								<div class="bg-white dark:bg-gray-800 rounded-xl border border-green-200 dark:border-green-900/50 p-4 hover:shadow-md transition-all">
+								{@const isChecking = pingingModels.has(model.name)}
+								{@const wasJustChecked = recentlyChecked.has(model.name)}
+								<div
+									class="bg-white dark:bg-gray-800 rounded-xl border p-4 hover:shadow-md transition-all relative {isChecking ? 'border-violet-300 dark:border-violet-700' : wasJustChecked ? 'border-green-400 dark:border-green-600 ring-2 ring-green-200 dark:ring-green-800' : 'border-green-200 dark:border-green-900/50'}"
+									ondblclick={() => openDetails(model)}
+								>
+									{#if isChecking}
+										<div class="absolute top-2 right-2">
+											<Loader2 size={14} class="animate-spin text-violet-500" />
+										</div>
+									{/if}
 									<div class="flex items-start gap-3">
 										<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-600/20 flex items-center justify-center flex-shrink-0">
 											<Icon size={20} class="text-green-600 dark:text-green-400" />
@@ -862,15 +1064,21 @@
 											<p class="text-xs text-gray-500 font-mono truncate">{model.model}</p>
 											<div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
 												<span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700">{model.model_type_label}</span>
-												{#if model.latency_ms}<span class="flex items-center gap-1"><Zap size={10} />{formatLatency(model.latency_ms)}</span>{/if}
+												{#if isChecking}
+													<span class="flex items-center gap-1 text-violet-500 animate-pulse">checking...</span>
+												{:else if model.latency_ms}
+													<span class="flex items-center gap-1"><Zap size={10} />{formatLatency(model.latency_ms)}</span>
+												{/if}
 											</div>
 										</div>
-										<div class="flex items-center gap-1">
-											<button onclick={() => pingModel(model.name)} disabled={pingingModels.has(model.name)} class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 disabled:opacity-50"><Activity size={14} class={pingingModels.has(model.name) ? 'animate-pulse' : ''} /></button>
-											{#if !model.is_builtin}
-												<button onclick={() => openEditor(model)} class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400"><Edit3 size={14} /></button>
-											{/if}
-										</div>
+										<!-- Three-dot menu -->
+										<button
+											onclick={(e) => toggleMenu(e, model.name)}
+											class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors {isChecking ? 'opacity-0' : ''}"
+											title="More options"
+										>
+											<MoreVertical size={16} />
+										</button>
 									</div>
 								</div>
 							{/each}
@@ -888,7 +1096,18 @@
 						<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
 							{#each configuredModels as model (model.name)}
 								{@const Icon = getModelIcon(model.model_type)}
-								<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all">
+								{@const isChecking = pingingModels.has(model.name)}
+								{@const wasJustChecked = recentlyChecked.has(model.name)}
+								{@const checkResult = recentlyChecked.get(model.name)}
+								<div
+									class="bg-white dark:bg-gray-800 rounded-xl border p-4 hover:shadow-md transition-all relative {isChecking ? 'border-violet-300 dark:border-violet-700' : wasJustChecked ? (checkResult === 'success' ? 'border-green-400 dark:border-green-600 ring-2 ring-green-200 dark:ring-green-800' : 'border-red-400 dark:border-red-600 ring-2 ring-red-200 dark:ring-red-800') : 'border-gray-200 dark:border-gray-700'}"
+									ondblclick={() => openDetails(model)}
+								>
+									{#if isChecking}
+										<div class="absolute top-2 right-2">
+											<Loader2 size={14} class="animate-spin text-violet-500" />
+										</div>
+									{/if}
 									<div class="flex items-start gap-3">
 										<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-600/20 flex items-center justify-center flex-shrink-0">
 											<Icon size={20} class="text-blue-600 dark:text-blue-400" />
@@ -902,7 +1121,9 @@
 														SyGra
 													</span>
 												{/if}
-												{#if model.status === 'offline' || model.status === 'error'}
+												{#if isChecking}
+													<span class="flex-shrink-0 w-2 h-2 rounded-full bg-violet-500 animate-pulse"></span>
+												{:else if model.status === 'offline' || model.status === 'error'}
 													<span class="flex-shrink-0 w-2 h-2 rounded-full bg-red-500"></span>
 												{:else}
 													<span class="flex-shrink-0 w-2 h-2 rounded-full bg-gray-400"></span>
@@ -911,15 +1132,21 @@
 											<p class="text-xs text-gray-500 font-mono truncate">{model.model}</p>
 											<div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
 												<span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700">{model.model_type_label}</span>
-												{#if model.error}<span class="text-red-500 truncate" title={model.error}>{model.error}</span>{/if}
+												{#if isChecking}
+													<span class="flex items-center gap-1 text-violet-500 animate-pulse">checking...</span>
+												{:else if model.error}
+													<span class="text-red-500 truncate" title={model.error}>{model.error}</span>
+												{/if}
 											</div>
 										</div>
-										<div class="flex items-center gap-1">
-											<button onclick={() => pingModel(model.name)} disabled={pingingModels.has(model.name)} class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 disabled:opacity-50"><Activity size={14} class={pingingModels.has(model.name) ? 'animate-pulse' : ''} /></button>
-											{#if !model.is_builtin}
-												<button onclick={() => openEditor(model)} class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400"><Edit3 size={14} /></button>
-											{/if}
-										</div>
+										<!-- Three-dot menu -->
+										<button
+											onclick={(e) => toggleMenu(e, model.name)}
+											class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors {isChecking ? 'opacity-0' : ''}"
+											title="More options"
+										>
+											<MoreVertical size={16} />
+										</button>
 									</div>
 								</div>
 							{/each}
@@ -937,7 +1164,16 @@
 						<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
 							{#each needsConfigModels as model (model.name)}
 								{@const Icon = getModelIcon(model.model_type)}
-								<div class="bg-white dark:bg-gray-800 rounded-xl border border-amber-200 dark:border-amber-900/50 border-dashed p-4 hover:shadow-md transition-all">
+								{@const isChecking = pingingModels.has(model.name)}
+								<div
+									class="bg-white dark:bg-gray-800 rounded-xl border border-dashed p-4 hover:shadow-md transition-all relative {isChecking ? 'border-violet-300 dark:border-violet-700' : 'border-amber-200 dark:border-amber-900/50'}"
+									ondblclick={() => openDetails(model)}
+								>
+									{#if isChecking}
+										<div class="absolute top-2 right-2">
+											<Loader2 size={14} class="animate-spin text-violet-500" />
+										</div>
+									{/if}
 									<div class="flex items-start gap-3">
 										<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center flex-shrink-0">
 											<Icon size={20} class="text-amber-600 dark:text-amber-400" />
@@ -955,17 +1191,19 @@
 											<p class="text-xs text-gray-500 font-mono truncate">{model.model}</p>
 											<div class="flex items-center gap-2 mt-2">
 												<span class="text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">{model.model_type_label}</span>
+												{#if isChecking}
+													<span class="flex items-center gap-1 text-xs text-violet-500 animate-pulse">checking...</span>
+												{/if}
 											</div>
 										</div>
-										{#if model.is_builtin}
-											<span class="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-lg cursor-not-allowed" title="Set environment variables to configure this SyGra model">
-												Set ENV
-											</span>
-										{:else}
-											<button onclick={() => openEditor(model)} class="px-3 py-1.5 text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors">
-												Configure
-											</button>
-										{/if}
+										<!-- Three-dot menu -->
+										<button
+											onclick={(e) => toggleMenu(e, model.name)}
+											class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors {isChecking ? 'opacity-0' : ''}"
+											title="More options"
+										>
+											<MoreVertical size={16} />
+										</button>
 									</div>
 								</div>
 							{/each}
@@ -976,6 +1214,95 @@
 		{/if}
 	</div>
 </div>
+
+<!-- Floating Context Menu -->
+{#if openMenuId && menuPosition}
+	{@const model = models.find(m => m.name === openMenuId)}
+	{#if model}
+		{@const modelName = model.name}
+		{@const modelId = model.model}
+		{@const isBuiltin = model.is_builtin}
+		{@const modelRef = model}
+		<div
+			class="fixed w-52 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-[100] max-h-[calc(100vh-16px)] overflow-y-auto"
+			style="left: {menuPosition.x}px; {menuPosition.top !== undefined ? `top: ${menuPosition.top}px` : `bottom: ${menuPosition.bottom}px`}"
+			onclick={(e) => e.stopPropagation()}
+		>
+			<!-- View Details -->
+			<button
+				onclick={(e) => { e.stopPropagation(); const m = modelRef; closeMenu(); openDetails(m); }}
+				class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+			>
+				<Eye size={14} />
+				View Details
+			</button>
+
+			<!-- Check Status -->
+			<button
+				onclick={(e) => { e.stopPropagation(); const name = modelName; closeMenu(); pingModel(name); }}
+				disabled={pingingModels.has(modelName) || pingingAll}
+				class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+			>
+				{#if pingingModels.has(modelName)}
+					<Loader2 size={14} class="animate-spin" />
+					Checking...
+				{:else}
+					<Activity size={14} />
+					Check Status
+				{/if}
+			</button>
+
+			<div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
+
+			<!-- Copy Model Name -->
+			<button
+				onclick={(e) => { e.stopPropagation(); const name = modelName; closeMenu(); copyToClipboard(name); }}
+				class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+			>
+				<Copy size={14} />
+				Copy Name
+			</button>
+
+			<!-- Copy Model ID -->
+			<button
+				onclick={(e) => { e.stopPropagation(); const id = modelId; closeMenu(); copyToClipboard(id); }}
+				class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+			>
+				<Copy size={14} />
+				Copy Model ID
+			</button>
+
+			<div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
+
+			<!-- Edit -->
+			{#if !isBuiltin}
+				<button
+					onclick={(e) => { e.stopPropagation(); const m = modelRef; closeMenu(); openEditor(m); }}
+					class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+				>
+					<Edit3 size={14} />
+					Edit Configuration
+				</button>
+			{:else}
+				<div class="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed">
+					<Lock size={14} />
+					Edit (Read-only)
+				</div>
+			{/if}
+
+			<!-- Delete -->
+			{#if !isBuiltin}
+				<button
+					onclick={(e) => { e.stopPropagation(); const name = modelName; closeMenu(); requestDelete(name); }}
+					class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+				>
+					<Trash2 size={14} />
+					Delete Model
+				</button>
+			{/if}
+		</div>
+	{/if}
+{/if}
 
 <!-- Model Editor Modal -->
 {#if showEditor}
@@ -1251,4 +1578,210 @@
 		on:confirm={confirmDelete}
 		on:cancel={() => { showDeleteConfirm = false; modelToDelete = null; }}
 	/>
+{/if}
+
+<!-- Model Details Modal -->
+{#if showDetails && detailsModel}
+	{@const Icon = getModelIcon(detailsModel.model_type)}
+	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onclick={closeDetails}>
+		<div
+			class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col"
+			onclick={(e) => e.stopPropagation()}
+		>
+			<!-- Header -->
+			<div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+				<div class="flex items-center gap-3">
+					<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center">
+						<Icon size={20} class="text-violet-600 dark:text-violet-400" />
+					</div>
+					<div>
+						<div class="flex items-center gap-2">
+							<h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">{detailsModel.name}</h3>
+							{#if detailsModel.is_builtin}
+								<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 font-medium">
+									<Shield size={10} />
+									SyGra
+								</span>
+							{/if}
+						</div>
+						<p class="text-xs text-gray-500 font-mono">{detailsModel.model}</p>
+					</div>
+				</div>
+				<button onclick={closeDetails} class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500">
+					<X size={18} />
+				</button>
+			</div>
+
+			<!-- Content -->
+			<div class="flex-1 overflow-y-auto p-6 space-y-6">
+				<!-- Status Section -->
+				<div class="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+					<div class="flex items-center gap-4">
+						<!-- Status Badge -->
+						{#if pingingModels.has(detailsModel.name)}
+							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400">
+								<Loader2 size={14} class="animate-spin" />
+								Checking...
+							</span>
+						{:else if !detailsModel.credentials_configured}
+							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+								<AlertTriangle size={14} />
+								Needs Configuration
+							</span>
+						{:else if detailsModel.status === 'online'}
+							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+								<CheckCircle2 size={14} />
+								Online
+							</span>
+						{:else if detailsModel.status === 'offline' || detailsModel.status === 'error'}
+							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+								<XCircle size={14} />
+								{detailsModel.status.charAt(0).toUpperCase() + detailsModel.status.slice(1)}
+							</span>
+						{:else}
+							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+								<HelpCircle size={14} />
+								Unknown
+							</span>
+						{/if}
+
+						<!-- Latency -->
+						{#if detailsModel.latency_ms}
+							<span class="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+								<Zap size={14} class="text-amber-500" />
+								{formatLatency(detailsModel.latency_ms)}
+							</span>
+						{/if}
+
+						<!-- Last Checked -->
+						{#if detailsModel.last_checked}
+							<span class="flex items-center gap-1.5 text-sm text-gray-500">
+								<Clock size={14} />
+								{formatTime(detailsModel.last_checked)}
+							</span>
+						{/if}
+					</div>
+
+					<button
+						onclick={() => pingModel(detailsModel.name)}
+						disabled={pingingModels.has(detailsModel.name) || pingingAll}
+						class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+					>
+						{#if pingingModels.has(detailsModel.name)}
+							<Loader2 size={14} class="animate-spin" />
+						{:else}
+							<RefreshCw size={14} />
+						{/if}
+						Check Now
+					</button>
+				</div>
+
+				<!-- Error Message -->
+				{#if detailsModel.error}
+					<div class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+						<div class="flex items-start gap-2">
+							<AlertTriangle size={16} class="text-red-500 flex-shrink-0 mt-0.5" />
+							<div>
+								<p class="text-sm font-medium text-red-800 dark:text-red-300">Error Details</p>
+								<p class="text-sm text-red-600 dark:text-red-400 mt-1">{detailsModel.error}</p>
+							</div>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Model Information -->
+				<div>
+					<h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Model Information</h4>
+					<div class="grid grid-cols-2 gap-4">
+						<div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+							<p class="text-xs text-gray-500 mb-1">Type</p>
+							<p class="text-sm font-medium text-gray-900 dark:text-gray-100">{detailsModel.model_type_label}</p>
+						</div>
+						<div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+							<p class="text-xs text-gray-500 mb-1">Model ID</p>
+							<div class="flex items-center gap-2">
+								<p class="text-sm font-mono text-gray-900 dark:text-gray-100 truncate">{detailsModel.model}</p>
+								<button
+									onclick={() => copyToClipboard(detailsModel.model)}
+									class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+									title="Copy model ID"
+								>
+									<Copy size={12} class="text-gray-400" />
+								</button>
+							</div>
+						</div>
+						{#if detailsModel.api_version}
+							<div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+								<p class="text-xs text-gray-500 mb-1">API Version</p>
+								<p class="text-sm font-mono text-gray-900 dark:text-gray-100">{detailsModel.api_version}</p>
+							</div>
+						{/if}
+						<div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+							<p class="text-xs text-gray-500 mb-1">Credentials</p>
+							<p class="text-sm font-medium {detailsModel.credentials_configured ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}">
+								{detailsModel.credentials_configured ? 'Configured' : 'Not Configured'}
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- Parameters -->
+				{#if Object.keys(detailsModel.parameters || {}).length > 0}
+					<div>
+						<h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Parameters</h4>
+						<div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+							<table class="w-full text-sm">
+								<tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+									{#each Object.entries(detailsModel.parameters) as [key, value]}
+										<tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+											<td class="px-4 py-2.5 font-mono text-gray-600 dark:text-gray-400 w-1/3">{key}</td>
+											<td class="px-4 py-2.5 font-mono text-gray-900 dark:text-gray-100">
+												{typeof value === 'object' ? JSON.stringify(value) : String(value)}
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Status Code -->
+				{#if detailsModel.status_code}
+					<div class="flex items-center gap-2 text-sm text-gray-500">
+						<Info size={14} />
+						<span>HTTP Status Code: <span class="font-mono">{detailsModel.status_code}</span></span>
+					</div>
+				{/if}
+			</div>
+
+			<!-- Footer -->
+			<div class="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-800">
+				<div class="flex items-center gap-2">
+					{#if !detailsModel.is_builtin}
+						<button
+							onclick={() => { closeDetails(); openEditor(detailsModel); }}
+							class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+						>
+							<Edit3 size={14} />
+							Edit
+						</button>
+						<button
+							onclick={() => { closeDetails(); requestDelete(detailsModel.name); }}
+							class="flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+						>
+							<Trash2 size={14} />
+							Delete
+						</button>
+					{/if}
+				</div>
+				<button
+					onclick={closeDetails}
+					class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+				>
+					Close
+				</button>
+			</div>
+		</div>
+	</div>
 {/if}

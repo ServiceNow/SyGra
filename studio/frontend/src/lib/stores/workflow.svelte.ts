@@ -4,6 +4,8 @@
  * Manages workflows, executions, and UI state for the SyGra Workflow Studio.
  */
 
+import { layoutInnerGraph, calculateSubgraphDimensions, layoutAllInnerGraphs } from '$lib/utils/layoutUtils';
+
 const API_BASE = '/api';
 
 // Types
@@ -43,6 +45,16 @@ export interface InnerGraph {
 	edges: WorkflowEdge[];
 }
 
+// Node configuration override for subgraph inner nodes
+export interface NodeConfigOverride {
+	model?: ModelConfig;
+	prompt?: PromptMessage[];
+	pre_process?: string;
+	post_process?: string;
+	prompt_placeholder_map?: Record<string, string>;
+	[key: string]: unknown;
+}
+
 export interface WorkflowNode {
 	id: string;
 	node_type: 'data' | 'start' | 'end' | 'output' | 'llm' | 'agent' | 'lambda' | 'subgraph' | 'branch' | 'weighted_sampler';
@@ -55,6 +67,7 @@ export interface WorkflowNode {
 	function_path?: string;
 	subgraph_path?: string;
 	inner_graph?: InnerGraph;  // Expanded subgraph contents
+	node_config_map?: Record<string, NodeConfigOverride>;  // Override configs for inner nodes (subgraph only)
 	position: { x: number; y: number };
 	size?: { width: number; height: number };
 	metadata?: Record<string, unknown>;
@@ -67,6 +80,8 @@ export interface WorkflowNode {
 	// Tool calling fields (for LLM/Agent nodes)
 	tools?: string[];
 	tool_choice?: 'auto' | 'required' | 'none';
+	// Output keys - state variable name(s) for this node's output
+	output_keys?: string | string[];
 }
 
 export interface AvailableModel {
@@ -788,10 +803,19 @@ function createWorkflowStore() {
 		},
 
 		// Add a node to the current workflow
-		addNode(nodeType: string, position: { x: number; y: number }) {
+		addNode(nodeType: WorkflowNode['node_type'], position: { x: number; y: number }) {
 			if (!currentWorkflow) return null;
 
-			const id = `${nodeType}_${Date.now()}`;
+			// Generate incremental ID: find the highest existing number for this node type
+			const existingIds = currentWorkflow.nodes
+				.filter(n => n.id.startsWith(`${nodeType}_`))
+				.map(n => {
+					const match = n.id.match(new RegExp(`^${nodeType}_(\\d+)$`));
+					return match ? parseInt(match[1], 10) : 0;
+				});
+			const nextNum = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+			const id = `${nodeType}_${nextNum}`;
+
 			const newNode: WorkflowNode = {
 				id,
 				node_type: nodeType,
@@ -849,7 +873,14 @@ function createWorkflowStore() {
 		): { nodes: WorkflowNode[]; edges: WorkflowEdge[] } | null {
 			if (!currentWorkflow) return null;
 
-			const timestamp = Date.now();
+			// Generate incremental subgraph ID
+			const existingSubgraphIds = currentWorkflow.nodes
+				.filter(n => n.id.startsWith('subgraph_'))
+				.map(n => {
+					const match = n.id.match(/^subgraph_(\d+)$/);
+					return match ? parseInt(match[1], 10) : 0;
+				});
+			const nextSubgraphNum = existingSubgraphIds.length > 0 ? Math.max(...existingSubgraphIds) + 1 : 1;
 			const offset = offsetPosition || { x: 400, y: 200 };
 
 			// Normalize inner node positions to start from (0, 0)
@@ -869,7 +900,7 @@ function createWorkflowStore() {
 
 			// Create a single subgraph node containing the recipe
 			const subgraphNode: WorkflowNode = {
-				id: `subgraph_${timestamp}`,
+				id: `subgraph_${nextSubgraphNum}`,
 				node_type: 'subgraph',
 				summary: recipeName || 'Imported Subgraph',
 				position: offset,
@@ -898,13 +929,29 @@ function createWorkflowStore() {
 				return null;
 			}
 
-			const timestamp = Date.now();
 			const idMap = new Map<string, string>();
 			const innerGraph = subgraphNode.inner_graph;
 
-			// Create new nodes with unique IDs and offset by subgraph position
-			const newNodes: WorkflowNode[] = innerGraph.nodes.map((node, index) => {
-				const newId = `${node.id}_${timestamp}_${index}`;
+			// Track the next available ID for each node type
+			const typeCounters = new Map<string, number>();
+
+			// Initialize counters based on existing nodes in the workflow
+			for (const existingNode of currentWorkflow.nodes) {
+				const nodeType = existingNode.node_type;
+				const match = existingNode.id.match(new RegExp(`^${nodeType}_(\\d+)$`));
+				if (match) {
+					const num = parseInt(match[1], 10);
+					const current = typeCounters.get(nodeType) || 0;
+					typeCounters.set(nodeType, Math.max(current, num));
+				}
+			}
+
+			// Create new nodes with incremental IDs and offset by subgraph position
+			const newNodes: WorkflowNode[] = innerGraph.nodes.map((node) => {
+				const nodeType = node.node_type;
+				const nextNum = (typeCounters.get(nodeType) || 0) + 1;
+				typeCounters.set(nodeType, nextNum);
+				const newId = `${nodeType}_${nextNum}`;
 				idMap.set(node.id, newId);
 
 				return {
@@ -1128,8 +1175,13 @@ function createWorkflowStore() {
 			if (!currentWorkflow) return;
 
 			// Dynamic import to avoid SSR issues
-			import('$lib/utils/layoutUtils').then(({ autoLayout }) => {
-				const result = autoLayout(currentWorkflow!.nodes, currentWorkflow!.edges);
+			import('$lib/utils/layoutUtils').then(({ autoLayout, layoutAllInnerGraphs }) => {
+				// First, recursively layout all inner graphs to get proper sizes
+				const nodesWithInnerLayouts = layoutAllInnerGraphs(currentWorkflow!.nodes);
+
+				// Then apply the main layout with accurate subgraph sizes
+				const result = autoLayout(nodesWithInnerLayouts, currentWorkflow!.edges);
+
 				currentWorkflow = {
 					...currentWorkflow!,
 					nodes: result.nodes
@@ -1238,8 +1290,8 @@ function createWorkflowStore() {
 				y: (minY + maxY) / 2
 			};
 
-			// Adjust inner node positions to be relative to the bounding box
-			const innerNodes: WorkflowNode[] = nodesToGroup.map(n => ({
+			// Create temporary inner nodes with relative positions for layout
+			const tempInnerNodes: WorkflowNode[] = nodesToGroup.map(n => ({
 				...n,
 				position: {
 					x: n.position.x - minX + 20,  // 20px padding
@@ -1253,17 +1305,38 @@ function createWorkflowStore() {
 				id: `inner_${e.id}`
 			}));
 
-			// Create the subgraph node
-			const subgraphId = `subgraph_${Date.now()}`;
+			// Apply auto-layout to inner nodes for proper arrangement
+			const { nodes: layoutedInnerNodes, width: innerWidth, height: innerHeight } = layoutInnerGraph(
+				tempInnerNodes,
+				innerEdges
+			);
+
+			// Calculate subgraph dimensions based on laid out inner content
+			const subgraphWidth = innerWidth + 40; // 40px total padding
+			const subgraphHeight = innerHeight + 100; // 60px header + 40px padding
+
+			// Generate incremental subgraph ID
+			const existingSubgraphIds = currentWorkflow.nodes
+				.filter(n => n.id.startsWith('subgraph_'))
+				.map(n => {
+					const match = n.id.match(/^subgraph_(\d+)$/);
+					return match ? parseInt(match[1], 10) : 0;
+				});
+			const nextSubgraphNum = existingSubgraphIds.length > 0 ? Math.max(...existingSubgraphIds) + 1 : 1;
+			const subgraphId = `subgraph_${nextSubgraphNum}`;
 			const subgraphNode: WorkflowNode = {
 				id: subgraphId,
 				node_type: 'subgraph',
 				summary: subgraphName,
 				description: subgraphDescription,
 				position: centerPosition,
+				size: {
+					width: subgraphWidth,
+					height: subgraphHeight
+				},
 				inner_graph: {
 					name: subgraphName,
-					nodes: innerNodes,
+					nodes: layoutedInnerNodes,
 					edges: innerEdges
 				}
 			};

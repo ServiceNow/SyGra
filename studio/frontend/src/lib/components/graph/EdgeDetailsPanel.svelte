@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { X, ArrowRight, GitBranch, Link, Code, GripVertical, Edit2, Save, Trash2, Plus, ChevronUp, ChevronDown, Check } from 'lucide-svelte';
+	import { X, ArrowRight, GitBranch, Link, Code, GripVertical, Edit2, Save, Trash2, Plus, ChevronUp, ChevronDown, Check, Bot, Zap, Database, Boxes, Play, Square, Globe, Download, Shuffle } from 'lucide-svelte';
 	import { workflowStore, type WorkflowNode, type EdgeCondition, type WorkflowEdge } from '$lib/stores/workflow.svelte';
+	import { panelStore } from '$lib/stores/panel.svelte';
 	import MonacoEditor from '$lib/components/editor/LazyMonacoEditor.svelte';
 	import ConfirmModal from '$lib/components/common/ConfirmModal.svelte';
 	import CustomSelect from '$lib/components/common/CustomSelect.svelte';
+	import PanelHeader from '$lib/components/panel/PanelHeader.svelte';
 
 	interface EdgeData {
 		id: string;
@@ -28,6 +30,7 @@
 		close: void;
 		update: { edgeId: string; data: Partial<WorkflowEdge> };
 		delete: string;
+		navigate: string; // Navigate to a connected node
 	}>();
 
 	const nodeTypeColors: Record<string, string> = {
@@ -166,8 +169,8 @@
 		};
 	}
 
-	// Resizable panel state
-	let panelWidth = $state(360);
+	// Resizable panel state - use panel store for persistence
+	let panelWidth = $state(panelStore.edgeWidth); // 640px default from store
 	let isResizing = $state(false);
 	let startX = $state(0);
 	let startWidth = $state(0);
@@ -185,7 +188,7 @@
 	function handleMouseMove(e: MouseEvent) {
 		if (!isResizing) return;
 		const diff = startX - e.clientX;
-		const newWidth = Math.max(320, Math.min(600, startWidth + diff));
+		const newWidth = Math.max(480, Math.min(1000, startWidth + diff));
 		panelWidth = newWidth;
 	}
 
@@ -195,6 +198,32 @@
 		document.removeEventListener('mouseup', handleMouseUp);
 		document.body.style.cursor = '';
 		document.body.style.userSelect = '';
+		// Persist width to store
+		panelStore.setEdgeWidth(panelWidth);
+	}
+
+	// Node type icons for visual connection diagram
+	const nodeIcons: Record<string, any> = {
+		llm: Bot,
+		agent: Bot,
+		lambda: Zap,
+		data: Database,
+		subgraph: Boxes,
+		start: Play,
+		end: Square,
+		output: Download,
+		web_agent: Globe,
+		branch: GitBranch,
+		weighted_sampler: Shuffle
+	};
+
+	function getNodeIcon(nodeType: string) {
+		return nodeIcons[nodeType] || Boxes;
+	}
+
+	// Navigate to a node
+	function navigateToNode(nodeId: string) {
+		dispatch('navigate', nodeId);
 	}
 </script>
 
@@ -214,70 +243,112 @@
 		</div>
 	</div>
 	<!-- Header -->
-	<div class="sticky top-0 bg-surface border-b border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between z-10">
-		<div class="flex items-center gap-2">
-			<div
-				class="w-8 h-8 rounded-lg flex items-center justify-center text-white"
-				style="background-color: {(isEditing ? editIsConditional : edge.isConditional) ? '#f59e0b' : '#9ca3af'}"
-			>
-				{#if isEditing ? editIsConditional : edge.isConditional}
-					<GitBranch size={18} />
-				{:else}
-					<Link size={18} />
-				{/if}
-			</div>
-			<div>
-				<h2 class="text-sm font-semibold text-gray-800 dark:text-gray-200">
-					{(isEditing ? editIsConditional : edge.isConditional) ? 'Conditional Edge' : 'Edge Connection'}
-				</h2>
-				{#if !isEditing && edge.label}
-					<span class="text-xs text-amber-600 dark:text-amber-400 font-medium">
-						{edge.label}
-					</span>
-				{/if}
-			</div>
-		</div>
-		<div class="flex items-center gap-1">
-			{#if editable}
-				{#if isEditing}
-					<button
-						onclick={cancelEditing}
-						class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-						title="Cancel"
+	<PanelHeader
+		title={(isEditing ? editIsConditional : edge.isConditional) ? 'Conditional Edge' : 'Edge Connection'}
+		subtitle={edge.label ? `Label: ${edge.label}` : undefined}
+		icon={(isEditing ? editIsConditional : edge.isConditional) ? GitBranch : Link}
+		iconColor={(isEditing ? editIsConditional : edge.isConditional) ? '#f59e0b' : '#9ca3af'}
+		nodeId={edge.id}
+		showNavigation={false}
+		{isEditing}
+		hasChanges={true}
+		isSaving={false}
+		canEdit={editable}
+		onStartEdit={startEditing}
+		onCancelEdit={cancelEditing}
+		onSave={saveEditing}
+		showCopyId={true}
+		showDuplicate={false}
+		showDelete={editable && !isEditing}
+		onDelete={requestDeleteEdge}
+		onClose={() => dispatch('close')}
+	/>
+
+	<!-- Visual Connection Diagram -->
+	<div class="px-4 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+		<div class="flex items-center justify-center gap-4">
+			<!-- Source Node -->
+			{#if sourceNode}
+				{@const SourceIcon = getNodeIcon(sourceNode.node_type)}
+				<button
+					onclick={() => navigateToNode(sourceNode.id)}
+					class="flex items-center gap-2 px-3 py-2 rounded-xl border transition-all hover:shadow-md cursor-pointer group"
+					style="background-color: {nodeTypeColors[sourceNode.node_type]}10; border-color: {nodeTypeColors[sourceNode.node_type]}40"
+					title="Go to {sourceNode.summary ?? edge.source}"
+				>
+					<div
+						class="w-8 h-8 rounded-lg flex items-center justify-center text-white flex-shrink-0"
+						style="background-color: {nodeTypeColors[sourceNode.node_type]}"
 					>
-						<X size={16} />
-					</button>
-					<button
-						onclick={saveEditing}
-						class="p-1.5 rounded-lg text-violet-600 hover:text-violet-700 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-colors"
-						title="Save changes"
-					>
-						<Save size={16} />
-					</button>
-				{:else}
-					<button
-						onclick={startEditing}
-						class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
-						title="Edit edge"
-					>
-						<Edit2 size={16} />
-					</button>
-					<button
-						onclick={requestDeleteEdge}
-						class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-						title="Delete edge"
-					>
-						<Trash2 size={16} />
-					</button>
-				{/if}
+						<SourceIcon size={16} />
+					</div>
+					<div class="text-left min-w-0">
+						<div class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate max-w-[100px] group-hover:underline">
+							{sourceNode.summary ?? edge.source}
+						</div>
+						<div class="text-xs text-gray-500 capitalize">
+							{sourceNode.node_type}
+						</div>
+					</div>
+				</button>
+			{:else}
+				<div class="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+					<div class="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-400 text-white flex-shrink-0">
+						<Boxes size={16} />
+					</div>
+					<div class="text-left min-w-0">
+						<div class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate max-w-[100px]">
+							{edge.source}
+						</div>
+						<div class="text-xs text-gray-500">unknown</div>
+					</div>
+				</div>
 			{/if}
-			<button
-				onclick={() => dispatch('close')}
-				class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-				title="Close"
-			>
-				<X size={18} />
-			</button>
+
+			<!-- Arrow -->
+			<div class="flex items-center gap-1 text-gray-400">
+				<div class="w-8 h-0.5 bg-gray-300 dark:bg-gray-600 rounded"></div>
+				<ArrowRight size={20} class="text-violet-500" />
+				<div class="w-8 h-0.5 bg-gray-300 dark:bg-gray-600 rounded"></div>
+			</div>
+
+			<!-- Target Node -->
+			{#if targetNode}
+				{@const TargetIcon = getNodeIcon(targetNode.node_type)}
+				<button
+					onclick={() => navigateToNode(targetNode.id)}
+					class="flex items-center gap-2 px-3 py-2 rounded-xl border transition-all hover:shadow-md cursor-pointer group"
+					style="background-color: {nodeTypeColors[targetNode.node_type]}10; border-color: {nodeTypeColors[targetNode.node_type]}40"
+					title="Go to {targetNode.summary ?? edge.target}"
+				>
+					<div
+						class="w-8 h-8 rounded-lg flex items-center justify-center text-white flex-shrink-0"
+						style="background-color: {nodeTypeColors[targetNode.node_type]}"
+					>
+						<TargetIcon size={16} />
+					</div>
+					<div class="text-left min-w-0">
+						<div class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate max-w-[100px] group-hover:underline">
+							{targetNode.summary ?? edge.target}
+						</div>
+						<div class="text-xs text-gray-500 capitalize">
+							{targetNode.node_type}
+						</div>
+					</div>
+				</button>
+			{:else}
+				<div class="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+					<div class="w-8 h-8 rounded-lg flex items-center justify-center bg-gray-400 text-white flex-shrink-0">
+						<Boxes size={16} />
+					</div>
+					<div class="text-left min-w-0">
+						<div class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate max-w-[100px]">
+							{edge.target}
+						</div>
+						<div class="text-xs text-gray-500">unknown</div>
+					</div>
+				</div>
+			{/if}
 		</div>
 	</div>
 

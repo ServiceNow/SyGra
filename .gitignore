@@ -19,6 +19,7 @@ studio/frontend/build/
 
 # Studio runtime data
 studio/.executions_history.json
+studio/.executions/*
 
 # Studio config
 studio/config/custom_models.yaml

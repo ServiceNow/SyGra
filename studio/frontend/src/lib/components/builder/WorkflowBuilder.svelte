@@ -157,26 +157,33 @@
 			}
 		}, AUTOSAVE_INTERVAL);
 
-		// Restore existing draft on mount (only once, and only if no workflow is already loaded)
-		// This prevents overwriting a workflow that was just created (e.g., from adding a recipe)
-		if (!draftRestored && !workflow) {
+		// Restore existing draft on mount (only once)
+		// The builder is for creating NEW workflows, so we should restore drafts
+		if (!draftRestored) {
 			const savedDraft = localStorage.getItem(DRAFT_KEY);
 			if (savedDraft) {
 				try {
 					const draft = JSON.parse(savedDraft);
 					if (draft.workflow) {
-						workflowStore.setCurrentWorkflow(draft.workflow);
-						workflowName = draft.workflow.name || 'Untitled Workflow';
-						workflowDescription = draft.workflow.description || '';
-						hasChanges = true;
-						draftRestored = true;
+						// Restore draft if:
+						// 1. No workflow is loaded, OR
+						// 2. Current workflow is NOT a draft (user was viewing an existing workflow
+						//    and returned to builder - their draft should be restored)
+						// Do NOT restore if current workflow IS a draft (e.g., recipe was just added)
+						const isCurrentWorkflowDraft = workflow?.id?.startsWith('new_');
+						const shouldRestore = !workflow || !isCurrentWorkflowDraft;
+
+						if (shouldRestore) {
+							workflowStore.setCurrentWorkflow(draft.workflow);
+							workflowName = draft.workflow.name || 'Untitled Workflow';
+							workflowDescription = draft.workflow.description || '';
+							hasChanges = true;
+						}
 					}
 				} catch (e) {
 					console.error('Failed to parse draft:', e);
 				}
 			}
-		} else if (workflow && !draftRestored) {
-			// Workflow already exists (e.g., recipe was added), don't restore draft
 			draftRestored = true;
 		}
 
@@ -1034,19 +1041,32 @@
 	// Apply auto-layout to arrange nodes nicely
 	async function handleAutoLayout() {
 		try {
-			const { autoLayout } = await import('$lib/utils/layoutUtils');
+			const { autoLayout, layoutAllInnerGraphs } = await import('$lib/utils/layoutUtils');
 			const currentWf = workflowStore.currentWorkflow;
 			if (!currentWf) return;
 
-			const result = autoLayout(currentWf.nodes, currentWf.edges);
+			// First, recursively layout all inner graphs to get proper sizes
+			const nodesWithInnerLayouts = layoutAllInnerGraphs(currentWf.nodes);
 
-			// Update workflow store with new positions
+			// Then apply the main layout with accurate subgraph sizes
+			const result = autoLayout(nodesWithInnerLayouts, currentWf.edges);
+
+			// Update workflow store with new positions and inner graph layouts
 			result.nodes.forEach(node => {
 				workflowStore.updateNodePosition(node.id, node.position);
+				// Also update inner_graph if it was laid out
+				if (node.inner_graph) {
+					const existingNode = currentWf.nodes.find(n => n.id === node.id);
+					if (existingNode) {
+						existingNode.inner_graph = node.inner_graph;
+						existingNode.size = node.size;
+					}
+				}
 			});
 
-			// Sync SvelteFlow nodes
+			// Sync SvelteFlow nodes and edges
 			syncNodesFromStore();
+			syncEdgesFromStore();
 			hasChanges = true;
 		} catch (e) {
 			console.error('Auto-layout failed:', e);

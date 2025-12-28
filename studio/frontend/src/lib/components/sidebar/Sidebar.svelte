@@ -63,12 +63,33 @@
 		}
 	}
 
+	const DRAFT_KEY = 'sygra_workflow_draft';
+
 	function createNewWorkflow() {
 		// If already in builder with a workflow, just switch to builder view
-		// Only create new workflow if there isn't one already
-		if (currentView !== 'builder' || !workflowStore.currentWorkflow) {
-			workflowStore.createNewWorkflow();
+		if (currentView === 'builder' && workflowStore.currentWorkflow) {
+			return;
 		}
+
+		// Check if there's a saved draft - if so, let WorkflowBuilder restore it
+		const savedDraft = localStorage.getItem(DRAFT_KEY);
+		if (savedDraft) {
+			try {
+				const draft = JSON.parse(savedDraft);
+				if (draft.workflow) {
+					// There's a draft - don't create new workflow, just navigate to builder
+					// WorkflowBuilder will restore the draft
+					uiStore.setView('builder');
+					updateUrl('builder');
+					return;
+				}
+			} catch (e) {
+				// Invalid draft, continue to create new workflow
+			}
+		}
+
+		// No draft exists, create a new workflow
+		workflowStore.createNewWorkflow();
 		uiStore.setView('builder');
 		updateUrl('builder');
 	}
