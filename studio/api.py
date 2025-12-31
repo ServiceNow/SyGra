@@ -791,7 +791,8 @@ def _register_routes(app: FastAPI) -> None:
         """
         List all available SyGra workflows.
 
-        Scans the tasks directory for graph_config.yaml files.
+        Recursively scans the tasks directory for graph_config.yaml files,
+        supporting nested folder structures.
         """
         workflows = []
         tasks_dir = Path(app.state.tasks_dir)
@@ -799,12 +800,9 @@ def _register_routes(app: FastAPI) -> None:
         if not tasks_dir.exists():
             return workflows
 
-        for task_dir in tasks_dir.iterdir():
-            if not task_dir.is_dir():
-                continue
-
-            config_path = task_dir / "graph_config.yaml"
-            if not config_path.exists():
+        # Recursively find all graph_config.yaml files
+        for config_path in tasks_dir.rglob("graph_config.yaml"):
+            if not config_path.is_file():
                 continue
 
             try:
@@ -867,13 +865,14 @@ def _register_routes(app: FastAPI) -> None:
         return openflow
 
     @app.get("/api/workflows/{workflow_id}/sample-data")
-    async def get_workflow_sample_data(workflow_id: str, limit: int = 3):
+    async def get_workflow_sample_data(workflow_id: str, limit: int = 3, source_index: int = 0):
         """
-        Get sample data records from the workflow's data source.
+        Get sample data records from a workflow's data source.
 
         Args:
             workflow_id: The workflow ID.
             limit: Maximum number of records to return (default: 3).
+            source_index: Index of the source to preview (default: 0, first source).
 
         Returns:
             Sample data records and metadata.
@@ -897,7 +896,19 @@ def _register_routes(app: FastAPI) -> None:
         source = data_config.get("source", {})
         # Handle array or single source
         if isinstance(source, list):
-            source = source[0] if source else {}
+            if source_index < 0 or source_index >= len(source):
+                return {
+                    "records": [],
+                    "total": 0,
+                    "message": f"Invalid source index {source_index}. Available: 0-{len(source)-1}" if source else "No sources configured"
+                }
+            source = source[source_index] if source else {}
+        elif source_index > 0:
+            return {
+                "records": [],
+                "total": 0,
+                "message": f"Only one source configured (index 0)"
+            }
 
         source_type = (source.get("type") or "").lower()
 
@@ -1326,24 +1337,31 @@ def _register_routes(app: FastAPI) -> None:
 
     @app.get("/api/tasks")
     async def list_task_directories():
-        """List available task directories for workflow discovery."""
+        """
+        List available task directories for workflow discovery.
+
+        Recursively scans the tasks directory for folders containing
+        graph_config.yaml files, supporting nested folder structures.
+        """
         tasks_dir = Path(app.state.tasks_dir)
 
         if not tasks_dir.exists():
             return []
 
         tasks = []
-        for task_dir in tasks_dir.iterdir():
-            if not task_dir.is_dir():
+        # Recursively find all graph_config.yaml files and get their parent directories
+        for config_path in tasks_dir.rglob("graph_config.yaml"):
+            if not config_path.is_file():
                 continue
 
-            config_path = task_dir / "graph_config.yaml"
-            has_config = config_path.exists()
+            task_dir = config_path.parent
+            # Create a relative name from the tasks_dir for better display
+            relative_path = task_dir.relative_to(tasks_dir)
 
             tasks.append({
-                "name": task_dir.name,
+                "name": str(relative_path),  # e.g., "structured_output_with_multi_llm/dpo_samples"
                 "path": str(task_dir),
-                "has_workflow": has_config,
+                "has_workflow": True,  # We only include dirs with graph_config.yaml
             })
 
         return tasks

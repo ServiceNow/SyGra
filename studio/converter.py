@@ -17,6 +17,9 @@ class SygraToStudioConverter:
     # Map SyGra node types to Studio module types
     MODULE_TYPE_MAP = {
         NodeType.LLM: "rawscript",
+        NodeType.MULTI_LLM: "rawscript",
+        NodeType.AGENT: "rawscript",
+        NodeType.WEB_AGENT: "rawscript",
         NodeType.LAMBDA: "rawscript",
         NodeType.SUBGRAPH: "flow",
         NodeType.WEIGHTED_SAMPLER: "rawscript",

@@ -40,6 +40,9 @@ class SygraGraphBuilder:
     # Node type mapping from SyGra to visualization types
     NODE_TYPE_MAP = {
         "llm": NodeType.LLM,
+        "multi_llm": NodeType.MULTI_LLM,
+        "agent": NodeType.AGENT,
+        "web_agent": NodeType.WEB_AGENT,
         "lambda": NodeType.LAMBDA,
         "subgraph": NodeType.SUBGRAPH,
         "weighted_sampler": NodeType.WEIGHTED_SAMPLER,
@@ -236,7 +239,7 @@ class SygraGraphBuilder:
         node_type_str = node_config.get("node_type", "llm")
         node_type = self.NODE_TYPE_MAP.get(node_type_str, NodeType.LLM)
 
-        # Extract model configuration
+        # Extract model configuration (for single LLM/Agent nodes)
         model_config = None
         if "model" in node_config:
             model = node_config["model"]
@@ -244,6 +247,13 @@ class SygraGraphBuilder:
                 name=model.get("name", "unknown"),
                 parameters=model.get("parameters", {}),
             )
+
+        # Extract models configuration (for multi_llm nodes)
+        models_config = None
+        multi_llm_post_process = None
+        if node_type == NodeType.MULTI_LLM and "models" in node_config:
+            models_config = node_config["models"]
+            multi_llm_post_process = node_config.get("multi_llm_post_process")
 
         # Extract prompt messages
         prompts = None
@@ -275,9 +285,11 @@ class SygraGraphBuilder:
             summary=summary,
             description=node_config.get("description"),
             model=model_config,
+            models=models_config,
             prompt=prompts,
             pre_process=node_config.get("pre_process"),
             post_process=node_config.get("post_process"),
+            multi_llm_post_process=multi_llm_post_process,
             subgraph_path=subgraph_path,
             inner_graph=inner_graph,
             node_config_map=node_config_map,

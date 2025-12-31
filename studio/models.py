@@ -16,6 +16,7 @@ class NodeType(str, Enum):
 
     DATA = "data"
     LLM = "llm"
+    MULTI_LLM = "multi_llm"
     LAMBDA = "lambda"
     SUBGRAPH = "subgraph"
     WEIGHTED_SAMPLER = "weighted_sampler"
@@ -25,6 +26,8 @@ class NodeType(str, Enum):
     OUTPUT = "output"
     BRANCH = "branch"
     LOOP = "loop"
+    AGENT = "agent"
+    WEB_AGENT = "web_agent"
 
 
 class ExecutionStatus(str, Enum):
@@ -84,9 +87,11 @@ class WorkflowNode(BaseModel):
 
     # Node-specific configuration
     model: Optional[ModelConfig] = None
+    models: Optional[Dict[str, Dict[str, Any]]] = None  # For multi_llm nodes
     prompt: Optional[List[PromptMessage]] = None
     pre_process: Optional[str] = None
     post_process: Optional[str] = None
+    multi_llm_post_process: Optional[str] = None  # For multi_llm nodes
 
     # For subgraph nodes
     subgraph_path: Optional[str] = None

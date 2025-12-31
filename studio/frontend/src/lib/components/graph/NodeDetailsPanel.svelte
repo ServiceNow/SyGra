@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
-	import { X, Bot, Zap, Link, Play, Square, Globe, Boxes, Save, ChevronDown, ChevronRight, Code, Settings, MessageSquare, Info, GitBranch, Plus, Trash2, Edit3, GripVertical, Database, Download, Cloud, Server, HardDrive, ArrowRight, Map, Shuffle, Wrench, AlertCircle, Library, Eye, EyeOff, Loader2, Layers, Copy } from 'lucide-svelte';
+	import { X, Bot, Zap, Link, Play, Square, Globe, Boxes, Save, ChevronDown, ChevronRight, Code, Settings, MessageSquare, Info, GitBranch, Plus, Trash2, Edit3, GripVertical, Database, Download, Cloud, Server, HardDrive, ArrowRight, Map as MapIcon, Shuffle, Wrench, AlertCircle, Library, Eye, EyeOff, Loader2, Layers, Copy, GitCompareArrows, Thermometer } from 'lucide-svelte';
 	import { workflowStore, type WorkflowNode, type NodeExecutionState, type PromptMessage, type NodeConfigOverride, type InnerGraph } from '$lib/stores/workflow.svelte';
 	import { toolStore } from '$lib/stores/tool.svelte';
 	import { panelStore } from '$lib/stores/panel.svelte';
@@ -10,8 +10,8 @@
 	import ToolPickerModal from '$lib/components/builder/ToolPickerModal.svelte';
 	import PanelHeader from '$lib/components/panel/PanelHeader.svelte';
 	import PanelTabs from '$lib/components/panel/PanelTabs.svelte';
-	import PanelSection from '$lib/components/panel/PanelSection.svelte';
-	import ConnectionPreview from '$lib/components/panel/ConnectionPreview.svelte';
+	import DataConfigSection from '$lib/components/data/DataConfigSection.svelte';
+	import type { DataSourceDetails, DataSinkDetails, TransformConfig } from '$lib/stores/workflow.svelte';
 
 	interface Props {
 		node?: WorkflowNode;
@@ -79,7 +79,7 @@
 	}
 
 	// Tab state
-	type TabId = 'details' | 'prompt' | 'tools' | 'code' | 'overrides' | 'settings';
+	type TabId = 'details' | 'prompt' | 'models' | 'tools' | 'code' | 'overrides' | 'settings';
 	let activeTab = $state<TabId>('details');
 
 	// Edit state
@@ -130,14 +130,30 @@
 	let editSinkRepoId = $state('');
 	let editSinkSplit = $state('train');
 
-	// Data transformations edit state
+	// Data transformations edit state (legacy - keeping for backward compatibility)
 	let editTransformations = $state<Array<{ transform: string; params: string }>>([]);
 	let editTransformCode = $state('');
+
+	// Multi-source and transform pipeline state (new unified data configuration)
+	let editDataSources = $state<DataSourceDetails[]>([]);
+	let editIdColumn = $state<string | undefined>(undefined);
+	let editSourceTransforms = $state<TransformConfig[]>([]);
+	let editDataSinks = $state<DataSinkDetails[]>([]);
 
 	// Output node edit state
 	let editOutputGenerator = $state('');
 	let editOutputGeneratorCode = $state('');
 	let editOutputMappings = $state<Array<{ key: string; from: string; value: string; transform: string }>>([]);
+
+	// Fetched code state (actual code from files, not stub)
+	let fetchedGeneratorCode = $state('');
+	let fetchedGeneratorLoading = $state(false);
+	let generatorCodeExpanded = $state(false);
+
+	// Transform function code previews (key -> code)
+	let transformCodeMap = $state<Record<string, string>>({});
+	let transformCodeLoading = $state<Record<string, boolean>>({});
+	let transformCodeExpanded = $state<Record<string, boolean>>({});
 
 	// Weighted sampler edit state
 	let editSamplerAttributes = $state<Array<{ name: string; values: string }>>([]);
@@ -154,11 +170,54 @@
 	let newOutputKeyInput = $state('');
 	let outputKeyError = $state('');
 
-	// Data preview state (for data nodes)
-	let showDataPreview = $state(false);
-	let dataPreviewLoading = $state(false);
-	let dataPreviewData = $state<{ records: unknown[]; total: number | string | null; message: string | null } | null>(null);
-	let expandedPreviewRows = $state<Set<number>>(new Set());
+	// Structured output edit state (for LLM/Agent nodes)
+	let editStructuredOutputEnabled = $state(false);
+	let editSchemaMode = $state<'inline' | 'class_path'>('inline');
+	let editSchemaClassPath = $state('');
+	let editSchemaFields = $state<Array<{
+		id: string;
+		name: string;
+		type: 'str' | 'int' | 'float' | 'bool' | 'list' | 'dict';
+		description: string;
+		default: string;
+		hasDefault: boolean;
+	}>>([]);
+	let editFallbackStrategy = $state<'instruction' | 'post_process'>('instruction');
+	let editRetryOnParseError = $state(true);
+	let editMaxParseRetries = $state(2);
+	let showSchemaPreview = $state(false);
+
+	// Chat history edit state (for LLM/Agent nodes)
+	let editChatHistoryEnabled = $state(false);
+	let editInjectSystemMessages = $state<Array<{
+		id: string;
+		turn: number;
+		message: string;
+	}>>([]);
+	let newInjectTurn = $state(1);
+	let newInjectMessage = $state('');
+
+	// Multi-LLM edit state
+	let editMultiLLMModels = $state<Array<{
+		id: string;
+		label: string;
+		name: string;
+		temperature: number;
+		maxTokens?: number;
+	}>>([]);
+	let editMultiLLMPostProcess = $state('');
+	let newModelLabel = $state('');
+	let newModelName = $state('');
+
+	// Per-source data preview state (for data nodes)
+	interface SourcePreviewData {
+		records: Record<string, unknown>[];
+		total?: number | string;
+		message?: string;
+		source_type?: string;
+	}
+	let sourcePreviewData = $state<Map<number, SourcePreviewData | null>>(new Map());
+	let sourcePreviewLoading = $state<Map<number, boolean>>(new Map());
 
 	// Subgraph node_config_map edit state
 	let editNodeConfigMap = $state<Record<string, NodeConfigOverride>>({});
@@ -178,38 +237,69 @@
 		{ value: 'servicenow', label: 'ServiceNow', icon: Globe }
 	];
 
-	// Fetch sample data from API for data node preview
-	async function fetchDataPreview() {
-		const workflowId = workflowStore.currentWorkflow?.id;
-		if (!workflowId || dataPreviewLoading) return;
+	// Schema field type options for CustomSelect
+	const schemaFieldTypeOptions = [
+		{ value: 'str', label: 'String', subtitle: 'Text values' },
+		{ value: 'int', label: 'Integer', subtitle: 'Whole numbers' },
+		{ value: 'float', label: 'Float', subtitle: 'Decimal numbers' },
+		{ value: 'bool', label: 'Boolean', subtitle: 'True/False' },
+		{ value: 'list', label: 'List', subtitle: 'Array of values' },
+		{ value: 'dict', label: 'Dict', subtitle: 'Key-value object' }
+	];
 
-		dataPreviewLoading = true;
-		dataPreviewData = null;
+	// Fallback strategy options for CustomSelect
+	const fallbackStrategyOptions = [
+		{ value: 'instruction', label: 'Instruction', subtitle: 'Add schema to prompt' },
+		{ value: 'post_process', label: 'Post-process', subtitle: 'Validate after generation' }
+	];
+
+	// Fetch sample data from API for a specific source
+	async function fetchSourcePreview(sourceIndex: number) {
+		const workflowId = workflowStore.currentWorkflow?.id;
+		if (!workflowId) return;
+
+		// Check if already loading this source
+		if (sourcePreviewLoading.get(sourceIndex)) return;
+
+		// Set loading state
+		const newLoading = new Map(sourcePreviewLoading);
+		newLoading.set(sourceIndex, true);
+		sourcePreviewLoading = newLoading;
+
+		// Clear previous data
+		const newData = new Map(sourcePreviewData);
+		newData.set(sourceIndex, null);
+		sourcePreviewData = newData;
 
 		try {
-			const response = await fetch(`/api/workflows/${encodeURIComponent(workflowId)}/sample-data?limit=5`);
+			const response = await fetch(`/api/workflows/${encodeURIComponent(workflowId)}/sample-data?limit=5&source_index=${sourceIndex}`);
+			const resultData = new Map(sourcePreviewData);
 			if (response.ok) {
-				dataPreviewData = await response.json();
+				resultData.set(sourceIndex, await response.json());
 			} else {
 				const errorText = await response.text();
-				dataPreviewData = { records: [], total: 0, message: `Error: ${errorText.substring(0, 100)}` };
+				resultData.set(sourceIndex, { records: [], total: 0, message: `Error: ${errorText.substring(0, 100)}` });
 			}
+			sourcePreviewData = resultData;
 		} catch (error) {
-			dataPreviewData = { records: [], total: 0, message: `Network error: ${error instanceof Error ? error.message : String(error)}` };
+			const resultData = new Map(sourcePreviewData);
+			resultData.set(sourceIndex, { records: [], total: 0, message: `Network error: ${error instanceof Error ? error.message : String(error)}` });
+			sourcePreviewData = resultData;
 		} finally {
-			dataPreviewLoading = false;
+			const finalLoading = new Map(sourcePreviewLoading);
+			finalLoading.set(sourceIndex, false);
+			sourcePreviewLoading = finalLoading;
 		}
 	}
 
-	function togglePreviewRowExpand(index: number) {
-		if (expandedPreviewRows.has(index)) {
-			expandedPreviewRows.delete(index);
-			expandedPreviewRows = new Set(expandedPreviewRows);
-		} else {
-			expandedPreviewRows.add(index);
-			expandedPreviewRows = new Set(expandedPreviewRows);
-		}
+	function refreshSourcePreview(sourceIndex: number) {
+		// Clear data and re-fetch
+		const newData = new Map(sourcePreviewData);
+		newData.delete(sourceIndex);
+		sourcePreviewData = newData;
+		fetchSourcePreview(sourceIndex);
 	}
+
 
 	// Resizable panel state - use panel store for persistence
 	let panelWidth = $state(panelStore.nodeWidth); // 640px default from store
@@ -281,7 +371,8 @@
 		connector: Link,
 		subgraph: Boxes,
 		web_agent: Globe,
-		branch: GitBranch
+		branch: GitBranch,
+		multi_llm: GitCompareArrows
 	};
 
 	const colors: Record<string, string> = {
@@ -295,15 +386,17 @@
 		connector: '#06b6d4',
 		subgraph: '#3b82f6',
 		web_agent: '#ec4899',
-		branch: '#eab308'
+		branch: '#eab308',
+		multi_llm: '#06b6d4'
 	};
 
 	let Icon = $derived(icons[node?.node_type ?? 'llm'] ?? Bot);
 	let color = $derived(colors[node?.node_type ?? 'llm'] ?? '#8b5cf6');
 
 	// Determine which tabs to show based on node type
-	let showPromptTab = $derived(node?.node_type === 'llm' || node?.node_type === 'agent');
+	let showPromptTab = $derived(node?.node_type === 'llm' || node?.node_type === 'agent' || node?.node_type === 'multi_llm');
 	let showToolsTab = $derived(node?.node_type === 'llm' || node?.node_type === 'agent');
+	let showModelsTab = $derived(node?.node_type === 'multi_llm');
 	// Show code tab for nodes that have code: lambda, branch, data (transforms), output (generator), or execution nodes with processors
 	let showCodeTab = $derived(
 		node?.node_type === 'lambda' ||
@@ -335,6 +428,7 @@
 	let tabsConfig = $derived([
 		{ id: 'details', label: 'Overview', icon: Info, hidden: false },
 		{ id: 'prompt', label: 'Prompt', icon: MessageSquare, badge: editPrompts.length || undefined, hidden: !showPromptTab },
+		{ id: 'models', label: 'Models', icon: GitCompareArrows, badge: editMultiLLMModels.length || undefined, hidden: !showModelsTab },
 		{ id: 'tools', label: 'Tools', icon: Wrench, badge: editTools.length || undefined, hidden: !showToolsTab },
 		{ id: 'code', label: 'Code', icon: Code, hidden: !showCodeTab },
 		{ id: 'overrides', label: 'Overrides', icon: Layers, badge: overrideCount || undefined, hidden: !showOverridesTab },
@@ -470,6 +564,71 @@
 				: [];
 			newOutputKeyInput = '';
 			outputKeyError = '';
+			// Initialize structured output state
+			const so = node.model?.structured_output;
+			if (so) {
+				editStructuredOutputEnabled = so.enabled ?? true;
+				editFallbackStrategy = so.fallback_strategy ?? 'instruction';
+				editRetryOnParseError = so.retry_on_parse_error ?? true;
+				editMaxParseRetries = so.max_parse_retries ?? 2;
+				if (typeof so.schema === 'string') {
+					editSchemaMode = 'class_path';
+					editSchemaClassPath = so.schema;
+					editSchemaFields = [];
+				} else if (so.schema && typeof so.schema === 'object') {
+					editSchemaMode = 'inline';
+					editSchemaClassPath = '';
+					editSchemaFields = Object.entries(so.schema.fields || {}).map(
+						([name, field], i) => ({
+							id: `field_${i}_${Date.now()}`,
+							name,
+							type: field.type,
+							description: field.description || '',
+							default: field.default !== undefined ? String(field.default) : '',
+							hasDefault: field.default !== undefined
+						})
+					);
+				}
+			} else {
+				editStructuredOutputEnabled = false;
+				editSchemaMode = 'inline';
+				editSchemaClassPath = '';
+				editSchemaFields = [];
+				editFallbackStrategy = 'instruction';
+				editRetryOnParseError = true;
+				editMaxParseRetries = 2;
+			}
+			showSchemaPreview = false;
+			// Initialize chat history state
+			editChatHistoryEnabled = node.chat_history ?? false;
+			if (node.inject_system_messages && Array.isArray(node.inject_system_messages)) {
+				editInjectSystemMessages = node.inject_system_messages.map((item, i) => {
+					const turn = parseInt(Object.keys(item)[0]);
+					const message = Object.values(item)[0] as string;
+					return { id: `inject_${i}_${Date.now()}`, turn, message };
+				});
+			} else {
+				editInjectSystemMessages = [];
+			}
+			newInjectTurn = 1;
+			newInjectMessage = '';
+
+			// Initialize multi_llm models state
+			if (node.models && typeof node.models === 'object') {
+				editMultiLLMModels = Object.entries(node.models).map(([label, config], i) => ({
+					id: `model_${i}_${Date.now()}`,
+					label,
+					name: config.name,
+					temperature: config.parameters?.temperature as number ?? 0.7,
+					maxTokens: config.parameters?.max_tokens as number | undefined
+				}));
+			} else {
+				editMultiLLMModels = [];
+			}
+			editMultiLLMPostProcess = node.multi_llm_post_process ?? '';
+			newModelLabel = '';
+			newModelName = '';
+
 			// Initialize node_config_map for subgraph nodes
 			editNodeConfigMap = node.node_config_map ? JSON.parse(JSON.stringify(node.node_config_map)) : {};
 			expandedOverrideNodes = new Set();
@@ -482,6 +641,10 @@
 			preProcessCodeLoaded = false;
 			postProcessCodeLoaded = false;
 			lambdaCodeLoaded = false;
+
+			// Clear per-source preview data when switching nodes
+			sourcePreviewData = new Map();
+			sourcePreviewLoading = new Map();
 
 			// Generate stub code helper (used if loading fails or no file exists)
 			const nodeClassName = (node.id || 'Node').replace(/-/g, '_').replace(/\s+/g, '').replace(/[^a-zA-Z0-9_]/g, '');
@@ -641,7 +804,33 @@ class ${dataClassName}Transform:
 
 				// Also load existing config if present
 				if (node.data_config) {
-					const src = Array.isArray(node.data_config.source) ? node.data_config.source[0] : node.data_config.source;
+					// Initialize multi-source array
+					const sources = Array.isArray(node.data_config.source)
+						? node.data_config.source
+						: node.data_config.source
+							? [node.data_config.source]
+							: [];
+
+					// Deep clone sources for editing
+					editDataSources = sources.map(s => ({ ...s }));
+
+					// Initialize id_column
+					editIdColumn = node.data_config.id_column;
+
+					// Initialize transforms from first source or separate config
+					if (sources.length > 0 && sources[0].transformations) {
+						editSourceTransforms = sources[0].transformations.map((t: any) => ({
+							id: t.id || `transform_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+							transform: t.transform,
+							params: t.params || {},
+							enabled: t.enabled !== false
+						}));
+					} else {
+						editSourceTransforms = [];
+					}
+
+					// Also initialize legacy single-source fields for backwards compatibility
+					const src = sources[0];
 					if (src) {
 						editDataSourceType = (src.type as 'hf' | 'disk' | 'servicenow') || 'hf';
 						editDataRepoId = src.repo_id ?? '';
@@ -653,7 +842,20 @@ class ${dataClassName}Transform:
 						editDataLimit = src.limit;
 						editDataFilters = src.filters ? JSON.stringify(src.filters) : '';
 					}
-					const sink = Array.isArray(node.data_config.sink) ? node.data_config.sink[0] : node.data_config.sink;
+					// Initialize sinks for new DataConfigSection
+					const sinkArray = Array.isArray(node.data_config.sink) ? node.data_config.sink : node.data_config.sink ? [node.data_config.sink] : [];
+					editDataSinks = sinkArray.map((s: any) => ({
+						type: s.type || (s.repo_id ? 'hf' : s.table ? 'servicenow' : 'disk'),
+						alias: s.alias,
+						file_path: s.file_path,
+						repo_id: s.repo_id,
+						split: s.split,
+						table: s.table,
+						operation: s.operation
+					}));
+
+					// Also initialize legacy single-sink fields for backwards compatibility
+					const sink = sinkArray[0];
 					if (sink) {
 						editSinkAlias = sink.alias ?? '';
 						if (sink.type === 'hf' || sink.repo_id) {
@@ -669,14 +871,20 @@ class ${dataClassName}Transform:
 							editSinkFilePath = sink.file_path ?? '';
 						}
 					}
+				} else {
+					// Reset multi-source state when no config
+					editDataSources = [];
+					editIdColumn = undefined;
+					editSourceTransforms = [];
+					editDataSinks = [];
 				}
 			}
 
-			// Initialize output node edit state - always set stub code
+			// Initialize output node edit state
 			if (node.node_type === 'output') {
-				// Always set default generator stub code
+				// Generate stub code as fallback
 				const outputClassName = (node.id || 'Output').replace(/-/g, '_').replace(/\s+/g, '').replace(/[^a-zA-Z0-9_]/g, '');
-				editOutputGeneratorCode = `"""Output generator for ${node.summary || node.id}."""
+				const outputGeneratorStub = `"""Output generator for ${node.summary || node.id}."""
 from typing import Any, Dict, List
 from sygra.core.graph.sygra_state import SygraState
 from sygra.processors.output_record_generator import BaseOutputGenerator
@@ -735,7 +943,16 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
         return str(data)
 `;
 
-				// Also load existing config if present
+				// Start with stub code as default
+				editOutputGeneratorCode = outputGeneratorStub;
+
+				// Reset fetched code state
+				fetchedGeneratorCode = '';
+				generatorCodeExpanded = false;
+				transformCodeMap = {};
+				transformCodeExpanded = {};
+
+				// Load existing config if present
 				if (node.output_config) {
 					editOutputGenerator = node.output_config.generator ?? '';
 					const outputMap = node.output_config.output_map ?? {};
@@ -745,6 +962,16 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 						value: val.value !== undefined ? JSON.stringify(val.value) : '',
 						transform: val.transform ?? ''
 					}));
+
+					// Fetch generator class code if available - this will update editOutputGeneratorCode
+					if (node.output_config.generator) {
+						fetchGeneratorCode(node.output_config.generator).then(() => {
+							// Update edit code with fetched code if successful
+							if (fetchedGeneratorCode) {
+								editOutputGeneratorCode = fetchedGeneratorCode;
+							}
+						});
+					}
 				}
 			}
 
@@ -794,6 +1021,69 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 				: [];
 			newOutputKeyInput = '';
 			outputKeyError = '';
+			// Reset structured output state
+			const so = node.model?.structured_output;
+			if (so) {
+				editStructuredOutputEnabled = so.enabled ?? true;
+				editFallbackStrategy = so.fallback_strategy ?? 'instruction';
+				editRetryOnParseError = so.retry_on_parse_error ?? true;
+				editMaxParseRetries = so.max_parse_retries ?? 2;
+				if (typeof so.schema === 'string') {
+					editSchemaMode = 'class_path';
+					editSchemaClassPath = so.schema;
+					editSchemaFields = [];
+				} else if (so.schema && typeof so.schema === 'object') {
+					editSchemaMode = 'inline';
+					editSchemaClassPath = '';
+					editSchemaFields = Object.entries(so.schema.fields || {}).map(
+						([name, field], i) => ({
+							id: `field_${i}_${Date.now()}`,
+							name,
+							type: field.type,
+							description: field.description || '',
+							default: field.default !== undefined ? String(field.default) : '',
+							hasDefault: field.default !== undefined
+						})
+					);
+				}
+			} else {
+				editStructuredOutputEnabled = false;
+				editSchemaMode = 'inline';
+				editSchemaClassPath = '';
+				editSchemaFields = [];
+				editFallbackStrategy = 'instruction';
+				editRetryOnParseError = true;
+				editMaxParseRetries = 2;
+			}
+			showSchemaPreview = false;
+			// Reset chat history state
+			editChatHistoryEnabled = node.chat_history ?? false;
+			if (node.inject_system_messages && Array.isArray(node.inject_system_messages)) {
+				editInjectSystemMessages = node.inject_system_messages.map((item, i) => {
+					const turn = parseInt(Object.keys(item)[0]);
+					const message = Object.values(item)[0] as string;
+					return { id: `inject_${i}_${Date.now()}`, turn, message };
+				});
+			} else {
+				editInjectSystemMessages = [];
+			}
+			newInjectTurn = 1;
+			newInjectMessage = '';
+			// Reset multi_llm models state
+			if (node.models && typeof node.models === 'object') {
+				editMultiLLMModels = Object.entries(node.models).map(([label, config], i) => ({
+					id: `model_${i}_${Date.now()}`,
+					label,
+					name: config.name,
+					temperature: config.parameters?.temperature as number ?? 0.7,
+					maxTokens: config.parameters?.max_tokens as number | undefined
+				}));
+			} else {
+				editMultiLLMModels = [];
+			}
+			editMultiLLMPostProcess = node.multi_llm_post_process ?? '';
+			newModelLabel = '';
+			newModelName = '';
 			// Reset node_config_map for subgraph nodes
 			editNodeConfigMap = node.node_config_map ? JSON.parse(JSON.stringify(node.node_config_map)) : {};
 			expandedOverrideNodes = new Set();
@@ -825,8 +1115,50 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 		if (editDescription !== (node.description ?? '')) {
 			updates.description = editDescription;
 		}
-		if (editModel !== (node.model?.name ?? '') || JSON.stringify(editModelParameters) !== JSON.stringify(node.model?.parameters ?? {})) {
-			updates.model = { name: editModel, parameters: editModelParameters };
+		// Build structured output config if enabled (for LLM/Agent nodes)
+		let structuredOutputConfig: import('$lib/stores/workflow.svelte').StructuredOutputConfig | undefined;
+		if ((node.node_type === 'llm' || node.node_type === 'agent') && editStructuredOutputEnabled) {
+			if (editSchemaMode === 'class_path' && editSchemaClassPath.trim()) {
+				structuredOutputConfig = {
+					enabled: true,
+					schema: editSchemaClassPath.trim(),
+					fallback_strategy: editFallbackStrategy,
+					retry_on_parse_error: editRetryOnParseError,
+					max_parse_retries: editMaxParseRetries
+				};
+			} else if (editSchemaMode === 'inline') {
+				const fields: Record<string, import('$lib/stores/workflow.svelte').SchemaFieldDefinition> = {};
+				for (const f of editSchemaFields) {
+					if (!f.name.trim()) continue;
+					fields[f.name.trim()] = {
+						type: f.type,
+						...(f.description && { description: f.description }),
+						...(f.hasDefault && { default: parseFieldDefault(f.default, f.type) })
+					};
+				}
+				if (Object.keys(fields).length > 0) {
+					structuredOutputConfig = {
+						enabled: true,
+						schema: { fields },
+						fallback_strategy: editFallbackStrategy,
+						retry_on_parse_error: editRetryOnParseError,
+						max_parse_retries: editMaxParseRetries
+					};
+				}
+			}
+		}
+
+		// Check if model config changed (including structured output)
+		const modelChanged = editModel !== (node.model?.name ?? '') ||
+			JSON.stringify(editModelParameters) !== JSON.stringify(node.model?.parameters ?? {}) ||
+			JSON.stringify(structuredOutputConfig) !== JSON.stringify(node.model?.structured_output);
+
+		if (modelChanged) {
+			updates.model = {
+				name: editModel,
+				parameters: editModelParameters,
+				...(structuredOutputConfig && { structured_output: structuredOutputConfig })
+			};
 		}
 		if (JSON.stringify(editPrompts) !== JSON.stringify(node.prompt ?? [])) {
 			updates.prompt = editPrompts;
@@ -849,10 +1181,22 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 			if (editToolChoice !== (node.tool_choice ?? 'auto')) {
 				updates.tool_choice = editToolChoice;
 			}
+
+			// Handle chat history updates
+			if (editChatHistoryEnabled !== (node.chat_history ?? false)) {
+				updates.chat_history = editChatHistoryEnabled || undefined;
+			}
+
+			// Convert inject_system_messages to backend format: [{3: "msg"}, {5: "msg"}]
+			const newInjectMessages = editInjectSystemMessages.map(m => ({ [m.turn]: m.message }));
+			const currentInjectMessages = node.inject_system_messages ?? [];
+			if (JSON.stringify(newInjectMessages) !== JSON.stringify(currentInjectMessages)) {
+				updates.inject_system_messages = newInjectMessages.length > 0 ? newInjectMessages : undefined;
+			}
 		}
 
-		// Handle output_keys updates for LLM/Agent/Lambda/Branch nodes
-		if (['llm', 'agent', 'lambda', 'branch'].includes(node.node_type)) {
+		// Handle output_keys updates for LLM/Agent/Lambda/Branch/Multi-LLM nodes
+		if (['llm', 'agent', 'lambda', 'branch', 'multi_llm'].includes(node.node_type)) {
 			// Normalize current value to array for comparison
 			const currentKeys = node.output_keys
 				? (Array.isArray(node.output_keys) ? node.output_keys : [node.output_keys])
@@ -870,51 +1214,102 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 			}
 		}
 
+		// Handle multi_llm models updates
+		if (node.node_type === 'multi_llm') {
+			// Convert models to backend format: { label: { name, parameters } }
+			const newModels: Record<string, { name: string; parameters?: Record<string, unknown> }> = {};
+			for (const m of editMultiLLMModels) {
+				newModels[m.label] = {
+					name: m.name,
+					parameters: {
+						temperature: m.temperature,
+						...(m.maxTokens !== undefined && { max_tokens: m.maxTokens })
+					}
+				};
+			}
+			const currentModels = node.models ?? {};
+			if (JSON.stringify(newModels) !== JSON.stringify(currentModels)) {
+				updates.models = Object.keys(newModels).length > 0 ? newModels : undefined;
+			}
+
+			// Handle multi_llm_post_process
+			if (editMultiLLMPostProcess !== (node.multi_llm_post_process ?? '')) {
+				updates.multi_llm_post_process = editMultiLLMPostProcess || undefined;
+			}
+		}
+
 		// Handle data node config updates
 		if (node.node_type === 'data') {
-			const source: Record<string, any> = { type: editDataSourceType };
-			if (editDataSourceType === 'hf') {
-				source.repo_id = editDataRepoId;
-				if (editDataConfigName) source.config_name = editDataConfigName;
-				source.split = editDataSplit.includes(',') ? editDataSplit.split(',').map(s => s.trim()) : editDataSplit;
-			} else if (editDataSourceType === 'disk') {
-				source.file_path = editDataFilePath;
-			} else if (editDataSourceType === 'servicenow') {
-				source.table = editDataTable;
-				if (editDataFields) source.fields = editDataFields.split(',').map(s => s.trim());
-				if (editDataLimit) source.limit = editDataLimit;
-				if (editDataFilters) {
-					try { source.filters = JSON.parse(editDataFilters); } catch {}
+			const dataConfig: any = {};
+
+			// Use new multi-source array if available, otherwise use legacy single source
+			if (editDataSources.length > 0) {
+				// Serialize transforms into the sources (strip `id` field as it's for UI only)
+				const sourcesWithTransforms = editDataSources.map((src, idx) => {
+					const sourceCopy = { ...src };
+					// Only attach transforms to primary or first source
+					if (idx === 0 && editSourceTransforms.length > 0) {
+						sourceCopy.transformations = editSourceTransforms
+							.filter(t => t.enabled !== false) // Only include enabled transforms
+							.map(t => ({
+								transform: t.transform,
+								params: t.params
+								// Note: Don't include `id` or `enabled` - those are UI-only fields
+							}));
+					}
+					return sourceCopy;
+				});
+
+				// Use array for multiple sources, single object for one source
+				dataConfig.source = sourcesWithTransforms.length > 1
+					? sourcesWithTransforms
+					: sourcesWithTransforms[0];
+
+				// Include id_column for multi-source
+				if (editIdColumn && sourcesWithTransforms.length > 1) {
+					dataConfig.id_column = editIdColumn;
 				}
+			} else {
+				// Fallback to legacy single source fields
+				const source: Record<string, any> = { type: editDataSourceType };
+				if (editDataSourceType === 'hf') {
+					source.repo_id = editDataRepoId;
+					if (editDataConfigName) source.config_name = editDataConfigName;
+					source.split = editDataSplit.includes(',') ? editDataSplit.split(',').map(s => s.trim()) : editDataSplit;
+				} else if (editDataSourceType === 'disk') {
+					source.file_path = editDataFilePath;
+				} else if (editDataSourceType === 'servicenow') {
+					source.table = editDataTable;
+					if (editDataFields) source.fields = editDataFields.split(',').map(s => s.trim());
+					if (editDataLimit) source.limit = editDataLimit;
+					if (editDataFilters) {
+						try { source.filters = JSON.parse(editDataFilters); } catch {}
+					}
+				}
+				dataConfig.source = source;
 			}
 
-			const dataConfig: any = { source };
-
-			// Include sink if configured based on type
-			const hasSinkConfig = editSinkType === 'disk' ? editSinkFilePath :
-				editSinkType === 'hf' ? editSinkRepoId :
-				editSinkType === 'servicenow' ? editSinkTable : false;
-
-			if (hasSinkConfig || editSinkAlias) {
-				const sinkConfig: any = {
-					alias: editSinkAlias || undefined,
-					type: editSinkType
-				};
-
-				if (editSinkType === 'disk') {
-					sinkConfig.file_path = editSinkFilePath;
-				} else if (editSinkType === 'hf') {
-					sinkConfig.repo_id = editSinkRepoId;
-					if (editSinkSplit) sinkConfig.split = editSinkSplit;
-				} else if (editSinkType === 'servicenow') {
-					sinkConfig.table = editSinkTable;
-					sinkConfig.operation = editSinkOperation;
-				}
-
-				dataConfig.sink = [sinkConfig];
+			// Include sinks from new DataConfigSection state
+			if (editDataSinks.length > 0) {
+				dataConfig.sink = editDataSinks.map(s => {
+					const sinkConfig: any = {
+						type: s.type,
+						alias: s.alias || undefined
+					};
+					if (s.type === 'disk' || s.type === 'json' || s.type === 'jsonl') {
+						if (s.file_path) sinkConfig.file_path = s.file_path;
+					} else if (s.type === 'hf') {
+						if (s.repo_id) sinkConfig.repo_id = s.repo_id;
+						if (s.split) sinkConfig.split = s.split;
+					} else if (s.type === 'servicenow') {
+						if (s.table) sinkConfig.table = s.table;
+						if (s.operation) sinkConfig.operation = s.operation;
+					}
+					return sinkConfig;
+				});
 			}
 
-			// Include transformation code if present
+			// Include transformation code if present (legacy support)
 			if (editTransformCode && editTransformCode.trim()) {
 				dataConfig._transform_code = editTransformCode;
 			}
@@ -1012,6 +1407,71 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 		markChanged();
 	}
 
+	// Fetch generator class code from backend
+	async function fetchGeneratorCode(generatorPath: string) {
+		if (!generatorPath || !currentWorkflow) return;
+
+		fetchedGeneratorLoading = true;
+		fetchedGeneratorCode = '';
+
+		try {
+			const code = await fetchCodeContent(generatorPath, currentWorkflow.id);
+			if (code) {
+				fetchedGeneratorCode = code;
+			}
+		} finally {
+			fetchedGeneratorLoading = false;
+		}
+	}
+
+	// Fetch transform function code for a specific mapping
+	async function fetchTransformCode(mappingKey: string, transformName: string) {
+		if (!transformName || !currentWorkflow || !node?.output_config?.generator) return;
+
+		// The transform function is a method on the generator class
+		// We need to fetch it from the generator file
+		const generatorPath = node.output_config.generator;
+
+		transformCodeLoading = { ...transformCodeLoading, [mappingKey]: true };
+
+		try {
+			// Construct the path to the transform method
+			// Transform methods are typically named like the transform value
+			const methodPath = `${generatorPath.split('.').slice(0, -1).join('.')}.${generatorPath.split('.').pop()}.${transformName}`;
+
+			// First try to get the method directly
+			const code = await fetchCodeContent(methodPath, currentWorkflow.id);
+			if (code) {
+				transformCodeMap = { ...transformCodeMap, [mappingKey]: code };
+			} else {
+				// If that fails, try getting from the generator class file
+				const generatorCode = fetchedGeneratorCode || await fetchCodeContent(generatorPath, currentWorkflow.id);
+				if (generatorCode) {
+					// Extract the specific method from the class
+					const methodMatch = generatorCode.match(new RegExp(`(\\s*def\\s+${transformName}\\s*\\([^)]*\\):[\\s\\S]*?)(?=\\n\\s*def\\s|\\n\\s*class\\s|$)`));
+					if (methodMatch) {
+						transformCodeMap = { ...transformCodeMap, [mappingKey]: methodMatch[1].trim() };
+					} else {
+						transformCodeMap = { ...transformCodeMap, [mappingKey]: `# Method '${transformName}' not found in generator class` };
+					}
+				}
+			}
+		} finally {
+			transformCodeLoading = { ...transformCodeLoading, [mappingKey]: false };
+		}
+	}
+
+	// Toggle transform code preview visibility
+	function toggleTransformCode(mappingKey: string, transformName: string) {
+		const isCurrentlyExpanded = transformCodeExpanded[mappingKey];
+		transformCodeExpanded = { ...transformCodeExpanded, [mappingKey]: !isCurrentlyExpanded };
+
+		// Fetch code if expanding and not already loaded
+		if (!isCurrentlyExpanded && !transformCodeMap[mappingKey]) {
+			fetchTransformCode(mappingKey, transformName);
+		}
+	}
+
 	// Sampler attribute helpers
 	function addSamplerAttribute() {
 		editSamplerAttributes = [...editSamplerAttributes, { name: '', values: '' }];
@@ -1031,6 +1491,34 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 
 	function markChanged() {
 		hasChanges = true;
+	}
+
+	// Multi-source manager handlers
+	function handleSourcesUpdate(e: CustomEvent<{ sources: DataSourceDetails[]; idColumn?: string }>) {
+		editDataSources = e.detail.sources;
+		editIdColumn = e.detail.idColumn;
+		markChanged();
+	}
+
+	// Transform pipeline handlers
+	function handleTransformsUpdate(e: CustomEvent<{ transforms: TransformConfig[] }>) {
+		editSourceTransforms = e.detail.transforms;
+		markChanged();
+	}
+
+	// Sinks handler
+	function handleSinksUpdate(e: CustomEvent<{ sinks: DataSinkDetails[] }>) {
+		editDataSinks = e.detail.sinks;
+		markChanged();
+	}
+
+	// Source preview handlers for DataConfigSection
+	function handleSourcePreviewFetch(e: CustomEvent<{ index: number }>) {
+		fetchSourcePreview(e.detail.index);
+	}
+
+	function handleSourcePreviewRefresh(e: CustomEvent<{ index: number }>) {
+		refreshSourcePreview(e.detail.index);
 	}
 
 	// Output keys helpers
@@ -1058,6 +1546,129 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 
 	function removeOutputKey(key: string) {
 		editOutputKeys = editOutputKeys.filter(k => k !== key);
+		markChanged();
+	}
+
+	// Structured output schema helpers
+	function addSchemaField() {
+		editSchemaFields = [...editSchemaFields, {
+			id: `field_${Date.now()}`,
+			name: '',
+			type: 'str',
+			description: '',
+			default: '',
+			hasDefault: false
+		}];
+		markChanged();
+	}
+
+	function removeSchemaField(id: string) {
+		editSchemaFields = editSchemaFields.filter(f => f.id !== id);
+		markChanged();
+	}
+
+	function updateSchemaField(id: string, field: string, value: any) {
+		editSchemaFields = editSchemaFields.map(f =>
+			f.id === id ? { ...f, [field]: value } : f
+		);
+		markChanged();
+	}
+
+	function parseFieldDefault(value: string, type: string): unknown {
+		switch (type) {
+			case 'int': return parseInt(value, 10) || 0;
+			case 'float': return parseFloat(value) || 0.0;
+			case 'bool': return value.toLowerCase() === 'true';
+			case 'list':
+			case 'dict':
+				try { return JSON.parse(value); } catch { return type === 'list' ? [] : {}; }
+			default: return value;
+		}
+	}
+
+	function generateSchemaPreview(): string {
+		if (editSchemaMode === 'class_path') {
+			return JSON.stringify({ class_path: editSchemaClassPath }, null, 2);
+		}
+		const properties: Record<string, any> = {};
+		const required: string[] = [];
+		for (const f of editSchemaFields) {
+			if (!f.name.trim()) continue;
+			const typeMap: Record<string, string> = {
+				str: 'string', int: 'integer', float: 'number',
+				bool: 'boolean', list: 'array', dict: 'object'
+			};
+			properties[f.name] = {
+				type: typeMap[f.type] || 'string',
+				...(f.description && { description: f.description }),
+				...(f.hasDefault && { default: parseFieldDefault(f.default, f.type) })
+			};
+			if (!f.hasDefault) required.push(f.name);
+		}
+		return JSON.stringify({ type: 'object', properties, required }, null, 2);
+	}
+
+	// Chat history / system message injection helpers
+	function addSystemMessageInjection() {
+		if (!newInjectTurn || newInjectTurn < 1 || !newInjectMessage.trim()) return;
+		// Check for duplicate turn numbers
+		if (editInjectSystemMessages.some(m => m.turn === newInjectTurn)) {
+			return;
+		}
+		editInjectSystemMessages = [
+			...editInjectSystemMessages,
+			{ id: `inject_${Date.now()}`, turn: newInjectTurn, message: newInjectMessage.trim() }
+		].sort((a, b) => a.turn - b.turn);
+		// Auto-increment turn for next entry
+		newInjectTurn = Math.max(...editInjectSystemMessages.map(m => m.turn), 0) + 2;
+		newInjectMessage = '';
+		markChanged();
+	}
+
+	function removeSystemMessageInjection(id: string) {
+		editInjectSystemMessages = editInjectSystemMessages.filter(m => m.id !== id);
+		markChanged();
+	}
+
+	function updateSystemMessageInjection(id: string, field: 'turn' | 'message', value: number | string) {
+		editInjectSystemMessages = editInjectSystemMessages.map(m =>
+			m.id === id ? { ...m, [field]: value } : m
+		).sort((a, b) => a.turn - b.turn);
+		markChanged();
+	}
+
+	// Multi-LLM model helpers
+	function addMultiLLMModel() {
+		if (!newModelLabel.trim() || !newModelName.trim()) return;
+		// Check for duplicate labels
+		if (editMultiLLMModels.some(m => m.label === newModelLabel.trim())) {
+			return;
+		}
+		editMultiLLMModels = [
+			...editMultiLLMModels,
+			{
+				id: `model_${Date.now()}`,
+				label: newModelLabel.trim(),
+				name: newModelName.trim(),
+				temperature: 0.7
+			}
+		];
+		// Auto-generate next label
+		const nextNum = editMultiLLMModels.length + 1;
+		newModelLabel = `model_${nextNum}`;
+		newModelName = '';
+		markChanged();
+	}
+
+	function removeMultiLLMModel(id: string) {
+		editMultiLLMModels = editMultiLLMModels.filter(m => m.id !== id);
+		markChanged();
+	}
+
+	function updateMultiLLMModel(id: string, field: 'label' | 'name' | 'temperature' | 'maxTokens', value: string | number | undefined) {
+		editMultiLLMModels = editMultiLLMModels.map(m =>
+			m.id === id ? { ...m, [field]: value } : m
+		);
 		markChanged();
 	}
 
@@ -1285,12 +1896,12 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 		/>
 
 		<!-- Tab Content -->
-		<div class="flex-1 overflow-y-auto p-4">
+		<div class="flex-1 min-h-0 overflow-y-auto p-4">
 			<!-- Details Tab -->
 			{#if activeTab === 'details'}
 				<div class="space-y-4">
-					<!-- Skip ID/Summary/Description for data nodes - they don't need these fields -->
-					{#if node.node_type !== 'data'}
+					<!-- Skip ID/Summary/Description for data and output nodes - they don't need these fields -->
+					{#if node.node_type !== 'data' && node.node_type !== 'output'}
 						<!-- Node ID (editable) -->
 						<div>
 							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
@@ -1356,16 +1967,6 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 							{/if}
 						</div>
 					{/if}
-
-					<!-- Connections section -->
-					<PanelSection title="Connections" icon={ArrowRight} defaultOpen={true} collapsible={true}>
-						<ConnectionPreview
-							nodeId={node.id}
-							nodes={workflowNodes}
-							edges={workflowEdges}
-							on:navigate={handleConnectionNavigate}
-						/>
-					</PanelSection>
 
 					<!-- Model info (for LLM nodes) -->
 					{#if node.node_type === 'llm'}
@@ -1493,421 +2094,37 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 					{#if node.node_type === 'data'}
 						{@const sources = Array.isArray(node.data_config?.source) ? node.data_config.source : node.data_config?.source ? [node.data_config.source] : []}
 						{@const sinks = Array.isArray(node.data_config?.sink) ? node.data_config.sink : node.data_config?.sink ? [node.data_config.sink] : []}
-						<div class="space-y-4">
-							<div class="flex items-center gap-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
-								<Database size={14} />
-								Data Configuration
-							</div>
-
-							{#if isEditing}
-								<!-- Edit Mode: Source Configuration -->
-								<div class="space-y-3 p-3 bg-violet-50 dark:bg-violet-900/20 rounded-lg border border-violet-200 dark:border-violet-800">
-									<div class="flex items-center gap-2 text-xs font-medium text-violet-700 dark:text-violet-300">
-										<Cloud size={12} />
-										Source
-									</div>
-
-									<!-- Source Type Selector -->
-									<div>
-										<span class="block text-xs text-gray-500 mb-1.5">Type</span>
-										<CustomSelect
-											options={sourceTypeOptions}
-											bind:value={editDataSourceType}
-											placeholder="Select source type..."
-											onchange={markChanged}
-										/>
-									</div>
-
-									<!-- HuggingFace Fields -->
-									{#if editDataSourceType === 'hf'}
-										<div>
-											<span class="block text-xs text-gray-500 mb-1.5">Repository ID *</span>
-											<input
-												type="text"
-												bind:value={editDataRepoId}
-												oninput={markChanged}
-												placeholder="username/dataset-name"
-												class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-violet-500"
-											/>
-										</div>
-										<div class="grid grid-cols-2 gap-3">
-											<div>
-												<span class="block text-xs text-gray-500 mb-1.5">Config</span>
-												<input
-													type="text"
-													bind:value={editDataConfigName}
-													oninput={markChanged}
-													placeholder="default"
-													class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
-												/>
-											</div>
-											<div>
-												<span class="block text-xs text-gray-500 mb-1.5">Split</span>
-												<input
-													type="text"
-													bind:value={editDataSplit}
-													oninput={markChanged}
-													placeholder="train"
-													class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
-												/>
-											</div>
-										</div>
-									{/if}
-
-									<!-- Local File Fields -->
-									{#if editDataSourceType === 'disk'}
-										<div>
-											<span class="block text-xs text-gray-500 mb-1.5">File Path *</span>
-											<input
-												type="text"
-												bind:value={editDataFilePath}
-												oninput={markChanged}
-												placeholder="/path/to/file.jsonl"
-												class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-violet-500"
-											/>
-										</div>
-									{/if}
-
-									<!-- ServiceNow Fields -->
-									{#if editDataSourceType === 'servicenow'}
-										<div>
-											<span class="block text-xs text-gray-500 mb-1.5">Table *</span>
-											<input
-												type="text"
-												bind:value={editDataTable}
-												oninput={markChanged}
-												placeholder="incident"
-												class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-violet-500"
-											/>
-										</div>
-										<div>
-											<span class="block text-xs text-gray-500 mb-1.5">Fields (comma-separated)</span>
-											<input
-												type="text"
-												bind:value={editDataFields}
-												oninput={markChanged}
-												placeholder="sys_id, number, short_description"
-												class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-violet-500"
-											/>
-										</div>
-										<div class="grid grid-cols-2 gap-3">
-											<div>
-												<span class="block text-xs text-gray-500 mb-1.5">Limit</span>
-												<input
-													type="number"
-													bind:value={editDataLimit}
-													oninput={markChanged}
-													placeholder="1000"
-													class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
-												/>
-											</div>
-											<div>
-												<span class="block text-xs text-gray-500 mb-1.5">Filters (JSON)</span>
-												<input
-													type="text"
-													bind:value={editDataFilters}
-													oninput={markChanged}
-													placeholder="JSON filters"
-													class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-violet-500"
-												/>
-											</div>
-										</div>
-									{/if}
-								</div>
-
-								<!-- Edit Mode: Sink Configuration -->
-								<div class="space-y-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
-									<div class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400">
-										<Server size={12} />
-										Sink (Optional)
-									</div>
-
-									<div class="grid grid-cols-2 gap-3">
-										<div>
-											<span class="block text-xs text-gray-500 mb-1.5">Alias</span>
-											<input
-												type="text"
-												bind:value={editSinkAlias}
-												oninput={markChanged}
-												placeholder="output_sink"
-												class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
-											/>
-										</div>
-										<div>
-											<span class="block text-xs text-gray-500 mb-1.5">Type</span>
-											<CustomSelect
-												options={sinkTypeOptions}
-												bind:value={editSinkType}
-												placeholder="Select sink type..."
-												onchange={markChanged}
-											/>
-										</div>
-									</div>
-
-									<!-- Disk Sink Fields -->
-									{#if editSinkType === 'disk'}
-										<div>
-											<span class="block text-xs text-gray-500 mb-1.5">File Path *</span>
-											<input
-												type="text"
-												bind:value={editSinkFilePath}
-												oninput={markChanged}
-												placeholder="output/data.jsonl"
-												class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-violet-500"
-											/>
-										</div>
-									{/if}
-
-									<!-- HuggingFace Sink Fields -->
-									{#if editSinkType === 'hf'}
-										<div>
-											<span class="block text-xs text-gray-500 mb-1.5">Repository ID *</span>
-											<input
-												type="text"
-												bind:value={editSinkRepoId}
-												oninput={markChanged}
-												placeholder="username/dataset-name"
-												class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-violet-500"
-											/>
-										</div>
-										<div>
-											<span class="block text-xs text-gray-500 mb-1.5">Split</span>
-											<input
-												type="text"
-												bind:value={editSinkSplit}
-												oninput={markChanged}
-												placeholder="train"
-												class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
-											/>
-										</div>
-									{/if}
-
-									<!-- ServiceNow Sink Fields -->
-									{#if editSinkType === 'servicenow'}
-										<div>
-											<span class="block text-xs text-gray-500 mb-1.5">Table *</span>
-											<input
-												type="text"
-												bind:value={editSinkTable}
-												oninput={markChanged}
-												placeholder="u_output_table"
-												class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-violet-500"
-											/>
-										</div>
-										<div>
-											<span class="block text-xs text-gray-500 mb-1.5">Operation</span>
-											<CustomSelect
-												options={[
-													{ value: 'insert', label: 'Insert' },
-													{ value: 'update', label: 'Update' }
-												]}
-												bind:value={editSinkOperation}
-												placeholder="Select operation..."
-												onchange={markChanged}
-											/>
-										</div>
-									{/if}
-								</div>
-
-							{:else}
-								<!-- Display Mode: Sources -->
-								{#if sources.length > 0}
-									<div>
-										<div class="text-xs font-medium text-violet-600 dark:text-violet-400 mb-2">Sources ({sources.length})</div>
-										{#each sources as src, idx}
-											<div class="mb-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs border border-gray-200 dark:border-gray-700">
-												<div class="flex items-center justify-between mb-2">
-													<span class="font-medium text-gray-700 dark:text-gray-300">{src.alias || `Source ${idx + 1}`}</span>
-													<span class="px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-[10px] font-medium">
-														{src.type || 'unknown'}
-													</span>
-												</div>
-												{#if src.type === 'hf'}
-													<div class="text-gray-500">Repo: <span class="text-gray-700 dark:text-gray-300 font-mono">{src.repo_id || 'N/A'}</span></div>
-													{#if src.split}<div class="text-gray-500">Split: <span class="text-gray-700 dark:text-gray-300">{Array.isArray(src.split) ? src.split.join(', ') : src.split}</span></div>{/if}
-												{:else if src.type === 'servicenow'}
-													<div class="text-gray-500">Table: <span class="text-gray-700 dark:text-gray-300 font-mono">{src.table || 'N/A'}</span></div>
-													{#if src.limit}<div class="text-gray-500">Limit: <span class="text-gray-700 dark:text-gray-300">{src.limit}</span></div>{/if}
-												{:else if src.type === 'disk'}
-													<div class="text-gray-500">File: <span class="text-gray-700 dark:text-gray-300 font-mono break-all">{src.file_path || 'N/A'}</span></div>
-												{/if}
-												{#if src.join_type && src.join_type !== 'primary'}
-													<div class="text-gray-500">Join: <span class="text-amber-600 dark:text-amber-400">{src.join_type}</span></div>
-												{/if}
-											</div>
-										{/each}
-									</div>
-								{:else}
-									<div class="text-xs text-gray-400 italic p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">No sources configured. Click Edit to add a source.</div>
-								{/if}
-
-								<!-- Display Mode: Sinks -->
-								{#if sinks.length > 0}
-									<div>
-										<div class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Sinks ({sinks.length})</div>
-										{#each sinks as sink, idx}
-											<div class="mb-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs border border-gray-200 dark:border-gray-700">
-												<div class="flex items-center justify-between mb-2">
-													<span class="font-medium text-gray-700 dark:text-gray-300">{sink.alias || `Sink ${idx + 1}`}</span>
-													<span class="px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-[10px] font-medium">
-														{sink.operation || 'write'}
-													</span>
-												</div>
-												{#if sink.type === 'servicenow'}
-													<div class="text-gray-500">Table: <span class="text-gray-700 dark:text-gray-300 font-mono">{sink.table || 'N/A'}</span></div>
-												{:else}
-													<div class="text-gray-500">Type: <span class="text-gray-700 dark:text-gray-300">{sink.type || 'N/A'}</span></div>
-												{/if}
-											</div>
-										{/each}
-									</div>
-								{/if}
-
-								<!-- Sample Data Preview (only show when sources exist) -->
-								{#if sources.length > 0}
-									<div class="pt-2 border-t border-gray-200 dark:border-gray-700">
-										<button
-											onclick={() => { showDataPreview = !showDataPreview; if (!dataPreviewData && showDataPreview) fetchDataPreview(); }}
-											class="flex items-center gap-2 text-xs font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors"
-										>
-											{#if showDataPreview}
-												<EyeOff size={14} />
-												Hide Sample Data
-											{:else}
-												<Eye size={14} />
-												Preview Sample Data
-											{/if}
-										</button>
-
-									{#if showDataPreview}
-										<div class="mt-3 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-											{#if dataPreviewLoading}
-												<div class="p-4 flex items-center justify-center gap-2 text-gray-500">
-													<Loader2 size={16} class="animate-spin" />
-													<span class="text-sm">Loading sample data...</span>
-												</div>
-											{:else if dataPreviewData?.message}
-												<div class="p-3 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800">
-													<span class="text-xs text-yellow-700 dark:text-yellow-300">{dataPreviewData.message}</span>
-												</div>
-											{:else if dataPreviewData?.records && dataPreviewData.records.length > 0}
-												{@const columns = Object.keys(dataPreviewData.records[0] || {})}
-												<!-- Header -->
-												<div class="bg-gray-50 dark:bg-gray-800 px-3 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-													<div class="flex items-center gap-2">
-														<Database size={12} class="text-gray-400" />
-														<span class="text-xs font-medium text-gray-600 dark:text-gray-300">
-															{columns.length} columns
-														</span>
-													</div>
-													<span class="text-xs text-gray-500 dark:text-gray-400">
-														{#if typeof dataPreviewData.total === 'number'}
-															{dataPreviewData.records.length} of {dataPreviewData.total.toLocaleString()} rows
-														{:else}
-															{dataPreviewData.records.length} rows
-														{/if}
-													</span>
-												</div>
-												<!-- Table -->
-												<div class="overflow-auto max-h-64">
-													<table class="w-full text-xs">
-														<thead class="sticky top-0 bg-gray-100 dark:bg-gray-800 z-10">
-															<tr>
-																<th class="px-2 py-1.5 text-left font-medium text-gray-500 dark:text-gray-400 border-b border-r border-gray-200 dark:border-gray-700 w-8">#</th>
-																{#each columns as col}
-																	<th class="px-2 py-1.5 text-left font-medium text-gray-600 dark:text-gray-300 border-b border-r border-gray-200 dark:border-gray-700 whitespace-nowrap max-w-xs">
-																		{col}
-																	</th>
-																{/each}
-															</tr>
-														</thead>
-														<tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-															{#each dataPreviewData.records as record, i}
-																<tr
-																	class="hover:bg-violet-50 dark:hover:bg-violet-900/20 cursor-pointer transition-colors {expandedPreviewRows.has(i) ? 'bg-violet-50 dark:bg-violet-900/20' : ''}"
-																	onclick={() => togglePreviewRowExpand(i)}
-																>
-																	<td class="px-2 py-1.5 text-gray-400 border-r border-gray-100 dark:border-gray-800 font-mono">
-																		<span class="inline-flex items-center gap-1">
-																			<span class="text-gray-300 dark:text-gray-600 transition-transform {expandedPreviewRows.has(i) ? 'rotate-90' : ''}">▶</span>
-																			{i + 1}
-																		</span>
-																	</td>
-																	{#each columns as col}
-																		{@const value = record[col]}
-																		<td class="px-2 py-1.5 border-r border-gray-100 dark:border-gray-800 max-w-xs">
-																			{#if value === null || value === undefined}
-																				<span class="text-gray-300 dark:text-gray-600 italic">null</span>
-																			{:else if typeof value === 'boolean'}
-																				<span class="px-1.5 py-0.5 rounded text-xs font-medium {value ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}">
-																					{value}
-																				</span>
-																			{:else if typeof value === 'number'}
-																				<span class="font-mono text-violet-600 dark:text-violet-400">{value}</span>
-																			{:else if typeof value === 'object'}
-																				<span class="text-gray-500 dark:text-gray-400 font-mono truncate block max-w-[200px]">
-																					{JSON.stringify(value).slice(0, 50)}{JSON.stringify(value).length > 50 ? '...' : ''}
-																				</span>
-																			{:else}
-																				<span class="text-gray-700 dark:text-gray-300 truncate block max-w-[200px]">
-																					{String(value).slice(0, 80)}{String(value).length > 80 ? '...' : ''}
-																				</span>
-																			{/if}
-																		</td>
-																	{/each}
-																</tr>
-																<!-- Expanded row detail -->
-																{#if expandedPreviewRows.has(i)}
-																	<tr class="bg-gray-50 dark:bg-gray-800/70">
-																		<td colspan={columns.length + 1} class="p-0">
-																			<div class="p-3 space-y-2 border-l-4 border-violet-400 dark:border-violet-500 ml-2">
-																				{#each columns as col}
-																					{@const value = record[col]}
-																					<div class="flex gap-3">
-																						<span class="text-xs font-semibold text-gray-500 dark:text-gray-400 min-w-[100px] flex-shrink-0 pt-0.5">
-																							{col}
-																						</span>
-																						<div class="flex-1 min-w-0">
-																							{#if value === null || value === undefined}
-																								<span class="text-xs text-gray-300 dark:text-gray-600 italic">null</span>
-																							{:else if typeof value === 'boolean'}
-																								<span class="px-1.5 py-0.5 rounded text-xs font-medium {value ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}">
-																									{value}
-																								</span>
-																							{:else if typeof value === 'number'}
-																								<span class="text-xs font-mono text-violet-600 dark:text-violet-400">{value}</span>
-																							{:else if typeof value === 'object'}
-																								<pre class="text-xs font-mono text-gray-600 dark:text-gray-300 whitespace-pre-wrap break-all bg-white dark:bg-gray-900 p-2 rounded border border-gray-200 dark:border-gray-700 max-h-40 overflow-auto">{JSON.stringify(value, null, 2)}</pre>
-																							{:else}
-																								<div class="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words bg-white dark:bg-gray-900 p-2 rounded border border-gray-200 dark:border-gray-700 max-h-40 overflow-auto">
-																									{String(value)}
-																								</div>
-																							{/if}
-																						</div>
-																					</div>
-																				{/each}
-																			</div>
-																		</td>
-																	</tr>
-																{/if}
-															{/each}
-														</tbody>
-													</table>
-												</div>
-											{:else if !dataPreviewLoading}
-												<button
-													onclick={fetchDataPreview}
-													class="w-full p-4 text-center text-sm text-gray-500 hover:text-violet-600 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-												>
-													Click to load sample data
-												</button>
-											{/if}
-										</div>
-									{/if}
-									</div>
-								{/if}
-							{/if}
-						</div>
+						{@const displayTransforms = sources.length > 0 && sources[0]?.transformations
+							? sources[0].transformations.map((t: any, i: number) => ({
+								id: t.id || `t_${i}`,
+								transform: t.transform,
+								params: t.params || {},
+								enabled: t.enabled !== false
+							}))
+							: []}
+						{@const displaySinks = sinks.map((s: any) => ({
+							type: s.type || (s.repo_id ? 'hf' : s.table ? 'servicenow' : 'disk'),
+							alias: s.alias,
+							file_path: s.file_path,
+							repo_id: s.repo_id,
+							split: s.split,
+							table: s.table,
+							operation: s.operation
+						}))}
+						<DataConfigSection
+							sources={isEditing ? editDataSources : sources}
+							sinks={isEditing ? editDataSinks : displaySinks}
+							transforms={isEditing ? editSourceTransforms : displayTransforms}
+							idColumn={isEditing ? editIdColumn : node.data_config?.id_column}
+							{isEditing}
+							{sourcePreviewData}
+							{sourcePreviewLoading}
+							on:sourcesUpdate={handleSourcesUpdate}
+							on:sinksUpdate={handleSinksUpdate}
+							on:transformsUpdate={handleTransformsUpdate}
+							on:sourcePreviewFetch={handleSourcePreviewFetch}
+							on:sourcePreviewRefresh={handleSourcePreviewRefresh}
+						/>
 					{/if}
 
 					<!-- Output node config -->
@@ -1920,7 +2137,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 								<div class="space-y-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
 									<div class="flex items-center justify-between">
 										<div class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400">
-											<Map size={12} />
+											<MapIcon size={12} />
 											Output Mappings
 										</div>
 										<button
@@ -2023,26 +2240,64 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 								{#if outputKeys.length > 0}
 									<div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
 										<div class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 mb-3">
-											<Map size={12} />
+											<MapIcon size={12} />
 											Output Mappings ({outputKeys.length})
 										</div>
-										<div class="space-y-2 max-h-48 overflow-y-auto">
+										<div class="space-y-2 max-h-64 overflow-y-auto">
 											{#each outputKeys as key}
 												{@const mapping = outputMap[key]}
-												<div class="flex items-center gap-2 p-2 bg-white dark:bg-gray-900 rounded-lg text-sm border border-gray-200 dark:border-gray-700">
-													<span class="font-mono text-gray-700 dark:text-gray-300 truncate flex-shrink-0" title={key}>
-														{key.length > 15 ? key.slice(0, 15) + '...' : key}
-													</span>
-													<ArrowRight size={12} class="text-gray-400 flex-shrink-0" />
-													{#if mapping.from}
-														<span class="font-mono text-violet-600 dark:text-violet-400 truncate">{mapping.from}</span>
-													{:else if mapping.value !== undefined}
-														<span class="px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs">static</span>
-													{/if}
-													{#if mapping.transform}
-														<span class="px-2 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-xs flex-shrink-0">
-															fn: {mapping.transform}
+												<div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+													<div class="flex items-center gap-2 p-2 text-sm">
+														<span class="font-mono text-gray-700 dark:text-gray-300 truncate flex-shrink-0" title={key}>
+															{key.length > 15 ? key.slice(0, 15) + '...' : key}
 														</span>
+														<ArrowRight size={12} class="text-gray-400 flex-shrink-0" />
+														{#if mapping.from}
+															<span class="font-mono text-violet-600 dark:text-violet-400 truncate">{mapping.from}</span>
+														{:else if mapping.value !== undefined}
+															<span class="px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs">static</span>
+														{/if}
+														{#if mapping.transform}
+															<button
+																type="button"
+																onclick={() => toggleTransformCode(key, mapping.transform)}
+																class="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs flex-shrink-0 hover:bg-amber-200 dark:hover:bg-amber-800/50 transition-colors"
+																title="Click to view transform function code"
+															>
+																<Code size={10} />
+																fn: {mapping.transform}
+																{#if transformCodeLoading[key]}
+																	<Loader2 size={10} class="animate-spin" />
+																{:else}
+																	<ChevronDown size={10} class="transition-transform {transformCodeExpanded[key] ? 'rotate-180' : ''}" />
+																{/if}
+															</button>
+														{/if}
+													</div>
+													<!-- Expandable transform code preview -->
+													{#if mapping.transform && transformCodeExpanded[key]}
+														<div class="border-t border-gray-200 dark:border-gray-700">
+															{#if transformCodeLoading[key]}
+																<div class="flex items-center justify-center py-3 bg-gray-50 dark:bg-gray-800">
+																	<Loader2 size={14} class="animate-spin text-gray-400" />
+																	<span class="ml-2 text-xs text-gray-500">Loading...</span>
+																</div>
+															{:else if transformCodeMap[key]}
+																<div class="monaco-editor-wrapper">
+																	<MonacoEditor
+																		value={transformCodeMap[key]}
+																		language="python"
+																		height="150px"
+																																				fontSize={11}
+																		readonly={true}
+																	/>
+																</div>
+															{:else}
+																<div class="text-center py-2 text-gray-400 text-xs bg-gray-50 dark:bg-gray-800">
+																	Transform function not found
+																</div>
+															{/if}
+														</div>
 													{/if}
 												</div>
 											{/each}
@@ -2267,6 +2522,349 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 							</div>
 						{/if}
 					{/if}
+
+					<!-- Multi-Turn Conversations Section (for LLM/Agent nodes) -->
+					{#if node.node_type === 'llm' || node.node_type === 'agent'}
+						<div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+							<!-- Header with toggle -->
+							<div class="flex items-center justify-between mb-3">
+								<div class="flex items-center gap-2">
+									<MessageSquare size={14} class="text-gray-400" />
+									<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Multi-Turn Conversations</span>
+								</div>
+								{#if isEditing}
+									<label class="flex items-center gap-2 cursor-pointer">
+										<span class="text-xs text-gray-500">Enable</span>
+										<button
+											type="button"
+											onclick={() => { editChatHistoryEnabled = !editChatHistoryEnabled; markChanged(); }}
+											class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 {editChatHistoryEnabled ? 'bg-violet-600' : 'bg-gray-200 dark:bg-gray-700'}"
+											role="switch"
+											aria-checked={editChatHistoryEnabled}
+										>
+											<span
+												class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {editChatHistoryEnabled ? 'translate-x-4' : 'translate-x-0'}"
+											></span>
+										</button>
+									</label>
+								{:else}
+									<span class="text-xs px-2 py-0.5 rounded-full {node.chat_history ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500'}">
+										{node.chat_history ? 'Enabled' : 'Disabled'}
+									</span>
+								{/if}
+							</div>
+
+							{#if isEditing && editChatHistoryEnabled}
+								<!-- Description -->
+								<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
+									Track conversation history across turns. Inject system messages at specific turns to guide the conversation flow.
+								</p>
+
+								<!-- System Message Injections -->
+								<div class="space-y-3">
+									<div class="flex items-center justify-between">
+										<span class="text-xs font-medium text-gray-600 dark:text-gray-400">Turn-Based System Injections</span>
+										<span class="text-xs text-gray-400 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">
+											{editInjectSystemMessages.length} configured
+										</span>
+									</div>
+
+									<!-- Existing injections -->
+									{#if editInjectSystemMessages.length > 0}
+										<div class="space-y-2">
+											{#each editInjectSystemMessages as msg (msg.id)}
+												<div class="flex items-center gap-2 group">
+													<div class="flex items-center gap-1 px-2 py-1.5 bg-violet-50 dark:bg-violet-900/20 rounded-lg border border-violet-200 dark:border-violet-800">
+														<span class="text-[10px] text-violet-500 dark:text-violet-400 uppercase">Turn</span>
+														<input
+															type="number"
+															value={msg.turn}
+															min="1"
+															onchange={(e) => updateSystemMessageInjection(msg.id, 'turn', parseInt(e.currentTarget.value) || 1)}
+															class="w-10 px-1 py-0.5 text-xs font-mono text-center border-0 bg-transparent text-violet-700 dark:text-violet-300 focus:ring-0"
+														/>
+													</div>
+													<div class="flex-1 relative">
+														<input
+															type="text"
+															value={msg.message}
+															oninput={(e) => updateSystemMessageInjection(msg.id, 'message', e.currentTarget.value)}
+															placeholder="System message content..."
+															class="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+														/>
+													</div>
+													<button
+														onclick={() => removeSystemMessageInjection(msg.id)}
+														class="p-1.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+														title="Remove"
+													>
+														<X size={14} />
+													</button>
+												</div>
+											{/each}
+										</div>
+									{/if}
+
+									<!-- Add new injection - inline form -->
+									<div class="flex items-center gap-2">
+										<div class="flex items-center gap-1 px-2 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+											<span class="text-[10px] text-gray-400 uppercase">Turn</span>
+											<input
+												type="number"
+												bind:value={newInjectTurn}
+												min="1"
+												class="w-10 px-1 py-0.5 text-xs font-mono text-center border-0 bg-transparent text-gray-700 dark:text-gray-300 focus:ring-0"
+											/>
+										</div>
+										<div class="flex-1">
+											<input
+												type="text"
+												bind:value={newInjectMessage}
+												placeholder="Add a system message to inject at this turn..."
+												onkeydown={(e) => { if (e.key === 'Enter') addSystemMessageInjection(); }}
+												class="w-full px-3 py-1.5 text-sm border border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-solid"
+											/>
+										</div>
+										<button
+											onclick={addSystemMessageInjection}
+											disabled={!newInjectTurn || newInjectTurn < 1 || !newInjectMessage.trim()}
+											class="px-3 py-1.5 text-xs font-medium text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 disabled:text-gray-300 dark:disabled:text-gray-600 disabled:hover:bg-transparent rounded-lg transition-colors"
+										>
+											<Plus size={14} />
+										</button>
+									</div>
+								</div>
+
+							{:else if !isEditing && node.chat_history}
+								<!-- View mode -->
+								<p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+									Conversation history is tracked across turns.
+								</p>
+								{#if node.inject_system_messages && node.inject_system_messages.length > 0}
+									<div class="space-y-1.5">
+										{#each node.inject_system_messages as msg}
+											{@const turn = Object.keys(msg)[0]}
+											{@const message = Object.values(msg)[0]}
+											<div class="flex items-center gap-2">
+												<span class="text-xs font-medium text-violet-600 dark:text-violet-400 px-2 py-0.5 bg-violet-50 dark:bg-violet-900/20 rounded">
+													Turn {turn}
+												</span>
+												<span class="text-sm text-gray-600 dark:text-gray-400">{message}</span>
+											</div>
+										{/each}
+									</div>
+								{:else}
+									<div class="text-xs text-gray-400 italic">No turn-based injections configured</div>
+								{/if}
+
+							{:else if !isEditing}
+								<p class="text-xs text-gray-400">
+									Enable to track conversation history and inject messages at specific turns.
+								</p>
+							{/if}
+						</div>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- Models Tab (for Multi-LLM nodes) -->
+			{#if activeTab === 'models' && showModelsTab}
+				<div class="space-y-4">
+					<!-- Models Section -->
+					<div>
+						<div class="flex items-center justify-between mb-3">
+							<span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+								Parallel Models
+							</span>
+							{#if isEditing}
+								<span class="text-xs text-gray-400 px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">
+									{editMultiLLMModels.length} model{editMultiLLMModels.length !== 1 ? 's' : ''}
+								</span>
+							{/if}
+						</div>
+
+						{#if isEditing}
+							<!-- Model cards -->
+							{#if editMultiLLMModels.length > 0}
+								<div class="space-y-3 mb-4">
+									{#each editMultiLLMModels as model (model.id)}
+										<div class="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 group hover:border-cyan-300 dark:hover:border-cyan-700 transition-colors">
+											<!-- Model Header -->
+											<div class="flex items-center justify-between mb-3">
+												<div class="flex items-center gap-2">
+													<div class="w-7 h-7 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
+														<Bot size={16} class="text-cyan-600 dark:text-cyan-400" />
+													</div>
+													<input
+														type="text"
+														value={model.label}
+														oninput={(e) => updateMultiLLMModel(model.id, 'label', e.currentTarget.value)}
+														placeholder="model_label"
+														class="px-2 py-1 text-sm font-semibold border border-transparent hover:border-gray-200 dark:hover:border-gray-600 focus:border-cyan-500 rounded bg-transparent text-gray-800 dark:text-gray-200 w-28"
+													/>
+												</div>
+												<button
+													onclick={() => removeMultiLLMModel(model.id)}
+													class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-all"
+													title="Remove model"
+												>
+													<X size={14} />
+												</button>
+											</div>
+
+											<!-- Model Selection -->
+											<div class="mb-3">
+												<label class="text-[10px] text-gray-500 uppercase tracking-wide block mb-1">Model</label>
+												<CustomSelect
+													options={modelOptions}
+													value={model.name}
+													placeholder="Select model..."
+													searchable={true}
+													onchange={(val) => updateMultiLLMModel(model.id, 'name', val)}
+												/>
+											</div>
+
+											<!-- Parameters -->
+											<div class="grid grid-cols-2 gap-3">
+												<div>
+													<label class="text-[10px] text-gray-500 uppercase tracking-wide block mb-1">Temperature</label>
+													<input
+														type="number"
+														value={model.temperature}
+														oninput={(e) => updateMultiLLMModel(model.id, 'temperature', parseFloat(e.currentTarget.value) || 0.7)}
+														min="0"
+														max="2"
+														step="0.1"
+														class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+													/>
+												</div>
+												<div>
+													<label class="text-[10px] text-gray-500 uppercase tracking-wide block mb-1">Max Tokens</label>
+													<input
+														type="number"
+														value={model.maxTokens ?? ''}
+														oninput={(e) => updateMultiLLMModel(model.id, 'maxTokens', e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined)}
+														min="1"
+														placeholder="—"
+														class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+													/>
+												</div>
+											</div>
+										</div>
+									{/each}
+								</div>
+							{:else}
+								<div class="text-center py-8 text-gray-400 text-sm border border-dashed border-gray-300 dark:border-gray-700 rounded-lg mb-4">
+									<Bot size={24} class="mx-auto mb-2 opacity-50" />
+									No models configured.<br />Add at least two models for parallel execution.
+								</div>
+							{/if}
+
+							<!-- Add new model form -->
+							<div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+								<div class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-3">Add Model</div>
+								<div class="flex items-end gap-2">
+									<div class="w-28">
+										<label class="text-[10px] text-gray-400 uppercase tracking-wide block mb-1">Label</label>
+										<input
+											type="text"
+											bind:value={newModelLabel}
+											placeholder="model_1"
+											class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+										/>
+									</div>
+									<div class="flex-1">
+										<label class="text-[10px] text-gray-400 uppercase tracking-wide block mb-1">Model</label>
+										<CustomSelect
+											options={modelOptions}
+											bind:value={newModelName}
+											placeholder="Select model..."
+											searchable={true}
+											onchange={(val) => { newModelName = val; }}
+										/>
+									</div>
+									<button
+										onclick={addMultiLLMModel}
+										disabled={!newModelLabel.trim() || !newModelName.trim()}
+										class="px-4 py-2 text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-1.5"
+									>
+										<Plus size={16} />
+										Add
+									</button>
+								</div>
+							</div>
+
+						{:else}
+							<!-- View mode -->
+							{#if node?.models && Object.keys(node.models).length > 0}
+								<div class="space-y-2">
+									{#each Object.entries(node.models) as [label, config]}
+										<div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
+											<div class="flex items-center gap-3">
+												<div class="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
+													<Bot size={16} class="text-cyan-600 dark:text-cyan-400" />
+												</div>
+												<div>
+													<div class="font-medium text-sm text-gray-800 dark:text-gray-200">{label}</div>
+													<div class="text-xs text-gray-500 dark:text-gray-400 font-mono">{config.name}</div>
+												</div>
+											</div>
+											{#if config.parameters?.temperature !== undefined}
+												<div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+													<Thermometer size={12} />
+													<span>{config.parameters.temperature}</span>
+												</div>
+											{/if}
+										</div>
+									{/each}
+								</div>
+							{:else}
+								<div class="text-center py-6 text-gray-400 text-sm">
+									No models configured
+								</div>
+							{/if}
+						{/if}
+					</div>
+
+					<!-- Post-processor Section -->
+					<div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+						<div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+							Post-Processor (Optional)
+						</div>
+						{#if isEditing}
+							<input
+								type="text"
+								bind:value={editMultiLLMPostProcess}
+								oninput={() => markChanged()}
+								placeholder="module.path.CustomPostProcessor"
+								class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+							/>
+							<p class="mt-1 text-xs text-gray-400">
+								Custom function to aggregate responses from all models.
+							</p>
+						{:else}
+							{#if node?.multi_llm_post_process}
+								<div class="px-3 py-2 text-sm font-mono bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300">
+									{node.multi_llm_post_process}
+								</div>
+							{:else}
+								<div class="text-xs text-gray-400 italic">Using default aggregator</div>
+							{/if}
+						{/if}
+					</div>
+
+					<!-- Help Section -->
+					<div class="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-3">
+						<div class="flex items-start gap-2">
+							<GitCompareArrows size={16} class="text-cyan-600 dark:text-cyan-400 mt-0.5" />
+							<div class="text-xs text-cyan-700 dark:text-cyan-300">
+								<strong>Multi-LLM Execution</strong>
+								<p class="mt-1 text-cyan-600 dark:text-cyan-400">
+									All models execute in parallel with the same prompt. Use for model comparison, A/B testing, or ensemble responses.
+								</p>
+							</div>
+						</div>
+					</div>
 				</div>
 			{/if}
 
@@ -2416,8 +3014,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 									bind:value={editTransformCode}
 									language="python"
 									height="clamp(250px, 35vh, 450px)"
-									theme="vs-dark"
-									fontSize={12}
+																		fontSize={12}
 									readonly={!isEditing}
 									on:change={() => markChanged()}
 								/>
@@ -2427,44 +3024,150 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 
 					<!-- Output Node: Generator Code -->
 					{#if node.node_type === 'output'}
-						<div>
-							<div class="flex items-center justify-between mb-2">
-								<div class="text-xs font-medium text-purple-600 dark:text-purple-400 uppercase tracking-wider">
-									Output Generator
-								</div>
-								<span class="text-xs text-gray-400">Python class</span>
+						<div class="space-y-4">
+							<!-- Generator Class Section -->
+							<div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+								<button
+									type="button"
+									onclick={() => generatorCodeExpanded = !generatorCodeExpanded}
+									class="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+								>
+									<div class="flex items-center gap-2">
+										<Code size={14} class="text-purple-500" />
+										<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Generator Class</span>
+										{#if node.output_config?.generator}
+											<span class="text-xs font-mono text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
+												{node.output_config.generator.split('.').pop()}
+											</span>
+										{/if}
+									</div>
+									<div class="flex items-center gap-2">
+										{#if fetchedGeneratorLoading}
+											<Loader2 size={14} class="animate-spin text-gray-400" />
+										{:else if fetchedGeneratorCode}
+											<span class="text-xs text-green-500">Loaded</span>
+										{/if}
+										<ChevronDown size={16} class="text-gray-400 transition-transform {generatorCodeExpanded ? 'rotate-180' : ''}" />
+									</div>
+								</button>
+
+								{#if generatorCodeExpanded}
+									<div class="p-3 border-t border-gray-200 dark:border-gray-700">
+										{#if isEditing}
+											<div class="mb-3">
+												<span class="block text-xs text-gray-500 mb-1">Generator Class Path</span>
+												<input
+													type="text"
+													bind:value={editOutputGenerator}
+													oninput={markChanged}
+													aria-label="Generator class path"
+													class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
+													placeholder="tasks.my_task.task_executor.MyOutputGenerator"
+												/>
+											</div>
+											<div class="text-xs text-gray-500 mb-2">
+												Edit the generator class code below. Changes will be saved to task_executor.py.
+											</div>
+											<div class="monaco-editor-wrapper">
+												<MonacoEditor
+													bind:value={editOutputGeneratorCode}
+													language="python"
+													height="clamp(300px, 40vh, 500px)"
+																										fontSize={12}
+													readonly={false}
+													on:change={() => markChanged()}
+												/>
+											</div>
+										{:else}
+											{#if node.output_config?.generator}
+												<div class="text-xs text-gray-500 mb-2 font-mono break-all">
+													{node.output_config.generator}
+												</div>
+											{/if}
+											{#if fetchedGeneratorLoading}
+												<div class="flex items-center justify-center py-8">
+													<Loader2 size={20} class="animate-spin text-gray-400" />
+													<span class="ml-2 text-sm text-gray-500">Loading code...</span>
+												</div>
+											{:else if fetchedGeneratorCode}
+												<div class="monaco-editor-wrapper">
+													<MonacoEditor
+														value={fetchedGeneratorCode}
+														language="python"
+														height="clamp(300px, 40vh, 500px)"
+																												fontSize={12}
+														readonly={true}
+													/>
+												</div>
+											{:else}
+												<div class="text-center py-6 text-gray-400 text-sm">
+													No generator code found. The file may not exist yet.
+												</div>
+											{/if}
+										{/if}
+									</div>
+								{/if}
 							</div>
-							{#if isEditing}
-								<div class="mb-2">
-									<span class="block text-xs text-gray-500 mb-1">Generator Class Path</span>
-									<input
-										type="text"
-										bind:value={editOutputGenerator}
-										oninput={markChanged}
-										aria-label="Generator class path"
-										class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
-										placeholder="tasks.my_task.task_executor.MyOutputGenerator"
-									/>
-								</div>
-							{:else if node.output_config?.generator}
-								<div class="text-sm text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg break-all mb-2">
-									{node.output_config.generator}
+
+							<!-- Transform Functions Section (if any mappings have transforms) -->
+							{#if !isEditing && Object.entries(node.output_config?.output_map || {}).some(([_, m]) => m.transform)}
+								{@const mappingsWithTransform = Object.entries(node.output_config?.output_map || {}).filter(([_, m]) => m.transform)}
+								<div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+									<div class="p-3 bg-gray-50 dark:bg-gray-800/50">
+										<div class="flex items-center gap-2">
+											<Zap size={14} class="text-amber-500" />
+											<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Transform Functions</span>
+											<span class="text-xs text-gray-500">({mappingsWithTransform.length})</span>
+										</div>
+									</div>
+									<div class="divide-y divide-gray-200 dark:divide-gray-700">
+										{#each mappingsWithTransform as [key, mapping]}
+											<div class="p-3">
+												<button
+													type="button"
+													onclick={() => toggleTransformCode(key, mapping.transform)}
+													class="w-full flex items-center justify-between mb-2 text-left"
+												>
+													<div class="flex items-center gap-2">
+														<span class="text-sm font-mono text-gray-700 dark:text-gray-300">{key}</span>
+														<ArrowRight size={12} class="text-gray-400" />
+														<span class="px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-mono">
+															{mapping.transform}()
+														</span>
+													</div>
+													<div class="flex items-center gap-2">
+														{#if transformCodeLoading[key]}
+															<Loader2 size={12} class="animate-spin text-gray-400" />
+														{/if}
+														<ChevronDown size={14} class="text-gray-400 transition-transform {transformCodeExpanded[key] ? 'rotate-180' : ''}" />
+													</div>
+												</button>
+												{#if transformCodeExpanded[key]}
+													{#if transformCodeLoading[key]}
+														<div class="flex items-center justify-center py-4">
+															<Loader2 size={16} class="animate-spin text-gray-400" />
+														</div>
+													{:else if transformCodeMap[key]}
+														<div class="monaco-editor-wrapper mt-2">
+															<MonacoEditor
+																value={transformCodeMap[key]}
+																language="python"
+																height="clamp(150px, 20vh, 250px)"
+																																fontSize={11}
+																readonly={true}
+															/>
+														</div>
+													{:else}
+														<div class="text-center py-3 text-gray-400 text-xs">
+															Transform function code not found
+														</div>
+													{/if}
+												{/if}
+											</div>
+										{/each}
+									</div>
 								</div>
 							{/if}
-							<div class="text-xs text-gray-500 mb-2">
-								Generate output records from workflow state. This code will be saved to task_executor.py.
-							</div>
-							<div class="monaco-editor-wrapper">
-								<MonacoEditor
-									bind:value={editOutputGeneratorCode}
-									language="python"
-									height="clamp(250px, 35vh, 450px)"
-									theme="vs-dark"
-									fontSize={12}
-									readonly={!isEditing}
-									on:change={() => markChanged()}
-								/>
-							</div>
 						</div>
 					{/if}
 
@@ -2497,8 +3200,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 									bind:value={preProcessCode}
 									language="python"
 									height="clamp(200px, 25vh, 350px)"
-									theme="vs-dark"
-									fontSize={12}
+																		fontSize={12}
 									readonly={!isEditing}
 									on:change={() => markChanged()}
 								/>
@@ -2535,8 +3237,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 									bind:value={postProcessCode}
 									language="python"
 									height="clamp(200px, 25vh, 350px)"
-									theme="vs-dark"
-									fontSize={12}
+																		fontSize={12}
 									readonly={!isEditing}
 									on:change={() => markChanged()}
 								/>
@@ -2582,8 +3283,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 									bind:value={lambdaCode}
 									language="python"
 									height="clamp(250px, 35vh, 450px)"
-									theme="vs-dark"
-									fontSize={12}
+																		fontSize={12}
 									readonly={!isEditing}
 									on:change={() => markChanged()}
 								/>
@@ -2608,8 +3308,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 									bind:value={branchConditionCode}
 									language="python"
 									height="clamp(250px, 35vh, 450px)"
-									theme="vs-dark"
-									fontSize={12}
+																		fontSize={12}
 									readonly={!isEditing}
 									on:change={() => markChanged()}
 								/>
@@ -3120,6 +3819,258 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 											No parameters configured
 										</div>
 									{/if}
+								</div>
+							{/if}
+						</div>
+					{/if}
+
+					<!-- Structured Output (for LLM/Agent nodes) -->
+					{#if node.node_type === 'llm' || node.node_type === 'agent'}
+						<div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+							<div class="flex items-center justify-between mb-3">
+								<div class="text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+									<Code size={12} />
+									Structured Output
+								</div>
+								{#if isEditing}
+									<label class="flex items-center gap-2 cursor-pointer">
+										<input
+											type="checkbox"
+											bind:checked={editStructuredOutputEnabled}
+											onchange={() => markChanged()}
+											class="w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
+										/>
+										<span class="text-xs text-gray-600 dark:text-gray-400">Enable</span>
+									</label>
+								{:else}
+									<span class="text-xs px-2 py-0.5 rounded {node.model?.structured_output?.enabled ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500'}">
+										{node.model?.structured_output?.enabled ? 'Enabled' : 'Disabled'}
+									</span>
+								{/if}
+							</div>
+
+							{#if isEditing && editStructuredOutputEnabled}
+								<!-- Schema Mode Toggle -->
+								<div class="mb-4">
+									<div class="text-xs text-gray-500 mb-2">Schema Type</div>
+									<div class="flex gap-4">
+										<label class="flex items-center gap-2 cursor-pointer">
+											<input
+												type="radio"
+												bind:group={editSchemaMode}
+												value="inline"
+												onchange={() => markChanged()}
+												class="w-4 h-4 text-violet-600 border-gray-300 focus:ring-violet-500"
+											/>
+											<span class="text-sm text-gray-700 dark:text-gray-300">Inline Schema</span>
+										</label>
+										<label class="flex items-center gap-2 cursor-pointer">
+											<input
+												type="radio"
+												bind:group={editSchemaMode}
+												value="class_path"
+												onchange={() => markChanged()}
+												class="w-4 h-4 text-violet-600 border-gray-300 focus:ring-violet-500"
+											/>
+											<span class="text-sm text-gray-700 dark:text-gray-300">Class Path</span>
+										</label>
+									</div>
+								</div>
+
+								{#if editSchemaMode === 'inline'}
+									<!-- Inline Schema Fields -->
+									<div class="mb-4">
+										<div class="flex items-center justify-between mb-2">
+											<div class="text-xs text-gray-500">Output Fields</div>
+											<button
+												onclick={addSchemaField}
+												class="flex items-center gap-1 px-2 py-1 text-xs font-medium text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded transition-colors"
+											>
+												<Plus size={12} />
+												Add Field
+											</button>
+										</div>
+
+										{#if editSchemaFields.length === 0}
+											<div class="text-center py-4 text-gray-400 text-xs border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+												No fields defined. Click "Add Field" to add one.
+											</div>
+										{:else}
+											<div class="space-y-2">
+												{#each editSchemaFields as field (field.id)}
+													<div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+														<div class="flex items-start gap-2">
+															<!-- Field Name -->
+															<div class="flex-1">
+																<input
+																	type="text"
+																	value={field.name}
+																	oninput={(e) => updateSchemaField(field.id, 'name', e.currentTarget.value)}
+																	placeholder="field_name"
+																	class="w-full px-2 py-1.5 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+																/>
+															</div>
+															<!-- Field Type -->
+															<div class="w-28">
+																<CustomSelect
+																	options={schemaFieldTypeOptions}
+																	value={field.type}
+																	compact={true}
+																	searchable={false}
+																	onchange={(val) => updateSchemaField(field.id, 'type', val)}
+																/>
+															</div>
+															<!-- Delete Button -->
+															<button
+																onclick={() => removeSchemaField(field.id)}
+																class="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+																title="Remove field"
+															>
+																<Trash2 size={14} />
+															</button>
+														</div>
+														<!-- Description -->
+														<div class="mt-2">
+															<input
+																type="text"
+																value={field.description}
+																oninput={(e) => updateSchemaField(field.id, 'description', e.currentTarget.value)}
+																placeholder="Field description (optional)"
+																class="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+															/>
+														</div>
+														<!-- Default Value (optional) -->
+														<div class="mt-2 flex items-center gap-2">
+															<label class="flex items-center gap-1.5 cursor-pointer">
+																<input
+																	type="checkbox"
+																	checked={field.hasDefault}
+																	onchange={(e) => updateSchemaField(field.id, 'hasDefault', e.currentTarget.checked)}
+																	class="w-3.5 h-3.5 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
+																/>
+																<span class="text-xs text-gray-500">Default:</span>
+															</label>
+															{#if field.hasDefault}
+																<input
+																	type="text"
+																	value={field.default}
+																	oninput={(e) => updateSchemaField(field.id, 'default', e.currentTarget.value)}
+																	placeholder="default value"
+																	class="flex-1 px-2 py-1 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+																/>
+															{/if}
+														</div>
+													</div>
+												{/each}
+											</div>
+										{/if}
+									</div>
+								{:else}
+									<!-- Class Path Input -->
+									<div class="mb-4">
+										<div class="text-xs text-gray-500 mb-2">Class Path</div>
+										<input
+											type="text"
+											bind:value={editSchemaClassPath}
+											oninput={() => markChanged()}
+											placeholder="module.path.ClassName"
+											class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+										/>
+										<p class="mt-1 text-xs text-gray-400">
+											e.g., sygra.core.models.structured_output.schemas_factory.SimpleResponse
+										</p>
+									</div>
+								{/if}
+
+								<!-- Schema Preview Button -->
+								<div class="mb-4">
+									<button
+										onclick={() => showSchemaPreview = !showSchemaPreview}
+										class="flex items-center gap-1.5 text-xs text-violet-600 hover:text-violet-700 transition-colors"
+									>
+										{#if showSchemaPreview}
+											<EyeOff size={12} />
+											Hide Preview
+										{:else}
+											<Eye size={12} />
+											Preview JSON Schema
+										{/if}
+									</button>
+									{#if showSchemaPreview}
+										<pre class="mt-2 p-3 text-xs font-mono bg-gray-900 text-green-400 rounded-lg overflow-auto max-h-48">{generateSchemaPreview()}</pre>
+									{/if}
+								</div>
+
+								<!-- Advanced Options (collapsible) -->
+								<details class="group">
+									<summary class="flex items-center gap-2 cursor-pointer text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+										<ChevronRight size={12} class="transition-transform group-open:rotate-90" />
+										Advanced Options
+									</summary>
+									<div class="mt-3 pl-4 space-y-3">
+										<!-- Fallback Strategy -->
+										<div>
+											<label class="text-xs text-gray-500 block mb-1">Fallback Strategy</label>
+											<CustomSelect
+												options={fallbackStrategyOptions}
+												bind:value={editFallbackStrategy}
+												searchable={false}
+												onchange={markChanged}
+											/>
+										</div>
+										<!-- Retry on Parse Error -->
+										<div class="flex items-center justify-between">
+											<label class="text-xs text-gray-500">Retry on Parse Error</label>
+											<input
+												type="checkbox"
+												bind:checked={editRetryOnParseError}
+												onchange={() => markChanged()}
+												class="w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
+											/>
+										</div>
+										<!-- Max Retries -->
+										<div class="flex items-center justify-between">
+											<label class="text-xs text-gray-500">Max Parse Retries</label>
+											<input
+												type="number"
+												bind:value={editMaxParseRetries}
+												oninput={() => markChanged()}
+												min="0"
+												max="10"
+												class="w-16 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+											/>
+										</div>
+									</div>
+								</details>
+							{:else if !isEditing && node.model?.structured_output?.enabled}
+								<!-- View Mode - Show configured schema -->
+								<div class="space-y-2">
+									{#if typeof node.model.structured_output.schema === 'string'}
+										<div class="p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs">
+											<span class="text-gray-500">Class Path:</span>
+											<span class="ml-2 font-mono text-gray-800 dark:text-gray-200">{node.model.structured_output.schema}</span>
+										</div>
+									{:else if node.model.structured_output.schema?.fields}
+										<div class="text-xs text-gray-500 mb-1">Fields:</div>
+										<div class="flex flex-wrap gap-1.5">
+											{#each Object.entries(node.model.structured_output.schema.fields) as [fieldName, fieldDef]}
+												<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800">
+													{fieldName}
+													<span class="text-violet-400">({fieldDef.type})</span>
+												</span>
+											{/each}
+										</div>
+									{/if}
+									{#if node.model.structured_output.fallback_strategy}
+										<div class="p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs">
+											<span class="text-gray-500">Fallback:</span>
+											<span class="ml-2 text-gray-800 dark:text-gray-200">{node.model.structured_output.fallback_strategy}</span>
+										</div>
+									{/if}
+								</div>
+							{:else if !isEditing}
+								<div class="text-center py-3 text-gray-400 text-xs">
+									Structured output not configured
 								</div>
 							{/if}
 						</div>

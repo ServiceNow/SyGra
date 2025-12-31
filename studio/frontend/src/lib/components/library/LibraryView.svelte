@@ -687,7 +687,7 @@
 			<div class="flex-1 min-h-0 px-6 pb-6">
 				<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Code</label>
 				<div class="h-64 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
-					<MonacoEditor bind:value={toolFormCode} language="python" theme="vs-dark" />
+					<MonacoEditor bind:value={toolFormCode} language="python" />
 				</div>
 			</div>
 			<div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-800">

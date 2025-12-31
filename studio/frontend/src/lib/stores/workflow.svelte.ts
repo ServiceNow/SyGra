@@ -21,6 +21,33 @@ export interface ModelConfig {
 	name: string;
 	provider?: string;
 	parameters?: Record<string, unknown>;
+	structured_output?: StructuredOutputConfig;
+}
+
+// Structured Output types for schema-constrained LLM responses
+export interface SchemaFieldDefinition {
+	type: 'str' | 'int' | 'float' | 'bool' | 'list' | 'dict';
+	description?: string;
+	default?: unknown;
+}
+
+export interface StructuredOutputSchema {
+	fields: Record<string, SchemaFieldDefinition>;
+}
+
+export interface StructuredOutputConfig {
+	enabled: boolean;
+	schema: StructuredOutputSchema | string; // Inline schema OR class path string
+	fallback_strategy?: 'instruction' | 'post_process';
+	retry_on_parse_error?: boolean;
+	max_parse_retries?: number;
+}
+
+// Multi-LLM model configuration (for parallel model execution)
+export interface MultiLLMModelConfig {
+	name: string;
+	parameters?: Record<string, unknown>;
+	structured_output?: StructuredOutputConfig;
 }
 
 export interface PromptMessage {
@@ -57,7 +84,7 @@ export interface NodeConfigOverride {
 
 export interface WorkflowNode {
 	id: string;
-	node_type: 'data' | 'start' | 'end' | 'output' | 'llm' | 'agent' | 'lambda' | 'subgraph' | 'branch' | 'weighted_sampler';
+	node_type: 'data' | 'start' | 'end' | 'output' | 'llm' | 'agent' | 'lambda' | 'subgraph' | 'branch' | 'weighted_sampler' | 'multi_llm';
 	summary: string;
 	description?: string;
 	model?: ModelConfig;
@@ -82,6 +109,12 @@ export interface WorkflowNode {
 	tool_choice?: 'auto' | 'required' | 'none';
 	// Output keys - state variable name(s) for this node's output
 	output_keys?: string | string[];
+	// Chat history fields (for LLM/Agent nodes)
+	chat_history?: boolean;
+	inject_system_messages?: Array<Record<number, string>>; // [{3: "msg"}, {5: "msg"}]
+	// Multi-LLM fields (for parallel model execution)
+	models?: Record<string, MultiLLMModelConfig>;  // Map of label -> model config
+	multi_llm_post_process?: string;  // Custom post-processor for aggregating responses
 }
 
 export interface AvailableModel {
@@ -107,18 +140,212 @@ export interface WorkflowEdge {
 	condition?: EdgeCondition;
 }
 
+// ============================================
+// Data Transformation Types (SyGra Framework)
+// ============================================
+
+// Supported transform types from SyGra framework
+export type TransformType =
+	| 'SkipRecords'
+	| 'CombineRecords'
+	| 'RenameFieldsTransform'
+	| 'AddNewFieldTransform'
+	| 'CreateImageUrlTransform'
+	| 'CreateAudioUrlTransform'
+	| 'CartesianProductTransform'
+	| 'custom';
+
+// Transform parameter schemas for each type
+export interface SkipRecordsParams {
+	skip_type: 'range' | 'count';
+	range?: string;  // e.g., "[:10],[-10:]"
+	count?: {
+		from_start?: number;
+		from_end?: number;
+	};
+}
+
+export interface CombineRecordsParams {
+	combine: number;
+	shift?: number;
+	skip?: {
+		from_beginning?: number;
+		from_end?: number;
+	};
+	join_column?: Record<string, string>;  // column -> join pattern ($1, $2)
+}
+
+export interface RenameFieldsParams {
+	mapping: Record<string, string>;  // old_name -> new_name
+	overwrite?: boolean;
+}
+
+export interface AddNewFieldParams {
+	mapping: Record<string, unknown>;  // field_name -> value
+}
+
+export interface CreateAudioUrlParams {
+	output_fields?: Record<string, string>;
+}
+
+export interface CartesianProductParams {
+	datasets: Array<{
+		alias: string;
+		prefix: string;
+	}>;
+}
+
+// Transform configuration with metadata
+export interface TransformConfig {
+	id: string;  // Unique ID for UI ordering/tracking
+	transform: string;  // Full module path or shorthand
+	params: Record<string, unknown>;
+	enabled?: boolean;  // Allow disabling without removing
+}
+
+// Map UI-friendly names to full module paths
+export const TRANSFORM_MODULES: Record<string, string> = {
+	'SkipRecords': 'sygra.processors.data_transform.SkipRecords',
+	'CombineRecords': 'sygra.processors.data_transform.CombineRecords',
+	'RenameFieldsTransform': 'sygra.processors.data_transform.RenameFieldsTransform',
+	'AddNewFieldTransform': 'sygra.processors.data_transform.AddNewFieldTransform',
+	'CreateImageUrlTransform': 'sygra.processors.data_transform.CreateImageUrlTransform',
+	'CreateAudioUrlTransform': 'sygra.processors.data_transform.CreateAudioUrlTransform',
+	'CartesianProductTransform': 'sygra.processors.data_transform.CartesianProductTransform',
+};
+
+// Transform metadata for UI display
+export const TRANSFORM_METADATA: Record<string, { name: string; description: string; icon: string; category: string }> = {
+	'SkipRecords': {
+		name: 'Skip Records',
+		description: 'Skip records from beginning/end by range or count',
+		icon: 'skip',
+		category: 'record'
+	},
+	'CombineRecords': {
+		name: 'Combine Records',
+		description: 'Merge consecutive records with custom join rules',
+		icon: 'merge',
+		category: 'record'
+	},
+	'RenameFieldsTransform': {
+		name: 'Rename Fields',
+		description: 'Rename columns in records',
+		icon: 'rename',
+		category: 'field'
+	},
+	'AddNewFieldTransform': {
+		name: 'Add Fields',
+		description: 'Add new fields with static values',
+		icon: 'add',
+		category: 'field'
+	},
+	'CreateImageUrlTransform': {
+		name: 'Image to URL',
+		description: 'Convert images to base64 data URLs',
+		icon: 'image',
+		category: 'media'
+	},
+	'CreateAudioUrlTransform': {
+		name: 'Audio to URL',
+		description: 'Convert audio to base64 data URLs',
+		icon: 'audio',
+		category: 'media'
+	},
+	'CartesianProductTransform': {
+		name: 'Cartesian Product',
+		description: 'Create M×N combinations from column groups',
+		icon: 'grid',
+		category: 'advanced'
+	},
+};
+
+// Get display name from module path
+export function getTransformDisplayName(modulePath: string): string {
+	const name = modulePath.split('.').pop() || modulePath;
+	return TRANSFORM_METADATA[name]?.name || name.replace('Transform', '');
+}
+
+// Get short name from full module path
+export function getTransformShortName(modulePath: string): string {
+	return modulePath.split('.').pop() || modulePath;
+}
+
+// ============================================
+// Multi-Dataset / Join Types
+// ============================================
+
+// Join types supported by SyGra
+export type JoinType =
+	| 'primary'      // Main/left table
+	| 'column'       // SQL-like column join (INNER)
+	| 'sequential'   // Repeat secondary cyclically
+	| 'random'       // Random permutation & repeat
+	| 'cross'        // Cartesian product (M×N)
+	| 'vstack';      // Vertical stack (same columns)
+
+// Join type metadata for UI
+export const JOIN_TYPE_METADATA: Record<JoinType, { name: string; description: string; icon: string }> = {
+	'primary': {
+		name: 'Primary',
+		description: 'Main table - all records from this source',
+		icon: 'database'
+	},
+	'column': {
+		name: 'Column Join',
+		description: 'SQL-like inner join on matching key columns',
+		icon: 'link'
+	},
+	'sequential': {
+		name: 'Sequential',
+		description: 'Repeat secondary data cyclically to match primary length',
+		icon: 'repeat'
+	},
+	'random': {
+		name: 'Random',
+		description: 'Shuffle secondary and extend to match primary length',
+		icon: 'shuffle'
+	},
+	'cross': {
+		name: 'Cross Product',
+		description: 'Cartesian product - M×N rows from both sources',
+		icon: 'grid'
+	},
+	'vstack': {
+		name: 'Vertical Stack',
+		description: 'Stack datasets vertically (same columns required)',
+		icon: 'layers'
+	}
+};
+
+// ============================================
+// Data Source Configuration Types
+// ============================================
+
 // Data source configuration types (matches SyGra YAML structure)
 export interface DataSourceDetails {
-	type: 'hf' | 'disk' | 'servicenow';
+	type: 'hf' | 'disk' | 'servicenow' | 'memory';
+
+	// Multi-dataset fields
+	alias?: string;
+	join_type?: JoinType;
+	primary_key?: string;  // Column in primary table
+	join_key?: string;     // Column in this table to match
+
 	// HuggingFace
 	repo_id?: string;
 	config_name?: string;
 	split?: string | string[];
 	streaming?: boolean;
+
 	// Disk/File
 	file_path?: string;
-	file_format?: string;
+	file_format?: string;  // json, jsonl, csv, parquet, folder
 	encoding?: string;
+
+	// Memory/Inline
+	data?: Array<Record<string, unknown>>;
+
 	// ServiceNow
 	table?: string;
 	query?: string;
@@ -127,11 +354,10 @@ export interface DataSourceDetails {
 	limit?: number;
 	batch_size?: number;
 	order_by?: string;
-	// Transformations
-	transformations?: Array<{
-		transform: string;
-		params?: Record<string, unknown>;
-	}>;
+	order_desc?: boolean;
+
+	// Transformations pipeline
+	transformations?: TransformConfig[];
 }
 
 export interface DataSinkDetails {
@@ -148,6 +374,7 @@ export interface DataSinkDetails {
 }
 
 export interface DataSourceConfig {
+	id_column?: string;  // For tracking records across joins in multi-dataset scenarios
 	source?: DataSourceDetails | DataSourceDetails[];
 	sink?: DataSinkDetails | DataSinkDetails[];
 	// Internal fields for code storage (stripped before save to YAML)
@@ -827,6 +1054,13 @@ function createWorkflowStore() {
 			if (nodeType === 'llm') {
 				newNode.model = { name: 'gpt-4o-mini', parameters: { temperature: 0.7 } };
 				newNode.prompt = [{ role: 'system', content: '' }];
+			} else if (nodeType === 'multi_llm') {
+				newNode.summary = 'Multi-LLM';
+				newNode.models = {
+					model_1: { name: 'gpt-4o', parameters: { temperature: 0.7 } },
+					model_2: { name: 'gpt-4o-mini', parameters: { temperature: 0.7 } }
+				};
+				newNode.prompt = [{ role: 'user', content: '' }];
 			} else if (nodeType === 'lambda') {
 				newNode.function_path = '';
 			}
@@ -1744,6 +1978,7 @@ export const NODE_TYPES = [
 	// AI Nodes (tools are configured on these nodes via the Tools tab)
 	{ type: 'llm', label: 'LLM', color: '#8b5cf6', description: 'Language model with optional tools', category: 'ai' },
 	{ type: 'agent', label: 'Agent', color: '#ec4899', description: 'ReAct agent with tool calling', category: 'ai' },
+	{ type: 'multi_llm', label: 'Multi-LLM', color: '#06b6d4', description: 'Parallel execution across multiple models', category: 'ai' },
 	// Data
 	{ type: 'data', label: 'Data', color: '#0ea5e9', description: 'Data source & sink configuration', category: 'data' },
 	{ type: 'output', label: 'Output', color: '#10b981', description: 'Output mapping & generator', category: 'data' },

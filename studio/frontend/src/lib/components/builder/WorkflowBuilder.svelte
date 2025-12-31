@@ -22,7 +22,7 @@
 		Play, Square, Bot, Zap, Boxes, GitBranch, Shuffle,
 		Save, X, Database, Download, GripVertical, LayoutGrid, Group,
 		Search, ChevronDown, ChevronRight, Sparkles, FilePlus2, Trash2, MousePointerClick,
-		Map as MapIcon, EyeOff
+		Map as MapIcon, EyeOff, GitCompareArrows
 	} from 'lucide-svelte';
 
 	// Node components
@@ -35,6 +35,7 @@
 	import OutputNode from '../graph/renderers/nodes/OutputNode.svelte';
 	import WeightedSamplerNode from '../graph/renderers/nodes/WeightedSamplerNode.svelte';
 	import AgentNode from '../graph/renderers/nodes/AgentNode.svelte';
+	import MultiLLMNode from '../graph/renderers/nodes/MultiLLMNode.svelte';
 
 	// Edge component
 	import SygraEdge from '../graph/renderers/edges/SygraEdge.svelte';
@@ -239,7 +240,8 @@
 		lambda: LambdaNode,
 		subgraph: SubgraphNode,
 		weighted_sampler: WeightedSamplerNode,
-		agent: AgentNode
+		agent: AgentNode,
+		multi_llm: MultiLLMNode
 	} as unknown as NodeTypes;
 
 	const edgeTypes = {
@@ -256,7 +258,8 @@
 		lambda: Zap,
 		subgraph: Boxes,
 		weighted_sampler: Shuffle,
-		agent: Sparkles
+		agent: Sparkles,
+		multi_llm: GitCompareArrows
 	};
 
 	// Search and category state for palette

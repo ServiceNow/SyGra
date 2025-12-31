@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { ArrowLeft, ArrowRight, Bot, Zap, Database, Boxes, Play, Square, Globe, GitBranch, Download, Shuffle } from 'lucide-svelte';
+	import { ArrowLeft, ArrowRight, Bot, Zap, Database, Boxes, Play, Square, Globe, GitBranch, Download, Shuffle, GitCompareArrows, Link2 } from 'lucide-svelte';
 	import type { WorkflowNode, WorkflowEdge } from '$lib/stores/workflow.svelte';
 
 	interface Props {
@@ -27,7 +27,8 @@
 		output: Download,
 		web_agent: Globe,
 		branch: GitBranch,
-		weighted_sampler: Shuffle
+		weighted_sampler: Shuffle,
+		multi_llm: GitCompareArrows
 	};
 
 	// Node type to color mapping
@@ -42,7 +43,8 @@
 		output: '#10b981',
 		web_agent: '#ec4899',
 		branch: '#eab308',
-		weighted_sampler: '#a855f7'
+		weighted_sampler: '#a855f7',
+		multi_llm: '#06b6d4'
 	};
 
 	// Find incoming connections (edges where this node is the target)
@@ -75,6 +77,8 @@
 		});
 	});
 
+	let totalConnections = $derived(incomingConnections().length + outgoingConnections().length);
+
 	function handleNodeClick(targetNodeId: string) {
 		dispatch('navigate', targetNodeId);
 	}
@@ -88,92 +92,75 @@
 	}
 </script>
 
-<div class="space-y-3">
-	<!-- Incoming connections -->
-	<div>
-		<div class="flex items-center gap-2 mb-2">
-			<ArrowLeft size={12} class="text-gray-400" />
-			<span class="text-xs font-medium text-gray-500 dark:text-gray-400">
-				Inputs ({incomingConnections().length})
-			</span>
-		</div>
-
-		{#if incomingConnections().length === 0}
-			<div class="text-xs text-gray-400 dark:text-gray-500 italic pl-5">
-				No incoming connections
-			</div>
-		{:else}
-			<div class="flex flex-wrap gap-1.5 pl-5">
+{#if totalConnections === 0}
+	<!-- Empty state - compact -->
+	<div class="flex items-center gap-2 py-1 text-xs text-gray-400 dark:text-gray-500">
+		<Link2 size={12} />
+		<span class="italic">No connections</span>
+	</div>
+{:else}
+	<!-- Compact inline layout -->
+	<div class="flex flex-col gap-2">
+		<!-- Inputs row -->
+		{#if incomingConnections().length > 0}
+			<div class="flex items-center gap-2 flex-wrap">
+				<div class="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
+					<ArrowLeft size={10} />
+					<span class="font-medium">From</span>
+				</div>
 				{#each incomingConnections() as conn}
 					{@const Icon = getIcon(conn.nodeType)}
 					{@const color = getColor(conn.nodeType)}
 					<button
 						onclick={() => handleNodeClick(conn.nodeId)}
-						class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-all border hover:shadow-sm cursor-pointer group"
-						style="background-color: {color}10; border-color: {color}30; color: {color}"
+						class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium transition-all hover:opacity-80 cursor-pointer"
+						style="background-color: {color}15; color: {color}"
 						title="Go to {conn.nodeName}"
 					>
 						<span
-							class="w-4 h-4 rounded flex items-center justify-center text-white flex-shrink-0"
+							class="w-3.5 h-3.5 rounded flex items-center justify-center text-white flex-shrink-0"
 							style="background-color: {color}"
 						>
-							<Icon size={10} />
+							<Icon size={8} />
 						</span>
-						<span class="truncate max-w-[120px] group-hover:underline">
-							{conn.nodeName}
-						</span>
+						<span class="truncate max-w-[100px]">{conn.nodeName}</span>
 						{#if conn.label}
-							<span class="text-[10px] px-1 py-0.5 rounded bg-white/50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400">
-								{conn.label}
-							</span>
+							<span class="text-[9px] opacity-70">({conn.label})</span>
 						{/if}
 					</button>
 				{/each}
 			</div>
 		{/if}
-	</div>
 
-	<!-- Outgoing connections -->
-	<div>
-		<div class="flex items-center gap-2 mb-2">
-			<ArrowRight size={12} class="text-gray-400" />
-			<span class="text-xs font-medium text-gray-500 dark:text-gray-400">
-				Outputs ({outgoingConnections().length})
-			</span>
-		</div>
-
-		{#if outgoingConnections().length === 0}
-			<div class="text-xs text-gray-400 dark:text-gray-500 italic pl-5">
-				No outgoing connections
-			</div>
-		{:else}
-			<div class="flex flex-wrap gap-1.5 pl-5">
+		<!-- Outputs row -->
+		{#if outgoingConnections().length > 0}
+			<div class="flex items-center gap-2 flex-wrap">
+				<div class="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
+					<ArrowRight size={10} />
+					<span class="font-medium">To</span>
+				</div>
 				{#each outgoingConnections() as conn}
 					{@const Icon = getIcon(conn.nodeType)}
 					{@const color = getColor(conn.nodeType)}
 					<button
 						onclick={() => handleNodeClick(conn.nodeId)}
-						class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-all border hover:shadow-sm cursor-pointer group"
-						style="background-color: {color}10; border-color: {color}30; color: {color}"
+						class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium transition-all hover:opacity-80 cursor-pointer"
+						style="background-color: {color}15; color: {color}"
 						title="Go to {conn.nodeName}"
 					>
 						<span
-							class="w-4 h-4 rounded flex items-center justify-center text-white flex-shrink-0"
+							class="w-3.5 h-3.5 rounded flex items-center justify-center text-white flex-shrink-0"
 							style="background-color: {color}"
 						>
-							<Icon size={10} />
+							<Icon size={8} />
 						</span>
-						<span class="truncate max-w-[120px] group-hover:underline">
-							{conn.nodeName}
-						</span>
+						<span class="truncate max-w-[100px]">{conn.nodeName}</span>
 						{#if conn.label}
-							<span class="text-[10px] px-1 py-0.5 rounded bg-white/50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400">
-								{conn.label}
-							</span>
+							<span class="text-[9px] opacity-70">({conn.label})</span>
 						{/if}
 					</button>
 				{/each}
 			</div>
 		{/if}
 	</div>
-</div>
+{/if}

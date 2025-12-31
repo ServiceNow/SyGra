@@ -726,7 +726,6 @@
 													bind:value={transformationCodes[index]}
 													language="python"
 													height="180px"
-													theme="vs-dark"
 													fontSize={12}
 													readonly={!isEditing}
 													on:change={markChanged}
@@ -776,7 +775,6 @@
 														value={transformationCodes[index] || `# Transform: ${transform.transform}\n# Params: ${JSON.stringify(transform.params || {}, null, 2)}`}
 														language="python"
 														height="180px"
-														theme="vs-dark"
 														fontSize={12}
 														readonly={true}
 													/>

@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import type { EditorTheme } from '$lib/stores/theme.svelte';
 
 	interface Props {
 		value?: string;
 		language?: string;
-		theme?: 'vs' | 'vs-dark' | 'hc-black';
+		theme?: EditorTheme;
 		height?: string;
 		readonly?: boolean;
 		minimap?: boolean;
@@ -20,7 +21,7 @@
 	let {
 		value = $bindable(''),
 		language = 'python',
-		theme = 'vs-dark',
+		theme,
 		height = '200px',
 		readonly = false,
 		minimap = false,

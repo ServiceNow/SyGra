@@ -5,7 +5,7 @@
 		AlertCircle, CheckCircle, Key, FileText, Copy, Check,
 		Sun, Moon, Monitor, Palette, Sliders, Info
 	} from 'lucide-svelte';
-	import { themeStore } from '$lib/stores/theme.svelte';
+	import { themeStore, EDITOR_THEMES } from '$lib/stores/theme.svelte';
 
 	interface Props {
 		onclose: () => void;
@@ -51,6 +51,7 @@
 	// Theme
 	let currentTheme = $derived(themeStore.theme);
 	let isDark = $derived(themeStore.isDark);
+	let currentEditorTheme = $derived(themeStore.editorTheme);
 
 	onMount(() => {
 		loadEnvVars();
@@ -301,63 +302,240 @@
 
 				<!-- Appearance Tab -->
 				{#if activeTab === 'appearance'}
-					<div class="space-y-6">
+					<div class="space-y-8">
+						<!-- Interface Theme Section -->
 						<div>
-							<h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Appearance</h3>
-
-							<div class="space-y-4">
-								<div>
-									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-										Theme
-									</label>
-									<div class="grid grid-cols-3 gap-3">
-										<button
-											onclick={() => themeStore.setTheme('light')}
-											class="flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors
-												{currentTheme === 'light'
-													? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
-													: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}"
-										>
-											<div class="w-12 h-12 rounded-lg bg-white border border-gray-200 flex items-center justify-center shadow-sm">
-												<Sun size={24} class="text-amber-500" />
-											</div>
-											<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Light</span>
-										</button>
-
-										<button
-											onclick={() => themeStore.setTheme('dark')}
-											class="flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors
-												{currentTheme === 'dark'
-													? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
-													: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}"
-										>
-											<div class="w-12 h-12 rounded-lg bg-gray-900 border border-gray-700 flex items-center justify-center shadow-sm">
-												<Moon size={24} class="text-blue-400" />
-											</div>
-											<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Dark</span>
-										</button>
-
-										<button
-											onclick={() => themeStore.setTheme('system')}
-											class="flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors
-												{currentTheme === 'system'
-													? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
-													: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}"
-										>
-											<div class="w-12 h-12 rounded-lg bg-gradient-to-br from-white to-gray-900 border border-gray-300 flex items-center justify-center shadow-sm">
-												<Monitor size={24} class="text-gray-600" />
-											</div>
-											<span class="text-sm font-medium text-gray-700 dark:text-gray-300">System</span>
-										</button>
-									</div>
-									<p class="mt-3 text-xs text-gray-500">
-										{#if currentTheme === 'system'}
-											Using system preference ({isDark ? 'dark' : 'light'} mode detected)
-										{:else}
-											Using {currentTheme} mode
-										{/if}
-									</p>
+							<div class="flex items-center gap-3 mb-4">
+								<div class="p-2 bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 rounded-lg">
+									<Palette size={18} class="text-amber-600 dark:text-amber-400" />
 								</div>
+								<div>
+									<h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Interface Theme</h3>
+									<p class="text-xs text-gray-500 dark:text-gray-400">Choose how SyGra Studio looks</p>
+								</div>
+							</div>
+
+							<div class="grid grid-cols-3 gap-4">
+								<!-- Light Theme -->
+								<button
+									onclick={() => themeStore.setTheme('light')}
+									class="group relative flex flex-col rounded-xl border-2 transition-all duration-200 overflow-hidden
+										{currentTheme === 'light'
+											? 'border-violet-500 shadow-lg shadow-violet-500/20'
+											: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md'}"
+								>
+									<!-- Preview Window -->
+									<div class="relative h-24 bg-gradient-to-b from-gray-100 to-white p-2">
+										<!-- Mini window chrome -->
+										<div class="absolute top-2 left-2 flex gap-1">
+											<div class="w-2 h-2 rounded-full bg-red-400"></div>
+											<div class="w-2 h-2 rounded-full bg-yellow-400"></div>
+											<div class="w-2 h-2 rounded-full bg-green-400"></div>
+										</div>
+										<!-- Mini sidebar -->
+										<div class="absolute left-2 top-6 bottom-2 w-8 bg-gray-200 rounded"></div>
+										<!-- Mini content area -->
+										<div class="absolute left-12 right-2 top-6 bottom-2 bg-white rounded shadow-sm border border-gray-200">
+											<div class="p-1.5 space-y-1">
+												<div class="h-1.5 w-3/4 bg-gray-300 rounded"></div>
+												<div class="h-1.5 w-1/2 bg-gray-200 rounded"></div>
+											</div>
+										</div>
+									</div>
+									<!-- Label -->
+									<div class="flex items-center justify-between p-3 bg-white dark:bg-gray-800">
+										<div class="flex items-center gap-2">
+											<Sun size={16} class="text-amber-500" />
+											<span class="text-sm font-medium text-gray-900 dark:text-gray-100">Light</span>
+										</div>
+										{#if currentTheme === 'light'}
+											<div class="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
+												<Check size={12} class="text-white" />
+											</div>
+										{/if}
+									</div>
+								</button>
+
+								<!-- Dark Theme -->
+								<button
+									onclick={() => themeStore.setTheme('dark')}
+									class="group relative flex flex-col rounded-xl border-2 transition-all duration-200 overflow-hidden
+										{currentTheme === 'dark'
+											? 'border-violet-500 shadow-lg shadow-violet-500/20'
+											: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md'}"
+								>
+									<!-- Preview Window -->
+									<div class="relative h-24 bg-gradient-to-b from-gray-800 to-gray-900 p-2">
+										<!-- Mini window chrome -->
+										<div class="absolute top-2 left-2 flex gap-1">
+											<div class="w-2 h-2 rounded-full bg-red-500"></div>
+											<div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+											<div class="w-2 h-2 rounded-full bg-green-500"></div>
+										</div>
+										<!-- Mini sidebar -->
+										<div class="absolute left-2 top-6 bottom-2 w-8 bg-gray-700 rounded"></div>
+										<!-- Mini content area -->
+										<div class="absolute left-12 right-2 top-6 bottom-2 bg-gray-800 rounded border border-gray-700">
+											<div class="p-1.5 space-y-1">
+												<div class="h-1.5 w-3/4 bg-gray-600 rounded"></div>
+												<div class="h-1.5 w-1/2 bg-gray-700 rounded"></div>
+											</div>
+										</div>
+									</div>
+									<!-- Label -->
+									<div class="flex items-center justify-between p-3 bg-white dark:bg-gray-800">
+										<div class="flex items-center gap-2">
+											<Moon size={16} class="text-blue-400" />
+											<span class="text-sm font-medium text-gray-900 dark:text-gray-100">Dark</span>
+										</div>
+										{#if currentTheme === 'dark'}
+											<div class="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
+												<Check size={12} class="text-white" />
+											</div>
+										{/if}
+									</div>
+								</button>
+
+								<!-- System Theme -->
+								<button
+									onclick={() => themeStore.setTheme('system')}
+									class="group relative flex flex-col rounded-xl border-2 transition-all duration-200 overflow-hidden
+										{currentTheme === 'system'
+											? 'border-violet-500 shadow-lg shadow-violet-500/20'
+											: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md'}"
+								>
+									<!-- Preview Window - Split -->
+									<div class="relative h-24 overflow-hidden">
+										<!-- Light half -->
+										<div class="absolute inset-0 w-1/2 bg-gradient-to-b from-gray-100 to-white p-2">
+											<div class="absolute left-2 top-6 bottom-2 w-4 bg-gray-200 rounded-l"></div>
+											<div class="absolute left-7 right-0 top-6 bottom-2 bg-white rounded-l shadow-sm border-l border-t border-b border-gray-200">
+												<div class="p-1 space-y-1">
+													<div class="h-1 w-3/4 bg-gray-300 rounded"></div>
+												</div>
+											</div>
+										</div>
+										<!-- Dark half -->
+										<div class="absolute inset-0 left-1/2 bg-gradient-to-b from-gray-800 to-gray-900 p-2">
+											<div class="absolute left-0 top-6 bottom-2 w-4 bg-gray-700 rounded-r"></div>
+											<div class="absolute left-5 right-2 top-6 bottom-2 bg-gray-800 rounded-r border-r border-t border-b border-gray-700">
+												<div class="p-1 space-y-1">
+													<div class="h-1 w-3/4 bg-gray-600 rounded"></div>
+												</div>
+											</div>
+										</div>
+										<!-- Divider line -->
+										<div class="absolute left-1/2 top-0 bottom-0 w-px bg-gray-400"></div>
+									</div>
+									<!-- Label -->
+									<div class="flex items-center justify-between p-3 bg-white dark:bg-gray-800">
+										<div class="flex items-center gap-2">
+											<Monitor size={16} class="text-gray-500" />
+											<span class="text-sm font-medium text-gray-900 dark:text-gray-100">System</span>
+										</div>
+										{#if currentTheme === 'system'}
+											<div class="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
+												<Check size={12} class="text-white" />
+											</div>
+										{/if}
+									</div>
+								</button>
+							</div>
+
+							{#if currentTheme === 'system'}
+								<p class="mt-3 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+									<Monitor size={12} />
+									Currently using {isDark ? 'dark' : 'light'} mode based on system preference
+								</p>
+							{/if}
+						</div>
+
+						<!-- Code Editor Theme Section -->
+						<div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+							<div class="flex items-center gap-3 mb-4">
+								<div class="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg">
+									<svg class="w-[18px] h-[18px] text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<polyline points="16,18 22,12 16,6"></polyline>
+										<polyline points="8,6 2,12 8,18"></polyline>
+									</svg>
+								</div>
+								<div>
+									<h3 class="text-base font-semibold text-gray-900 dark:text-gray-100">Code Editor Theme</h3>
+									<p class="text-xs text-gray-500 dark:text-gray-400">Syntax highlighting for all code editors</p>
+								</div>
+							</div>
+
+							<!-- Theme Grid with realistic code preview -->
+							<div class="grid grid-cols-2 gap-4">
+								{#each EDITOR_THEMES as editorTheme}
+									<button
+										onclick={() => themeStore.setEditorTheme(editorTheme.id)}
+										class="group relative flex flex-col rounded-xl border-2 transition-all duration-200 overflow-hidden text-left
+											{currentEditorTheme === editorTheme.id
+												? 'border-violet-500 shadow-lg shadow-violet-500/20'
+												: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md'}"
+									>
+										<!-- Realistic Code Preview -->
+										<div
+											class="relative font-mono text-[11px] leading-relaxed overflow-hidden"
+											style="background-color: {editorTheme.preview.bg};"
+										>
+											<!-- Editor chrome - tabs -->
+											<div class="flex items-center gap-1 px-2 py-1.5 border-b" style="background-color: {editorTheme.preview.gutter}; border-color: {editorTheme.preview.border};">
+												<div class="px-2 py-0.5 rounded-t text-[9px]" style="background-color: {editorTheme.preview.bg}; color: {editorTheme.preview.text};">
+													main.py
+												</div>
+											</div>
+											<!-- Code area with line numbers -->
+											<div class="flex">
+												<!-- Line numbers gutter -->
+												<div class="flex flex-col items-end px-2 py-2 select-none" style="background-color: {editorTheme.preview.gutter}; color: {editorTheme.preview.lineNumber};">
+													<span>1</span>
+													<span>2</span>
+													<span>3</span>
+													<span>4</span>
+													<span>5</span>
+												</div>
+												<!-- Code content -->
+												<div class="flex-1 py-2 pl-2 pr-3 overflow-hidden" style="color: {editorTheme.preview.text};">
+													<div>
+														<span style="color: {editorTheme.preview.keyword};">def</span>
+														<span style="color: {editorTheme.preview.function};"> greet</span><span>(name):</span>
+													</div>
+													<div>
+														<span style="color: {editorTheme.preview.comment};">    # Say hello</span>
+													</div>
+													<div>
+														<span>    msg = </span><span style="color: {editorTheme.preview.string};">f"Hello, </span><span style="color: {editorTheme.preview.text};">{'{'}name{'}'}</span><span style="color: {editorTheme.preview.string};">"</span>
+													</div>
+													<div>
+														<span>    </span><span style="color: {editorTheme.preview.keyword};">return</span><span> msg</span>
+													</div>
+													<div style="opacity: 0.5;">
+														<span>&nbsp;</span>
+													</div>
+												</div>
+											</div>
+										</div>
+
+										<!-- Theme info footer -->
+										<div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700">
+											<div>
+												<div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+													{editorTheme.name}
+												</div>
+												<div class="text-xs text-gray-500 dark:text-gray-400">
+													{editorTheme.description}
+												</div>
+											</div>
+											{#if currentEditorTheme === editorTheme.id}
+												<div class="w-6 h-6 rounded-full bg-violet-500 flex items-center justify-center shadow-sm">
+													<Check size={14} class="text-white" />
+												</div>
+											{/if}
+										</div>
+									</button>
+								{/each}
 							</div>
 						</div>
 					</div>

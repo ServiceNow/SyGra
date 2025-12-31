@@ -2,11 +2,43 @@
 	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import loader from '@monaco-editor/loader';
 	import type * as Monaco from 'monaco-editor';
+	import { subscribeToEditorTheme, EDITOR_THEMES, type EditorTheme } from '$lib/stores/theme.svelte';
+
+	// Track which custom themes have been registered with Monaco (shared across all instances)
+	const registeredThemes = new Set<string>();
+
+	// Register a custom theme with Monaco if it has themeData
+	function registerCustomTheme(monacoInstance: typeof Monaco, themeId: EditorTheme): void {
+		// Skip if already registered or if it's a built-in theme
+		if (registeredThemes.has(themeId)) return;
+
+		const themeConfig = EDITOR_THEMES.find(t => t.id === themeId);
+		if (!themeConfig?.themeData) {
+			// Built-in theme, no registration needed
+			return;
+		}
+
+		// Register the custom theme with Monaco
+		monacoInstance.editor.defineTheme(themeId, {
+			base: themeConfig.themeData.base,
+			inherit: themeConfig.themeData.inherit,
+			rules: themeConfig.themeData.rules,
+			colors: themeConfig.themeData.colors
+		});
+
+		registeredThemes.add(themeId);
+	}
+
+	// Apply theme to editor, registering custom theme if needed
+	function applyTheme(monacoInstance: typeof Monaco, editorInstance: Monaco.editor.IStandaloneCodeEditor, themeId: EditorTheme): void {
+		registerCustomTheme(monacoInstance, themeId);
+		editorInstance.updateOptions({ theme: themeId });
+	}
 
 	interface Props {
 		value?: string;
 		language?: string;
-		theme?: 'vs' | 'vs-dark' | 'hc-black';
+		theme?: EditorTheme;
 		height?: string;
 		readonly?: boolean;
 		minimap?: boolean;
@@ -22,7 +54,7 @@
 	let {
 		value = $bindable(''),
 		language = 'python',
-		theme = 'vs-dark',
+		theme: themeProp,
 		height = '200px',
 		readonly = false,
 		minimap = false,
@@ -34,6 +66,10 @@
 		breakpoints = $bindable([]),
 		currentLine = null
 	}: Props = $props();
+
+	// Track current global theme via subscription
+	let currentGlobalTheme = $state<EditorTheme>('vs-dark');
+	let unsubscribeTheme: (() => void) | null = null;
 
 	const dispatch = createEventDispatcher<{
 		change: string;
@@ -49,14 +85,29 @@
 	let currentLineDecorations: string[] = [];
 
 	onMount(async () => {
+		// Subscribe to global theme changes
+		unsubscribeTheme = subscribeToEditorTheme((theme) => {
+			currentGlobalTheme = theme;
+			// If no prop override and editor is ready, update theme
+			if (!themeProp && editor && monaco && isInitialized) {
+				applyTheme(monaco, editor, theme);
+			}
+		});
+
 		monaco = await loader.init();
 
 		if (!container) return;
 
+		// Use prop theme if provided, otherwise use current global theme
+		const initialTheme = themeProp ?? currentGlobalTheme;
+
+		// Register custom theme if needed before creating editor
+		registerCustomTheme(monaco, initialTheme);
+
 		editor = monaco.editor.create(container, {
 			value: value || '',
 			language,
-			theme,
+			theme: initialTheme,
 			readOnly: readonly,
 			minimap: { enabled: minimap },
 			lineNumbers: lineNumbers ? 'on' : 'off',
@@ -215,6 +266,11 @@
 	});
 
 	onDestroy(() => {
+		// Unsubscribe from theme changes
+		if (unsubscribeTheme) {
+			unsubscribeTheme();
+			unsubscribeTheme = null;
+		}
 		if (editor) {
 			editor.dispose();
 			editor = null;
@@ -242,12 +298,15 @@
 
 	// Update other editor options when props change
 	$effect(() => {
+		const currentFontSize = fontSize;
+		const currentWordWrap = wordWrap;
+		const currentLineNumbers = lineNumbers;
+
 		if (editor && isInitialized) {
 			editor.updateOptions({
-				theme,
-				fontSize,
-				wordWrap: wordWrap ? 'on' : 'off',
-				lineNumbers: lineNumbers ? 'on' : 'off',
+				fontSize: currentFontSize,
+				wordWrap: currentWordWrap ? 'on' : 'off',
+				lineNumbers: currentLineNumbers ? 'on' : 'off',
 			});
 		}
 	});

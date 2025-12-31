@@ -447,7 +447,6 @@
 								bind:value={editConditionCode}
 								language="python"
 								height="200px"
-								theme="vs-dark"
 								fontSize={12}
 							/>
 						</div>

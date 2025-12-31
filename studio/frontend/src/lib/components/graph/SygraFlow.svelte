@@ -29,6 +29,7 @@
 	import OutputNode from './renderers/nodes/OutputNode.svelte';
 	import WeightedSamplerNode from './renderers/nodes/WeightedSamplerNode.svelte';
 	import AgentNode from './renderers/nodes/AgentNode.svelte';
+	import MultiLLMNode from './renderers/nodes/MultiLLMNode.svelte';
 
 	// Edge component
 	import SygraEdge from './renderers/edges/SygraEdge.svelte';
@@ -77,7 +78,8 @@
 		lambda: LambdaNode,
 		subgraph: SubgraphNode,
 		weighted_sampler: WeightedSamplerNode,
-		agent: AgentNode
+		agent: AgentNode,
+		multi_llm: MultiLLMNode
 	} as unknown as NodeTypes;
 
 	const edgeTypes = {
@@ -94,7 +96,8 @@
 		lambda: '#f97316',
 		subgraph: '#3b82f6',
 		weighted_sampler: '#8b5cf6',
-		agent: '#ec4899'
+		agent: '#ec4899',
+		multi_llm: '#06b6d4'
 	};
 
 	// Dark mode detection
@@ -138,22 +141,29 @@
 	// Store to trigger fitView - increment to trigger
 	const fitViewTrigger = writable(0);
 
-	// Node types that are part of the main workflow (inside the boundary)
-	// Excludes: 'data' (input), 'output' (result), and 'tool' which stay outside
-	const workflowNodeTypes = new Set([
-		'start', 'end', 'llm', 'lambda', 'subgraph',
-		'weighted_sampler', 'connector', 'web_agent', 'agent'
-	]);
+	// Node types that should be EXCLUDED from the main workflow boundary
+	// These nodes visually sit outside the green dotted box: data (input), output (result), tool
+	// All other node types are automatically included in the boundary
+	const excludedFromBoundary = new Set(['data', 'output', 'tool']);
 
-	// Estimated node dimensions for bounding box calculation (based on NodeWrapper styles)
-	// These are fallback values when measured dimensions aren't available yet
+	// Helper function to check if a node type should be inside the workflow boundary
+	function isWorkflowNode(nodeType: string | undefined): boolean {
+		if (!nodeType) return false;
+		return !excludedFromBoundary.has(nodeType);
+	}
+
+	// Estimated node dimensions for bounding box calculation (fallback before DOM measurement)
 	// NodeWrapper has min-w-[180px], so actual nodes can be wider based on content
+	// Default dimensions used when a node type isn't explicitly listed
+	const DEFAULT_NODE_DIMS = { width: 220, height: 100 };
+
 	const nodeDimensions: Record<string, { width: number; height: number }> = {
 		start: { width: 140, height: 60 },
 		end: { width: 140, height: 60 },
-		llm: { width: 240, height: 120 },      // Larger to account for content
+		llm: { width: 240, height: 120 },
+		multi_llm: { width: 240, height: 140 },  // Slightly taller for model list
 		lambda: { width: 220, height: 100 },
-		subgraph: { width: 200, height: 100 }, // Default, actual size from data
+		subgraph: { width: 200, height: 100 },
 		weighted_sampler: { width: 240, height: 100 },
 		connector: { width: 180, height: 70 },
 		web_agent: { width: 220, height: 100 },
@@ -180,7 +190,7 @@
 		if (measured?.width && measured?.height) {
 			return { width: measured.width, height: measured.height };
 		}
-		return nodeDimensions[node.type || 'llm'] || { width: 200, height: 100 };
+		return nodeDimensions[node.type || 'llm'] || DEFAULT_NODE_DIMS;
 	}
 
 	/**
@@ -298,7 +308,7 @@
 
 	// Derive bounding box for workflow nodes (excluding data and output) AND arc edges
 	const workflowBounds = derived([nodes, edges], ([$nodes, $edges]) => {
-		const workflowNodes = $nodes.filter(n => workflowNodeTypes.has(n.type || ''));
+		const workflowNodes = $nodes.filter(n => isWorkflowNode(n.type));
 
 		if (workflowNodes.length === 0) return null;
 
@@ -308,7 +318,7 @@
 			// Use measured dimensions from SvelteFlow if available (actual rendered size)
 			// Fall back to estimated dimensions from nodeDimensions map
 			const measured = (node as any).measured;
-			let dims = nodeDimensions[node.type || 'llm'] || { width: 180, height: 70 };
+			let dims = nodeDimensions[node.type || 'llm'] || DEFAULT_NODE_DIMS;
 
 			if (measured?.width && measured?.height) {
 				// Use actual measured dimensions from DOM

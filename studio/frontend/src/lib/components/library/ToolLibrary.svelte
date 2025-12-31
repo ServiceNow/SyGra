@@ -455,7 +455,6 @@
 					<MonacoEditor
 						bind:value={formCode}
 						language="python"
-						theme="vs-dark"
 					/>
 				</div>
 				<p class="text-xs text-gray-400 mt-1">

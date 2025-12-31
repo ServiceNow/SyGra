@@ -1061,7 +1061,6 @@
 							bind:value={yamlContent}
 							language="yaml"
 							readonly={false}
-							theme="vs-dark"
 							height={editorHeight}
 							minimap={false}
 							lineNumbers={true}
@@ -1216,7 +1215,6 @@
 									value={codeFiles[selectedCodeFile]?.content || ''}
 									language="python"
 									readonly={false}
-									theme="vs-dark"
 									height={editorHeight}
 									minimap={false}
 									lineNumbers={true}
