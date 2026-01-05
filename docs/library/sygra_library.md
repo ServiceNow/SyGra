@@ -17,7 +17,7 @@ The **SyGra Library** provides a high-level Python interface for building and ex
 
 ## Installation
 
-Requirements: Python 3.9-3.11 recommended. We also recommend upgrading `pip` first.
+Requirements: Python 3.11-3.13 recommended. We also recommend upgrading `pip` first.
 
 **Install from PyPI**
 ```bash

@@ -1,12 +1,12 @@
 
 # Installation Guide
 
-1. Create an environment with Python `3.9` or higher, using `pyenv` or `conda`.
+1. Create an environment with Python `3.11` or higher, using `pyenv` or `conda`.
     * For `pyenv`, use the following commands:
         ```bash
         brew install pyenv
-        pyenv install 3.9
-        pyenv local 3.9
+        pyenv install 3.11
+        pyenv local 3.11
         ```
     * To set up your PATH automatically every time you open a shell session, add this to your .zshrc file:
         ```bash
