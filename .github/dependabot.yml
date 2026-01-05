@@ -8,6 +8,10 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - dependencies
+    pull-request-branch-name: "scratch/gha-updates"
+    groups:
+      gha-dependencies:
+        patterns: ["*"]
 
   # Update UV-managed Python deps
   - package-ecosystem: uv
@@ -20,3 +24,7 @@ updates:
     commit-message:
       prefix: "deps"
       include: scope
+    pull-request-branch-name: "scratch/uv-updates"
+    groups:
+      uv-dependencies:
+        patterns: ["*"]
