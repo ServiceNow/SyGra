@@ -16,7 +16,7 @@ from sygra.utils import constants, utils
 
 class ModelType(Enum):
     """Enum representing the supported model types for client creation."""
-
+    # model type or server type
     VLLM = "vllm"
     OPENAI = "openai"
     AZURE_OPENAI = "azure_openai"
@@ -26,9 +26,14 @@ class ModelType(Enum):
     OLLAMA = "ollama"
     TRITON = "triton"
 
+class ClientType(Enum):
+    # client type
+    HTTP = "http"
+
 
 # Define which model types do not require a AUTH_TOKEN
 NO_AUTH_TOKEN_NEEDED_MODEL_TYPES = [ModelType.OLLAMA.value]
+NO_AUTH_TOKEN_NEEDED_CLIENT_TYPES = [ClientType.HTTP.value]
 
 
 class ClientFactory:
@@ -65,22 +70,42 @@ class ClientFactory:
         # Validate model_type is present
         utils.validate_required_keys(["model_type"], model_config, "model")
 
+        # read model type or server type
         model_type = model_config["model_type"].lower()
+
+        # read client type
+        client_type = model_config["client_type"].lower() if model_config.get("client_type") else None
 
         # Validate if url is present
         if url is None:
             logger.error("URL is required for client creation.")
             raise ValueError("URL is required for client creation.")
 
-        # Validate if auth_token is present
-        if auth_token is None and model_type not in NO_AUTH_TOKEN_NEEDED_MODEL_TYPES:
-            logger.error("Auth token/API key is required for client creation.")
-            raise ValueError("Auth token/API key is required for client creation.")
+        # auth_token validation is not required TODO add backend condition
+        #if auth_token is None and (model_type not in NO_AUTH_TOKEN_NEEDED_MODEL_TYPES):
+        #    logger.error("Auth token/API key is required for client creation.")
+        #    raise ValueError("Auth token/API key is required for client creation.")
 
         # Validate that the model_type is supported
-        supported_types = [type_enum.value for type_enum in ModelType]
-        if model_type not in supported_types:
-            supported_types_str = ", ".join(supported_types)
+        supported_model_types = [type_enum.value for type_enum in ModelType]
+        if client_type is not None:
+            supported_client_types = [type_enum.value for type_enum in ClientType]
+            if client_type not in supported_client_types:
+                supported_types_str = ", ".join(supported_client_types)
+                logger.error(
+                    f"Unsupported client type: {client_type}. Supported types: {supported_types_str}"
+                )
+                raise ValueError(
+                    f"Unsupported client type: {client_type}. Must be one of: {supported_types_str}"
+                )
+
+            if client_type == ClientType.HTTP.value:
+                return cls._create_http_client(model_config, url, auth_token)
+            else:
+                logger.error(f"Unsupported client type: {client_type}")
+            # Add more client type which can be common
+        elif model_type not in supported_model_types:
+            supported_types_str = ", ".join(supported_model_types)
             logger.error(
                 f"Unsupported model type: {model_type}. Supported types: {supported_types_str}"
             )
@@ -89,8 +114,9 @@ class ClientFactory:
             )
 
         # Create client based on model type
-        if model_type == ModelType.VLLM.value or model_type == ModelType.OPENAI.value:
+        elif model_type == ModelType.VLLM.value or model_type == ModelType.OPENAI.value:
             # Initialize the client with default chat_completions_api
+            # for VLLM server type, client type is openai ONLY
             return cls._create_openai_client(
                 model_config,
                 url,
@@ -99,6 +125,7 @@ class ClientFactory:
                 not model_config.get("completions_api", False),
             )
         elif model_type == ModelType.AZURE_OPENAI.value:
+            # for AZURE_OPENAI server type, client type is openai_azure ONLY
             return cls._create_openai_azure_client(
                 model_config,
                 url,
@@ -111,10 +138,13 @@ class ClientFactory:
             or model_type == ModelType.TGI.value
             or model_type == ModelType.TRITON.value
         ):
+            # for AZURE/TGI/TRITON server type, client type is http ONLY
             return cls._create_http_client(model_config, url, auth_token)
         elif model_type == ModelType.MISTRALAI.value:
+            # for Mistral server type, client type is mistral ONLY
             return cls._create_mistral_client(model_config, url, auth_token, async_client)
         elif model_type == ModelType.OLLAMA.value:
+            # for OLLAMA server type, client type is ollama
             return cls._create_ollama_client(
                 model_config,
                 url,
@@ -305,6 +335,12 @@ class ClientFactory:
         if auth_token and len(auth_token) > 0:
             auth_token = auth_token.replace("Bearer ", "")
             headers["Authorization"] = f"Bearer {auth_token}"
+
+        if model_config.get("extra_headers"):
+            extra_headers = model_config.get("extra_headers")
+            if extra_headers:
+                for k, v in extra_headers.items():
+                    headers[k] = v
 
         timeout = model_config.get("timeout", constants.DEFAULT_TIMEOUT)
         max_retries = model_config.get("max_retries", 3)

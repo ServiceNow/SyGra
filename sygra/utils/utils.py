@@ -9,6 +9,7 @@ from typing import Any, Callable, Optional, Sequence, Union, cast
 import yaml  # type: ignore[import-untyped]
 from datasets import IterableDataset  # type: ignore[import-untyped]
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
     BaseMessagePromptTemplate,
@@ -19,6 +20,8 @@ from langchain_core.prompts.chat import (
 from sygra.core.dataset.dataset_config import DataSourceConfig
 from sygra.core.dataset.file_handler import FileHandler
 from sygra.core.dataset.huggingface_handler import HuggingFaceHandler
+from sygra.core.models.model_factory import ModelFactory
+from sygra.core.models.model_response import ModelResponse
 from sygra.data_mapper.helper import JSONEncoder
 from sygra.logger.logger_config import logger
 from sygra.utils import constants
@@ -337,6 +340,9 @@ def convert_messages_from_chat_format_to_langchain(
             langchain_messages.append(HumanMessagePromptTemplate.from_template(content))
         elif role == "assistant":
             langchain_messages.append(AIMessagePromptTemplate.from_template(content))
+            if message.get("tool_call"):
+                logger.error("tool_call not implemented yet.")
+                raise NotImplementedError("tool_call not implemented yet.")
         elif role == "system":
             langchain_messages.append(SystemMessagePromptTemplate.from_template(content))
         elif role == "tool":
@@ -417,6 +423,32 @@ def get_models_used(task: str):
         used_model_config[model] = all_model_config.get(model)
 
     return used_model_config
+
+
+def get_model(model_name):
+    """Get model object by its name"""
+    all_model_config = load_model_config()
+    model_config = all_model_config.get(model_name)
+    model_config["name"] = model_name
+    model = ModelFactory.create_model(model_config)
+    return model
+
+
+async def get_model_response(model, system_prompt, user_prompt):
+    """Get model response for the given prompts"""
+    json_msg = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt.replace("{", "[").replace("}", "]")},
+    ]
+    # build the ChatPrompt for model inference
+    messages = convert_messages_from_chat_format_to_langchain(json_msg)
+    prompt = ChatPromptTemplate.from_messages(
+        [*messages],
+    )
+    msg = prompt.invoke({})
+    response: ModelResponse = await model._generate_text(msg, model._get_model_params())
+    resp_text, _status = response.llm_response, response.response_code
+    return resp_text
 
 
 def get_graph_factory(backend: str):

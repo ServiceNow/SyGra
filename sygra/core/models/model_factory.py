@@ -8,6 +8,8 @@ from sygra.core.models.custom_models import (
     CustomTGI,
     CustomTriton,
     CustomVLLM,
+    CustomClaudeProxy,
+    CustomGeminiProxy
 )
 from sygra.core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
 from sygra.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
@@ -27,6 +29,7 @@ from sygra.utils.constants import (
     MODEL_BACKEND_CUSTOM,
     MODEL_BACKEND_LANGGRAPH,
     MODEL_BACKEND_LITELLM,
+    MODEL_BACKEND_PROXY
 )
 
 
@@ -48,6 +51,11 @@ class ModelFactory:
             "azure_openai": CustomOpenAI,
             "ollama": CustomOllama,
             "triton": CustomTriton,
+        },
+        MODEL_BACKEND_PROXY: {
+            # list of supported models through proxy layer in enterprise network
+            "claude_proxy": CustomClaudeProxy,
+            "gemini_proxy": CustomGeminiProxy,
         },
         MODEL_BACKEND_LITELLM: {
             "openai": CustomLiteLLMOpenAI,
@@ -75,7 +83,7 @@ class ModelFactory:
 
         Args:
             model_config: Dictionary containing model configuration parameters
-            backend: The backend to use for model creation
+            backend: The backend to use for model creation, if present in model_config, it picks from model config
 
         Returns:
             An instance of a custom model class

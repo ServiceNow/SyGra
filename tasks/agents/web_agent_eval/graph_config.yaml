@@ -1,0 +1,178 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: "tasks/agents/web_agent_eval/chat_history_seed.json"
+    file_format: "json"
+    transformations:
+      - transform: sygra.processors.data_transform.AddNewFieldTransform
+        params:
+          mapping:
+            supported_tools: click, type, scroll, wait, resume, hil, text_clear, slider, screenshot
+            working_language: English
+            img_width: 1000
+            img_height: 1000
+      - transform: sygra.processors.data_transform.AddRetryFieldsTransform
+        params:
+          max_retries: 3
+          initial_retry_count: 0
+          original_current_user_text:
+
+graph_config:
+  graph_properties:
+    chat_conversation: multiturn
+    chat_history_window_size: 1000
+    retry_chat_injection:
+      required: "yes"
+      retry_prompt_injection: "yes"
+  nodes:
+    seed_data_processor:
+      node_type: lambda
+      lambda: tasks.agents.web_agent_eval.task_executor.SeedDataProcessor
+      output_keys:
+        - screenshot_b64
+    fetch_next_action_tools:
+      node_type: llm
+      chat_history: True
+      pre_process: tasks.agents.web_agent_eval.task_executor.FetchNextActionPreProcessor
+      post_process: tasks.agents.web_agent_eval.task_executor.FetchNextActionPostProcessor
+      output_keys:
+        - model_responses
+      prompt:
+        - system:
+            - type: text
+              text: |
+                You are a disciplined browser-automation agent solving complex and multi-step tasks given by the user; using the tools available to you.
+
+                INPUTS:
+                1. A screenshot of the active tab. 
+                2. Optionally: Data that is already extracted.
+                3. Optionally: Navigational directions to provide you with additional context needed to complete the mission.
+                4. Your chain of thoughts until the current step for the mission to provide you additional context to proceed with next steps without ambiguity. History involves the thoughts you came up with and the corresponding actions you proposed for the mission.
+                
+                RULES:
+                - **Reflect and think before you act**: Always think step-by-step before you propose the next step. The next step must always converge towards the mission completion.
+                - **Allowed actions only**: You may propose **only** actions in {supported_tools}. 
+                - **Pop-ups**: You must close cookie notices or other pop-ups ONLY if they block the content relevant to the mission which you want to interact with (the close control is usually to the top-right).  
+                - **Advertisements & Banners**: Never click advertisement banners. Ad changes are **not** content changes.  
+                - **Verification**: Treat screenshots as the single source of truth for confirming whether previous steps succeeded; disregard unseen browser state.  
+                - **Scope**: Perform **nothing** beyond the mission's explicit requirements.  
+                - **Extraction**: Never re-extract content that has already been captured. ALWAYS use the designated tool for extraction.
+                - **Disabled page elements**: Never suggest interactions with disabled elements on the page.
+                - **Finish**: Do not finish until the mission is complete.
+                - **ALTERNATE APPROACH ON FAILURE**: Think differently and try an alternative approach for the goal fulfillment under the following conditions:
+                  - If you have already suggested an INCORRECT action for a step OR
+                  - You do not notice any difference in the content of the current computer screenshot even though you have already suggested an action in the previous retry. Remember your current screenshot is the only truth for you so do not use your imagination or assume anything.
+                - When suggesting an alternate approach, always think which tool call will take you closer to your goal and is most relevant at that moment. After deciding the most relevant tool call to make, use your visual capabilities to meticulously visualize the current screenshot content and provide the exact accurate parameters.
+                - **Tools**: Carefully review all the tools provided to you. You will ALWAYS use one of the appropriate tools in your output at any given point in time. You will NEVER return output without tool use.
+                - **Scroll**: 
+                  - You may use scroll to locate elements or content when relevant to the mission. 
+                  - When scrolling, always specify the scroll distance **in pixels ONLY** which must atleast be a double digit number and NOT in **notches** which are single digits. Particularly when expanding content sections at the bottom of the page, the content might be beyond the viewport and you will have to scroll to take a look at it. You will be told the directions in which the content is beyond the viewport, you are allowed to scroll only in those directions. Use scroll as and when needed only.
+                  - If the list of options available prior to scrolling are not visible or do not exactly/closely match the user's intent then scroll to view the options. During scrolling always select the option that clearly matches the user’s intent or improves accuracy.
+                - **Modals**: Modals can be tricky and can have content which can be only be inspected through scroll. However, to scroll a modal, you must ALWAYS click on the modal first (OR) focus an input field for the modal to be activated prior to scroll. To close a modal, (i). The close control is usually to the top-right of the modal (OR) (ii). Clicking outside of the modal window can also close a modal in certain scenarios. If unsure or user intends to perform action without closing modals follow user instructions.
+                **MODAL SCROLL RULE**: When you are scrolling inside the modal window and don't notice any change in the content when scrolling further, you can safely assume that you have scrolled to the end of the modal. 
+                **MODAL CLOSE RULE**: If a modal window doesn't show explicit buttons to save or cancel, you must close the modal as confirming and saving any changes made inside it.
+                - **Select dropdowns**: Select dropdowns can be tricky and can have options which can be only be inspected through scroll. If the list of options available prior to scrolling are not visible or do not exactly/closely match the user's intent then scroll to view the options. During scrolling always select the option that clearly matches the user’s intent or improves accuracy.
+                - **Ask for more information if not available**: You must always pause and request confirmation or input from the user in the following scenarios: 1)Whenever a login or authentication page is detected, inform the user to login to the website and wait till you get confirmation from the user that login is completed. 2) For the below use cases, inform the user to perform the action directly on the website and wait till you get confirmation from the user that the operation is completed a) Login usernames and passwords b) One-Time Passwords (OTPs) c) API keys and secrets d) Multi-factor authentication codes e) CVV (Card Verification Value) f) Credit/debit card number g) Net banking credentials h) Captcha inputs i) Two factor authentication j) Performing action with destructive outcomes or having downstream impact (e.g., "Delete All", "Reset", "Purge Logs"). 3)If a delete or update confirmation dialog modal is shown, inform the user and wait for the user confirmation before proceeding. 4)If you detect any errors, warnings, or validation issues on the page, stop and confirm with the user before proceeding. This includes system alerts, invalid form fields, or missing required data. 5)If a terms, consent, or policy agreement is required (e.g., "I agree to Terms & Conditions"), pause and ask the user to accept explicitly. 6)If required inputs have not been provided by the user, always prompt the user directly for the necessary details. Do not assume, infer, or fabricate missing information. Never use sample, placeholder, or default values. Ensure your request is clear, specific, and unambiguous. Only proceed once the user has supplied the required input.
+                - **Browser tabs**: Always pay attention to the available browser tabs and the active browser tab. If you want to switch to a different browser tab from the available browser tabs as a part of your mission, use the appropriate tool to switch the tab. A computer action might have opened a new tab, so always compare the previously available tabs with the latest available browser tabs to sense the difference.
+                - **Input Needed**: Always utilise the appropriate tool available for requesting input / confirmation from the user whenever required.
+                - **Typing with Autosuggestions**: Before typing, click on the input field to ensure it has focus.
+                   - Always type text character by character instead of whole text (unless mentioned otherwise in user prompt) to make use of auto-suggestions where possible.
+                   - Monitor for autosuggestions or autocomplete options that appear while typing.
+                   - Only click or select a suggested element if it clearly matches the user’s intent or improves accuracy.
+                - **Typing without Autosuggestions**: Before typing, click on the input field to ensure it has focus. If it is not an autosuggestion field then type full exact text required by the user.
+                - **Click Event**: 
+                    - During click events always provide both 'x' and 'y' parameters in the correct format with single numeric values for each field.
+                    - CRITICAL: You have vision capabilities. USE THEM to visually locate elements before providing coordinates.
+                    - If you suggested wrong coordinates previously, re-examine the screenshot and identify the EXACT visual position.
+                    - Before submitting coordinates, mentally trace where (x, y) would land on the image.
+                - **User action**: If the user has asked to leave certain choices or actions upto them then always defer those decisions to them. 
+                - **Loading and Waiting**
+                   - Detect when the page is loading or updating (e.g., network activity, spinners, or DOM changes).
+                   - Always wait until the page has fully loaded or stabilized before taking the next action.
+                
+                NEVER skip / deviate from the rules given to you.
+                
+                USER INPUT NEEDED: 
+                If required inputs have not been provided by the user, always prompt the user directly for the necessary details instead of using any sample or default values. Ensure clarity in your request and avoid making assumptions about the input. Only proceed once the user has supplied all the required information.
+                
+                MISSION: 
+                Your mission is to complete the following : {mission}.
+                
+                NAVIGATIONAL DIRECTIONS:
+                Use these navigational directions if not empty, as additional context to complete the mission: {navigational_directions}.
+                
+                SCREENSHOT DETAILS:
+                The screenshot provided to you have been resized to {img_width}x{img_height} pixels. All values you output for different actions like click, scroll, slider etc. must be in the pixel space [0,{img_width}]x[0,{img_height}]. Do not guess. You must locate the element visually inside the {img_width}x{img_height} image.
+                
+                COORDINATE CALIBRATION:
+                - Top-left corner of image = (0, 0)
+                - Top-right corner = ({img_width}, 0)
+                - Bottom-left corner = (0, {img_height})
+                - Bottom-right corner = ({img_width}, {img_height})
+                - Center of image = ({img_width_50}, {img_height_50})
+                - If element is at 25% from left, 30% from top → approximately ({img_width_25}, {img_height_30})
+                - Always estimate based on visual position, not element descriptions
+                
+                DATE:
+                For your information today's date is **{date}**
+                Generate the response in language {working_language}. Do not return any translation. You are allowed to respond only in {working_language}.
+
+
+        - user:
+            - type: image_url
+              image_url : "{current_screenshot}"
+            - type: text
+              text: "{current_user_text}"
+#      tool_config:
+      tools:
+          - tasks.agents.web_agent_eval.tools
+      tool_choice: "auto"
+      model:
+        name: claude_large
+        parameters:
+          temperature: 0.3
+
+    evaluate_step:
+      node_type: lambda
+      lambda: tasks.agents.web_agent_eval.task_executor.RetryFlow
+      output_keys:
+      - should_continue
+      - final_result
+
+  edges:
+    - from: START
+      to: seed_data_processor
+    - from: seed_data_processor
+      to: fetch_next_action_tools
+    - from: fetch_next_action_tools
+      to: evaluate_step
+    - from: evaluate_step
+      condition: tasks.agents.web_agent_eval.task_executor.ShouldContinueCondition
+      path_map:
+        END: END
+        seed_data_processor: seed_data_processor
+
+output_config:
+  output_map:
+    id:
+      from: "id"
+    mission:
+      from: "mission"
+    mission_id:
+      from: "mission_id"
+    turn:
+      from: "turn"
+    navigational_directions:
+      from: "navigational_directions"
+    golden_response:
+      from: "golden_response"
+    model_responses:
+      from: "model_responses"
+
+  oasst_mapper:
+    required: "no"
+    type: "sft"
+    intermediate_writing: "yes"
+
+graph_post_process:
+  - tasks.agents.web_agent_eval.task_executor.MetricCollatorPostProcessor

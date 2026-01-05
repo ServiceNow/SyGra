@@ -59,7 +59,7 @@ def calculate_cost(model_name: str, prompt_tokens: int, completion_tokens: int) 
                 return _get_anthropic_claude_token_cost(
                     prompt_tokens, completion_tokens, model_name
                 )
-            except (KeyError, ValueError):
+            except (KeyError, ValueError, IndexError):
                 # Claude model but not in Bedrock pricing table
                 pass
 
@@ -71,7 +71,7 @@ def calculate_cost(model_name: str, prompt_tokens: int, completion_tokens: int) 
         return 0.0
 
     # No pricing available - log and return 0.0
-    logger.debug(
+    logger.info(
         f"No pricing information available for model '{model_name}'. "
         f"Cost will be reported as $0.00. "
         f"Supported models: OpenAI (GPT-4, GPT-3.5, etc.), Azure OpenAI and Anthropic Claude on Bedrock."
