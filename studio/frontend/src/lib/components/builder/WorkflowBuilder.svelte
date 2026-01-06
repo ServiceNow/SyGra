@@ -1178,7 +1178,7 @@
 					onclick={() => showGroupModal = true}
 					disabled={!canGroupNodes()}
 					title={canGroupNodes() ? `Group ${selectedNodeIds.length} nodes as subgraph (⌘G)` : 'Cannot group: includes START, END, Data, or Output nodes'}
-					class="flex items-center gap-2 px-3 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
+					class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
 				>
 					<Group size={16} />
 					Group ({selectedNodeIds.length})

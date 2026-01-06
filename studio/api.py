@@ -21,7 +21,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -1016,6 +1016,167 @@ def _register_routes(app: FastAPI) -> None:
                 "total": total_count,
                 "source_type": source_type,
                 "message": None
+            }
+
+        except Exception as e:
+            return {
+                "records": [],
+                "total": 0,
+                "message": f"Error loading sample data: {str(e)}"
+            }
+
+    @app.post("/api/preview-source")
+    async def preview_source_data(request: Request, limit: int = 5):
+        """
+        Preview data from a source configuration directly (without requiring a saved workflow).
+
+        Accepts source configuration in the POST body and returns sample data.
+        This allows previewing data before saving a workflow.
+
+        Args:
+            request: Request containing source configuration in body.
+            limit: Maximum number of records to return (default: 5).
+
+        Returns:
+            Sample data records and metadata.
+        """
+        try:
+            source = await request.json()
+        except Exception as e:
+            return {
+                "records": [],
+                "total": 0,
+                "message": f"Invalid JSON body: {str(e)}"
+            }
+
+        if not source:
+            return {
+                "records": [],
+                "total": 0,
+                "message": "No source configuration provided"
+            }
+
+        source_type = (source.get("type") or "").lower()
+
+        try:
+            records = []
+            total_count = None
+
+            if source_type in ("disk", "local_file", "local", "json", "jsonl", "csv"):
+                # Local file source
+                file_path = source.get("file_path") or source.get("path")
+                file_format = source.get("file_format") or source.get("format") or "json"
+
+                if not file_path:
+                    return {
+                        "records": [],
+                        "total": 0,
+                        "message": "No file_path specified for local file source"
+                    }
+
+                if file_path and os.path.exists(file_path):
+                    import json as json_lib
+                    if file_format in ("json",):
+                        with open(file_path, 'r') as f:
+                            data = json_lib.load(f)
+                            if isinstance(data, list):
+                                total_count = len(data)
+                                records = data[:limit]
+                            else:
+                                records = [data]
+                                total_count = 1
+                    elif file_format in ("jsonl",):
+                        with open(file_path, 'r') as f:
+                            lines = f.readlines()
+                            total_count = len(lines)
+                            for line in lines[:limit]:
+                                if line.strip():
+                                    records.append(json_lib.loads(line))
+                    elif file_format in ("csv",):
+                        import csv
+                        with open(file_path, 'r') as f:
+                            reader = csv.DictReader(f)
+                            all_rows = list(reader)
+                            total_count = len(all_rows)
+                            records = all_rows[:limit]
+                    elif file_format in ("parquet",):
+                        try:
+                            import pandas as pd
+                            df = pd.read_parquet(file_path)
+                            total_count = len(df)
+                            records = df.head(limit).to_dict('records')
+                        except ImportError:
+                            return {
+                                "records": [],
+                                "total": 0,
+                                "message": "pandas and pyarrow required for parquet files"
+                            }
+                else:
+                    return {
+                        "records": [],
+                        "total": 0,
+                        "message": f"File not found: {file_path}"
+                    }
+
+            elif source_type in ("hf", "huggingface"):
+                # HuggingFace source - use HF Hub API directly
+                repo_id = source.get("repo_id")
+                config_name = source.get("config_name") or "default"
+                split = source.get("split", "train")
+
+                if not repo_id:
+                    return {
+                        "records": [],
+                        "total": 0,
+                        "message": "No repo_id specified for HuggingFace dataset"
+                    }
+
+                try:
+                    from huggingface_hub import HfApi
+                    import requests as hf_requests
+
+                    api = HfApi()
+
+                    # Try the dataset viewer API first (much faster)
+                    viewer_url = f"https://datasets-server.huggingface.co/rows?dataset={repo_id}&config={config_name}&split={split}&offset=0&length={limit}"
+                    response = hf_requests.get(viewer_url, timeout=10)
+
+                    if response.status_code == 200:
+                        data = response.json()
+                        records = [row.get("row", row) for row in data.get("rows", [])]
+                        total_count = data.get("num_rows_total", len(records))
+                    else:
+                        # Fall back to datasets library
+                        from datasets import load_dataset
+                        ds = load_dataset(repo_id, config_name, split=split, streaming=True, trust_remote_code=True)
+                        records = list(ds.take(limit))
+                        total_count = "streaming"
+                except Exception as hf_error:
+                    return {
+                        "records": [],
+                        "total": 0,
+                        "message": f"HuggingFace error: {str(hf_error)}"
+                    }
+
+            elif source_type == "servicenow":
+                # ServiceNow source - would need credentials
+                return {
+                    "records": [],
+                    "total": 0,
+                    "message": "ServiceNow preview requires saved workflow with credentials"
+                }
+
+            else:
+                return {
+                    "records": [],
+                    "total": 0,
+                    "message": f"Unknown source type: {source_type}"
+                }
+
+            return {
+                "records": records,
+                "total": total_count,
+                "source_type": source_type
             }
 
         except Exception as e:
@@ -3365,6 +3526,22 @@ async def _connect_dap_client(execution_id: str, debug_port: int, file_path: str
             writer.close()
 
 
+def _represent_multiline_str(dumper, data):
+    """Custom YAML representer that uses literal block scalar style for multiline strings."""
+    if '\n' in data:
+        # Use literal block scalar style (|) for multiline strings
+        return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
+    return dumper.represent_scalar('tag:yaml.org,2002:str', data)
+
+
+def _get_yaml_dumper():
+    """Get a custom YAML dumper that properly formats multiline strings."""
+    class CustomDumper(yaml.SafeDumper):
+        pass
+    CustomDumper.add_representer(str, _represent_multiline_str)
+    return CustomDumper
+
+
 async def _save_workflow_to_disk(app: FastAPI, request: WorkflowCreateRequest, is_new: bool) -> WorkflowSaveResponse:
     """
     Save a workflow to disk as graph_config.yaml and task_executor.py.
@@ -3420,7 +3597,7 @@ async def _save_workflow_to_disk(app: FastAPI, request: WorkflowCreateRequest, i
     config_path = workflow_dir / "graph_config.yaml"
 
     with open(config_path, 'w') as f:
-        yaml.dump(graph_config, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+        yaml.dump(graph_config, f, Dumper=_get_yaml_dumper(), default_flow_style=False, sort_keys=False, allow_unicode=True)
     files_created.append(str(config_path))
 
     # Generate task_executor.py if there are custom processors
@@ -3763,9 +3940,22 @@ def _generate_graph_config(request: WorkflowCreateRequest, task_name: str) -> di
             }
         config['output_config'] = output_config_clean
     else:
-        # Generate minimal default output config - just id mapping
-        # Users can add more mappings via the UI if needed
-        config['output_config'] = {'output_map': {'id': {'from': 'id'}}}
+        # Generate default output config with id and messages mapping
+        # Check if we have LLM nodes that need message conversion
+        has_llm_nodes = any(n.node_type == 'llm' for n in request.nodes)
+
+        if has_llm_nodes:
+            # Use output generator with message transform for LLM outputs
+            config['output_config'] = {
+                'generator': f'tasks.examples.{task_name}.task_executor.DefaultOutputGenerator',
+                'output_map': {
+                    'id': {'from': 'id'},
+                    'response': {'from': 'messages', 'transform': 'build_response'}
+                }
+            }
+        else:
+            # Minimal output config for non-LLM workflows
+            config['output_config'] = {'output_map': {'id': {'from': 'id'}}}
 
     # Schema config
     if request.schema_config:
@@ -3911,6 +4101,24 @@ def {func_name}(state: SygraState) -> str:
     # Return one of: {path_map_keys}
     # Access state variables: state["variable_name"]
     return "{path_map_keys[0]}"
+''')
+
+    # Check if we have LLM nodes - always generate DefaultOutputGenerator for them
+    has_llm_nodes = any(n.node_type == 'llm' for n in request.nodes)
+    if has_llm_nodes:
+        needs_executor = True
+        imports.add("from typing import Any")
+        imports.add("from sygra.processors.output_record_generator import BaseOutputGenerator")
+        imports.add("from sygra.utils import utils")
+
+        classes.append('''
+class DefaultOutputGenerator(BaseOutputGenerator):
+    """Output generator that converts LangChain messages to chat format."""
+
+    @staticmethod
+    def build_response(data: Any, state: dict) -> list:
+        """Convert LangChain AIMessage objects to serializable chat format."""
+        return utils.convert_messages_from_langchain_to_chat_format(data)
 ''')
 
     if not needs_executor:

@@ -216,7 +216,7 @@
 
 			<!-- Edit Actions (only in edit mode) -->
 			{#if isEditing}
-				<div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+				<div class="flex items-center gap-0.5 flex-shrink-0">
 					{#if !isPrimary}
 						<button
 							onclick={() => dispatch('makePrimary')}

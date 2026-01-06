@@ -53,6 +53,17 @@
 	// Section expansion state
 	let showAdvanced = $state(false);
 
+	// Validation state - show errors after first save attempt
+	let showErrors = $state(false);
+
+	// Individual field error states
+	let aliasError = $derived(showErrors && joinType !== 'primary' && !alias.trim() ? 'Alias is required for non-primary sources' : '');
+	let repoIdError = $derived(showErrors && type === 'hf' && !repoId.trim() ? 'Repository ID is required' : '');
+	let filePathError = $derived(showErrors && type === 'disk' && !filePath.trim() ? 'File path is required' : '');
+	let tableError = $derived(showErrors && type === 'servicenow' && !table.trim() ? 'Table name is required' : '');
+	let primaryKeyError = $derived(showErrors && joinType === 'column' && !primaryKey.trim() ? 'Primary key is required for column join' : '');
+	let joinKeyError = $derived(showErrors && joinType === 'column' && !joinKey.trim() ? 'Join key is required for column join' : '');
+
 	// Reset form when source changes
 	$effect(() => {
 		if (source) {
@@ -98,6 +109,7 @@
 	});
 
 	function handleSave() {
+		showErrors = true;
 		if (!isValid()) return;
 
 		const newSource: DataSourceDetails = {
@@ -137,6 +149,7 @@
 	}
 
 	function handleClose() {
+		showErrors = false;
 		dispatch('close');
 	}
 
@@ -225,11 +238,14 @@
 						type="text"
 						bind:value={alias}
 						placeholder="e.g., incidents, users, products"
-						class="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 transition-all"
+						class="w-full px-4 py-2.5 border rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 transition-all {aliasError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200 dark:border-gray-700 focus:ring-violet-500 focus:border-violet-500'}"
 					/>
+					{#if aliasError}
+						<p class="text-xs text-red-500 mt-1">{aliasError}</p>
+					{/if}
 					<p class="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-1">
 						<Info size={12} />
-						Use in prompts: <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded font-mono text-violet-600 dark:text-violet-400">{'{' + (alias || 'alias') + '->column}'}</code>
+						Use in prompts: <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded font-mono text-violet-600 dark:text-violet-400">{'{column_name}'}</code>
 					</p>
 				</div>
 
@@ -264,8 +280,11 @@
 											type="text"
 											bind:value={primaryKey}
 											placeholder="Column in primary source"
-											class="w-full px-3 py-2 text-sm font-mono border border-violet-200 dark:border-violet-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-violet-500"
+											class="w-full px-3 py-2 text-sm font-mono border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 {primaryKeyError ? 'border-red-500 focus:ring-red-500' : 'border-violet-200 dark:border-violet-700 focus:ring-violet-500'}"
 										/>
+										{#if primaryKeyError}
+											<p class="text-xs text-red-500 mt-1">{primaryKeyError}</p>
+										{/if}
 									</div>
 									<div>
 										<label class="block text-xs text-gray-600 dark:text-gray-400 mb-1.5">
@@ -275,8 +294,11 @@
 											type="text"
 											bind:value={joinKey}
 											placeholder="Column in this source"
-											class="w-full px-3 py-2 text-sm font-mono border border-violet-200 dark:border-violet-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-violet-500"
+											class="w-full px-3 py-2 text-sm font-mono border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 {joinKeyError ? 'border-red-500 focus:ring-red-500' : 'border-violet-200 dark:border-violet-700 focus:ring-violet-500'}"
 										/>
+										{#if joinKeyError}
+											<p class="text-xs text-red-500 mt-1">{joinKeyError}</p>
+										{/if}
 									</div>
 								</div>
 								<div class="mt-3 text-xs text-violet-600 dark:text-violet-400 flex items-center gap-2 justify-center p-2 bg-white dark:bg-gray-800/50 rounded-lg">
@@ -311,9 +333,12 @@
 										type="text"
 										bind:value={repoId}
 										placeholder="username/dataset-name"
-										class="w-full pl-10 pr-4 py-2.5 font-mono border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-violet-500"
+										class="w-full pl-10 pr-4 py-2.5 font-mono border rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 {repoIdError ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-700 focus:ring-violet-500'}"
 									/>
 								</div>
+								{#if repoIdError}
+									<p class="text-xs text-red-500 mt-1">{repoIdError}</p>
+								{/if}
 							</div>
 							<div class="grid grid-cols-2 gap-4">
 								<div>
@@ -361,9 +386,12 @@
 										type="text"
 										bind:value={filePath}
 										placeholder="/path/to/data.json"
-										class="w-full pl-10 pr-4 py-2.5 font-mono border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-violet-500"
+										class="w-full pl-10 pr-4 py-2.5 font-mono border rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 {filePathError ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-700 focus:ring-violet-500'}"
 									/>
 								</div>
+								{#if filePathError}
+									<p class="text-xs text-red-500 mt-1">{filePathError}</p>
+								{/if}
 							</div>
 							<div class="grid grid-cols-2 gap-4">
 								<div>
@@ -404,9 +432,12 @@
 										type="text"
 										bind:value={table}
 										placeholder="incident"
-										class="w-full pl-10 pr-4 py-2.5 font-mono border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-violet-500"
+										class="w-full pl-10 pr-4 py-2.5 font-mono border rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 {tableError ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-700 focus:ring-violet-500'}"
 									/>
 								</div>
+								{#if tableError}
+									<p class="text-xs text-red-500 mt-1">{tableError}</p>
+								{/if}
 							</div>
 							<div>
 								<label class="block text-xs text-gray-500 dark:text-gray-400 mb-1.5">Query Filter</label>
@@ -519,8 +550,7 @@
 					</button>
 					<button
 						onclick={handleSave}
-						disabled={!isValid()}
-						class="flex items-center gap-2 px-5 py-2 text-sm bg-violet-600 hover:bg-violet-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-xl transition-colors shadow-sm hover:shadow-md"
+						class="flex items-center gap-2 px-5 py-2 text-sm bg-violet-600 hover:bg-violet-700 text-white rounded-xl transition-colors shadow-sm hover:shadow-md"
 					>
 						<Save size={16} />
 						{source ? 'Save Changes' : 'Add Source'}

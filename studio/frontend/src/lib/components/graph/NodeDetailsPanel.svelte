@@ -272,7 +272,36 @@
 		sourcePreviewData = newData;
 
 		try {
-			const response = await fetch(`/api/workflows/${encodeURIComponent(workflowId)}/sample-data?limit=5&source_index=${sourceIndex}`);
+			let response: Response;
+
+			// Check if this is a new/unsaved workflow - use direct source preview
+			const isNewWorkflow = workflowId.startsWith('new_');
+
+			if (isNewWorkflow) {
+				// Get source configuration from current editing state or node data
+				const sources = isEditing ? editDataSources :
+					(Array.isArray(node?.data_config?.source) ? node.data_config.source :
+					node?.data_config?.source ? [node.data_config.source] : []);
+
+				const sourceConfig = sources[sourceIndex];
+				if (!sourceConfig) {
+					const resultData = new Map(sourcePreviewData);
+					resultData.set(sourceIndex, { records: [], total: 0, message: 'Source not found at index ' + sourceIndex });
+					sourcePreviewData = resultData;
+					return;
+				}
+
+				// Use POST endpoint with source config directly
+				response = await fetch('/api/preview-source?limit=5', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(sourceConfig)
+				});
+			} else {
+				// Use existing workflow-based endpoint for saved workflows
+				response = await fetch(`/api/workflows/${encodeURIComponent(workflowId)}/sample-data?limit=5&source_index=${sourceIndex}`);
+			}
+
 			const resultData = new Map(sourcePreviewData);
 			if (response.ok) {
 				resultData.set(sourceIndex, await response.json());

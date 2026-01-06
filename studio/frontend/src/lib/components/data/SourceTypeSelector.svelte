@@ -2,7 +2,8 @@
 	import { Cloud, HardDrive, Server, MemoryStick, FileJson, Database, Table2, Box } from 'lucide-svelte';
 	import VisualSelectionCard from '../common/VisualSelectionCard.svelte';
 
-	type SourceType = 'hf' | 'disk' | 'servicenow' | 'memory';
+	// Note: 'memory' type is only supported in Python library (sygra/workflow), not in YAML workflows
+	type SourceType = 'hf' | 'disk' | 'servicenow';
 
 	interface Props {
 		value: SourceType;
@@ -46,15 +47,6 @@
 			iconBgClass: 'bg-emerald-100 dark:bg-emerald-900/40',
 			iconClass: 'text-emerald-600 dark:text-emerald-400',
 			previewColor: 'emerald'
-		},
-		{
-			value: 'memory',
-			label: 'In Memory',
-			description: 'Inline or runtime data',
-			icon: MemoryStick,
-			iconBgClass: 'bg-purple-100 dark:bg-purple-900/40',
-			iconClass: 'text-purple-600 dark:text-purple-400',
-			previewColor: 'purple'
 		}
 	];
 
