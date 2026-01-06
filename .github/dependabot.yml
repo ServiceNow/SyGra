@@ -9,7 +9,7 @@ updates:
     labels:
       - dependencies
     pull-request-branch-name:
-      name: "scratch/gha-updates"
+      separator: "/"
     groups:
       gha-dependencies:
         patterns: ["*"]
@@ -26,7 +26,7 @@ updates:
       prefix: "deps"
       include: scope
     pull-request-branch-name: 
-      name: "scratch/uv-updates"
+      separator: "/"
     groups:
       uv-dependencies:
         patterns: ["*"]
