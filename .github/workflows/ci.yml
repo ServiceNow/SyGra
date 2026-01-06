@@ -51,7 +51,7 @@ jobs:
 
       # ---- Cache uv global + python installs ----
       - name: Cache uv global cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/uv
@@ -62,7 +62,7 @@ jobs:
 
       # ---- Cache project venv ----
       - name: Cache project .venv
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .venv
           key: uv-venv-${{ runner.os }}-py${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/uv.lock', '**/pyproject.toml') }}
