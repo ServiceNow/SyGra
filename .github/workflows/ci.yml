@@ -33,7 +33,7 @@ jobs:
           df -h
 
       # ---- Checkout ----
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # ---- Python setup ----
       # Pin to an explicit patch version so cached venv is always valid
