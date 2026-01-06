@@ -8,7 +8,8 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - dependencies
-    pull-request-branch-name: "scratch/gha-updates"
+    pull-request-branch-name:
+      name: "scratch/gha-updates"
     groups:
       gha-dependencies:
         patterns: ["*"]
@@ -24,7 +25,8 @@ updates:
     commit-message:
       prefix: "deps"
       include: scope
-    pull-request-branch-name: "scratch/uv-updates"
+    pull-request-branch-name: 
+      name: "scratch/uv-updates"
     groups:
       uv-dependencies:
         patterns: ["*"]
