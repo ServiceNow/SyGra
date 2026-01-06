@@ -8,6 +8,9 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - dependencies
+    groups:
+      gha-dependencies:
+        patterns: ["*"]
 
   # Update UV-managed Python deps
   - package-ecosystem: uv
@@ -20,3 +23,6 @@ updates:
     commit-message:
       prefix: "deps"
       include: scope
+    groups:
+      uv-dependencies:
+        patterns: ["*"]
