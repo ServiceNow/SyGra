@@ -8,8 +8,6 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - dependencies
-    pull-request-branch-name:
-      separator: "/"
     groups:
       gha-dependencies:
         patterns: ["*"]
@@ -25,8 +23,6 @@ updates:
     commit-message:
       prefix: "deps"
       include: scope
-    pull-request-branch-name: 
-      separator: "/"
     groups:
       uv-dependencies:
         patterns: ["*"]
