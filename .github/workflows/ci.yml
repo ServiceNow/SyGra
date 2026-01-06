@@ -37,7 +37,7 @@ jobs:
 
       # ---- Python setup ----
       # Pin to an explicit patch version so cached venv is always valid
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         id: setup-python
         with:
           python-version: "3.9.25"
