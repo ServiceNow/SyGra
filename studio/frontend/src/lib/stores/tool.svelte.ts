@@ -233,11 +233,11 @@ export const toolStore = createToolStore();
 
 // Category metadata for UI
 export const TOOL_CATEGORIES: { value: ToolCategory; label: string; icon: string; color: string }[] = [
-	{ value: 'search', label: 'Search', icon: 'search', color: '#3b82f6' },
-	{ value: 'data', label: 'Data', icon: 'database', color: '#10b981' },
-	{ value: 'api', label: 'API', icon: 'globe', color: '#f59e0b' },
-	{ value: 'utility', label: 'Utility', icon: 'wrench', color: '#6b7280' },
-	{ value: 'custom', label: 'Custom', icon: 'puzzle', color: '#8b5cf6' }
+	{ value: 'search', label: 'Search', icon: 'search', color: '#52B8FF' },
+	{ value: 'data', label: 'Data', icon: 'database', color: '#7661FF' },
+	{ value: 'api', label: 'API', icon: 'globe', color: '#BF71F2' },
+	{ value: 'utility', label: 'Utility', icon: 'wrench', color: '#0A4D6E' },
+	{ value: 'custom', label: 'Custom', icon: 'puzzle', color: '#63DF4E' }
 ];
 
 // Default tool template

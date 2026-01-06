@@ -67,7 +67,7 @@
 			{#if isEditing}
 				<button
 					onclick={addMapping}
-					class="flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300"
+					class="flex items-center gap-1 text-xs text-[#032D42] dark:text-[#52B8FF] hover:text-[#7661FF] dark:hover:text-[#BF71F2]"
 				>
 					<Plus size={12} />
 					Add Mapping
@@ -105,7 +105,7 @@
 							<code class="text-xs font-mono flex items-center gap-2">
 								<span class="text-gray-600 dark:text-gray-400">{mapping.oldName}</span>
 								<ArrowRight size={12} class="text-gray-400" />
-								<span class="text-violet-600 dark:text-violet-400">{mapping.newName}</span>
+								<span class="text-[#7661FF] dark:text-[#BF71F2]">{mapping.newName}</span>
 							</code>
 						{/if}
 					</div>
@@ -130,7 +130,7 @@
 					type="checkbox"
 					bind:checked={overwrite}
 					onchange={emitUpdate}
-					class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-violet-600 focus:ring-violet-500 dark:focus:ring-violet-400"
+					class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-[#63DF4E] focus:ring-[#52B8FF] dark:focus:ring-[#52B8FF]"
 				/>
 				<span class="text-sm text-gray-700 dark:text-gray-300">
 					Overwrite existing fields
@@ -141,7 +141,7 @@
 			</p>
 		{:else if overwrite}
 			<div class="text-xs text-gray-600 dark:text-gray-400">
-				Overwrite mode: <span class="text-violet-600 dark:text-violet-400">enabled</span>
+				Overwrite mode: <span class="text-[#7661FF] dark:text-[#BF71F2]">enabled</span>
 			</div>
 		{/if}
 	</div>

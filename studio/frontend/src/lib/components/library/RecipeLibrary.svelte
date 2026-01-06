@@ -203,10 +203,10 @@
 	<div class="p-4 border-b border-gray-200 dark:border-gray-700">
 		<div class="flex items-center justify-between mb-3">
 			<div class="flex items-center gap-2">
-				<Library size={20} class="text-violet-500" />
+				<Library size={20} class="text-[#7661FF]" />
 				<h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Recipe Library</h2>
 				{#if selectionCount > 0}
-					<span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400">
+					<span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]">
 						{selectionCount} selected
 					</span>
 				{/if}
@@ -265,9 +265,9 @@
 					title={allSelected() ? 'Deselect all' : 'Select all'}
 				>
 					{#if allSelected()}
-						<CheckSquare size={16} class="text-violet-500" />
+						<CheckSquare size={16} class="text-[#7661FF]" />
 					{:else if someSelected()}
-						<MinusSquare size={16} class="text-violet-500" />
+						<MinusSquare size={16} class="text-[#7661FF]" />
 					{:else}
 						<Square size={16} />
 					{/if}
@@ -282,7 +282,7 @@
 					type="text"
 					placeholder="Search recipes..."
 					bind:value={recipeStore.searchQuery}
-					class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+					class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 				/>
 			</div>
 		</div>
@@ -308,7 +308,7 @@
 						onclick={() => { recipeStore.selectedCategory = 'all'; showCategoryFilter = false; }}
 						class="px-2 py-1 text-xs rounded-full transition-colors {
 							recipeStore.selectedCategory === 'all'
-								? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+								? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]'
 								: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
 						}"
 					>
@@ -319,7 +319,7 @@
 							onclick={() => { recipeStore.selectedCategory = cat.value; showCategoryFilter = false; }}
 							class="px-2 py-1 text-xs rounded-full transition-colors {
 								recipeStore.selectedCategory === cat.value
-									? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+									? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]'
 									: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
 							}"
 						>
@@ -335,8 +335,8 @@
 	<div class="flex-1 overflow-y-auto p-3">
 		{#if recipeStore.filteredRecipes.length === 0}
 			<div class="text-center py-12">
-				<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center">
-					<Library size={28} class="text-violet-500" />
+				<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#7661FF]/20 to-[#BF71F2]/20 flex items-center justify-center">
+					<Library size={28} class="text-[#7661FF]" />
 				</div>
 				<h3 class="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">No recipes yet</h3>
 				<p class="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
@@ -355,8 +355,8 @@
 					<div
 						class="group relative p-3 rounded-lg border transition-all cursor-pointer {
 							isSelected
-								? 'border-violet-400 dark:border-violet-500 bg-violet-50 dark:bg-violet-900/20'
-								: 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-md'
+								? 'border-[#7661FF] dark:border-[#BF71F2] bg-[#7661FF]/10 dark:bg-[#7661FF]/20'
+								: 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-[#52B8FF] dark:hover:border-[#7661FF] hover:shadow-md'
 						}"
 						onclick={() => handleAddRecipe(recipe)}
 					>
@@ -373,7 +373,7 @@
 								class="relative z-10 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex-shrink-0 mt-0.5"
 							>
 								{#if isSelected}
-									<CheckSquare size={18} class="text-violet-500" />
+									<CheckSquare size={18} class="text-[#7661FF]" />
 								{:else}
 									<Square size={18} class="text-gray-400 group-hover:text-gray-500" />
 								{/if}
@@ -444,7 +444,7 @@
 							</button>
 							<button
 								onclick={(e) => { e.stopPropagation(); handleAddRecipe(recipe); }}
-								class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium transition-colors"
+								class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#63DF4E] hover:bg-[#63DF4E]/90 text-[#032D42] text-sm font-medium transition-colors"
 							>
 								<Plus size={14} />
 								Add

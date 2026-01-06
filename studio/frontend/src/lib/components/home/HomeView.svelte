@@ -4,7 +4,8 @@
 	import {
 		Plus, GitBranch, History, Play, CheckCircle2, XCircle, Clock, Loader2, ArrowRight,
 		Zap, TrendingUp, TrendingDown, Activity, Layers, RefreshCw, Sparkles, Search, Timer,
-		DollarSign, BarChart3, Settings, BookOpen, Cpu, Database, ArrowUpRight, Ban
+		DollarSign, BarChart3, Settings, BookOpen, Cpu, Database, ArrowUpRight, Ban,
+		FolderOpen, Library
 	} from 'lucide-svelte';
 
 	let workflows = $derived(workflowStore.workflows);
@@ -148,17 +149,22 @@
 
 <div class="h-full w-full overflow-auto bg-gray-50 dark:bg-gray-900">
 	<div class="max-w-7xl mx-auto px-6 py-8">
-		<!-- Header -->
-		<div class="flex items-center justify-between mb-8">
-			<div class="flex items-center gap-4">
-				<div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
-					<Sparkles size={24} class="text-white" />
+		<!-- Header - Clean and professional -->
+		<div class="flex items-center justify-between mb-10">
+			<div class="flex items-center gap-5">
+				<!-- Logo with Green + Purple gradient (ServiceNow brand style) -->
+				<div
+					class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
+					style="background: radial-gradient(ellipse at 20% 10%, rgba(99, 223, 78, 0.4) 0%, transparent 50%), radial-gradient(ellipse at 80% 90%, rgba(191, 113, 242, 0.35) 0%, transparent 50%), #032D42;"
+				>
+					<Sparkles size={28} class="text-[#63DF4E]" />
 				</div>
 				<div>
-					<h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100 tracking-tight">
-						SyGra Studio
+					<h1 class="text-3xl font-bold tracking-tight">
+						<span class="text-[#032D42] dark:text-white">SyGra</span>
+						<span class="text-gray-400 dark:text-gray-500 font-normal ml-1">Studio</span>
 					</h1>
-					<p class="text-sm text-gray-500 dark:text-gray-400">
+					<p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
 						Synthetic data generation workflows
 					</p>
 				</div>
@@ -170,51 +176,51 @@
 						type="text"
 						bind:value={searchQuery}
 						placeholder="Search workflows..."
-						class="w-64 pl-9 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 transition-colors"
+						class="w-72 pl-9 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#032D42]/20 focus:border-[#032D42] dark:focus:ring-[#52B8FF]/30 dark:focus:border-[#52B8FF] transition-colors"
 					/>
 				</div>
-				<button onclick={refresh} disabled={loading} class="p-2.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50">
+				<button onclick={refresh} disabled={loading} class="p-2.5 text-gray-500 hover:text-[#032D42] dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors disabled:opacity-50">
 					<RefreshCw size={18} class={loading ? 'animate-spin' : ''} />
 				</button>
 			</div>
 		</div>
 
-		<!-- Quick Actions Bar -->
-		<div class="grid grid-cols-4 gap-4 mb-8">
-			<button onclick={createNewWorkflow} class="group flex items-center gap-3 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-md transition-all">
-				<div class="w-10 h-10 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center group-hover:scale-110 transition-transform">
-					<Plus size={20} class="text-violet-600 dark:text-violet-400" />
+		<!-- Quick Actions Bar - Clean with brand gradients -->
+		<div class="grid grid-cols-4 gap-5 mb-10">
+			<button onclick={createNewWorkflow} class="group flex items-center gap-4 p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg hover:border-[#63DF4E] dark:hover:border-[#63DF4E] transition-all">
+				<div class="w-12 h-12 rounded-xl bg-[#63DF4E] flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm">
+					<Plus size={24} class="text-white" />
 				</div>
 				<div class="text-left">
-					<p class="font-medium text-gray-900 dark:text-gray-100">New Workflow</p>
-					<p class="text-xs text-gray-500">Create from scratch</p>
+					<p class="font-semibold text-gray-900 dark:text-gray-100">New Workflow</p>
+					<p class="text-xs text-gray-500 mt-0.5">Create from scratch</p>
 				</div>
 			</button>
-			<button onclick={goToWorkflows} class="group flex items-center gap-3 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md transition-all">
-				<div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center group-hover:scale-110 transition-transform">
-					<GitBranch size={20} class="text-blue-600 dark:text-blue-400" />
+			<button onclick={goToWorkflows} class="group flex items-center gap-4 p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg hover:border-[#BF71F2] dark:hover:border-[#BF71F2] transition-all">
+				<div class="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
+					<FolderOpen size={24} class="text-white" />
 				</div>
 				<div class="text-left">
-					<p class="font-medium text-gray-900 dark:text-gray-100">Workflows</p>
-					<p class="text-xs text-gray-500">{stats().workflowCount} available</p>
+					<p class="font-semibold text-gray-900 dark:text-gray-100">Workflows</p>
+					<p class="text-xs text-gray-500 mt-0.5">{stats().workflowCount} available</p>
 				</div>
 			</button>
-			<button onclick={goToRuns} class="group flex items-center gap-3 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:border-emerald-300 dark:hover:border-emerald-600 hover:shadow-md transition-all">
-				<div class="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center group-hover:scale-110 transition-transform">
-					<Activity size={20} class="text-emerald-600 dark:text-emerald-400" />
+			<button onclick={goToRuns} class="group flex items-center gap-4 p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg hover:border-[#BF71F2] dark:hover:border-[#BF71F2] transition-all">
+				<div class="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
+					<History size={24} class="text-white" />
 				</div>
 				<div class="text-left">
-					<p class="font-medium text-gray-900 dark:text-gray-100">Runs</p>
-					<p class="text-xs text-gray-500">{stats().totalRuns} executions</p>
+					<p class="font-semibold text-gray-900 dark:text-gray-100">Runs</p>
+					<p class="text-xs text-gray-500 mt-0.5">{stats().totalRuns} executions</p>
 				</div>
 			</button>
-			<button onclick={goToLibrary} class="group flex items-center gap-3 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:border-amber-300 dark:hover:border-amber-600 hover:shadow-md transition-all">
-				<div class="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center group-hover:scale-110 transition-transform">
-					<BookOpen size={20} class="text-amber-600 dark:text-amber-400" />
+			<button onclick={goToLibrary} class="group flex items-center gap-4 p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg hover:border-[#BF71F2] dark:hover:border-[#BF71F2] transition-all">
+				<div class="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
+					<Library size={24} class="text-white" />
 				</div>
 				<div class="text-left">
-					<p class="font-medium text-gray-900 dark:text-gray-100">Library</p>
-					<p class="text-xs text-gray-500">Browse templates</p>
+					<p class="font-semibold text-gray-900 dark:text-gray-100">Library</p>
+					<p class="text-xs text-gray-500 mt-0.5">Browse templates</p>
 				</div>
 			</button>
 		</div>
@@ -232,7 +238,7 @@
 			<div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
 				<div class="flex items-center justify-between mb-2">
 					<span class="text-xs font-medium text-gray-500 uppercase">Total Tokens</span>
-					<Zap size={14} class="text-violet-500" />
+					<Zap size={14} class="text-[#7661FF]" />
 				</div>
 				<div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatNumber(stats().totalTokens)}</div>
 				<div class="text-xs text-gray-500 mt-1">across all runs</div>
@@ -269,10 +275,10 @@
 			<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
 				<div class="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
 					<h2 class="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-						<GitBranch size={18} class="text-violet-500" />
+						<FolderOpen size={18} class="text-[#7661FF]" />
 						{searchQuery ? 'Search Results' : 'Recent Workflows'}
 					</h2>
-					<button onclick={goToWorkflows} class="text-sm text-violet-600 dark:text-violet-400 hover:text-violet-700 flex items-center gap-1">
+					<button onclick={goToWorkflows} class="text-sm text-[#032D42] dark:text-[#52B8FF] hover:text-[#52B8FF] flex items-center gap-1">
 						View all <ArrowRight size={14} />
 					</button>
 				</div>
@@ -280,28 +286,28 @@
 					{#each filteredWorkflows() as workflow (workflow.id)}
 						<button onclick={() => selectWorkflow(workflow.id)} class="group w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left">
 							<div class="flex items-center gap-3">
-								<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-									<GitBranch size={18} class="text-white" />
+								<div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
+									<FolderOpen size={18} class="text-white" />
 								</div>
 								<div>
-									<p class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">{workflow.name}</p>
+									<p class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-[#032D42] dark:group-hover:text-[#52B8FF] transition-colors">{workflow.name}</p>
 									<div class="flex items-center gap-3 text-xs text-gray-500">
 										<span class="flex items-center gap-1"><Layers size={12} />{workflow.node_count} nodes</span>
 										<span>{workflow.edge_count} edges</span>
 									</div>
 								</div>
 							</div>
-							<ArrowUpRight size={16} class="text-gray-400 group-hover:text-violet-500 transition-colors" />
+							<ArrowUpRight size={16} class="text-gray-400 group-hover:text-[#032D42] dark:group-hover:text-[#52B8FF] transition-colors" />
 						</button>
 					{:else}
 						<div class="px-5 py-12 text-center">
-							<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-								<Layers size={28} class="text-violet-500" />
+							<div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
+								<FolderOpen size={28} class="text-white" />
 							</div>
 							<p class="font-medium text-gray-900 dark:text-gray-100 mb-1">{searchQuery ? 'No matching workflows' : 'No workflows yet'}</p>
 							<p class="text-sm text-gray-500 mb-4">{searchQuery ? 'Try a different search term' : 'Create your first workflow to get started'}</p>
 							{#if !searchQuery}
-								<button onclick={createNewWorkflow} class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg transition-colors">
+								<button onclick={createNewWorkflow} class="px-4 py-2.5 bg-[#63DF4E] hover:bg-[#4BC93A] text-[#032D42] text-sm font-semibold rounded-lg transition-colors shadow-sm">
 									<Plus size={16} class="inline mr-1" /> Create Workflow
 								</button>
 							{/if}
@@ -317,7 +323,7 @@
 						<History size={18} class="text-blue-500" />
 						Recent Activity
 					</h2>
-					<button onclick={goToRuns} class="text-sm text-violet-600 dark:text-violet-400 hover:text-violet-700 flex items-center gap-1">
+					<button onclick={goToRuns} class="text-sm text-[#032D42] dark:text-[#52B8FF] hover:text-[#52B8FF] flex items-center gap-1">
 						View all <ArrowRight size={14} />
 					</button>
 				</div>
@@ -357,37 +363,42 @@
 
 		<!-- Getting Started -->
 		{#if workflows.length === 0}
-			<div class="mt-8 bg-gradient-to-r from-violet-500/10 to-purple-600/10 dark:from-violet-500/20 dark:to-purple-600/20 rounded-xl p-6 border border-violet-200 dark:border-violet-800">
-				<h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-					🚀 Getting Started
-				</h3>
-				<p class="text-gray-600 dark:text-gray-400 mb-4">
-					Welcome to SyGra Studio! Here's how to get started:
+			<div class="mt-10 bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-200 dark:border-gray-700 shadow-sm">
+				<div class="flex items-center gap-3 mb-4">
+					<div class="w-10 h-10 rounded-xl bg-[#032D42] flex items-center justify-center">
+						<Sparkles size={20} class="text-[#63DF4E]" />
+					</div>
+					<h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">
+						Getting Started
+					</h3>
+				</div>
+				<p class="text-gray-600 dark:text-gray-400 mb-6">
+					Welcome to SyGra Studio! Follow these steps to create your first synthetic data workflow:
 				</p>
-				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-					<div class="bg-white dark:bg-gray-800 rounded-lg p-4">
-						<div class="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-3">
-							<span class="text-violet-600 dark:text-violet-400 font-bold">1</span>
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+					<div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-5 border border-gray-100 dark:border-gray-700">
+						<div class="w-9 h-9 rounded-lg bg-[#032D42] flex items-center justify-center mb-4">
+							<span class="text-white font-bold">1</span>
 						</div>
-						<h4 class="font-medium text-gray-900 dark:text-gray-100 mb-1">Create a Workflow</h4>
+						<h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Create a Workflow</h4>
 						<p class="text-sm text-gray-500 dark:text-gray-400">
 							Click "Create Workflow" to build your first data generation pipeline.
 						</p>
 					</div>
-					<div class="bg-white dark:bg-gray-800 rounded-lg p-4">
-						<div class="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-3">
-							<span class="text-violet-600 dark:text-violet-400 font-bold">2</span>
+					<div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-5 border border-gray-100 dark:border-gray-700">
+						<div class="w-9 h-9 rounded-lg bg-[#032D42] flex items-center justify-center mb-4">
+							<span class="text-white font-bold">2</span>
 						</div>
-						<h4 class="font-medium text-gray-900 dark:text-gray-100 mb-1">Add Nodes</h4>
+						<h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Add Nodes</h4>
 						<p class="text-sm text-gray-500 dark:text-gray-400">
 							Drag and drop LLM, Lambda, Sampler, and other nodes to build your workflow.
 						</p>
 					</div>
-					<div class="bg-white dark:bg-gray-800 rounded-lg p-4">
-						<div class="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-3">
-							<span class="text-violet-600 dark:text-violet-400 font-bold">3</span>
+					<div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-5 border border-gray-100 dark:border-gray-700">
+						<div class="w-9 h-9 rounded-lg bg-[#032D42] flex items-center justify-center mb-4">
+							<span class="text-white font-bold">3</span>
 						</div>
-						<h4 class="font-medium text-gray-900 dark:text-gray-100 mb-1">Execute & Monitor</h4>
+						<h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Execute & Monitor</h4>
 						<p class="text-sm text-gray-500 dark:text-gray-400">
 							Run your workflow and monitor execution progress in real-time.
 						</p>

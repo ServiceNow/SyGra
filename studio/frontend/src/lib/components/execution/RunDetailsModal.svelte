@@ -151,9 +151,9 @@
 				<button
 					onclick={() => activeTab = tab.id as TabId}
 					class="flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors"
-					class:border-violet-500={activeTab === tab.id}
-					class:text-violet-600={activeTab === tab.id}
-					class:dark:text-violet-400={activeTab === tab.id}
+					class:border-[#7661FF]={activeTab === tab.id}
+					class:text-[#7661FF]={activeTab === tab.id}
+					class:dark:text-[#52B8FF]={activeTab === tab.id}
 					class:border-transparent={activeTab !== tab.id}
 					class:text-gray-500={activeTab !== tab.id}
 					class:hover:text-gray-700={activeTab !== tab.id}
@@ -323,14 +323,14 @@
 														<div class="col-span-2 text-gray-800 dark:text-gray-200 break-words">
 															{#if typeof value === 'object'}
 																<details class="cursor-pointer">
-																	<summary class="text-violet-600 dark:text-violet-400 hover:underline">
+																	<summary class="text-[#032D42] dark:text-[#52B8FF] hover:underline">
 																		{Array.isArray(value) ? `[${value.length} items]` : '{object}'}
 																	</summary>
 																	<pre class="mt-2 p-2 bg-gray-900 text-gray-100 rounded text-xs overflow-x-auto max-h-40">{JSON.stringify(value, null, 2)}</pre>
 																</details>
 															{:else if typeof value === 'string' && value.length > 200}
 																<details class="cursor-pointer">
-																	<summary class="text-violet-600 dark:text-violet-400 hover:underline">
+																	<summary class="text-[#032D42] dark:text-[#52B8FF] hover:underline">
 																		{value.slice(0, 100)}...
 																	</summary>
 																	<div class="mt-2 p-2 bg-gray-100 dark:bg-gray-900 rounded text-xs whitespace-pre-wrap">
@@ -395,15 +395,15 @@
 							</div>
 
 							<!-- Tokens Card -->
-							<div class="bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-900/20 dark:to-violet-800/20 rounded-xl p-4 border border-violet-200 dark:border-violet-800">
+							<div class="bg-gradient-to-br from-[#7661FF]/10 to-[#7661FF]/20 dark:from-[#7661FF]/15 dark:to-[#7661FF]/25 rounded-xl p-4 border border-[#7661FF]/30 dark:border-[#7661FF]/40">
 								<div class="flex items-center gap-2 mb-2">
-									<Zap size={16} class="text-violet-600 dark:text-violet-400" />
-									<span class="text-xs font-medium text-violet-600 dark:text-violet-400 uppercase">Total Tokens</span>
+									<Zap size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
+									<span class="text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] uppercase">Total Tokens</span>
 								</div>
-								<div class="text-2xl font-bold text-violet-700 dark:text-violet-300">
+								<div class="text-2xl font-bold text-[#7661FF] dark:text-[#52B8FF]">
 									{formatNumber(metadata.aggregate_statistics.tokens.total_tokens)}
 								</div>
-								<div class="text-xs text-violet-600/70 dark:text-violet-400/70 mt-1">
+								<div class="text-xs text-[#7661FF]/70 dark:text-[#52B8FF]/70 mt-1">
 									{formatNumber(metadata.aggregate_statistics.tokens.total_prompt_tokens)} prompt · {formatNumber(metadata.aggregate_statistics.tokens.total_completion_tokens)} completion
 								</div>
 							</div>
@@ -531,7 +531,7 @@
 												</div>
 												<div class="flex items-center gap-4 text-sm">
 													<span class="text-emerald-600 dark:text-emerald-400 font-medium">{formatCost(model.cost.total_cost_usd)}</span>
-													<span class="text-violet-600 dark:text-violet-400">{formatNumber(model.token_statistics.total_tokens)} tokens</span>
+													<span class="text-[#7661FF] dark:text-[#52B8FF]">{formatNumber(model.token_statistics.total_tokens)} tokens</span>
 												</div>
 											</div>
 											<div class="grid grid-cols-4 gap-4 text-xs">
@@ -605,7 +605,7 @@
 												<tr class="border-b border-gray-100 dark:border-gray-800">
 													<td class="py-2 font-medium text-gray-800 dark:text-gray-200">{nodeName}</td>
 													<td class="py-2">
-														<span class="text-xs px-2 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
+														<span class="text-xs px-2 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]">
 															{node.node_type}
 														</span>
 													</td>

@@ -233,7 +233,7 @@
 >
 	<!-- Resize handle -->
 	<div
-		class="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-violet-500/50 transition-colors z-20 group"
+		class="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-[#52B8FF]/50 transition-colors z-20 group"
 		onmousedown={handleMouseDown}
 		role="separator"
 		aria-orientation="vertical"
@@ -308,7 +308,7 @@
 			<!-- Arrow -->
 			<div class="flex items-center gap-1 text-gray-400">
 				<div class="w-8 h-0.5 bg-gray-300 dark:bg-gray-600 rounded"></div>
-				<ArrowRight size={20} class="text-violet-500" />
+				<ArrowRight size={20} class="text-[#7661FF]" />
 				<div class="w-8 h-0.5 bg-gray-300 dark:bg-gray-600 rounded"></div>
 			</div>
 
@@ -367,11 +367,11 @@
 					<button
 						onclick={() => editIsConditional = false}
 						class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border transition-all {!editIsConditional
-							? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 shadow-sm'
+							? 'border-[#7661FF] bg-[#7661FF]/10 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] shadow-sm'
 							: 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 hover:border-gray-300 dark:hover:border-gray-600'}"
 					>
 						{#if !editIsConditional}
-							<Check size={14} class="text-violet-600 dark:text-violet-400" />
+							<Check size={14} class="text-[#7661FF] dark:text-[#BF71F2]" />
 						{/if}
 						<Link size={16} />
 						<span class="text-sm font-medium">Sequential</span>
@@ -379,11 +379,11 @@
 					<button
 						onclick={() => editIsConditional = true}
 						class="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg border transition-all {editIsConditional
-							? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 shadow-sm'
+							? 'border-[#7661FF] bg-[#7661FF]/10 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] shadow-sm'
 							: 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 hover:border-gray-300 dark:hover:border-gray-600'}"
 					>
 						{#if editIsConditional}
-							<Check size={14} class="text-violet-600 dark:text-violet-400" />
+							<Check size={14} class="text-[#7661FF] dark:text-[#BF71F2]" />
 						{/if}
 						<GitBranch size={16} />
 						<span class="text-sm font-medium">Conditional</span>
@@ -401,7 +401,7 @@
 					bind:value={editLabel}
 					placeholder="e.g., true, success, route_a"
 					aria-label="Edge label"
-					class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 text-sm focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+					class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 text-sm focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 				/>
 				<p class="mt-2 text-xs text-gray-500">
 					Label shown on the edge, used for routing in conditional branches
@@ -421,7 +421,7 @@
 						bind:value={editConditionPath}
 						placeholder="e.g., my_module.evaluate_condition"
 						aria-label="Condition function path"
-						class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 text-sm font-mono focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+						class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 text-sm font-mono focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 					/>
 					<p class="mt-2 text-xs text-gray-500">
 						Python module path to the function that evaluates the condition
@@ -430,7 +430,7 @@
 					<!-- Collapsible Code Editor -->
 					<button
 						onclick={() => showCodeEditor = !showCodeEditor}
-						class="mt-3 flex items-center gap-2 text-xs font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300"
+						class="mt-3 flex items-center gap-2 text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] hover:text-[#7661FF]/80 dark:hover:text-[#BF71F2]/80"
 					>
 						<Code size={14} />
 						{showCodeEditor ? 'Hide Code Template' : 'Show Code Template'}
@@ -465,7 +465,7 @@
 						</div>
 						<button
 							onclick={addPathMapping}
-							class="flex items-center gap-1 px-2 py-1 text-xs bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded hover:bg-violet-200 dark:hover:bg-violet-800/50 transition-colors"
+							class="flex items-center gap-1 px-2 py-1 text-xs bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] rounded hover:bg-[#7661FF]/25 dark:hover:bg-[#7661FF]/30 transition-colors"
 						>
 							<Plus size={12} />
 							Add Mapping
@@ -486,7 +486,7 @@
 											bind:value={mapping.key}
 											placeholder="Condition value"
 											aria-label="Condition value"
-											class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-sm font-mono focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+											class="flex-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-sm font-mono focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 										/>
 										<ArrowRight size={16} class="text-gray-400 flex-shrink-0" />
 										<div class="flex-1">
@@ -535,7 +535,7 @@
 							{sourceNode?.node_type ?? 'unknown'}
 						</div>
 					</div>
-					<ArrowRight size={18} class="text-violet-500 flex-shrink-0" />
+					<ArrowRight size={18} class="text-[#7661FF] flex-shrink-0" />
 					<div class="flex-1 min-w-0">
 						<div class="flex items-center gap-2">
 							<div
@@ -565,7 +565,7 @@
 				<div class="flex items-center gap-2">
 					<span
 						class="px-3 py-1.5 rounded-lg text-sm font-medium {edge.isConditional
-							? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300'
+							? 'bg-[#7661FF]/15 text-[#7661FF] dark:bg-[#7661FF]/20 dark:text-[#BF71F2]'
 							: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}"
 					>
 						{#if edge.isConditional}
@@ -599,7 +599,7 @@
 							{sourceNode?.node_type ?? 'unknown'}
 						</div>
 					</div>
-					<ArrowRight size={18} class="text-violet-500 flex-shrink-0" />
+					<ArrowRight size={18} class="text-[#7661FF] flex-shrink-0" />
 					<div class="flex-1 min-w-0">
 						<div class="flex items-center gap-2">
 							<div
@@ -624,8 +624,8 @@
 						<Code size={12} />
 						Branch Label
 					</div>
-					<div class="px-3 py-2 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-700 rounded-lg">
-						<span class="text-sm font-mono text-violet-700 dark:text-violet-300">
+					<div class="px-3 py-2 bg-[#7661FF]/10 dark:bg-[#7661FF]/15 border border-[#7661FF]/30 dark:border-[#7661FF]/40 rounded-lg">
+						<span class="text-sm font-mono text-[#7661FF] dark:text-[#BF71F2]">
 							{edge.label}
 						</span>
 					</div>
@@ -658,12 +658,12 @@
 							<div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
 								<div class="flex items-center">
 									<!-- Condition Key -->
-									<div class="px-3 py-2.5 bg-violet-50 dark:bg-violet-900/30 border-r border-gray-200 dark:border-gray-700">
-										<span class="font-mono text-sm font-medium text-violet-700 dark:text-violet-300">"{key}"</span>
+									<div class="px-3 py-2.5 bg-[#7661FF]/10 dark:bg-[#7661FF]/20 border-r border-gray-200 dark:border-gray-700">
+										<span class="font-mono text-sm font-medium text-[#7661FF] dark:text-[#BF71F2]">"{key}"</span>
 									</div>
 									<!-- Arrow -->
 									<div class="px-2">
-										<ArrowRight size={16} class="text-violet-500" />
+										<ArrowRight size={16} class="text-[#7661FF]" />
 									</div>
 									<!-- Target Node -->
 									<div class="flex-1 px-3 py-2.5 flex items-center gap-2 min-w-0">
@@ -689,10 +689,10 @@
 
 			<!-- Info for conditional edges -->
 			{#if edge.isConditional}
-				<div class="p-3 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-700 rounded-lg">
+				<div class="p-3 bg-[#7661FF]/10 dark:bg-[#7661FF]/15 border border-[#7661FF]/30 dark:border-[#7661FF]/40 rounded-lg">
 					<div class="flex items-start gap-2">
-						<GitBranch size={16} class="text-violet-600 dark:text-violet-400 mt-0.5 flex-shrink-0" />
-						<div class="text-xs text-violet-700 dark:text-violet-300">
+						<GitBranch size={16} class="text-[#7661FF] dark:text-[#BF71F2] mt-0.5 flex-shrink-0" />
+						<div class="text-xs text-[#7661FF] dark:text-[#BF71F2]">
 							<strong>Conditional Edge:</strong> This connection is only followed when the condition function returns a value matching this edge's label.
 						</div>
 					</div>

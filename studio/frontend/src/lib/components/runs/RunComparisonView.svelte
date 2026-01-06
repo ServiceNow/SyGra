@@ -528,7 +528,7 @@ ${runs.map((r, i) => `  ${i + 1}. ${r.workflow_name || 'Unknown'} (${r.id.slice(
 				</button>
 				<div>
 					<h1 class="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-						<GitCompare size={24} class="text-violet-500" />
+						<GitCompare size={24} class="text-[#7661FF]" />
 						Run Comparison
 					</h1>
 					<p class="text-sm text-gray-500">Comparing {runs.length} runs</p>
@@ -583,7 +583,7 @@ ${runs.map((r, i) => `  ${i + 1}. ${r.workflow_name || 'Unknown'} (${r.id.slice(
 				{@const TabIcon = tab.icon}
 				<button
 					onclick={() => activeTab = tab.id as TabId}
-					class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {activeTab === tab.id ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}"
+					class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {activeTab === tab.id ? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}"
 				>
 					<TabIcon size={16} />
 					{tab.label}
@@ -617,18 +617,18 @@ ${runs.map((r, i) => `  ${i + 1}. ${r.workflow_name || 'Unknown'} (${r.id.slice(
 					</div>
 
 					<!-- Most Token Efficient -->
-					<div class="bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-900/20 dark:to-violet-800/20 rounded-xl p-4 border border-violet-200 dark:border-violet-800">
+					<div class="bg-gradient-to-br from-[#7661FF]/10 to-[#7661FF]/20 dark:from-[#7661FF]/20 dark:to-[#7661FF]/10 rounded-xl p-4 border border-[#7661FF]/30 dark:border-[#7661FF]/40">
 						<div class="flex items-center justify-between mb-3">
 							<div class="flex items-center gap-2">
-								<Medal size={18} class="text-violet-600 dark:text-violet-400" />
-								<span class="text-xs font-semibold text-violet-600 dark:text-violet-400 uppercase">Lowest Tokens</span>
+								<Medal size={18} class="text-[#7661FF] dark:text-[#BF71F2]" />
+								<span class="text-xs font-semibold text-[#7661FF] dark:text-[#BF71F2] uppercase">Lowest Tokens</span>
 							</div>
-							<Zap size={16} class="text-violet-500" />
+							<Zap size={16} class="text-[#7661FF]" />
 						</div>
-						<div class="text-2xl font-bold text-violet-700 dark:text-violet-300 mb-1">
+						<div class="text-2xl font-bold text-[#7661FF] dark:text-[#52B8FF] mb-1">
 							{formatNumber(getMetrics(lowestTokensRun).tokens)}
 						</div>
-						<div class="text-xs text-violet-600/80 dark:text-violet-400/80 truncate">
+						<div class="text-xs text-[#7661FF]/80 dark:text-[#BF71F2]/80 truncate">
 							{lowestTokensRun?.workflow_name || 'Unknown'} ({lowestTokensRun?.id.slice(0, 6)})
 						</div>
 					</div>
@@ -673,7 +673,7 @@ ${runs.map((r, i) => `  ${i + 1}. ${r.workflow_name || 'Unknown'} (${r.id.slice(
 					<!-- Metrics Comparison Bar Chart -->
 					<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
 						<div class="flex items-center gap-2 mb-4">
-							<BarChart3 size={16} class="text-violet-500" />
+							<BarChart3 size={16} class="text-[#7661FF]" />
 							<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Duration vs Tokens</h3>
 						</div>
 						<div class="h-64">
@@ -697,7 +697,7 @@ ${runs.map((r, i) => `  ${i + 1}. ${r.workflow_name || 'Unknown'} (${r.id.slice(
 				<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
 					<div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
 						<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-							<Activity size={16} class="text-violet-500" />
+							<Activity size={16} class="text-[#7661FF]" />
 							Detailed Metrics Comparison
 						</h3>
 					</div>
@@ -764,7 +764,7 @@ ${runs.map((r, i) => `  ${i + 1}. ${r.workflow_name || 'Unknown'} (${r.id.slice(
 								<tr class="border-b border-gray-100 dark:border-gray-800">
 									<td class="py-3 px-4 font-medium text-gray-600 dark:text-gray-400 sticky left-0 bg-white dark:bg-gray-800">
 										<div class="flex items-center gap-2">
-											<Zap size={14} class="text-violet-500" />
+											<Zap size={14} class="text-[#7661FF]" />
 											Tokens
 										</div>
 									</td>
@@ -774,11 +774,11 @@ ${runs.map((r, i) => `  ${i + 1}. ${r.workflow_name || 'Unknown'} (${r.id.slice(
 										{@const isWorst = i === comparisonStats().tokens.worstIdx}
 										<td class="py-3 px-4">
 											<div class="flex items-center gap-2">
-												<span class="font-mono {isBest ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : isWorst ? 'text-red-600 dark:text-red-400' : 'text-violet-600 dark:text-violet-400'}">
+												<span class="font-mono {isBest ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : isWorst ? 'text-red-600 dark:text-red-400' : 'text-[#7661FF] dark:text-[#BF71F2]'}">
 													{formatNumber(metrics.tokens)}
 												</span>
 												{#if isBest}
-													<Medal size={14} class="text-violet-500" />
+													<Medal size={14} class="text-[#7661FF]" />
 												{/if}
 											</div>
 										</td>
@@ -882,7 +882,7 @@ ${runs.map((r, i) => `  ${i + 1}. ${r.workflow_name || 'Unknown'} (${r.id.slice(
 					<!-- Token Distribution -->
 					<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
 						<div class="flex items-center gap-2 mb-4">
-							<Zap size={16} class="text-violet-500" />
+							<Zap size={16} class="text-[#7661FF]" />
 							<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Token Distribution</h3>
 						</div>
 						<div class="h-64">
@@ -923,7 +923,7 @@ ${runs.map((r, i) => `  ${i + 1}. ${r.workflow_name || 'Unknown'} (${r.id.slice(
 						<div class="space-y-4">
 							{#each [
 								{ label: 'Duration', stats: comparisonStats().duration, format: formatDuration, icon: Timer, color: 'amber' },
-								{ label: 'Tokens', stats: comparisonStats().tokens, format: formatNumber, icon: Zap, color: 'violet' },
+								{ label: 'Tokens', stats: comparisonStats().tokens, format: formatNumber, icon: Zap, color: '[#7661FF]' },
 								{ label: 'Cost', stats: comparisonStats().cost, format: formatCost, icon: DollarSign, color: 'emerald' },
 								{ label: 'Success Rate', stats: comparisonStats().successRate, format: formatPercent, icon: TrendingUp, color: 'blue' }
 							] as item}
@@ -962,7 +962,7 @@ ${runs.map((r, i) => `  ${i + 1}. ${r.workflow_name || 'Unknown'} (${r.id.slice(
 						<!-- Model Token Usage -->
 						<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
 							<div class="flex items-center gap-2 mb-4">
-								<Zap size={16} class="text-violet-500" />
+								<Zap size={16} class="text-[#7661FF]" />
 								<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Token Usage by Model</h3>
 							</div>
 							<div class="h-64">
@@ -986,7 +986,7 @@ ${runs.map((r, i) => `  ${i + 1}. ${r.workflow_name || 'Unknown'} (${r.id.slice(
 					<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
 						<div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
 							<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-								<Cpu size={16} class="text-violet-500" />
+								<Cpu size={16} class="text-[#7661FF]" />
 								Model Performance Details
 							</h3>
 						</div>
@@ -1015,8 +1015,8 @@ ${runs.map((r, i) => `  ${i + 1}. ${r.workflow_name || 'Unknown'} (${r.id.slice(
 													{#if model}
 														<div class="space-y-1">
 															<div class="flex items-center gap-2 text-xs">
-																<Zap size={12} class="text-violet-500" />
-																<span class="text-violet-600 dark:text-violet-400">{formatNumber(model.token_statistics?.total_tokens || 0)}</span>
+																<Zap size={12} class="text-[#7661FF]" />
+																<span class="text-[#7661FF] dark:text-[#BF71F2]">{formatNumber(model.token_statistics?.total_tokens || 0)}</span>
 															</div>
 															<div class="flex items-center gap-2 text-xs">
 																<Timer size={12} class="text-amber-500" />
@@ -1100,13 +1100,13 @@ ${runs.map((r, i) => `  ${i + 1}. ${r.workflow_name || 'Unknown'} (${r.id.slice(
 														<div class="space-y-1">
 															<div class="text-xs">
 																<span class="text-gray-500">Type:</span>
-																<span class="ml-1 px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">{node.node_type}</span>
+																<span class="ml-1 px-1.5 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]">{node.node_type}</span>
 															</div>
 															<div class="text-xs text-gray-600 dark:text-gray-400">
 																{node.total_executions} exec • {((node.average_latency_seconds || 0) * 1000).toFixed(0)}ms avg
 															</div>
 															{#if node.token_statistics}
-																<div class="text-xs text-violet-600 dark:text-violet-400">
+																<div class="text-xs text-[#7661FF] dark:text-[#BF71F2]">
 																	{formatNumber(node.token_statistics.total_tokens)} tokens
 																</div>
 															{/if}

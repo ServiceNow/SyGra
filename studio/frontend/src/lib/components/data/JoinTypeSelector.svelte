@@ -26,7 +26,7 @@
 	// Join type configurations with visual colors
 	const joinConfigs: Record<JoinType, { color: string; bgClass: string; iconClass: string }> = {
 		primary: { color: 'amber', bgClass: 'bg-amber-100 dark:bg-amber-900/40', iconClass: 'text-amber-600 dark:text-amber-400' },
-		column: { color: 'violet', bgClass: 'bg-violet-100 dark:bg-violet-900/40', iconClass: 'text-violet-600 dark:text-violet-400' },
+		column: { color: 'indigo', bgClass: 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20', iconClass: 'text-[#7661FF] dark:text-[#BF71F2]' },
 		sequential: { color: 'blue', bgClass: 'bg-blue-100 dark:bg-blue-900/40', iconClass: 'text-blue-600 dark:text-blue-400' },
 		random: { color: 'pink', bgClass: 'bg-pink-100 dark:bg-pink-900/40', iconClass: 'text-pink-600 dark:text-pink-400' },
 		cross: { color: 'emerald', bgClass: 'bg-emerald-100 dark:bg-emerald-900/40', iconClass: 'text-emerald-600 dark:text-emerald-400' },
@@ -59,8 +59,8 @@
 			onclick={() => selectType(jt.value)}
 			class="group relative flex flex-col rounded-xl border-2 transition-all duration-200 overflow-hidden text-left
 				{isSelected
-					? 'border-violet-500 shadow-lg shadow-violet-500/20 dark:shadow-violet-500/10 ring-1 ring-violet-500/30'
-					: 'border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-md'}"
+					? 'border-[#7661FF] shadow-lg shadow-[#7661FF]/20 dark:shadow-[#7661FF]/10 ring-1 ring-[#7661FF]/30'
+					: 'border-gray-200 dark:border-gray-700 hover:border-[#52B8FF] dark:hover:border-[#7661FF] hover:shadow-md'}"
 		>
 			<!-- Visual Diagram Preview -->
 			<div class="relative {compact ? 'h-14' : 'h-20'} bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 overflow-hidden">
@@ -88,17 +88,17 @@
 						<!-- Column Join: Two tables with matching rows -->
 						<div class="flex items-center gap-2">
 							<div class="flex flex-col gap-0.5">
-								<div class="w-6 h-1.5 rounded-sm bg-violet-400"></div>
-								<div class="w-6 h-1.5 rounded-sm bg-violet-300"></div>
-								<div class="w-6 h-1.5 rounded-sm bg-violet-400"></div>
+								<div class="w-6 h-1.5 rounded-sm bg-[#7661FF]"></div>
+								<div class="w-6 h-1.5 rounded-sm bg-[#7661FF]/60"></div>
+								<div class="w-6 h-1.5 rounded-sm bg-[#7661FF]"></div>
 							</div>
 							<div class="flex flex-col justify-center">
-								<Link size={10} class="text-violet-500" />
+								<Link size={10} class="text-[#7661FF]" />
 							</div>
 							<div class="flex flex-col gap-0.5">
-								<div class="w-6 h-1.5 rounded-sm bg-violet-300"></div>
-								<div class="w-6 h-1.5 rounded-sm bg-violet-400"></div>
-								<div class="w-6 h-1.5 rounded-sm bg-violet-300"></div>
+								<div class="w-6 h-1.5 rounded-sm bg-[#7661FF]/60"></div>
+								<div class="w-6 h-1.5 rounded-sm bg-[#7661FF]"></div>
+								<div class="w-6 h-1.5 rounded-sm bg-[#7661FF]/60"></div>
 							</div>
 						</div>
 					{:else if jt.value === 'sequential'}
@@ -160,16 +160,16 @@
 
 				<!-- Selected glow -->
 				{#if isSelected}
-					<div class="absolute inset-0 bg-violet-500/5 dark:bg-violet-400/10"></div>
+					<div class="absolute inset-0 bg-[#7661FF]/5 dark:bg-[#7661FF]/10"></div>
 				{/if}
 			</div>
 
 			<!-- Label Section -->
 			<div class="flex items-center justify-between {compact ? 'p-2' : 'p-3'} bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700/50">
 				<div class="flex items-center gap-2 min-w-0 flex-1">
-					<Icon size={compact ? 12 : 14} class="{isSelected ? 'text-violet-500' : jt.config.iconClass} transition-colors" />
+					<Icon size={compact ? 12 : 14} class="{isSelected ? 'text-[#7661FF]' : jt.config.iconClass} transition-colors" />
 					<div class="min-w-0 flex-1">
-						<span class="text-sm font-medium {isSelected ? 'text-violet-700 dark:text-violet-300' : 'text-gray-900 dark:text-gray-100'} block truncate transition-colors">
+						<span class="text-sm font-medium {isSelected ? 'text-[#7661FF] dark:text-[#52B8FF]' : 'text-gray-900 dark:text-gray-100'} block truncate transition-colors">
 							{jt.name}
 						</span>
 						{#if !compact}
@@ -182,11 +182,11 @@
 
 				<!-- Checkmark -->
 				{#if isSelected}
-					<div class="w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+					<div class="w-4 h-4 rounded-full bg-[#7661FF] flex items-center justify-center flex-shrink-0 shadow-sm">
 						<Check size={10} class="text-white" strokeWidth={3} />
 					</div>
 				{:else}
-					<div class="w-4 h-4 rounded-full border-2 border-gray-200 dark:border-gray-600 flex-shrink-0 group-hover:border-violet-300 dark:group-hover:border-violet-500 transition-colors"></div>
+					<div class="w-4 h-4 rounded-full border-2 border-gray-200 dark:border-gray-600 flex-shrink-0 group-hover:border-[#52B8FF] dark:group-hover:border-[#7661FF] transition-colors"></div>
 				{/if}
 			</div>
 		</button>

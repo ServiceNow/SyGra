@@ -424,15 +424,15 @@
 	<!-- Summary Cards Row -->
 	<div class="grid grid-cols-6 gap-4">
 		<!-- Filtered Runs -->
-		<div class="bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-900/20 dark:to-violet-800/20 rounded-xl p-4 border border-violet-200 dark:border-violet-800">
+		<div class="bg-gradient-to-br from-[#7661FF]/10 to-[#7661FF]/20 dark:from-[#7661FF]/20 dark:to-[#7661FF]/10 rounded-xl p-4 border border-[#7661FF]/30 dark:border-[#7661FF]/40">
 			<div class="flex items-center justify-between mb-2">
-				<Activity size={18} class="text-violet-600 dark:text-violet-400" />
-				<span class="text-xs px-2 py-0.5 rounded-full bg-violet-200 dark:bg-violet-800 text-violet-700 dark:text-violet-300">
+				<Activity size={18} class="text-[#7661FF] dark:text-[#BF71F2]" />
+				<span class="text-xs px-2 py-0.5 rounded-full bg-[#7661FF]/20 dark:bg-[#7661FF]/30 text-[#7661FF] dark:text-[#52B8FF]">
 					{stats().runningRuns} running
 				</span>
 			</div>
-			<div class="text-2xl font-bold text-violet-700 dark:text-violet-300">{runs.length}</div>
-			<div class="text-xs text-violet-600/70 dark:text-violet-400/70">
+			<div class="text-2xl font-bold text-[#7661FF] dark:text-[#52B8FF]">{runs.length}</div>
+			<div class="text-xs text-[#7661FF]/70 dark:text-[#BF71F2]/70">
 				{#if runs.length !== totalRuns}Filtered from {totalRuns}{:else}Total Runs{/if}
 			</div>
 		</div>
@@ -501,7 +501,7 @@
 		<!-- Token Usage Chart -->
 		<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
 			<div class="flex items-center gap-2 mb-4">
-				<BarChart3 size={16} class="text-violet-500" />
+				<BarChart3 size={16} class="text-[#7661FF]" />
 				<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Token Usage by Run</h3>
 			</div>
 			<div class="h-48">
@@ -548,7 +548,7 @@
 		<!-- Model Performance Comparison -->
 		<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
 			<div class="flex items-center gap-2 mb-4">
-				<Cpu size={16} class="text-violet-500" />
+				<Cpu size={16} class="text-[#7661FF]" />
 				<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Model Latency Comparison</h3>
 			</div>
 			<div class="h-48">
@@ -577,7 +577,7 @@
 	{#if Object.keys(stats().modelStats).length > 0}
 		<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
 			<div class="flex items-center gap-2 mb-4">
-				<Server size={16} class="text-violet-500" />
+				<Server size={16} class="text-[#7661FF]" />
 				<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Model Performance Summary</h3>
 			</div>
 			<table class="w-full text-sm">
@@ -638,7 +638,7 @@
 			</div>
 		</div>
 		<div class="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 flex items-center gap-3">
-			<Layers size={20} class="text-violet-500" />
+			<Layers size={20} class="text-[#7661FF]" />
 			<div>
 				<div class="text-lg font-bold text-gray-800 dark:text-gray-200">{Object.keys(stats().nodeStats).length}</div>
 				<div class="text-xs text-gray-500">Unique Nodes</div>

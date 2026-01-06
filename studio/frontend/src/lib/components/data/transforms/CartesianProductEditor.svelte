@@ -64,7 +64,7 @@
 			{#if isEditing}
 				<button
 					onclick={addDataset}
-					class="flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300"
+					class="flex items-center gap-1 text-xs text-[#032D42] dark:text-[#52B8FF] hover:text-[#7661FF] dark:hover:text-[#BF71F2]"
 				>
 					<Plus size={12} />
 					Add Group
@@ -111,7 +111,7 @@
 								<div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600 text-xs text-gray-500">
 									<span class="font-mono text-gray-600 dark:text-gray-400">{dataset.prefix}col1</span>
 									<span class="mx-1">→</span>
-									<span class="font-mono text-violet-600 dark:text-violet-400">{dataset.alias}_col1</span>
+									<span class="font-mono text-[#7661FF] dark:text-[#BF71F2]">{dataset.alias}_col1</span>
 								</div>
 							{/if}
 						{:else}
@@ -122,7 +122,7 @@
 								</div>
 								<div class="text-xs">
 									<span class="text-gray-500">Alias:</span>
-									<code class="ml-1 px-1 bg-violet-100 dark:bg-violet-900/30 rounded text-violet-700 dark:text-violet-300">{dataset.alias}</code>
+									<code class="ml-1 px-1 bg-[#7661FF]/15 dark:bg-[#7661FF]/20 rounded text-[#7661FF] dark:text-[#52B8FF]">{dataset.alias}</code>
 								</div>
 							</div>
 						{/if}
@@ -155,7 +155,7 @@
 			<div>
 				<p class="font-medium mb-1">Example:</p>
 				<p>Input columns: <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">a_col1, a_col2, b_col1, b_col2</code></p>
-				<p>With prefixes <code class="text-violet-600">a_</code> → <code class="text-violet-600">user</code> and <code class="text-violet-600">b_</code> → <code class="text-violet-600">product</code></p>
+				<p>With prefixes <code class="text-[#7661FF]">a_</code> → <code class="text-[#7661FF]">user</code> and <code class="text-[#7661FF]">b_</code> → <code class="text-[#7661FF]">product</code></p>
 				<p>Output: <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">user_col1, user_col2, product_col1, product_col2</code> with M×N rows</p>
 			</div>
 		</div>

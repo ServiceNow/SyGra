@@ -120,7 +120,7 @@
 	function formatDuration(ms: number): string { if (ms < 1000) return `${ms.toFixed(0)}ms`; const s = ms / 1000; if (s < 60) return `${s.toFixed(1)}s`; return `${Math.floor(s / 60)}m ${(s % 60).toFixed(0)}s`; }
 
 	const colors = {
-		violet: { main: 'rgba(139, 92, 246, 1)', light: 'rgba(139, 92, 246, 0.2)', bg: 'rgba(139, 92, 246, 0.8)' },
+		violet: { main: 'rgba(118, 97, 255, 1)', light: 'rgba(118, 97, 255, 0.2)', bg: 'rgba(118, 97, 255, 0.8)' },
 		blue: { main: 'rgba(59, 130, 246, 1)', light: 'rgba(59, 130, 246, 0.2)', bg: 'rgba(59, 130, 246, 0.8)' },
 		emerald: { main: 'rgba(16, 185, 129, 1)', light: 'rgba(16, 185, 129, 0.2)', bg: 'rgba(16, 185, 129, 0.8)' },
 		amber: { main: 'rgba(245, 158, 11, 1)', light: 'rgba(245, 158, 11, 0.2)', bg: 'rgba(245, 158, 11, 0.8)' },
@@ -208,12 +208,12 @@
 		<div class="flex items-center justify-between mb-4">
 			<div>
 				<h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Analytics Dashboard</h2>
-				<p class="text-sm text-gray-500">{runs.length} run{runs.length !== 1 ? 's' : ''} {#if runs.length !== totalRuns}<span class="text-violet-600">(filtered from {totalRuns})</span>{/if}</p>
+				<p class="text-sm text-gray-500">{runs.length} run{runs.length !== 1 ? 's' : ''} {#if runs.length !== totalRuns}<span class="text-[#7661FF]">(filtered from {totalRuns})</span>{/if}</p>
 			</div>
 		</div>
 		<div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1 w-fit">
 			{#each [{ id: 'overview', label: 'Overview', icon: BarChart3 }, { id: 'models', label: 'Models', icon: Cpu }, { id: 'performance', label: 'Performance', icon: Gauge }, { id: 'cost', label: 'Cost', icon: CircleDollarSign }] as tab}
-				<button onclick={() => activeTab = tab.id as TabType} class="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all {activeTab === tab.id ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'}">
+				<button onclick={() => activeTab = tab.id as TabType} class="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all {activeTab === tab.id ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'}">
 					<svelte:component this={tab.icon} size={16} />{tab.label}
 				</button>
 			{/each}
@@ -224,8 +224,8 @@
 		{#if runs.length === 0}
 			<div class="h-full flex items-center justify-center">
 				<div class="text-center">
-					<div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30 flex items-center justify-center">
-						<BarChart3 size={40} class="text-violet-500" />
+					<div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-[#7661FF]/20 to-[#BF71F2]/20 dark:from-[#7661FF]/30 dark:to-[#BF71F2]/30 flex items-center justify-center">
+						<BarChart3 size={40} class="text-[#7661FF]" />
 					</div>
 					<h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">No Analytics Data</h3>
 					<p class="text-gray-500 max-w-sm">Run workflows to see analytics.</p>
@@ -245,7 +245,7 @@
 					</div>
 					<div class="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
 						<div class="flex items-start justify-between mb-3">
-							<div class="p-2 rounded-lg bg-violet-100 dark:bg-violet-900/30"><Zap size={20} class="text-violet-600" /></div>
+							<div class="p-2 rounded-lg bg-[#7661FF]/15 dark:bg-[#7661FF]/20"><Zap size={20} class="text-[#7661FF]" /></div>
 							<span class="text-xs text-gray-500">{formatNumber(stats().avgTokensPerRun)}/run</span>
 						</div>
 						<div class="text-3xl font-bold text-gray-900 dark:text-gray-100">{formatNumber(stats().totalTokens)}</div>
@@ -276,8 +276,8 @@
 						<div class="flex items-center gap-2 mb-4"><Lightbulb size={18} class="text-amber-500" /><h3 class="font-semibold text-gray-900 dark:text-gray-100">Insights</h3></div>
 						<div class="grid grid-cols-2 gap-3">
 							{#each insights() as insight}
-								<div class="flex items-start gap-3 p-3 rounded-lg {insight.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-900/20' : insight.type === 'warning' ? 'bg-amber-50 dark:bg-amber-900/20' : insight.type === 'info' ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-violet-50 dark:bg-violet-900/20'}">
-									{#if insight.type === 'success'}<Award size={18} class="text-emerald-600 flex-shrink-0" />{:else if insight.type === 'warning'}<AlertTriangle size={18} class="text-amber-600 flex-shrink-0" />{:else if insight.type === 'info'}<Info size={18} class="text-blue-600 flex-shrink-0" />{:else}<Sparkles size={18} class="text-violet-600 flex-shrink-0" />{/if}
+								<div class="flex items-start gap-3 p-3 rounded-lg {insight.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-900/20' : insight.type === 'warning' ? 'bg-amber-50 dark:bg-amber-900/20' : insight.type === 'info' ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-[#7661FF]/10 dark:bg-[#7661FF]/20'}">
+									{#if insight.type === 'success'}<Award size={18} class="text-emerald-600 flex-shrink-0" />{:else if insight.type === 'warning'}<AlertTriangle size={18} class="text-amber-600 flex-shrink-0" />{:else if insight.type === 'info'}<Info size={18} class="text-blue-600 flex-shrink-0" />{:else}<Sparkles size={18} class="text-[#7661FF] flex-shrink-0" />{/if}
 									<div class="flex-1"><div class="flex items-center justify-between"><span class="font-medium text-sm text-gray-900 dark:text-gray-100">{insight.title}</span>{#if insight.metric}<span class="text-xs font-mono px-2 py-0.5 rounded bg-white dark:bg-gray-700 text-gray-600">{insight.metric}</span>{/if}</div><p class="text-xs text-gray-600 mt-1">{insight.description}</p></div>
 								</div>
 							{/each}
@@ -286,7 +286,7 @@
 				{/if}
 				<div class="grid grid-cols-2 gap-6">
 					<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
-						<div class="flex items-center gap-2 mb-4"><BarChart3 size={18} class="text-violet-500" /><h3 class="font-semibold text-gray-900 dark:text-gray-100">Token Usage</h3></div>
+						<div class="flex items-center gap-2 mb-4"><BarChart3 size={18} class="text-[#7661FF]" /><h3 class="font-semibold text-gray-900 dark:text-gray-100">Token Usage</h3></div>
 						<div class="h-64"><canvas bind:this={tokenChartCanvas}></canvas></div>
 					</div>
 					<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
@@ -317,9 +317,9 @@
 						<div class="text-sm text-emerald-600">${performers().cheapest.value.toFixed(4)}/1M tok</div>
 					</div>
 					<div class="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
-						<div class="flex items-center gap-2 mb-3"><Activity size={18} class="text-violet-500" /><span class="text-sm text-gray-500">Most Used</span></div>
+						<div class="flex items-center gap-2 mb-3"><Activity size={18} class="text-[#7661FF]" /><span class="text-sm text-gray-500">Most Used</span></div>
 						<div class="text-lg font-bold text-gray-900 dark:text-gray-100 truncate">{performers().mostUsed.name}</div>
-						<div class="text-sm text-violet-600">{performers().mostUsed.value.toLocaleString()} requests</div>
+						<div class="text-sm text-[#7661FF]">{performers().mostUsed.value.toLocaleString()} requests</div>
 					</div>
 				</div>
 				<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
@@ -328,7 +328,7 @@
 				</div>
 				{#if Object.keys(stats().modelStats).length > 0}
 					<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
-						<div class="flex items-center gap-2 mb-4"><Server size={18} class="text-violet-500" /><h3 class="font-semibold text-gray-900 dark:text-gray-100">Model Details</h3></div>
+						<div class="flex items-center gap-2 mb-4"><Server size={18} class="text-[#7661FF]" /><h3 class="font-semibold text-gray-900 dark:text-gray-100">Model Details</h3></div>
 						<table class="w-full text-sm">
 							<thead><tr class="text-left text-xs text-gray-500 uppercase border-b border-gray-200 dark:border-gray-700"><th class="pb-3">Model</th><th class="pb-3 text-right">Requests</th><th class="pb-3 text-right">Tokens</th><th class="pb-3 text-right">Latency</th><th class="pb-3 text-right">Throughput</th><th class="pb-3 text-right">Cost</th></tr></thead>
 							<tbody>
@@ -368,7 +368,7 @@
 						<div class="text-xs text-gray-500">processed</div>
 					</div>
 					<div class="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
-						<div class="flex items-center gap-2 mb-2"><Activity size={18} class="text-violet-500" /><span class="text-sm text-gray-500">Requests</span></div>
+						<div class="flex items-center gap-2 mb-2"><Activity size={18} class="text-[#7661FF]" /><span class="text-sm text-gray-500">Requests</span></div>
 						<div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatNumber(stats().totalRequests)}</div>
 						<div class="text-xs text-gray-500">API calls</div>
 					</div>
@@ -379,7 +379,7 @@
 				</div>
 				{#if Object.keys(stats().nodeStats).length > 0}
 					<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
-						<div class="flex items-center gap-2 mb-4"><Layers size={18} class="text-violet-500" /><h3 class="font-semibold text-gray-900 dark:text-gray-100">Node Performance</h3></div>
+						<div class="flex items-center gap-2 mb-4"><Layers size={18} class="text-[#7661FF]" /><h3 class="font-semibold text-gray-900 dark:text-gray-100">Node Performance</h3></div>
 						<div class="space-y-3">
 							{#each Object.entries(stats().nodeStats).sort((a, b) => b[1].avgLatency - a[1].avgLatency) as [name, node]}
 								{@const max = Math.max(...Object.values(stats().nodeStats).map(n => n.avgLatency))}
@@ -405,7 +405,7 @@
 						<div class="text-xs text-gray-500">{stats().completedRuns} runs</div>
 					</div>
 					<div class="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
-						<div class="flex items-center gap-2 mb-2"><BarChart3 size={18} class="text-violet-500" /><span class="text-sm text-gray-500">Avg per Run</span></div>
+						<div class="flex items-center gap-2 mb-2"><BarChart3 size={18} class="text-[#7661FF]" /><span class="text-sm text-gray-500">Avg per Run</span></div>
 						<div class="text-3xl font-bold text-gray-900 dark:text-gray-100">{formatCost(stats().avgCostPerRun)}</div>
 						<div class="text-xs text-gray-500">average cost</div>
 					</div>
@@ -421,7 +421,7 @@
 				</div>
 				{#if Object.keys(stats().workflowStats).length > 0}
 					<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
-						<div class="flex items-center gap-2 mb-4"><CircleDollarSign size={18} class="text-violet-500" /><h3 class="font-semibold text-gray-900 dark:text-gray-100">Cost by Workflow</h3></div>
+						<div class="flex items-center gap-2 mb-4"><CircleDollarSign size={18} class="text-[#7661FF]" /><h3 class="font-semibold text-gray-900 dark:text-gray-100">Cost by Workflow</h3></div>
 						<div class="space-y-3">
 							{#each Object.entries(stats().workflowStats).sort((a, b) => b[1].cost - a[1].cost) as [name, wf]}
 								{@const max = Math.max(...Object.values(stats().workflowStats).map(w => w.cost))}
@@ -429,7 +429,7 @@
 								<div class="flex items-center gap-4">
 									<div class="w-40 truncate text-sm font-medium text-gray-700 dark:text-gray-300" title={name}>{name}</div>
 									<div class="flex-1 h-6 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-										<div class="h-full bg-violet-500 rounded-full" style="width: {pct}%"></div>
+										<div class="h-full bg-[#7661FF] rounded-full" style="width: {pct}%"></div>
 									</div>
 									<div class="w-24 text-right text-sm font-medium text-gray-900 dark:text-gray-100">{formatCost(wf.cost)}</div>
 									<div class="w-16 text-right text-xs text-gray-500">{wf.runs} runs</div>

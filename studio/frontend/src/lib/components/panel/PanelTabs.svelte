@@ -66,17 +66,17 @@
 				aria-controls={`panel-${tab.id}`}
 				tabindex={isActive ? 0 : -1}
 				class="flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all flex-1 min-w-0 {isActive
-					? 'bg-white dark:bg-gray-900 text-violet-700 dark:text-violet-300 shadow-sm'
+					? 'bg-white dark:bg-gray-900 text-[#7661FF] dark:text-[#52B8FF] shadow-sm'
 					: 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50'}"
 			>
 				{#if Icon}
-					<Icon size={14} class="flex-shrink-0 {isActive ? 'text-violet-600 dark:text-violet-400' : ''}" />
+					<Icon size={14} class="flex-shrink-0 {isActive ? 'text-[#7661FF] dark:text-[#BF71F2]' : ''}" />
 				{/if}
 				<span class="truncate">{tab.label}</span>
 				{#if tab.badge !== undefined && tab.badge !== null && tab.badge !== 0}
 					<span
 						class="flex-shrink-0 px-1.5 py-0.5 text-[10px] font-semibold rounded-full {isActive
-							? 'bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300'
+							? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/30 text-[#7661FF] dark:text-[#52B8FF]'
 							: 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'}"
 					>
 						{tab.badge}

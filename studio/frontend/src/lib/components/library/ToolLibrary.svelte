@@ -213,7 +213,7 @@
 			</button>
 			<button
 				onclick={openCreateModal}
-				class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+				class="px-4 py-2 bg-[#63DF4E] hover:bg-[#63DF4E]/90 text-[#032D42] text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
 			>
 				<Plus size={16} />
 				Create Tool
@@ -230,17 +230,17 @@
 					type="text"
 					placeholder="Search tools..."
 					bind:value={toolStore.searchQuery}
-					class="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+					class="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 				/>
 			</div>
 			<div class="flex items-center gap-1">
 				<button
 					onclick={() => toolStore.selectedCategory = 'all'}
 					class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
-					class:bg-violet-100={toolStore.selectedCategory === 'all'}
-					class:dark:bg-violet-900={toolStore.selectedCategory === 'all'}
-					class:text-violet-700={toolStore.selectedCategory === 'all'}
-					class:dark:text-violet-300={toolStore.selectedCategory === 'all'}
+					class:bg-[#7661FF]/15={toolStore.selectedCategory === 'all'}
+					class:dark:bg-[#7661FF]/20={toolStore.selectedCategory === 'all'}
+					class:text-[#7661FF]={toolStore.selectedCategory === 'all'}
+					class:dark:text-[#52B8FF]={toolStore.selectedCategory === 'all'}
 					class:text-gray-600={toolStore.selectedCategory !== 'all'}
 					class:hover:bg-gray-100={toolStore.selectedCategory !== 'all'}
 				>
@@ -250,10 +250,10 @@
 					<button
 						onclick={() => toolStore.selectedCategory = cat.value}
 						class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
-						class:bg-violet-100={toolStore.selectedCategory === cat.value}
-						class:dark:bg-violet-900={toolStore.selectedCategory === cat.value}
-						class:text-violet-700={toolStore.selectedCategory === cat.value}
-						class:dark:text-violet-300={toolStore.selectedCategory === cat.value}
+						class:bg-[#7661FF]/15={toolStore.selectedCategory === cat.value}
+						class:dark:bg-[#7661FF]/20={toolStore.selectedCategory === cat.value}
+						class:text-[#7661FF]={toolStore.selectedCategory === cat.value}
+						class:dark:text-[#52B8FF]={toolStore.selectedCategory === cat.value}
 						class:text-gray-600={toolStore.selectedCategory !== cat.value}
 						class:hover:bg-gray-100={toolStore.selectedCategory !== cat.value}
 					>
@@ -268,7 +268,9 @@
 	<div class="flex-1 overflow-y-auto p-6">
 		{#if toolStore.filteredTools.length === 0}
 			<div class="flex flex-col items-center justify-center h-full text-center">
-				<Wrench size={48} class="text-gray-300 dark:text-gray-600 mb-4" />
+				<div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
+					<Wrench size={28} class="text-white" />
+				</div>
 				{#if toolStore.tools.length === 0}
 					<h3 class="text-lg font-medium text-gray-600 dark:text-gray-400 mb-2">No tools yet</h3>
 					<p class="text-sm text-gray-500 dark:text-gray-500 mb-4 max-w-md">
@@ -276,7 +278,7 @@
 					</p>
 					<button
 						onclick={openCreateModal}
-						class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+						class="px-4 py-2 bg-[#63DF4E] hover:bg-[#63DF4E]/90 text-[#032D42] text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
 					>
 						<Plus size={16} />
 						Create Your First Tool
@@ -291,7 +293,7 @@
 				{#each toolStore.filteredTools as tool (tool.id)}
 					{@const Icon = categoryIcons[tool.category]}
 					<div
-						class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-md transition-all overflow-hidden"
+						class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-[#52B8FF] dark:hover:border-[#7661FF] hover:shadow-md transition-all overflow-hidden"
 					>
 						<div class="p-4">
 							<div class="flex items-start justify-between mb-3">
@@ -324,7 +326,7 @@
 							<span>{formatDate(tool.updatedAt)}</span>
 							<button
 								onclick={() => openEditModal(tool)}
-								class="text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1"
+								class="text-[#032D42] dark:text-[#52B8FF] hover:underline flex items-center gap-1"
 							>
 								<Edit3 size={12} />
 								Edit
@@ -404,7 +406,7 @@
 							type="text"
 							bind:value={formName}
 							placeholder="My Search Tool"
-							class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
+							class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
 						/>
 					</div>
 					<div class="relative z-10">
@@ -429,7 +431,7 @@
 							type="text"
 							bind:value={formDescription}
 							placeholder="A tool that searches for information..."
-							class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
+							class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
 						/>
 					</div>
 					<div>
@@ -440,7 +442,7 @@
 							type="text"
 							bind:value={formImportPath}
 							placeholder="mypackage.tools.search_tool"
-							class="w-full px-3 py-2 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
+							class="w-full px-3 py-2 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
 						/>
 					</div>
 				</div>
@@ -473,7 +475,7 @@
 				<button
 					onclick={saveTool}
 					disabled={!formName.trim() || !formImportPath.trim()}
-					class="px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:bg-gray-300 disabled:dark:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+					class="px-4 py-2 bg-[#63DF4E] hover:bg-[#63DF4E]/90 disabled:bg-gray-300 disabled:dark:bg-gray-700 text-[#032D42] text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
 				>
 					<Check size={16} />
 					{editingTool ? 'Save Changes' : 'Create Tool'}

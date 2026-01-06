@@ -100,9 +100,9 @@
 		memory: {
 			icon: MemoryStick,
 			label: 'In Memory',
-			color: 'purple',
-			bgClass: 'bg-purple-100 dark:bg-purple-900/30',
-			iconClass: 'text-purple-600 dark:text-purple-400'
+			color: 'indigo',
+			bgClass: 'bg-[#BF71F2]/15 dark:bg-[#BF71F2]/20',
+			iconClass: 'text-[#BF71F2] dark:text-[#BF71F2]'
 		}
 	};
 
@@ -208,7 +208,7 @@
 
 			<!-- Join info badge -->
 			{#if showJoinInfo && !isPrimary && source.join_type && source.join_type !== 'primary'}
-				<div class="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 bg-violet-50 dark:bg-violet-900/20 rounded text-[10px] text-violet-600 dark:text-violet-400">
+				<div class="flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 bg-[#7661FF]/10 dark:bg-[#7661FF]/15 rounded text-[10px] text-[#7661FF] dark:text-[#52B8FF]">
 					<Link size={9} />
 					<span>{source.primary_key || 'key'}={source.join_key || 'key'}</span>
 				</div>

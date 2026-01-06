@@ -244,16 +244,16 @@
 			</div>
 
 			<!-- Save as Recipe Option -->
-			<div class="p-4 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-lg">
+			<div class="p-4 bg-[#7661FF]/10 dark:bg-[#7661FF]/15 border border-[#7661FF]/30 dark:border-[#7661FF]/40 rounded-lg">
 				<label class="flex items-start gap-3 cursor-pointer">
 					<input
 						type="checkbox"
 						bind:checked={saveAsRecipe}
-						class="mt-1 w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
+						class="mt-1 w-4 h-4 text-[#7661FF] border-gray-300 rounded focus:ring-[#52B8FF]"
 					/>
 					<div class="flex-1">
 						<div class="flex items-center gap-2">
-							<Library size={16} class="text-violet-500" />
+							<Library size={16} class="text-[#7661FF]" />
 							<span class="font-medium text-gray-800 dark:text-gray-200">Save as Recipe</span>
 						</div>
 						<p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">

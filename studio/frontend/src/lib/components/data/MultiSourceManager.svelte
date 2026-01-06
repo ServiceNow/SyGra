@@ -190,7 +190,7 @@
 				{#if isMultiSource && isEditing}
 					<div class="mb-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
 						<div class="flex items-center gap-1.5 mb-1.5">
-							<Link size={10} class="text-violet-500" />
+							<Link size={10} class="text-[#7661FF]" />
 							<label class="text-[10px] font-medium text-gray-600 dark:text-gray-400">ID Column</label>
 						</div>
 						<input
@@ -198,12 +198,12 @@
 							bind:value={editIdColumn}
 							onchange={handleIdColumnChange}
 							placeholder="sys_id"
-							class="w-full px-2 py-1.5 text-xs font-mono border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-violet-500"
+							class="w-full px-2 py-1.5 text-xs font-mono border border-gray-200 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-1 focus:ring-[#52B8FF]"
 						/>
 					</div>
 				{:else if isMultiSource && idColumn}
 					<div class="mb-3 flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-gray-400 px-1">
-						<Link size={10} class="text-violet-500" />
+						<Link size={10} class="text-[#7661FF]" />
 						<span>ID:</span>
 						<code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded font-mono">{idColumn}</code>
 					</div>

@@ -92,7 +92,7 @@
 
 	<!-- Tokens -->
 	<div class="flex items-center gap-2" title="Total tokens">
-		<Zap size={14} class="text-violet-500" />
+		<Zap size={14} class="text-[#7661FF]" />
 		<span class="text-sm text-gray-600 dark:text-gray-400">{formatNumber(stats().totalTokens)}</span>
 	</div>
 

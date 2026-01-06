@@ -314,7 +314,7 @@
 
 			{#if metadata?.aggregate_statistics}
 				<div class="flex items-center gap-2">
-					<Zap size={16} class="text-violet-500" />
+					<Zap size={16} class="text-[#7661FF]" />
 					<span class="text-sm text-gray-600 dark:text-gray-400">Tokens:</span>
 					<span class="text-sm font-medium text-gray-900 dark:text-gray-100">{formatNumber(metadata.aggregate_statistics.tokens.total_tokens)}</span>
 				</div>
@@ -353,7 +353,7 @@
 				{@const TabIcon = tab.icon}
 				<button
 					onclick={() => activeTab = tab.id as TabId}
-					class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {activeTab === tab.id ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}"
+					class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {activeTab === tab.id ? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}"
 				>
 					<TabIcon size={16} />
 					{tab.label}
@@ -388,15 +388,15 @@
 							</div>
 						</div>
 
-						<div class="bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-900/20 dark:to-violet-800/20 rounded-xl p-4 border border-violet-200 dark:border-violet-800">
+						<div class="bg-gradient-to-br from-[#7661FF]/10 to-[#BF71F2]/10 dark:from-[#7661FF]/20 dark:to-[#BF71F2]/20 rounded-xl p-4 border border-[#7661FF]/30 dark:border-[#7661FF]/40">
 							<div class="flex items-center gap-2 mb-2">
-								<Zap size={16} class="text-violet-600 dark:text-violet-400" />
-								<span class="text-xs font-medium text-violet-600 dark:text-violet-400 uppercase">Tokens</span>
+								<Zap size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
+								<span class="text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] uppercase">Tokens</span>
 							</div>
-							<div class="text-2xl font-bold text-violet-700 dark:text-violet-300">
+							<div class="text-2xl font-bold text-[#7661FF] dark:text-[#BF71F2]">
 								{formatNumber(metadata.aggregate_statistics.tokens.total_tokens)}
 							</div>
-							<div class="text-xs text-violet-600/70 dark:text-violet-400/70 mt-1">
+							<div class="text-xs text-[#7661FF]/70 dark:text-[#BF71F2]/70 mt-1">
 								{formatNumber(metadata.aggregate_statistics.tokens.total_prompt_tokens)} in / {formatNumber(metadata.aggregate_statistics.tokens.total_completion_tokens)} out
 							</div>
 						</div>
@@ -453,7 +453,7 @@
 								<span class="text-gray-500 flex-shrink-0">Run ID</span>
 								<button
 									onclick={() => copyToClipboard(execution.id, 'run_id')}
-									class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-violet-600 dark:hover:text-violet-400 flex items-center gap-1 text-right break-all"
+									class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-[#7661FF] dark:hover:text-[#52B8FF] flex items-center gap-1 text-right break-all"
 									title="Click to copy: {execution.id}"
 								>
 									{execution.id}
@@ -477,7 +477,7 @@
 									<span class="text-gray-500 flex-shrink-0">Output File</span>
 									<button
 										onclick={() => copyToClipboard(execution.output_file, 'output_file')}
-										class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-violet-600 dark:hover:text-violet-400 flex items-center gap-1 text-right break-all"
+										class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-[#7661FF] dark:hover:text-[#52B8FF] flex items-center gap-1 text-right break-all"
 										title="Click to copy full path: {execution.output_file}"
 									>
 										{execution.output_file.split('/').pop()}
@@ -504,7 +504,7 @@
 													href={gitUrl}
 													target="_blank"
 													rel="noopener noreferrer"
-													class="font-mono text-xs text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1"
+													class="font-mono text-xs text-[#032D42] dark:text-[#52B8FF] hover:underline flex items-center gap-1"
 													title="View commit on GitHub: {metadata.execution.git.commit_hash}"
 												>
 													{metadata.execution.git.commit_hash.slice(0, 7)}
@@ -513,7 +513,7 @@
 											{:else}
 												<button
 													onclick={() => copyToClipboard(metadata.execution.git.commit_hash, 'git')}
-													class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-violet-600 dark:hover:text-violet-400 flex items-center gap-1"
+													class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-[#7661FF] dark:hover:text-[#52B8FF] flex items-center gap-1"
 													title="Click to copy: {metadata.execution.git.commit_hash}"
 												>
 													{metadata.execution.git.commit_hash.slice(0, 7)}
@@ -557,7 +557,7 @@
 												href={hfUrl}
 												target="_blank"
 												rel="noopener noreferrer"
-												class="font-mono text-xs text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1 break-all text-right"
+												class="font-mono text-xs text-[#032D42] dark:text-[#52B8FF] hover:underline flex items-center gap-1 break-all text-right"
 											>
 												{metadata.dataset.source_path}
 												<ExternalLink size={10} class="flex-shrink-0" />
@@ -590,7 +590,7 @@
 										<span class="text-gray-500 flex-shrink-0">Hash</span>
 										<button
 											onclick={() => copyToClipboard(metadata.dataset.dataset_hash, 'dataset_hash')}
-											class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-violet-600 dark:hover:text-violet-400 flex items-center gap-1 break-all text-right"
+											class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-[#7661FF] dark:hover:text-[#52B8FF] flex items-center gap-1 break-all text-right"
 											title="Click to copy: {metadata.dataset.dataset_hash}"
 										>
 											{metadata.dataset.dataset_hash}
@@ -619,7 +619,7 @@
 								<div class="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
 									<span class="font-medium text-gray-800 dark:text-gray-200">{name}</span>
 									<span class="text-xs text-gray-500">{model.model_type}</span>
-									<span class="text-xs text-violet-600 dark:text-violet-400">{formatNumber(model.token_statistics.total_tokens)} tok</span>
+									<span class="text-xs text-[#7661FF] dark:text-[#BF71F2]">{formatNumber(model.token_statistics.total_tokens)} tok</span>
 									<span class="text-xs text-emerald-600 dark:text-emerald-400">{formatCost(model.cost.total_cost_usd)}</span>
 								</div>
 							{/each}
@@ -692,7 +692,7 @@
 					<div class="grid grid-cols-2 gap-4">
 						<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
 							<div class="flex items-center gap-2 mb-3">
-								<PieChart size={16} class="text-violet-500" />
+								<PieChart size={16} class="text-[#7661FF]" />
 								<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Token Distribution</h4>
 							</div>
 							<div class="h-48">
@@ -735,7 +735,7 @@
 											<tr class="border-b border-gray-100 dark:border-gray-800">
 												<td class="py-3 font-medium text-gray-800 dark:text-gray-200">{name}</td>
 												<td class="py-3 text-right text-gray-600 dark:text-gray-400">{model.performance.total_requests}</td>
-												<td class="py-3 text-right text-violet-600 dark:text-violet-400">{formatNumber(model.token_statistics.total_tokens)}</td>
+												<td class="py-3 text-right text-[#7661FF] dark:text-[#BF71F2]">{formatNumber(model.token_statistics.total_tokens)}</td>
 												<td class="py-3 text-right text-gray-600 dark:text-gray-400">{formatLatency(model.performance.average_latency_seconds)}</td>
 												<td class="py-3 text-right text-blue-600 dark:text-blue-400">{model.performance.tokens_per_second.toFixed(1)} tok/s</td>
 												<td class="py-3 text-right text-emerald-600 dark:text-emerald-400">{formatCost(model.cost.total_cost_usd)}</td>
@@ -770,7 +770,7 @@
 											<tr class="border-b border-gray-100 dark:border-gray-800">
 												<td class="py-2 font-medium text-gray-800 dark:text-gray-200">{name}</td>
 												<td class="py-2">
-													<span class="text-xs px-2 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
+													<span class="text-xs px-2 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]">
 														{node.node_type}
 													</span>
 												</td>

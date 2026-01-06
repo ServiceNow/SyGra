@@ -202,7 +202,7 @@
 			{#if execution.output_file}
 				<div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
 					<div class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-						<FileJson size={16} class="text-violet-500" />
+						<FileJson size={16} class="text-[#7661FF]" />
 						Output File
 					</div>
 					<div class="bg-gray-900 dark:bg-gray-950 rounded-lg p-3">
@@ -229,7 +229,7 @@
 				<div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
 					<div class="flex items-center justify-between mb-3">
 						<div class="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-							<FileJson size={16} class="text-violet-500" />
+							<FileJson size={16} class="text-[#7661FF]" />
 							Output Data
 						</div>
 						<div class="flex items-center gap-1">
@@ -265,14 +265,14 @@
 		<div class="flex items-center justify-between px-6 py-4 bg-gray-50 dark:bg-gray-800/50 rounded-b-xl border-t border-gray-200 dark:border-gray-800">
 			<button
 				onclick={viewInRuns}
-				class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+				class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-[#7661FF] dark:hover:text-[#52B8FF] hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
 			>
 				<ExternalLink size={16} />
 				View in Runs
 			</button>
 			<button
 				onclick={() => dispatch('close')}
-				class="px-5 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-sm font-medium text-white transition-colors"
+				class="px-5 py-2 bg-[#63DF4E] hover:bg-[#52c840] rounded-lg text-sm font-medium text-[#032D42] transition-colors"
 			>
 				Close
 			</button>

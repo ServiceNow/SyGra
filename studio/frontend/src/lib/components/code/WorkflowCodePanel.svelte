@@ -793,12 +793,12 @@
 	<!-- Resize Handle -->
 	{#if !isCollapsed}
 		<div
-			class="h-1 bg-gray-100 dark:bg-gray-800 hover:bg-violet-200 dark:hover:bg-violet-800 cursor-ns-resize flex items-center justify-center group transition-colors"
+			class="h-1 bg-gray-100 dark:bg-gray-800 hover:bg-[#7661FF]/20 dark:hover:bg-[#7661FF]/30 cursor-ns-resize flex items-center justify-center group transition-colors"
 			onmousedown={startResize}
 			role="separator"
 			aria-orientation="horizontal"
 		>
-			<GripHorizontal size={14} class="text-gray-400 group-hover:text-violet-500 transition-colors" />
+			<GripHorizontal size={14} class="text-gray-400 group-hover:text-[#7661FF] transition-colors" />
 		</div>
 	{/if}
 
@@ -807,7 +807,7 @@
 		<div class="flex items-center gap-4">
 			<!-- Code Panel Title -->
 			<div class="flex items-center gap-2">
-				<div class="flex items-center gap-2 text-violet-600 dark:text-violet-400">
+				<div class="flex items-center gap-2 text-[#7661FF] dark:text-[#52B8FF]">
 					<Code2 size={16} />
 					<span class="text-sm font-medium">Code Panel</span>
 				</div>
@@ -829,7 +829,7 @@
 				<div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
 					<button
 						onclick={() => activeTab = 'yaml'}
-						class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors {activeTab === 'yaml' ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}"
+						class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors {activeTab === 'yaml' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}"
 					>
 						<FileText size={14} />
 						YAML
@@ -839,7 +839,7 @@
 					</button>
 					<button
 						onclick={() => activeTab = 'code'}
-						class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors {activeTab === 'code' ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}"
+						class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors {activeTab === 'code' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}"
 					>
 						<FileCode2 size={14} />
 						Code
@@ -849,7 +849,7 @@
 					</button>
 					<button
 						onclick={() => activeTab = 'output'}
-						class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors {activeTab === 'output' ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}"
+						class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors {activeTab === 'output' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'}"
 					>
 						<Terminal size={14} />
 						Output
@@ -863,7 +863,7 @@
 				{#if activeTab === 'code' && codeFileList.length > 1}
 					<select
 						bind:value={selectedCodeFile}
-						class="text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500"
+						class="text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#52B8FF]"
 					>
 						{#each codeFileList as file}
 							<option value={file}>{file}</option>
@@ -1045,7 +1045,7 @@
 				type="text"
 				bind:value={runArgs}
 				placeholder="e.g., --input data.json --verbose"
-				class="flex-1 px-3 py-1.5 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-500"
+				class="flex-1 px-3 py-1.5 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#52B8FF]"
 			/>
 			<button
 				onclick={() => showArgsInput = false}

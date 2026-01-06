@@ -233,7 +233,7 @@
 				</button>
 				<button
 					onclick={handleAddToWorkflow}
-					class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 rounded-lg transition-colors"
+					class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#032D42] bg-[#63DF4E] hover:bg-[#52c840] rounded-lg transition-colors"
 				>
 					<Plus size={16} />
 					Add to Workflow

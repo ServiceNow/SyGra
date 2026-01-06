@@ -108,7 +108,7 @@
 					type="text"
 					placeholder="Search logs..."
 					bind:value={searchQuery}
-					class="w-full pl-8 pr-8 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
+					class="w-full pl-8 pr-8 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#52B8FF]"
 				/>
 				{#if searchQuery}
 					<button
@@ -137,14 +137,14 @@
 		<div class="flex items-center gap-1">
 			<button
 				onclick={() => caseSensitive = !caseSensitive}
-				class="px-2 py-1 text-xs rounded transition-colors {caseSensitive ? 'bg-violet-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-gray-300'}"
+				class="px-2 py-1 text-xs rounded transition-colors {caseSensitive ? 'bg-[#7661FF] text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-gray-300'}"
 				title="Case sensitive"
 			>
 				Aa
 			</button>
 			<button
 				onclick={() => showLineNumbers = !showLineNumbers}
-				class="px-2 py-1 text-xs rounded transition-colors {showLineNumbers ? 'bg-violet-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-gray-300'}"
+				class="px-2 py-1 text-xs rounded transition-colors {showLineNumbers ? 'bg-[#7661FF] text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-gray-300'}"
 				title="Toggle line numbers"
 			>
 				#

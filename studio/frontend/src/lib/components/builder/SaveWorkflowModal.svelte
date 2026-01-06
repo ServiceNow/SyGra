@@ -149,7 +149,7 @@
 			<div class="px-6 py-5 space-y-5">
 				{#if isLoadingConfig}
 					<div class="flex items-center justify-center py-8">
-						<div class="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+						<div class="w-6 h-6 border-2 border-[#7661FF] border-t-transparent rounded-full animate-spin"></div>
 						<span class="ml-3 text-gray-500">Loading configuration...</span>
 					</div>
 				{:else}
@@ -163,7 +163,7 @@
 							type="text"
 							bind:value={taskName}
 							placeholder="my_workflow"
-							class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors"
+							class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent transition-colors"
 						/>
 					</div>
 
@@ -181,7 +181,7 @@
 								type="text"
 								bind:value={tasksDir}
 								placeholder="./tasks"
-								class="w-full pl-10 pr-12 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-colors"
+								class="w-full pl-10 pr-12 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent transition-colors"
 							/>
 							<!-- Directory picker button -->
 							{#if subdirectories.length > 0}
@@ -208,8 +208,8 @@
 										type="button"
 										onclick={() => selectDirectory(dir)}
 										class="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
-										class:bg-violet-50={tasksDir === dir}
-										class:dark:bg-violet-900={tasksDir === dir}
+										class:bg-sky-50={tasksDir === dir}
+										class:dark:bg-sky-900={tasksDir === dir}
 									>
 										<FolderOpen size={14} class="text-gray-400" />
 										<span class="text-gray-700 dark:text-gray-300 truncate">{dir}</span>
@@ -240,7 +240,7 @@
 				<button
 					onclick={handleSave}
 					disabled={isSaving || isLoadingConfig || !normalizedName}
-					class="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+					class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					{#if isSaving}
 						<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

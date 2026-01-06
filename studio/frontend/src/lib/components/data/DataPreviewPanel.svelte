@@ -87,8 +87,8 @@
 		class="w-full flex items-center justify-between px-5 py-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 hover:from-gray-100 hover:to-gray-50 dark:hover:from-gray-750 dark:hover:to-gray-800 transition-colors cursor-pointer"
 	>
 		<div class="flex items-center gap-4">
-			<div class="p-2.5 rounded-xl bg-gradient-to-br from-violet-100 to-indigo-100 dark:from-violet-900/40 dark:to-indigo-900/40 shadow-sm">
-				<Table2 size={20} class="text-violet-600 dark:text-violet-400" />
+			<div class="p-2.5 rounded-xl bg-gradient-to-br from-[#7661FF]/20 to-[#52B8FF]/20 dark:from-[#7661FF]/30 dark:to-[#52B8FF]/30 shadow-sm">
+				<Table2 size={20} class="text-[#7661FF] dark:text-[#BF71F2]" />
 			</div>
 			<div class="text-left">
 				<div class="font-semibold text-gray-900 dark:text-gray-100">
@@ -113,7 +113,7 @@
 					<button
 						onclick={(e) => { e.stopPropagation(); handleRefresh(); }}
 						disabled={loading}
-						class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-900/50 disabled:opacity-50 rounded-lg transition-colors"
+						class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#7661FF] dark:text-[#52B8FF] bg-[#7661FF]/15 dark:bg-[#7661FF]/20 hover:bg-[#7661FF]/25 dark:hover:bg-[#7661FF]/30 disabled:opacity-50 rounded-lg transition-colors"
 					>
 						<RefreshCw size={14} class={loading ? 'animate-spin' : ''} />
 						Refresh
@@ -121,7 +121,7 @@
 				{:else if !loading}
 					<button
 						onclick={(e) => { e.stopPropagation(); handleFetch(); }}
-						class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-900/50 rounded-lg transition-colors"
+						class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#7661FF] dark:text-[#52B8FF] bg-[#7661FF]/15 dark:bg-[#7661FF]/20 hover:bg-[#7661FF]/25 dark:hover:bg-[#7661FF]/30 rounded-lg transition-colors"
 					>
 						<Eye size={14} />
 						Preview
@@ -157,7 +157,7 @@
 			{:else if loading}
 				<!-- Loading State -->
 				<div class="flex items-center justify-center gap-3 py-12">
-					<Loader2 size={20} class="animate-spin text-violet-500" />
+					<Loader2 size={20} class="animate-spin text-[#7661FF]" />
 					<span class="text-sm text-gray-500 dark:text-gray-400">Loading sample data...</span>
 				</div>
 
@@ -213,8 +213,8 @@
 									{#each data.records as record, i}
 										<!-- Main Row -->
 										<tr
-											class="hover:bg-violet-50/50 dark:hover:bg-violet-900/10 cursor-pointer transition-colors
-												{expandedRows.has(i) ? 'bg-violet-50 dark:bg-violet-900/20' : ''}"
+											class="hover:bg-[#7661FF]/5 dark:hover:bg-[#7661FF]/10 cursor-pointer transition-colors
+												{expandedRows.has(i) ? 'bg-[#7661FF]/5 dark:bg-[#7661FF]/10' : ''}"
 											onclick={() => toggleRowExpand(i)}
 										>
 											<td class="px-3 py-2 text-gray-400 border-r border-gray-100 dark:border-gray-800 font-mono text-center">
@@ -237,7 +237,7 @@
 															{formatted.display}
 														</span>
 													{:else if formatted.type === 'number'}
-														<span class="font-mono text-violet-600 dark:text-violet-400">{formatted.display}</span>
+														<span class="font-mono text-[#7661FF] dark:text-[#52B8FF]">{formatted.display}</span>
 													{:else if formatted.type === 'object'}
 														<span class="text-gray-500 dark:text-gray-400 font-mono truncate block">{formatted.display}</span>
 													{:else}
@@ -251,7 +251,7 @@
 										{#if expandedRows.has(i)}
 											<tr class="bg-gray-50/80 dark:bg-gray-800/70">
 												<td colspan={columns.length + 1} class="p-0">
-													<div class="p-4 space-y-3 border-l-4 border-violet-400 dark:border-violet-500 ml-3">
+													<div class="p-4 space-y-3 border-l-4 border-[#7661FF] dark:border-[#BF71F2] ml-3">
 														{#each columns as col}
 															{@const value = record[col]}
 															{@const formatted = formatValue(value)}
@@ -268,7 +268,7 @@
 																			{formatted.display}
 																		</span>
 																	{:else if formatted.type === 'number'}
-																		<span class="text-sm font-mono text-violet-600 dark:text-violet-400">{value}</span>
+																		<span class="text-sm font-mono text-[#7661FF] dark:text-[#52B8FF]">{value}</span>
 																	{:else if formatted.type === 'object'}
 																		<pre class="text-xs font-mono text-gray-600 dark:text-gray-300 whitespace-pre-wrap break-all bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700 max-h-48 overflow-auto">{formatted.full}</pre>
 																	{:else}
@@ -293,8 +293,8 @@
 			{:else}
 				<!-- Empty State - No Data Loaded Yet -->
 				<div class="text-center py-10">
-					<div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-100 to-indigo-100 dark:from-violet-900/30 dark:to-indigo-900/30 flex items-center justify-center shadow-sm">
-						<Eye size={24} class="text-violet-500 dark:text-violet-400" />
+					<div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#7661FF]/20 to-[#52B8FF]/20 dark:from-[#7661FF]/30 dark:to-[#52B8FF]/30 flex items-center justify-center shadow-sm">
+						<Eye size={24} class="text-[#7661FF] dark:text-[#BF71F2]" />
 					</div>
 					<p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
 						Ready to preview data
@@ -304,7 +304,7 @@
 					</p>
 					<button
 						onclick={handleFetch}
-						class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white rounded-xl transition-colors shadow-sm hover:shadow-md"
+						class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#63DF4E] hover:bg-[#63DF4E]/90 text-[#032D42] rounded-xl transition-colors shadow-sm hover:shadow-md"
 					>
 						<Eye size={16} />
 						Load Preview

@@ -94,7 +94,7 @@
 							<span class="truncate text-green-600 dark:text-green-400">static</span>
 						{/if}
 						{#if mapping?.transform}
-							<span class="text-[8px] px-0.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+							<span class="text-[8px] px-0.5 py-0.5 rounded bg-[#BF71F2]/15 dark:bg-[#BF71F2]/20 text-[#BF71F2] dark:text-[#BF71F2]">
 								fn
 							</span>
 						{/if}

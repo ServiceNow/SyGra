@@ -758,10 +758,10 @@
 				<p class="text-sm text-gray-500 dark:text-gray-400">
 					{filteredModels.length} of {models.length} models
 					{#if onlineCount > 0}
-						<span class="ml-2 text-green-600 dark:text-green-400">• {onlineCount} online</span>
+						<span class="ml-2 text-[#4BC93A] dark:text-[#63DF4E]">• {onlineCount} online</span>
 					{/if}
 					{#if needsConfigCount > 0}
-						<span class="ml-2 text-amber-600 dark:text-amber-400">• {needsConfigCount} need config</span>
+						<span class="ml-2 text-[#52B8FF]">• {needsConfigCount} need config</span>
 					{/if}
 					{#if modelsStore.lastRefresh}
 						<span class="ml-2 text-gray-400">|</span>
@@ -774,14 +774,14 @@
 				<div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
 					<button
 						onclick={() => setViewMode('card')}
-						class="p-2 rounded-md transition-colors {viewMode === 'card' ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+						class="p-2 rounded-md transition-colors {viewMode === 'card' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#BF71F2] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
 						title="Card view"
 					>
 						<LayoutGrid size={18} />
 					</button>
 					<button
 						onclick={() => setViewMode('list')}
-						class="p-2 rounded-md transition-colors {viewMode === 'list' ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+						class="p-2 rounded-md transition-colors {viewMode === 'list' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#BF71F2] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
 						title="List view"
 					>
 						<LayoutList size={18} />
@@ -809,7 +809,7 @@
 				</button>
 				<button
 					onclick={() => openEditor()}
-					class="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors text-sm"
+					class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c33f] text-[#032D42] rounded-lg transition-colors text-sm"
 				>
 					<Plus size={16} />
 					Add Model
@@ -826,7 +826,7 @@
 					type="text"
 					placeholder="Search models..."
 					bind:value={searchQuery}
-					class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm"
+					class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] text-sm"
 				/>
 			</div>
 
@@ -865,7 +865,7 @@
 	<div class="flex-1 overflow-auto">
 		{#if loading}
 			<div class="flex items-center justify-center h-full p-6">
-				<RefreshCw size={24} class="animate-spin text-violet-500" />
+				<RefreshCw size={24} class="animate-spin text-[#7661FF]" />
 			</div>
 		{:else if filteredModels.length === 0}
 			<div class="flex flex-col items-center justify-center h-full text-center p-6">
@@ -877,7 +877,7 @@
 					</p>
 					<button
 						onclick={() => openEditor()}
-						class="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm"
+						class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c33f] text-[#032D42] rounded-lg text-sm"
 					>
 						<Plus size={16} />
 						Add Your First Model
@@ -898,7 +898,7 @@
 								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
 							>
 								Model
-								<ArrowUpDown size={14} class={sortField === 'name' ? 'text-violet-500' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'name' ? 'text-[#7661FF]' : ''} />
 							</button>
 						</th>
 						<th class="text-left px-6 py-3">
@@ -907,7 +907,7 @@
 								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
 							>
 								Type
-								<ArrowUpDown size={14} class={sortField === 'model_type' ? 'text-violet-500' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'model_type' ? 'text-[#7661FF]' : ''} />
 							</button>
 						</th>
 						<th class="text-left px-6 py-3">
@@ -916,7 +916,7 @@
 								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
 							>
 								Status
-								<ArrowUpDown size={14} class={sortField === 'status' ? 'text-violet-500' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'status' ? 'text-[#7661FF]' : ''} />
 							</button>
 						</th>
 						<th class="text-left px-6 py-3">
@@ -925,7 +925,7 @@
 								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
 							>
 								Latency
-								<ArrowUpDown size={14} class={sortField === 'latency' ? 'text-violet-500' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'latency' ? 'text-[#7661FF]' : ''} />
 							</button>
 						</th>
 						<th class="text-right px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
@@ -937,14 +937,14 @@
 						<tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
 							<td class="px-6 py-4">
 								<div class="flex items-center gap-3">
-									<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center">
-										<Icon size={20} class="text-violet-600 dark:text-violet-400" />
+									<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#7661FF]/20 to-[#BF71F2]/20 flex items-center justify-center">
+										<Icon size={20} class="text-[#7661FF] dark:text-[#BF71F2]" />
 									</div>
 									<div>
 										<div class="flex items-center gap-2">
 											<span class="font-medium text-gray-900 dark:text-gray-100">{model.name}</span>
 											{#if model.is_builtin}
-												<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 font-medium" title="SyGra builtin model (read-only)">
+												<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] font-medium" title="SyGra builtin model (read-only)">
 													<Shield size={10} />
 													SyGra
 												</span>
@@ -960,7 +960,7 @@
 							<td class="px-6 py-4">
 								{#if pingingModels.has(model.name)}
 									<!-- Checking status -->
-									<span class="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 animate-pulse">
+									<span class="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] animate-pulse">
 										<Loader2 size={12} class="animate-spin" />
 										Checking...
 									</span>
@@ -968,7 +968,7 @@
 									<!-- Just checked - show result briefly -->
 									{@const result = recentlyChecked.get(model.name)}
 									{#if result === 'success'}
-										<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 ring-2 ring-green-300 dark:ring-green-600 ring-opacity-50">
+										<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-[#63DF4E]/20 text-[#4BC93A] dark:text-[#63DF4E] ring-2 ring-[#63DF4E]/50">
 											<CheckCircle2 size={12} />
 											Online
 										</span>
@@ -979,12 +979,12 @@
 										</span>
 									{/if}
 								{:else if !model.credentials_configured}
-									<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+									<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-[#52B8FF]/20 text-[#52B8FF]">
 										<AlertTriangle size={12} />
 										Needs Config
 									</span>
 								{:else if model.status === 'online'}
-									<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+									<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-[#63DF4E]/20 text-[#4BC93A] dark:text-[#63DF4E]">
 										<CheckCircle2 size={12} />
 										Online
 									</span>
@@ -1002,7 +1002,7 @@
 							</td>
 							<td class="px-6 py-4 text-sm text-gray-500">
 								{#if pingingModels.has(model.name)}
-									<span class="text-violet-500 animate-pulse">...</span>
+									<span class="text-[#7661FF] animate-pulse">...</span>
 								{:else}
 									{model.latency_ms ? formatLatency(model.latency_ms) : '-'}
 								{/if}
@@ -1030,7 +1030,7 @@
 				{#if onlineModels.length > 0}
 					<div>
 						<div class="flex items-center gap-2 mb-3">
-							<CheckCircle2 size={18} class="text-green-500" />
+							<CheckCircle2 size={18} class="text-[#63DF4E]" />
 							<h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Online ({onlineModels.length})</h2>
 						</div>
 						<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -1039,23 +1039,23 @@
 								{@const isChecking = pingingModels.has(model.name)}
 								{@const wasJustChecked = recentlyChecked.has(model.name)}
 								<div
-									class="bg-white dark:bg-gray-800 rounded-xl border p-4 hover:shadow-md transition-all relative {isChecking ? 'border-violet-300 dark:border-violet-700' : wasJustChecked ? 'border-green-400 dark:border-green-600 ring-2 ring-green-200 dark:ring-green-800' : 'border-green-200 dark:border-green-900/50'}"
+									class="bg-white dark:bg-gray-800 rounded-xl border p-4 hover:shadow-md transition-all relative {isChecking ? 'border-[#7661FF]/50 dark:border-[#7661FF]/60' : wasJustChecked ? 'border-[#63DF4E] ring-2 ring-[#63DF4E]/30' : 'border-[#63DF4E]/30 dark:border-[#63DF4E]/20'}"
 									ondblclick={() => openDetails(model)}
 								>
 									{#if isChecking}
 										<div class="absolute top-2 right-2">
-											<Loader2 size={14} class="animate-spin text-violet-500" />
+											<Loader2 size={14} class="animate-spin text-[#7661FF]" />
 										</div>
 									{/if}
 									<div class="flex items-start gap-3">
-										<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-600/20 flex items-center justify-center flex-shrink-0">
-											<Icon size={20} class="text-green-600 dark:text-green-400" />
+										<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: radial-gradient(ellipse at 70% 20%, rgba(99, 223, 78, 0.4) 0%, transparent 60%), #032D42;">
+											<Icon size={20} class="text-[#63DF4E]" />
 										</div>
 										<div class="flex-1 min-w-0">
 											<div class="flex items-center gap-2">
 												<h3 class="font-semibold text-gray-900 dark:text-gray-100 truncate">{model.name}</h3>
 												{#if model.is_builtin}
-													<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 font-medium flex-shrink-0" title="SyGra builtin model">
+													<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] font-medium flex-shrink-0" title="SyGra builtin model">
 														<Shield size={9} />
 														SyGra
 													</span>
@@ -1065,7 +1065,7 @@
 											<div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
 												<span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700">{model.model_type_label}</span>
 												{#if isChecking}
-													<span class="flex items-center gap-1 text-violet-500 animate-pulse">checking...</span>
+													<span class="flex items-center gap-1 text-[#7661FF] animate-pulse">checking...</span>
 												{:else if model.latency_ms}
 													<span class="flex items-center gap-1"><Zap size={10} />{formatLatency(model.latency_ms)}</span>
 												{/if}
@@ -1090,7 +1090,7 @@
 				{#if configuredModels.length > 0}
 					<div>
 						<div class="flex items-center gap-2 mb-3">
-							<Server size={18} class="text-blue-500" />
+							<Server size={18} class="text-[#7661FF]" />
 							<h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Configured ({configuredModels.length})</h2>
 						</div>
 						<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -1100,29 +1100,29 @@
 								{@const wasJustChecked = recentlyChecked.has(model.name)}
 								{@const checkResult = recentlyChecked.get(model.name)}
 								<div
-									class="bg-white dark:bg-gray-800 rounded-xl border p-4 hover:shadow-md transition-all relative {isChecking ? 'border-violet-300 dark:border-violet-700' : wasJustChecked ? (checkResult === 'success' ? 'border-green-400 dark:border-green-600 ring-2 ring-green-200 dark:ring-green-800' : 'border-red-400 dark:border-red-600 ring-2 ring-red-200 dark:ring-red-800') : 'border-gray-200 dark:border-gray-700'}"
+									class="bg-white dark:bg-gray-800 rounded-xl border p-4 hover:shadow-md transition-all relative {isChecking ? 'border-[#7661FF]/50 dark:border-[#7661FF]/60' : wasJustChecked ? (checkResult === 'success' ? 'border-[#63DF4E] ring-2 ring-[#63DF4E]/30' : 'border-red-400 dark:border-red-600 ring-2 ring-red-200 dark:ring-red-800') : 'border-gray-200 dark:border-gray-700'}"
 									ondblclick={() => openDetails(model)}
 								>
 									{#if isChecking}
 										<div class="absolute top-2 right-2">
-											<Loader2 size={14} class="animate-spin text-violet-500" />
+											<Loader2 size={14} class="animate-spin text-[#7661FF]" />
 										</div>
 									{/if}
 									<div class="flex items-start gap-3">
-										<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-indigo-600/20 flex items-center justify-center flex-shrink-0">
-											<Icon size={20} class="text-blue-600 dark:text-blue-400" />
+										<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
+											<Icon size={20} class="text-white" />
 										</div>
 										<div class="flex-1 min-w-0">
 											<div class="flex items-center gap-2">
 												<h3 class="font-semibold text-gray-900 dark:text-gray-100 truncate">{model.name}</h3>
 												{#if model.is_builtin}
-													<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 font-medium flex-shrink-0" title="SyGra builtin model">
+													<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] font-medium flex-shrink-0" title="SyGra builtin model">
 														<Shield size={9} />
 														SyGra
 													</span>
 												{/if}
 												{#if isChecking}
-													<span class="flex-shrink-0 w-2 h-2 rounded-full bg-violet-500 animate-pulse"></span>
+													<span class="flex-shrink-0 w-2 h-2 rounded-full bg-[#7661FF] animate-pulse"></span>
 												{:else if model.status === 'offline' || model.status === 'error'}
 													<span class="flex-shrink-0 w-2 h-2 rounded-full bg-red-500"></span>
 												{:else}
@@ -1133,7 +1133,7 @@
 											<div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
 												<span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700">{model.model_type_label}</span>
 												{#if isChecking}
-													<span class="flex items-center gap-1 text-violet-500 animate-pulse">checking...</span>
+													<span class="flex items-center gap-1 text-[#7661FF] animate-pulse">checking...</span>
 												{:else if model.error}
 													<span class="text-red-500 truncate" title={model.error}>{model.error}</span>
 												{/if}
@@ -1158,7 +1158,7 @@
 				{#if needsConfigModels.length > 0}
 					<div>
 						<div class="flex items-center gap-2 mb-3">
-							<AlertTriangle size={18} class="text-amber-500" />
+							<AlertTriangle size={18} class="text-[#52B8FF]" />
 							<h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Needs Configuration ({needsConfigModels.length})</h2>
 						</div>
 						<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -1166,23 +1166,23 @@
 								{@const Icon = getModelIcon(model.model_type)}
 								{@const isChecking = pingingModels.has(model.name)}
 								<div
-									class="bg-white dark:bg-gray-800 rounded-xl border border-dashed p-4 hover:shadow-md transition-all relative {isChecking ? 'border-violet-300 dark:border-violet-700' : 'border-amber-200 dark:border-amber-900/50'}"
+									class="bg-white dark:bg-gray-800 rounded-xl border border-dashed p-4 hover:shadow-md transition-all relative {isChecking ? 'border-[#7661FF]/50 dark:border-[#7661FF]/60' : 'border-[#52B8FF]/40 dark:border-[#52B8FF]/30'}"
 									ondblclick={() => openDetails(model)}
 								>
 									{#if isChecking}
 										<div class="absolute top-2 right-2">
-											<Loader2 size={14} class="animate-spin text-violet-500" />
+											<Loader2 size={14} class="animate-spin text-[#7661FF]" />
 										</div>
 									{/if}
 									<div class="flex items-start gap-3">
-										<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-600/20 flex items-center justify-center flex-shrink-0">
-											<Icon size={20} class="text-amber-600 dark:text-amber-400" />
+										<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#52B8FF]/20 dark:bg-[#52B8FF]/15">
+											<Icon size={20} class="text-[#52B8FF]" />
 										</div>
 										<div class="flex-1 min-w-0">
 											<div class="flex items-center gap-2">
 												<h3 class="font-semibold text-gray-900 dark:text-gray-100 truncate">{model.name}</h3>
 												{#if model.is_builtin}
-													<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 font-medium flex-shrink-0" title="SyGra builtin model">
+													<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] font-medium flex-shrink-0" title="SyGra builtin model">
 														<Shield size={9} />
 														SyGra
 													</span>
@@ -1192,7 +1192,7 @@
 											<div class="flex items-center gap-2 mt-2">
 												<span class="text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">{model.model_type_label}</span>
 												{#if isChecking}
-													<span class="flex items-center gap-1 text-xs text-violet-500 animate-pulse">checking...</span>
+													<span class="flex items-center gap-1 text-xs text-[#7661FF] animate-pulse">checking...</span>
 												{/if}
 											</div>
 										</div>
@@ -1334,7 +1334,7 @@
 								bind:value={formName}
 								placeholder="my-gpt4o"
 								disabled={!!editingModel}
-								class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 disabled:opacity-50"
+								class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] disabled:opacity-50"
 							/>
 						</div>
 						<div>
@@ -1358,7 +1358,7 @@
 								type="text"
 								bind:value={formModel}
 								placeholder="gpt-4o"
-								class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
+								class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
 							/>
 						</div>
 						<div>
@@ -1367,7 +1367,7 @@
 								type="text"
 								bind:value={formApiVersion}
 								placeholder="2024-08-01-preview"
-								class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
+								class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
 							/>
 						</div>
 					</div>
@@ -1385,7 +1385,7 @@
 											type={envVar.toLowerCase().includes('token') || envVar.toLowerCase().includes('secret') || envVar.toLowerCase().includes('key') ? 'password' : 'text'}
 											bind:value={formCredentials[envVar]}
 											placeholder={`SYGRA_${formName.toUpperCase().replace(/[-.]/g, '_')}_${envVar}`}
-											class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 font-mono"
+											class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
 										/>
 									</div>
 								{/each}
@@ -1400,7 +1400,7 @@
 							<button
 								type="button"
 								onclick={addParameter}
-								class="text-xs text-violet-600 hover:text-violet-700 dark:text-violet-400 flex items-center gap-1"
+								class="text-xs text-[#7661FF] hover:text-[#5a4dcc] dark:text-[#BF71F2] flex items-center gap-1"
 							>
 								<Plus size={12} />
 								Add Parameter
@@ -1413,13 +1413,13 @@
 										type="text"
 										bind:value={param.key}
 										placeholder="key (e.g., max_tokens)"
-										class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 font-mono"
+										class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
 									/>
 									<input
 										type="text"
 										bind:value={param.value}
 										placeholder="value (e.g., 1000)"
-										class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 font-mono"
+										class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
 									/>
 									<button
 										type="button"
@@ -1439,7 +1439,7 @@
 					<button
 						type="button"
 						onclick={() => showAdvancedOptions = !showAdvancedOptions}
-						class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400"
+						class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-[#7661FF] dark:hover:text-[#BF71F2]"
 					>
 						{#if showAdvancedOptions}
 							<ChevronDown size={16} />
@@ -1460,7 +1460,7 @@
 										type="text"
 										bind:value={formHfChatTemplateModelId}
 										placeholder="Qwen/Qwen3-32B"
-										class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 font-mono"
+										class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
 									/>
 								</div>
 								<div>
@@ -1469,7 +1469,7 @@
 										type="text"
 										bind:value={formModelServingName}
 										placeholder="my_model_server"
-										class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 font-mono"
+										class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
 									/>
 								</div>
 							</div>
@@ -1482,7 +1482,7 @@
 										type="text"
 										bind:value={formInputType}
 										placeholder="audio, image, etc."
-										class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
+										class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
 									/>
 								</div>
 								<div>
@@ -1491,7 +1491,7 @@
 										type="text"
 										bind:value={formOutputType}
 										placeholder="audio, image, etc."
-										class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
+										class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
 									/>
 								</div>
 							</div>
@@ -1503,7 +1503,7 @@
 									type="text"
 									bind:value={formPostProcess}
 									placeholder="sygra.core.models.model_postprocessor.RemoveThinkData"
-									class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 font-mono"
+									class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
 								/>
 							</div>
 
@@ -1514,7 +1514,7 @@
 									<button
 										type="button"
 										onclick={addCustomProperty}
-										class="text-xs text-violet-600 hover:text-violet-700 dark:text-violet-400 flex items-center gap-1"
+										class="text-xs text-[#7661FF] hover:text-[#5a4dcc] dark:text-[#BF71F2] flex items-center gap-1"
 									>
 										<Plus size={12} />
 										Add Property
@@ -1528,13 +1528,13 @@
 												type="text"
 												bind:value={prop.key}
 												placeholder="property_name"
-												class="w-1/3 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 font-mono"
+												class="w-1/3 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
 											/>
 											<textarea
 												bind:value={prop.value}
 												placeholder="JSON object or simple value"
 												rows="2"
-												class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 font-mono resize-y"
+												class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono resize-y"
 											></textarea>
 											<button
 												type="button"
@@ -1559,7 +1559,7 @@
 				</button>
 				<button
 					onclick={saveModel}
-					class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg"
+					class="px-4 py-2 bg-[#63DF4E] hover:bg-[#52c33f] text-[#032D42] text-sm font-medium rounded-lg"
 				>
 					{editingModel ? 'Save Changes' : 'Add Model'}
 				</button>
@@ -1591,14 +1591,14 @@
 			<!-- Header -->
 			<div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
 				<div class="flex items-center gap-3">
-					<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center">
-						<Icon size={20} class="text-violet-600 dark:text-violet-400" />
+					<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#7661FF]/20 to-[#BF71F2]/20 flex items-center justify-center">
+						<Icon size={20} class="text-[#7661FF] dark:text-[#BF71F2]" />
 					</div>
 					<div>
 						<div class="flex items-center gap-2">
 							<h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">{detailsModel.name}</h3>
 							{#if detailsModel.is_builtin}
-								<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 font-medium">
+								<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] font-medium">
 									<Shield size={10} />
 									SyGra
 								</span>
@@ -1619,7 +1619,7 @@
 					<div class="flex items-center gap-4">
 						<!-- Status Badge -->
 						{#if pingingModels.has(detailsModel.name)}
-							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400">
+							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]">
 								<Loader2 size={14} class="animate-spin" />
 								Checking...
 							</span>

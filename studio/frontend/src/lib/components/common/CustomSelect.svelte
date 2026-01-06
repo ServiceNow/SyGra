@@ -144,10 +144,10 @@
 		disabled={disabled}
 		class="w-full flex items-center justify-between gap-2 text-left transition-all
 			{compact ? 'px-2 py-1 text-xs rounded-md border-0 bg-transparent' : 'px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800'}
-			{disabled ? 'opacity-50 cursor-not-allowed' : compact ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : 'hover:border-violet-400 dark:hover:border-violet-500 focus:ring-2 focus:ring-violet-500 focus:border-violet-500'}
-			{isOpen && !compact ? 'ring-2 ring-violet-500 border-violet-500' : ''}"
+			{disabled ? 'opacity-50 cursor-not-allowed' : compact ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : 'hover:border-[#52B8FF] dark:hover:border-[#7661FF] focus:ring-2 focus:ring-[#52B8FF] focus:border-[#52B8FF]'}
+			{isOpen && !compact ? 'ring-2 ring-[#52B8FF] border-[#52B8FF]' : ''}"
 	>
-		<span class="flex-1 truncate {selectedOption ? (compact ? 'text-violet-600 dark:text-violet-400 font-medium' : 'text-gray-800 dark:text-gray-200') : 'text-gray-500 dark:text-gray-400'}">
+		<span class="flex-1 truncate {selectedOption ? (compact ? 'text-[#7661FF] dark:text-[#BF71F2] font-medium' : 'text-gray-800 dark:text-gray-200') : 'text-gray-500 dark:text-gray-400'}">
 			{#if selectedOption}
 				<span class="flex items-center gap-2">
 					{#if selectedOption.icon}
@@ -186,7 +186,7 @@
 							onkeydown={handleKeydown}
 							type="text"
 							placeholder={searchPlaceholder}
-							class="w-full pl-8 pr-8 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-violet-500 focus:border-violet-500"
+							class="w-full pl-8 pr-8 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#52B8FF] focus:border-[#52B8FF]"
 						/>
 						{#if searchQuery}
 							<button
@@ -214,7 +214,7 @@
 							onclick={() => selectOption(opt)}
 							onmouseenter={() => highlightedIndex = index}
 							class="w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors
-								{opt.value === value ? 'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : ''}
+								{opt.value === value ? 'bg-[#7661FF]/10 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]' : ''}
 								{index === highlightedIndex ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}"
 						>
 							{#if opt.icon}
@@ -231,7 +231,7 @@
 								{/if}
 							</div>
 							{#if opt.value === value}
-								<Check size={14} class="text-violet-600 dark:text-violet-400 flex-shrink-0" />
+								<Check size={14} class="text-[#7661FF] dark:text-[#BF71F2] flex-shrink-0" />
 							{/if}
 						</button>
 					{/each}

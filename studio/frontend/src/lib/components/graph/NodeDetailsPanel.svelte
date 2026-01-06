@@ -1880,7 +1880,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 >
 	<!-- Resize handle -->
 	<div
-		class="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-violet-500/50 transition-colors z-20 group"
+		class="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-[#52B8FF]/50 transition-colors z-20 group"
 		onmousedown={handleResizeMouseDown}
 		role="separator"
 		aria-orientation="vertical"
@@ -1941,7 +1941,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 									type="text"
 									bind:value={editNodeId}
 									oninput={markChanged}
-									class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
+									class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
 									placeholder="Enter node ID..."
 								/>
 								<p class="text-xs text-gray-400 mt-1">Use lowercase with underscores (e.g., my_node_id)</p>
@@ -1962,7 +1962,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 									type="text"
 									bind:value={editSummary}
 									oninput={markChanged}
-									class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
+									class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
 									placeholder="Enter node summary..."
 								/>
 							{:else}
@@ -1981,7 +1981,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 								<textarea
 									bind:value={editDescription}
 									oninput={markChanged}
-									class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 resize-none"
+									class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] resize-none"
 									rows="3"
 									placeholder="Enter node description..."
 								></textarea>
@@ -2171,7 +2171,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 										</div>
 										<button
 											onclick={addOutputMapping}
-											class="flex items-center gap-1 px-2 py-1 text-xs bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded hover:bg-violet-200 dark:hover:bg-violet-800/50 transition-colors"
+											class="flex items-center gap-1 px-2 py-1 text-xs bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] rounded hover:bg-[#7661FF]/25 dark:hover:bg-[#7661FF]/30 transition-colors"
 										>
 											<Plus size={12} />
 											Add Mapping
@@ -2200,7 +2200,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 																oninput={(e) => updateOutputMapping(idx, 'key', e.currentTarget.value)}
 																placeholder="field_name"
 																aria-label="Output key"
-																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-violet-500"
+																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-[#52B8FF]"
 															/>
 														</div>
 														<div>
@@ -2211,7 +2211,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 																oninput={(e) => updateOutputMapping(idx, 'from', e.currentTarget.value)}
 																placeholder="state_variable"
 																aria-label="From state"
-																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-violet-500"
+																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-[#52B8FF]"
 															/>
 														</div>
 													</div>
@@ -2224,7 +2224,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 																oninput={(e) => updateOutputMapping(idx, 'value', e.currentTarget.value)}
 																placeholder="JSON value"
 																aria-label="Static value"
-																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-violet-500"
+																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-[#52B8FF]"
 															/>
 														</div>
 														<div>
@@ -2235,7 +2235,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 																oninput={(e) => updateOutputMapping(idx, 'transform', e.currentTarget.value)}
 																placeholder="transform_func"
 																aria-label="Transform function"
-																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-violet-500"
+																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-[#52B8FF]"
 															/>
 														</div>
 													</div>
@@ -2252,7 +2252,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 								<!-- Display Mode: Generator -->
 								{#if node.output_config?.generator}
 									<div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
-										<div class="flex items-center gap-2 text-xs font-medium text-violet-600 dark:text-violet-400 mb-2">
+										<div class="flex items-center gap-2 text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] mb-2">
 											<Code size={12} />
 											Generator Class
 										</div>
@@ -2282,7 +2282,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 														</span>
 														<ArrowRight size={12} class="text-gray-400 flex-shrink-0" />
 														{#if mapping.from}
-															<span class="font-mono text-violet-600 dark:text-violet-400 truncate">{mapping.from}</span>
+															<span class="font-mono text-[#7661FF] dark:text-[#BF71F2] truncate">{mapping.from}</span>
 														{:else if mapping.value !== undefined}
 															<span class="px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs">static</span>
 														{/if}
@@ -2353,14 +2353,14 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 
 							{#if isEditing}
 								<!-- Edit Mode: Attributes -->
-								<div class="space-y-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+								<div class="space-y-3 p-3 bg-[#BF71F2]/10 dark:bg-[#BF71F2]/15 rounded-lg border border-[#BF71F2]/30 dark:border-[#BF71F2]/40">
 									<div class="flex items-center justify-between">
-										<div class="flex items-center gap-2 text-xs font-medium text-purple-700 dark:text-purple-300">
+										<div class="flex items-center gap-2 text-xs font-medium text-[#BF71F2] dark:text-[#d49af7]">
 											Attributes
 										</div>
 										<button
 											onclick={addSamplerAttribute}
-											class="flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 dark:bg-purple-800 text-purple-700 dark:text-purple-300 rounded hover:bg-purple-200 dark:hover:bg-purple-700 transition-colors"
+											class="flex items-center gap-1 px-2 py-1 text-xs bg-[#BF71F2]/20 dark:bg-[#BF71F2]/25 text-[#BF71F2] dark:text-[#d49af7] rounded hover:bg-[#BF71F2]/30 dark:hover:bg-[#BF71F2]/35 transition-colors"
 										>
 											<Plus size={12} />
 											Add
@@ -2417,7 +2417,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 								<!-- Display Mode: Attributes -->
 								{#if attributeNames.length > 0}
 									<div>
-										<div class="text-xs font-medium text-purple-600 dark:text-purple-400 mb-2">
+										<div class="text-xs font-medium text-[#BF71F2] dark:text-[#d49af7] mb-2">
 											Attributes ({attributeNames.length})
 										</div>
 										<div class="space-y-2 max-h-48 overflow-y-auto">
@@ -2426,7 +2426,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 												<div class="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs">
 													<div class="flex items-center justify-between mb-1">
 														<span class="font-mono font-medium text-gray-700 dark:text-gray-300">{name}</span>
-														<span class="px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[10px]">
+														<span class="px-1.5 py-0.5 rounded bg-[#BF71F2]/15 dark:bg-[#BF71F2]/20 text-[#BF71F2] dark:text-[#d49af7] text-[10px]">
 															{attr.values?.length ?? 0} values
 														</span>
 													</div>
@@ -2535,7 +2535,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 						{#each node.prompt ?? [] as message}
 							<div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
 								<div class="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-									<span class="text-xs font-medium text-violet-600 dark:text-violet-400 capitalize">
+									<span class="text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] capitalize">
 										{message.role}
 									</span>
 								</div>
@@ -2567,7 +2567,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 										<button
 											type="button"
 											onclick={() => { editChatHistoryEnabled = !editChatHistoryEnabled; markChanged(); }}
-											class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 {editChatHistoryEnabled ? 'bg-violet-600' : 'bg-gray-200 dark:bg-gray-700'}"
+											class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#52B8FF] focus:ring-offset-2 {editChatHistoryEnabled ? 'bg-[#7661FF]' : 'bg-gray-200 dark:bg-gray-700'}"
 											role="switch"
 											aria-checked={editChatHistoryEnabled}
 										>
@@ -2603,14 +2603,14 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 										<div class="space-y-2">
 											{#each editInjectSystemMessages as msg (msg.id)}
 												<div class="flex items-center gap-2 group">
-													<div class="flex items-center gap-1 px-2 py-1.5 bg-violet-50 dark:bg-violet-900/20 rounded-lg border border-violet-200 dark:border-violet-800">
-														<span class="text-[10px] text-violet-500 dark:text-violet-400 uppercase">Turn</span>
+													<div class="flex items-center gap-1 px-2 py-1.5 bg-[#7661FF]/10 dark:bg-[#7661FF]/15 rounded-lg border border-[#7661FF]/30 dark:border-[#7661FF]/40">
+														<span class="text-[10px] text-[#7661FF] dark:text-[#BF71F2] uppercase">Turn</span>
 														<input
 															type="number"
 															value={msg.turn}
 															min="1"
 															onchange={(e) => updateSystemMessageInjection(msg.id, 'turn', parseInt(e.currentTarget.value) || 1)}
-															class="w-10 px-1 py-0.5 text-xs font-mono text-center border-0 bg-transparent text-violet-700 dark:text-violet-300 focus:ring-0"
+															class="w-10 px-1 py-0.5 text-xs font-mono text-center border-0 bg-transparent text-[#7661FF] dark:text-[#BF71F2] focus:ring-0"
 														/>
 													</div>
 													<div class="flex-1 relative">
@@ -2619,7 +2619,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 															value={msg.message}
 															oninput={(e) => updateSystemMessageInjection(msg.id, 'message', e.currentTarget.value)}
 															placeholder="System message content..."
-															class="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+															class="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 														/>
 													</div>
 													<button
@@ -2651,13 +2651,13 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 												bind:value={newInjectMessage}
 												placeholder="Add a system message to inject at this turn..."
 												onkeydown={(e) => { if (e.key === 'Enter') addSystemMessageInjection(); }}
-												class="w-full px-3 py-1.5 text-sm border border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 focus:border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-solid"
+												class="w-full px-3 py-1.5 text-sm border border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-solid"
 											/>
 										</div>
 										<button
 											onclick={addSystemMessageInjection}
 											disabled={!newInjectTurn || newInjectTurn < 1 || !newInjectMessage.trim()}
-											class="px-3 py-1.5 text-xs font-medium text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 disabled:text-gray-300 dark:disabled:text-gray-600 disabled:hover:bg-transparent rounded-lg transition-colors"
+											class="px-3 py-1.5 text-xs font-medium text-[#7661FF] hover:text-[#5a4dcc] hover:bg-[#7661FF]/10 dark:hover:bg-[#7661FF]/15 disabled:text-gray-300 dark:disabled:text-gray-600 disabled:hover:bg-transparent rounded-lg transition-colors"
 										>
 											<Plus size={14} />
 										</button>
@@ -2675,7 +2675,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 											{@const turn = Object.keys(msg)[0]}
 											{@const message = Object.values(msg)[0]}
 											<div class="flex items-center gap-2">
-												<span class="text-xs font-medium text-violet-600 dark:text-violet-400 px-2 py-0.5 bg-violet-50 dark:bg-violet-900/20 rounded">
+												<span class="text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] px-2 py-0.5 bg-[#7661FF]/10 dark:bg-[#7661FF]/15 rounded">
 													Turn {turn}
 												</span>
 												<span class="text-sm text-gray-600 dark:text-gray-400">{message}</span>
@@ -2929,7 +2929,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 							{#if isEditing}
 								<button
 									onclick={() => { showToolPicker = true; }}
-									class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded-md transition-colors"
+									class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] hover:bg-[#7661FF]/10 dark:hover:bg-[#7661FF]/15 rounded-md transition-colors"
 								>
 									<Plus size={14} />
 									Add Tool
@@ -2944,12 +2944,12 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 									{@const toolName = toolPath.split('.').pop() || toolPath}
 									{@const modulePath = toolPath.split('.').slice(0, -1).join('.')}
 									{@const libraryTool = toolStore.getToolByPath(toolPath)}
-									<div class="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 group hover:border-violet-300 dark:hover:border-violet-700 transition-colors">
-										<div class="w-8 h-8 rounded-md bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0">
+									<div class="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 group hover:border-[#7661FF]/50 dark:hover:border-[#7661FF]/60 transition-colors">
+										<div class="w-8 h-8 rounded-md bg-[#7661FF]/15 dark:bg-[#7661FF]/20 flex items-center justify-center flex-shrink-0">
 											{#if libraryTool}
-												<Library size={16} class="text-violet-600 dark:text-violet-400" />
+												<Library size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
 											{:else}
-												<Wrench size={16} class="text-violet-600 dark:text-violet-400" />
+												<Wrench size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
 											{/if}
 										</div>
 										<div class="flex-1 min-w-0">
@@ -3062,7 +3062,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 									class="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
 								>
 									<div class="flex items-center gap-2">
-										<Code size={14} class="text-purple-500" />
+										<Code size={14} class="text-[#BF71F2]" />
 										<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Generator Class</span>
 										{#if node.output_config?.generator}
 											<span class="text-xs font-mono text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
@@ -3090,7 +3090,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 													bind:value={editOutputGenerator}
 													oninput={markChanged}
 													aria-label="Generator class path"
-													class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
+													class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
 													placeholder="tasks.my_task.task_executor.MyOutputGenerator"
 												/>
 											</div>
@@ -3214,7 +3214,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 									type="text"
 									bind:value={editPreProcess}
 									oninput={markChanged}
-									class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 mb-2"
+									class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] mb-2"
 									placeholder="module.path.ClassName"
 								/>
 							{:else}
@@ -3251,7 +3251,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 									type="text"
 									bind:value={editPostProcess}
 									oninput={markChanged}
-									class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 mb-2"
+									class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] mb-2"
 									placeholder="module.path.ClassName"
 								/>
 							{:else}
@@ -3291,7 +3291,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 										bind:value={editFunctionPath}
 										oninput={markChanged}
 										aria-label="Function path"
-										class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500"
+										class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
 										placeholder="tasks.my_task.task_executor.my_function"
 									/>
 								</div>
@@ -3364,7 +3364,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 									type="text"
 									bind:value={overrideSearchQuery}
 									placeholder="Search inner nodes..."
-									class="w-full pl-3 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+									class="w-full pl-3 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 								/>
 								{#if overrideSearchQuery}
 									<button
@@ -3442,7 +3442,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 											tabindex="0"
 											onclick={(e) => { e.stopPropagation(); addOverrideForNode(innerNode.id); }}
 											onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); addOverrideForNode(innerNode.id); } }}
-											class="px-2 py-1 text-xs font-medium text-violet-600 hover:text-violet-700 bg-violet-100 hover:bg-violet-200 dark:bg-violet-900/30 dark:hover:bg-violet-900/50 dark:text-violet-400 rounded transition-colors cursor-pointer"
+											class="px-2 py-1 text-xs font-medium text-[#7661FF] hover:text-[#5a4dcc] bg-[#7661FF]/15 hover:bg-[#7661FF]/25 dark:bg-[#7661FF]/20 dark:hover:bg-[#7661FF]/30 dark:text-[#BF71F2] rounded transition-colors cursor-pointer"
 										>
 											+ Add Override
 										</span>
@@ -3468,7 +3468,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 																value={override.model?.name ?? ''}
 																oninput={(e) => updateOverrideField(innerNode.id, 'model', e.currentTarget.value ? { name: e.currentTarget.value } : undefined)}
 																placeholder="e.g., gpt-4o, claude-3-5-sonnet"
-																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 font-mono"
+																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
 															/>
 														</div>
 													{/if}
@@ -3482,7 +3482,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 															</label>
 															<button
 																onclick={() => addPlaceholderMapping(innerNode.id)}
-																class="flex items-center gap-1 px-2 py-1 text-xs font-medium text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded transition-colors"
+																class="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#7661FF] hover:text-[#5a4dcc] hover:bg-[#7661FF]/10 dark:hover:bg-[#7661FF]/15 rounded transition-colors"
 															>
 																<Plus size={12} />
 																Add
@@ -3593,7 +3593,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 																<div class="space-y-1">
 																	{#each Object.entries(override.prompt_placeholder_map) as [key, value]}
 																		<div class="flex items-center gap-2 text-xs">
-																			<code class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-violet-600 dark:text-violet-400">{key}</code>
+																			<code class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-[#7661FF] dark:text-[#BF71F2]">{key}</code>
 																			<ArrowRight size={12} class="text-gray-400" />
 																			<code class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">{value}</code>
 																		</div>
@@ -3636,7 +3636,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 												{#if isEditing}
 													<button
 														onclick={() => addOverrideForNode(innerNode.id)}
-														class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-violet-600 hover:text-violet-700 bg-violet-100 hover:bg-violet-200 dark:bg-violet-900/30 dark:hover:bg-violet-900/50 dark:text-violet-400 rounded-lg transition-colors"
+														class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#7661FF] hover:text-[#5a4dcc] bg-[#7661FF]/15 hover:bg-[#7661FF]/25 dark:bg-[#7661FF]/20 dark:hover:bg-[#7661FF]/30 dark:text-[#BF71F2] rounded-lg transition-colors"
 													>
 														<Plus size={16} />
 														Add Configuration Override
@@ -3698,7 +3698,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 							{#if node.model?.name}
 								<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded">
 									<span class="text-gray-500">Model</span>
-									<span class="font-medium text-violet-600 dark:text-violet-400">{node.model.name}</span>
+									<span class="font-medium text-[#7661FF] dark:text-[#BF71F2]">{node.model.name}</span>
 								</div>
 							{/if}
 							{#if node.model?.provider}
@@ -3774,7 +3774,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 								{#if isEditing}
 									<button
 										onclick={addModelParameter}
-										class="flex items-center gap-1 px-2 py-1 text-xs font-medium text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded transition-colors"
+										class="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#7661FF] hover:text-[#5a4dcc] hover:bg-[#7661FF]/10 dark:hover:bg-[#7661FF]/15 rounded transition-colors"
 									>
 										<Plus size={12} />
 										Add
@@ -3867,7 +3867,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 											type="checkbox"
 											bind:checked={editStructuredOutputEnabled}
 											onchange={() => markChanged()}
-											class="w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
+											class="w-4 h-4 text-[#7661FF] border-gray-300 rounded focus:ring-[#52B8FF]"
 										/>
 										<span class="text-xs text-gray-600 dark:text-gray-400">Enable</span>
 									</label>
@@ -3889,7 +3889,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 												bind:group={editSchemaMode}
 												value="inline"
 												onchange={() => markChanged()}
-												class="w-4 h-4 text-violet-600 border-gray-300 focus:ring-violet-500"
+												class="w-4 h-4 text-[#7661FF] border-gray-300 focus:ring-[#52B8FF]"
 											/>
 											<span class="text-sm text-gray-700 dark:text-gray-300">Inline Schema</span>
 										</label>
@@ -3899,7 +3899,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 												bind:group={editSchemaMode}
 												value="class_path"
 												onchange={() => markChanged()}
-												class="w-4 h-4 text-violet-600 border-gray-300 focus:ring-violet-500"
+												class="w-4 h-4 text-[#7661FF] border-gray-300 focus:ring-[#52B8FF]"
 											/>
 											<span class="text-sm text-gray-700 dark:text-gray-300">Class Path</span>
 										</label>
@@ -3913,7 +3913,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 											<div class="text-xs text-gray-500">Output Fields</div>
 											<button
 												onclick={addSchemaField}
-												class="flex items-center gap-1 px-2 py-1 text-xs font-medium text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-900/20 rounded transition-colors"
+												class="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#7661FF] hover:text-[#5a4dcc] hover:bg-[#7661FF]/10 dark:hover:bg-[#7661FF]/15 rounded transition-colors"
 											>
 												<Plus size={12} />
 												Add Field
@@ -3975,7 +3975,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 																	type="checkbox"
 																	checked={field.hasDefault}
 																	onchange={(e) => updateSchemaField(field.id, 'hasDefault', e.currentTarget.checked)}
-																	class="w-3.5 h-3.5 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
+																	class="w-3.5 h-3.5 text-[#7661FF] border-gray-300 rounded focus:ring-[#52B8FF]"
 																/>
 																<span class="text-xs text-gray-500">Default:</span>
 															</label>
@@ -4003,7 +4003,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 											bind:value={editSchemaClassPath}
 											oninput={() => markChanged()}
 											placeholder="module.path.ClassName"
-											class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+											class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 										/>
 										<p class="mt-1 text-xs text-gray-400">
 											e.g., sygra.core.models.structured_output.schemas_factory.SimpleResponse
@@ -4015,7 +4015,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 								<div class="mb-4">
 									<button
 										onclick={() => showSchemaPreview = !showSchemaPreview}
-										class="flex items-center gap-1.5 text-xs text-violet-600 hover:text-violet-700 transition-colors"
+										class="flex items-center gap-1.5 text-xs text-[#7661FF] hover:text-[#5a4dcc] transition-colors"
 									>
 										{#if showSchemaPreview}
 											<EyeOff size={12} />
@@ -4054,7 +4054,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 												type="checkbox"
 												bind:checked={editRetryOnParseError}
 												onchange={() => markChanged()}
-												class="w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
+												class="w-4 h-4 text-[#7661FF] border-gray-300 rounded focus:ring-[#52B8FF]"
 											/>
 										</div>
 										<!-- Max Retries -->
@@ -4083,9 +4083,9 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 										<div class="text-xs text-gray-500 mb-1">Fields:</div>
 										<div class="flex flex-wrap gap-1.5">
 											{#each Object.entries(node.model.structured_output.schema.fields) as [fieldName, fieldDef]}
-												<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800">
+												<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] border border-[#7661FF]/30 dark:border-[#7661FF]/40">
 													{fieldName}
-													<span class="text-violet-400">({fieldDef.type})</span>
+													<span class="text-[#BF71F2]">({fieldDef.type})</span>
 												</span>
 											{/each}
 										</div>
@@ -4171,7 +4171,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 								<span class="text-xs text-gray-400">{Object.keys(node.metadata).length} fields</span>
 							</div>
 							<details class="group">
-								<summary class="cursor-pointer text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300">
+								<summary class="cursor-pointer text-xs text-[#7661FF] dark:text-[#BF71F2] hover:text-[#5a4dcc] dark:hover:text-[#d49af7]">
 									View full metadata
 								</summary>
 								<div class="mt-2 text-sm font-mono bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg overflow-x-auto max-h-64">
@@ -4189,7 +4189,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 							</div>
 						</div>
 						<details class="group">
-							<summary class="cursor-pointer text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300">
+							<summary class="cursor-pointer text-xs text-[#7661FF] dark:text-[#BF71F2] hover:text-[#5a4dcc] dark:hover:text-[#d49af7]">
 								View raw node configuration (JSON)
 							</summary>
 							<div class="mt-2 text-sm font-mono bg-gray-900 dark:bg-gray-950 px-3 py-2 rounded-lg overflow-x-auto max-h-80">

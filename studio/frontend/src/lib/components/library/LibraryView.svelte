@@ -336,7 +336,7 @@
 				<p class="text-sm text-gray-500 dark:text-gray-400">
 					{currentItems.length} of {totalCount} {activeTab}
 					{#if selectionCount > 0}
-						<span class="ml-2 text-violet-600 dark:text-violet-400">• {selectionCount} selected</span>
+						<span class="ml-2 text-[#7661FF] dark:text-[#BF71F2]">• {selectionCount} selected</span>
 					{/if}
 				</p>
 			</div>
@@ -345,7 +345,7 @@
 				<div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
 					<button
 						onclick={() => { activeTab = 'recipes'; selectedIds = new Set(); }}
-						class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 {activeTab === 'recipes' ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}"
+						class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 {activeTab === 'recipes' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#BF71F2] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}"
 					>
 						<Boxes size={16} />
 						Recipes
@@ -355,7 +355,7 @@
 					</button>
 					<button
 						onclick={() => { activeTab = 'tools'; selectedIds = new Set(); }}
-						class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 {activeTab === 'tools' ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}"
+						class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 {activeTab === 'tools' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#BF71F2] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700'}"
 					>
 						<Wrench size={16} />
 						Tools
@@ -383,7 +383,7 @@
 					Import
 				</button>
 				{#if activeTab === 'tools'}
-					<button onclick={handleCreate} class="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors text-sm">
+					<button onclick={handleCreate} class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c33f] text-[#032D42] rounded-lg transition-colors text-sm">
 						<Plus size={16} />
 						Create Tool
 					</button>
@@ -401,23 +401,23 @@
 						type="text"
 						placeholder="Search {activeTab}..."
 						bind:value={searchQuery}
-						class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm"
+						class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] text-sm"
 					/>
 				</div>
 
 				<!-- Category Filter -->
 				{#if activeTab === 'recipes'}
 					<div class="flex items-center gap-1">
-						<button onclick={() => selectedRecipeCategory = 'all'} class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {selectedRecipeCategory === 'all' ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'text-gray-600 hover:bg-gray-100'}">All</button>
+						<button onclick={() => selectedRecipeCategory = 'all'} class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {selectedRecipeCategory === 'all' ? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]' : 'text-gray-600 hover:bg-gray-100'}">All</button>
 						{#each RECIPE_CATEGORIES as cat}
-							<button onclick={() => selectedRecipeCategory = cat.value} class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {selectedRecipeCategory === cat.value ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'text-gray-600 hover:bg-gray-100'}">{cat.label}</button>
+							<button onclick={() => selectedRecipeCategory = cat.value} class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {selectedRecipeCategory === cat.value ? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]' : 'text-gray-600 hover:bg-gray-100'}">{cat.label}</button>
 						{/each}
 					</div>
 				{:else}
 					<div class="flex items-center gap-1">
-						<button onclick={() => selectedToolCategory = 'all'} class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {selectedToolCategory === 'all' ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'text-gray-600 hover:bg-gray-100'}">All</button>
+						<button onclick={() => selectedToolCategory = 'all'} class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {selectedToolCategory === 'all' ? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]' : 'text-gray-600 hover:bg-gray-100'}">All</button>
 						{#each TOOL_CATEGORIES as cat}
-							<button onclick={() => selectedToolCategory = cat.value} class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {selectedToolCategory === cat.value ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'text-gray-600 hover:bg-gray-100'}">{cat.label}</button>
+							<button onclick={() => selectedToolCategory = cat.value} class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {selectedToolCategory === cat.value ? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]' : 'text-gray-600 hover:bg-gray-100'}">{cat.label}</button>
 						{/each}
 					</div>
 				{/if}
@@ -432,10 +432,10 @@
 
 			<!-- View Toggle -->
 			<div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-				<button onclick={() => setViewMode('card')} class="p-2 rounded-md transition-colors {viewMode === 'card' ? 'bg-white dark:bg-gray-700 text-violet-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}" title="Card view">
+				<button onclick={() => setViewMode('card')} class="p-2 rounded-md transition-colors {viewMode === 'card' ? 'bg-white dark:bg-gray-700 text-[#7661FF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}" title="Card view">
 					<LayoutGrid size={18} />
 				</button>
-				<button onclick={() => setViewMode('list')} class="p-2 rounded-md transition-colors {viewMode === 'list' ? 'bg-white dark:bg-gray-700 text-violet-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}" title="List view">
+				<button onclick={() => setViewMode('list')} class="p-2 rounded-md transition-colors {viewMode === 'list' ? 'bg-white dark:bg-gray-700 text-[#7661FF] shadow-sm' : 'text-gray-500 hover:text-gray-700'}" title="List view">
 					<LayoutList size={18} />
 				</button>
 			</div>
@@ -446,11 +446,13 @@
 	<div class="flex-1 overflow-auto">
 		{#if currentItems.length === 0}
 			<div class="flex flex-col items-center justify-center h-full text-center p-6">
-				{#if activeTab === 'recipes'}
-					<Boxes size={48} class="text-gray-300 dark:text-gray-600 mb-4" />
-				{:else}
-					<Wrench size={48} class="text-gray-300 dark:text-gray-600 mb-4" />
-				{/if}
+				<div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
+					{#if activeTab === 'recipes'}
+						<Boxes size={28} class="text-white" />
+					{:else}
+						<Wrench size={28} class="text-white" />
+					{/if}
+				</div>
 				{#if totalCount === 0}
 					<h3 class="text-lg font-medium text-gray-600 dark:text-gray-400 mb-2">No {activeTab} yet</h3>
 					<p class="text-sm text-gray-500 mb-4 max-w-md">
@@ -466,7 +468,7 @@
 							Import {activeTab === 'recipes' ? 'Recipe' : 'Tool'}
 						</button>
 						{#if activeTab === 'tools'}
-							<button onclick={handleCreate} class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg flex items-center gap-2">
+							<button onclick={handleCreate} class="px-4 py-2 bg-[#63DF4E] hover:bg-[#52c33f] text-[#032D42] text-sm font-medium rounded-lg flex items-center gap-2">
 								<Plus size={16} />
 								Create Tool
 							</button>
@@ -485,7 +487,7 @@
 					{@const Icon = isRecipe ? recipeCategoryIcons[(item as Recipe).category] : toolCategoryIcons[(item as Tool).category]}
 					{@const color = getCategoryColor(isRecipe ? (item as Recipe).category : (item as Tool).category, isRecipe ? 'recipe' : 'tool')}
 					<div
-						class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-md transition-all overflow-hidden cursor-pointer"
+						class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-[#7661FF]/50 dark:hover:border-[#7661FF]/60 hover:shadow-md transition-all overflow-hidden cursor-pointer"
 						onclick={() => isRecipe ? (previewRecipe = item as Recipe) : handleEdit(item.id)}
 					>
 						<div class="p-4">
@@ -493,7 +495,7 @@
 								<div class="flex items-center gap-3">
 									<button onclick={(e) => toggleSelect(item.id, e)} class="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
 										{#if selectedIds.has(item.id)}
-											<CheckSquare size={18} class="text-violet-600" />
+											<CheckSquare size={18} class="text-[#7661FF]" />
 										{:else}
 											<Square size={18} class="text-gray-400 group-hover:text-gray-500" />
 										{/if}
@@ -521,12 +523,12 @@
 						<div class="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between text-xs text-gray-400">
 							<span>{formatDate(item.updatedAt)}</span>
 							{#if isRecipe}
-								<button onclick={(e) => { e.stopPropagation(); handleAddRecipe(item as Recipe); }} class="text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1">
+								<button onclick={(e) => { e.stopPropagation(); handleAddRecipe(item as Recipe); }} class="text-[#032D42] dark:text-[#52B8FF] hover:underline flex items-center gap-1">
 									<Plus size={12} />
 									Add to Workflow
 								</button>
 							{:else}
-								<button onclick={(e) => { e.stopPropagation(); handleEdit(item.id); }} class="text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1">
+								<button onclick={(e) => { e.stopPropagation(); handleEdit(item.id); }} class="text-[#032D42] dark:text-[#52B8FF] hover:underline flex items-center gap-1">
 									<Edit3 size={12} />
 									Edit
 								</button>
@@ -543,9 +545,9 @@
 						<th class="text-left px-6 py-3 w-10">
 							<button onclick={toggleSelectAll} class="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700">
 								{#if allSelected()}
-									<CheckSquare size={18} class="text-violet-600" />
+									<CheckSquare size={18} class="text-[#7661FF]" />
 								{:else if someSelected()}
-									<MinusSquare size={18} class="text-violet-600" />
+									<MinusSquare size={18} class="text-[#7661FF]" />
 								{:else}
 									<Square size={18} class="text-gray-400" />
 								{/if}
@@ -568,7 +570,7 @@
 							<td class="px-6 py-4">
 								<button onclick={(e) => toggleSelect(item.id, e)} class="p-0.5 rounded hover:bg-gray-200">
 									{#if selectedIds.has(item.id)}
-										<CheckSquare size={18} class="text-violet-600" />
+										<CheckSquare size={18} class="text-[#7661FF]" />
 									{:else}
 										<Square size={18} class="text-gray-400" />
 									{/if}
@@ -590,7 +592,7 @@
 							<td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{catLabel}</td>
 							<td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
 								{#if isRecipe}
-									<span class="inline-flex items-center gap-1.5"><Layers size={14} class="text-violet-500" />{(item as Recipe).nodeCount} nodes</span>
+									<span class="inline-flex items-center gap-1.5"><Layers size={14} class="text-[#7661FF]" />{(item as Recipe).nodeCount} nodes</span>
 								{:else}
 									<span class="font-mono text-xs">{(item as Tool).import_path}</span>
 								{/if}
@@ -599,11 +601,11 @@
 							<td class="px-6 py-4 text-right">
 								<div class="flex items-center justify-end gap-2">
 									{#if isRecipe}
-										<button onclick={(e) => { e.stopPropagation(); handleAddRecipe(item as Recipe); }} class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30 rounded-lg transition-colors">
+										<button onclick={(e) => { e.stopPropagation(); handleAddRecipe(item as Recipe); }} class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#7661FF] dark:text-[#BF71F2] hover:bg-[#7661FF]/15 dark:hover:bg-[#7661FF]/20 rounded-lg transition-colors">
 											<Plus size={14} />Add
 										</button>
 									{:else}
-										<button onclick={(e) => { e.stopPropagation(); handleEdit(item.id); }} class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30 rounded-lg transition-colors">
+										<button onclick={(e) => { e.stopPropagation(); handleEdit(item.id); }} class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#7661FF] dark:text-[#BF71F2] hover:bg-[#7661FF]/15 dark:hover:bg-[#7661FF]/20 rounded-lg transition-colors">
 											<Edit3 size={14} />Edit
 										</button>
 									{/if}
@@ -660,7 +662,7 @@
 				<div class="grid grid-cols-2 gap-4 mb-4">
 					<div>
 						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Name *</label>
-						<input type="text" bind:value={toolFormName} placeholder="My Search Tool" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500" />
+						<input type="text" bind:value={toolFormName} placeholder="My Search Tool" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]" />
 					</div>
 					<div class="relative z-10">
 						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Category</label>
@@ -675,11 +677,11 @@
 				<div class="grid grid-cols-2 gap-4">
 					<div>
 						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Description</label>
-						<input type="text" bind:value={toolFormDescription} placeholder="A tool that searches..." class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500" />
+						<input type="text" bind:value={toolFormDescription} placeholder="A tool that searches..." class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]" />
 					</div>
 					<div>
 						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Import Path *</label>
-						<input type="text" bind:value={toolFormImportPath} placeholder="mypackage.tools.search_tool" class="w-full px-3 py-2 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500" />
+						<input type="text" bind:value={toolFormImportPath} placeholder="mypackage.tools.search_tool" class="w-full px-3 py-2 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]" />
 					</div>
 				</div>
 			</div>
@@ -692,7 +694,7 @@
 			</div>
 			<div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-800">
 				<button onclick={() => { showToolEditor = false; editingTool = null; }} class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-				<button onclick={saveTool} disabled={!toolFormName.trim() || !toolFormImportPath.trim()} class="px-4 py-2 bg-violet-600 hover:bg-violet-700 disabled:bg-gray-300 text-white text-sm font-medium rounded-lg">
+				<button onclick={saveTool} disabled={!toolFormName.trim() || !toolFormImportPath.trim()} class="px-4 py-2 bg-[#63DF4E] hover:bg-[#52c33f] disabled:bg-gray-300 text-[#032D42] text-sm font-medium rounded-lg">
 					{editingTool ? 'Save Changes' : 'Create Tool'}
 				</button>
 			</div>

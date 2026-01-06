@@ -287,8 +287,8 @@
 									<FileText size={16} class="text-blue-600 dark:text-blue-400" />
 								</div>
 							{:else}
-								<div class="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30">
-									<Database size={16} class="text-violet-600 dark:text-violet-400" />
+								<div class="p-1.5 rounded-lg bg-[#7661FF]/15 dark:bg-[#7661FF]/20">
+									<Database size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
 								</div>
 							{/if}
 							<span class="text-sm font-semibold text-gray-800 dark:text-gray-200">{sourceTypeLabel()}</span>
@@ -374,7 +374,7 @@
 							type="button"
 							onclick={togglePreview}
 							disabled={previewLoading}
-							class="mt-3 flex items-center gap-1.5 text-xs font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors disabled:opacity-50"
+							class="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#032D42] dark:text-[#52B8FF] hover:text-[#7661FF] dark:hover:text-[#BF71F2] transition-colors disabled:opacity-50"
 						>
 							{#if previewLoading}
 								<Loader2 size={14} class="animate-spin" />
@@ -411,7 +411,7 @@
 			<!-- Execution Parameters Section -->
 			<div>
 				<div class="flex items-center gap-2 mb-3">
-					<Hash size={16} class="text-violet-500" />
+					<Hash size={16} class="text-[#7661FF]" />
 					<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Execution Parameters</span>
 				</div>
 
@@ -425,7 +425,7 @@
 							type="number"
 							bind:value={numRecords}
 							min="1"
-							class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+							class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 						/>
 						<p class="mt-1 text-xs text-gray-500">How many records to process</p>
 					</div>
@@ -438,7 +438,7 @@
 							type="number"
 							bind:value={startIndex}
 							min="0"
-							class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+							class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 						/>
 						<p class="mt-1 text-xs text-gray-500">Skip first N records (default: 0)</p>
 					</div>
@@ -448,7 +448,7 @@
 			<!-- Run Identification Section -->
 			<div>
 				<div class="flex items-center gap-2 mb-3">
-					<Tag size={16} class="text-violet-500" />
+					<Tag size={16} class="text-[#7661FF]" />
 					<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Run Identification</span>
 				</div>
 
@@ -462,7 +462,7 @@
 						type="text"
 						bind:value={runName}
 						placeholder={generateRunName()}
-						class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+						class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 					/>
 					<p class="mt-1 text-xs text-gray-500">Leave empty for auto-generated name with timestamp</p>
 				</div>
@@ -492,7 +492,7 @@
 								type="number"
 								bind:value={batchSize}
 								min="1"
-								class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+								class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 							/>
 							<p class="mt-1 text-xs text-gray-500">Records per batch</p>
 						</div>
@@ -505,7 +505,7 @@
 								type="number"
 								bind:value={checkpointInterval}
 								min="1"
-								class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+								class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 							/>
 							<p class="mt-1 text-xs text-gray-500">Records between saves</p>
 						</div>
@@ -521,7 +521,7 @@
 							type="text"
 							bind:value={outputDir}
 							placeholder="Leave empty for default"
-							class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+							class="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 						/>
 					</div>
 
@@ -531,7 +531,7 @@
 							<input
 								type="checkbox"
 								bind:checked={outputWithTs}
-								class="w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
+								class="w-4 h-4 text-[#63DF4E] border-gray-300 rounded focus:ring-[#52B8FF]"
 							/>
 							<span class="text-sm text-gray-700 dark:text-gray-300">Add timestamp to output</span>
 						</label>
@@ -539,7 +539,7 @@
 							<input
 								type="checkbox"
 								bind:checked={debug}
-								class="w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
+								class="w-4 h-4 text-[#63DF4E] border-gray-300 rounded focus:ring-[#52B8FF]"
 							/>
 							<span class="text-sm text-gray-700 dark:text-gray-300">Debug mode</span>
 						</label>
@@ -547,7 +547,7 @@
 							<input
 								type="checkbox"
 								bind:checked={quality}
-								class="w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
+								class="w-4 h-4 text-[#63DF4E] border-gray-300 rounded focus:ring-[#52B8FF]"
 							/>
 							<span class="text-sm text-gray-700 dark:text-gray-300">Enable quality metrics</span>
 						</label>
@@ -555,7 +555,7 @@
 							<input
 								type="checkbox"
 								bind:checked={disableMetadata}
-								class="w-4 h-4 text-violet-600 border-gray-300 rounded focus:ring-violet-500"
+								class="w-4 h-4 text-[#63DF4E] border-gray-300 rounded focus:ring-[#52B8FF]"
 							/>
 							<span class="text-sm text-gray-700 dark:text-gray-300">Disable metadata</span>
 						</label>
@@ -573,7 +573,7 @@
 									name="resume"
 									checked={resume === null}
 									onchange={() => resume = null}
-									class="w-4 h-4 text-violet-600 border-gray-300 focus:ring-violet-500"
+									class="w-4 h-4 text-[#63DF4E] border-gray-300 focus:ring-[#52B8FF]"
 								/>
 								<span class="text-sm text-gray-700 dark:text-gray-300">Default</span>
 							</label>
@@ -583,7 +583,7 @@
 									name="resume"
 									checked={resume === true}
 									onchange={() => resume = true}
-									class="w-4 h-4 text-violet-600 border-gray-300 focus:ring-violet-500"
+									class="w-4 h-4 text-[#63DF4E] border-gray-300 focus:ring-[#52B8FF]"
 								/>
 								<span class="text-sm text-gray-700 dark:text-gray-300">Force Resume</span>
 							</label>
@@ -593,7 +593,7 @@
 									name="resume"
 									checked={resume === false}
 									onchange={() => resume = false}
-									class="w-4 h-4 text-violet-600 border-gray-300 focus:ring-violet-500"
+									class="w-4 h-4 text-[#63DF4E] border-gray-300 focus:ring-[#52B8FF]"
 								/>
 								<span class="text-sm text-gray-700 dark:text-gray-300">No Resume</span>
 							</label>
@@ -608,7 +608,7 @@
 						<textarea
 							id="run-args"
 							bind:value={runArgsText}
-							class="w-full h-20 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono text-sm focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
+							class="w-full h-20 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono text-sm focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent resize-none"
 							placeholder={'{"custom_key": "custom_value"}'}
 						></textarea>
 						{#if runArgsError}
@@ -629,7 +629,7 @@
 			</button>
 			<button
 				onclick={handleRun}
-				class="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-sm font-medium text-white transition-colors"
+				class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#63DF4E]/90 rounded-lg text-sm font-medium text-[#032D42] transition-colors"
 			>
 				<Play size={16} />
 				Run Workflow

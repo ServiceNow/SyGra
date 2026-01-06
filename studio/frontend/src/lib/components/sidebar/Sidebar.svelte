@@ -7,7 +7,7 @@
 	import { modelsStore } from '$lib/stores/models.svelte';
 	import {
 		Home, ChevronLeft, ChevronRight,
-		FolderOpen, History, Plus, Library, Settings, Brain
+		FolderOpen, History, Plus, Library, Settings, Brain, Sparkles
 	} from 'lucide-svelte';
 
 	interface Props {
@@ -116,32 +116,36 @@
 </script>
 
 <aside
-	class="flex flex-col border-r border-gray-200 dark:border-gray-800 bg-surface transition-all duration-300"
+	class="flex flex-col border-r border-gray-200 dark:border-[#0A4D6E] bg-white dark:bg-[#032D42] transition-all duration-300"
 	class:w-64={!collapsed}
 	class:w-16={collapsed}
 >
 	<!-- Logo/Brand -->
-	<div class="h-14 flex items-center border-b border-gray-200 dark:border-gray-800 overflow-hidden px-2">
+	<div class="h-14 flex items-center border-b border-gray-200 dark:border-[#0A4D6E] overflow-hidden px-2">
 		<div class="w-12 h-12 shrink-0 flex items-center justify-center">
-			<div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-				<span class="text-white font-bold text-sm">S</span>
+			<!-- Logo with Green + Purple gradient (ServiceNow brand style) -->
+			<div
+				class="w-9 h-9 rounded-xl flex items-center justify-center shadow-md"
+				style="background: radial-gradient(ellipse at 20% 10%, rgba(99, 223, 78, 0.4) 0%, transparent 50%), radial-gradient(ellipse at 80% 90%, rgba(191, 113, 242, 0.35) 0%, transparent 50%), #032D42;"
+			>
+				<Sparkles size={20} class="text-[#63DF4E]" />
 			</div>
 		</div>
 		{#if !collapsed}
 			<span class="font-semibold text-lg whitespace-nowrap">
-				<span class="text-violet-600 dark:text-violet-400">SyGra</span>
-				<span class="text-gray-500 dark:text-gray-400 text-sm ml-1">Studio</span>
+				<span class="text-[#032D42] dark:text-white tracking-tight">SyGra</span>
+				<span class="text-gray-400 dark:text-gray-500 font-normal text-sm ml-0.5">Studio</span>
 			</span>
 		{/if}
 	</div>
 
 	<!-- Navigation -->
 	<nav class="flex-1 overflow-y-auto overflow-x-hidden p-2">
-		<!-- Create Workflow Button - Primary Action -->
+		<!-- Create Workflow Button - Primary Action with Wasabi Green accent -->
 		<div class="mb-4 overflow-hidden">
 			<button
 				onclick={createNewWorkflow}
-				class="w-full flex items-center py-2.5 rounded-lg bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-medium transition-all shadow-sm hover:shadow-md"
+				class="w-full flex items-center py-2.5 rounded-lg bg-[#63DF4E] hover:bg-[#4BC93A] text-[#032D42] font-semibold transition-all shadow-sm hover:shadow-md"
 			>
 				<div class="w-12 shrink-0 flex items-center justify-center">
 					<Plus size={20} />
@@ -157,14 +161,14 @@
 			<button
 				onclick={goToHome}
 				class="w-full flex items-center py-2 rounded-lg transition-colors"
-				class:bg-violet-100={currentView === 'home'}
-				class:dark:bg-violet-900={currentView === 'home'}
-				class:text-violet-700={currentView === 'home'}
-				class:dark:text-violet-300={currentView === 'home'}
+				class:bg-[#e8f4f8]={currentView === 'home'}
+				class:dark:bg-[#064565]={currentView === 'home'}
+				class:text-[#032D42]={currentView === 'home'}
+				class:dark:text-[#52B8FF]={currentView === 'home'}
 				class:text-gray-600={currentView !== 'home'}
 				class:dark:text-gray-400={currentView !== 'home'}
 				class:hover:bg-gray-100={currentView !== 'home'}
-				class:dark:hover:bg-gray-800={currentView !== 'home'}
+				class:dark:hover:bg-[#064565]={currentView !== 'home'}
 			>
 				<div class="w-12 shrink-0 flex items-center justify-center">
 					<Home size={20} />
@@ -180,14 +184,14 @@
 			<button
 				onclick={goToWorkflows}
 				class="w-full flex items-center py-2 rounded-lg transition-colors"
-				class:bg-violet-100={currentView === 'workflows'}
-				class:dark:bg-violet-900={currentView === 'workflows'}
-				class:text-violet-700={currentView === 'workflows'}
-				class:dark:text-violet-300={currentView === 'workflows'}
+				class:bg-[#e8f4f8]={currentView === 'workflows'}
+				class:dark:bg-[#064565]={currentView === 'workflows'}
+				class:text-[#032D42]={currentView === 'workflows'}
+				class:dark:text-[#52B8FF]={currentView === 'workflows'}
 				class:text-gray-600={currentView !== 'workflows'}
 				class:dark:text-gray-400={currentView !== 'workflows'}
 				class:hover:bg-gray-100={currentView !== 'workflows'}
-				class:dark:hover:bg-gray-800={currentView !== 'workflows'}
+				class:dark:hover:bg-[#064565]={currentView !== 'workflows'}
 			>
 				<div class="w-12 shrink-0 flex items-center justify-center">
 					<FolderOpen size={20} />
@@ -195,7 +199,7 @@
 				{#if !collapsed}
 					<span class="text-sm font-medium flex-1 text-left">Workflows</span>
 					{#if workflows.length > 0}
-						<span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 mr-3">
+						<span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-[#0A4D6E] text-gray-600 dark:text-gray-300 mr-3">
 							{workflows.length}
 						</span>
 					{/if}
@@ -208,14 +212,14 @@
 			<button
 				onclick={goToModels}
 				class="w-full flex items-center py-2 rounded-lg transition-colors"
-				class:bg-violet-100={currentView === 'models'}
-				class:dark:bg-violet-900={currentView === 'models'}
-				class:text-violet-700={currentView === 'models'}
-				class:dark:text-violet-300={currentView === 'models'}
+				class:bg-[#e8f4f8]={currentView === 'models'}
+				class:dark:bg-[#064565]={currentView === 'models'}
+				class:text-[#032D42]={currentView === 'models'}
+				class:dark:text-[#52B8FF]={currentView === 'models'}
 				class:text-gray-600={currentView !== 'models'}
 				class:dark:text-gray-400={currentView !== 'models'}
 				class:hover:bg-gray-100={currentView !== 'models'}
-				class:dark:hover:bg-gray-800={currentView !== 'models'}
+				class:dark:hover:bg-[#064565]={currentView !== 'models'}
 			>
 				<div class="w-12 shrink-0 flex items-center justify-center">
 					<Brain size={20} />
@@ -223,7 +227,7 @@
 				{#if !collapsed}
 					<span class="text-sm font-medium flex-1 text-left">Models</span>
 					{#if modelsTotalCount > 0}
-						<span class="text-xs px-2 py-0.5 rounded-full mr-3 {modelsOnlineCount > 0 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'}">
+						<span class="text-xs px-2 py-0.5 rounded-full mr-3 {modelsOnlineCount > 0 ? 'bg-[#63DF4E]/20 text-[#4BC93A] dark:text-[#63DF4E]' : 'bg-gray-200 dark:bg-[#0A4D6E] text-gray-600 dark:text-gray-300'}">
 							{modelsOnlineCount}/{modelsTotalCount}
 						</span>
 					{/if}
@@ -236,14 +240,14 @@
 			<button
 				onclick={goToRuns}
 				class="w-full flex items-center py-2 rounded-lg transition-colors"
-				class:bg-violet-100={currentView === 'runs'}
-				class:dark:bg-violet-900={currentView === 'runs'}
-				class:text-violet-700={currentView === 'runs'}
-				class:dark:text-violet-300={currentView === 'runs'}
+				class:bg-[#e8f4f8]={currentView === 'runs'}
+				class:dark:bg-[#064565]={currentView === 'runs'}
+				class:text-[#032D42]={currentView === 'runs'}
+				class:dark:text-[#52B8FF]={currentView === 'runs'}
 				class:text-gray-600={currentView !== 'runs'}
 				class:dark:text-gray-400={currentView !== 'runs'}
 				class:hover:bg-gray-100={currentView !== 'runs'}
-				class:dark:hover:bg-gray-800={currentView !== 'runs'}
+				class:dark:hover:bg-[#064565]={currentView !== 'runs'}
 			>
 				<div class="w-12 shrink-0 flex items-center justify-center">
 					<History size={20} />
@@ -251,12 +255,12 @@
 				{#if !collapsed}
 					<span class="text-sm font-medium flex-1 text-left">Runs</span>
 					{#if executionHistory.length > 0}
-						<span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 {runningCount === 0 ? 'mr-3' : ''}">
+						<span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-[#0A4D6E] text-gray-600 dark:text-gray-300 {runningCount === 0 ? 'mr-3' : ''}">
 							{executionHistory.length}
 						</span>
 					{/if}
 					{#if runningCount > 0}
-						<span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse ml-1.5 mr-3" title="{runningCount} running"></span>
+						<span class="w-2 h-2 rounded-full bg-[#52B8FF] animate-pulse ml-1.5 mr-3" title="{runningCount} running"></span>
 					{/if}
 				{/if}
 			</button>
@@ -267,14 +271,14 @@
 			<button
 				onclick={goToLibrary}
 				class="w-full flex items-center py-2 rounded-lg transition-colors"
-				class:bg-violet-100={currentView === 'library'}
-				class:dark:bg-violet-900={currentView === 'library'}
-				class:text-violet-700={currentView === 'library'}
-				class:dark:text-violet-300={currentView === 'library'}
+				class:bg-[#e8f4f8]={currentView === 'library'}
+				class:dark:bg-[#064565]={currentView === 'library'}
+				class:text-[#032D42]={currentView === 'library'}
+				class:dark:text-[#52B8FF]={currentView === 'library'}
 				class:text-gray-600={currentView !== 'library'}
 				class:dark:text-gray-400={currentView !== 'library'}
 				class:hover:bg-gray-100={currentView !== 'library'}
-				class:dark:hover:bg-gray-800={currentView !== 'library'}
+				class:dark:hover:bg-[#064565]={currentView !== 'library'}
 			>
 				<div class="w-12 shrink-0 flex items-center justify-center">
 					<Library size={20} />
@@ -283,7 +287,7 @@
 					<span class="text-sm font-medium flex-1 text-left">Library</span>
 					{@const totalCount = recipeStore.recipes.length + toolStore.tools.length}
 					{#if totalCount > 0}
-						<span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 mr-3">
+						<span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-[#0A4D6E] text-gray-600 dark:text-gray-300 mr-3">
 							{totalCount}
 						</span>
 					{/if}
@@ -293,11 +297,11 @@
 	</nav>
 
 	<!-- Footer -->
-	<div class="border-t border-gray-200 dark:border-gray-800 p-2">
+	<div class="border-t border-gray-200 dark:border-[#0A4D6E] p-2">
 		<!-- Settings -->
 		<button
 			onclick={onOpenSettings}
-			class="w-full flex items-center py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+			class="w-full flex items-center py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#064565] transition-colors"
 		>
 			<div class="w-12 shrink-0 flex items-center justify-center">
 				<Settings size={20} />
@@ -310,7 +314,7 @@
 		<!-- Collapse toggle -->
 		<button
 			onclick={handleCollapse}
-			class="w-full flex items-center py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+			class="w-full flex items-center py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#064565] transition-colors"
 		>
 			<div class="w-12 shrink-0 flex items-center justify-center">
 				{#if collapsed}

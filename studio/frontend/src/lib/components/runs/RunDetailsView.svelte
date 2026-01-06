@@ -330,7 +330,7 @@
 				{@const TabIcon = tab.icon}
 				<button
 					onclick={() => activeTab = tab.id as TabId}
-					class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {activeTab === tab.id ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}"
+					class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {activeTab === tab.id ? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}"
 				>
 					<TabIcon size={16} />
 					{tab.label}
@@ -516,15 +516,15 @@
 							</div>
 						</div>
 
-						<div class="bg-gradient-to-br from-violet-50 to-violet-100 dark:from-violet-900/20 dark:to-violet-800/20 rounded-xl p-4 border border-violet-200 dark:border-violet-800">
+						<div class="bg-gradient-to-br from-[#7661FF]/10 to-[#BF71F2]/10 dark:from-[#7661FF]/20 dark:to-[#BF71F2]/20 rounded-xl p-4 border border-[#7661FF]/30 dark:border-[#7661FF]/40">
 							<div class="flex items-center gap-2 mb-2">
-								<Zap size={16} class="text-violet-600 dark:text-violet-400" />
-								<span class="text-xs font-medium text-violet-600 dark:text-violet-400 uppercase">Total Tokens</span>
+								<Zap size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
+								<span class="text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] uppercase">Total Tokens</span>
 							</div>
-							<div class="text-2xl font-bold text-violet-700 dark:text-violet-300">
+							<div class="text-2xl font-bold text-[#7661FF] dark:text-[#BF71F2]">
 								{formatNumber(metadata.aggregate_statistics.tokens.total_tokens)}
 							</div>
-							<div class="text-xs text-violet-600/70 dark:text-violet-400/70 mt-1">
+							<div class="text-xs text-[#7661FF]/70 dark:text-[#BF71F2]/70 mt-1">
 								{formatNumber(metadata.aggregate_statistics.tokens.total_prompt_tokens)} prompt
 							</div>
 						</div>
@@ -561,7 +561,7 @@
 						<!-- Token Distribution -->
 						<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
 							<div class="flex items-center gap-2 mb-3">
-								<PieChart size={16} class="text-violet-500" />
+								<PieChart size={16} class="text-[#7661FF]" />
 								<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Token Distribution</h4>
 							</div>
 							<div class="h-40">
@@ -629,7 +629,7 @@
 													href={gitUrl}
 													target="_blank"
 													rel="noopener noreferrer"
-													class="font-mono text-xs text-violet-600 dark:text-violet-400 hover:underline flex items-center gap-1"
+													class="font-mono text-xs text-[#032D42] dark:text-[#52B8FF] hover:underline flex items-center gap-1"
 													title="View commit on GitHub: {metadata.execution.git.commit_hash}"
 												>
 													{metadata.execution.git.commit_hash.slice(0, 7)}
@@ -638,7 +638,7 @@
 											{:else}
 												<button
 													onclick={() => copyToClipboard(metadata.execution.git.commit_hash, 'git')}
-													class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-violet-600 dark:hover:text-violet-400 flex items-center gap-1"
+													class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-[#7661FF] dark:hover:text-[#52B8FF] flex items-center gap-1"
 													title="Click to copy full hash: {metadata.execution.git.commit_hash}"
 												>
 													{metadata.execution.git.commit_hash.slice(0, 7)}
@@ -678,7 +678,7 @@
 											href={hfUrl}
 											target="_blank"
 											rel="noopener noreferrer"
-											class="text-violet-600 dark:text-violet-400 hover:underline font-mono text-xs break-all flex items-center gap-1"
+											class="text-[#032D42] dark:text-[#52B8FF] hover:underline font-mono text-xs break-all flex items-center gap-1"
 										>
 											{metadata.dataset.source_path}
 											<ExternalLink size={10} class="flex-shrink-0" />
@@ -710,7 +710,7 @@
 										<span class="text-gray-500">Data Hash:</span>
 										<button
 											onclick={() => copyToClipboard(metadata.dataset.dataset_hash, 'hash')}
-											class="text-gray-800 dark:text-gray-200 font-mono text-xs break-all text-left hover:text-violet-600 dark:hover:text-violet-400 flex items-center gap-1"
+											class="text-gray-800 dark:text-gray-200 font-mono text-xs break-all text-left hover:text-[#7661FF] dark:hover:text-[#52B8FF] flex items-center gap-1"
 											title="Click to copy full hash"
 										>
 											{metadata.dataset.dataset_hash}
@@ -746,7 +746,7 @@
 											</div>
 											<div class="flex items-center gap-4 text-sm">
 												<span class="text-emerald-600 dark:text-emerald-400 font-medium">{formatCost(model.cost.total_cost_usd)}</span>
-												<span class="text-violet-600 dark:text-violet-400">{formatNumber(model.token_statistics.total_tokens)} tokens</span>
+												<span class="text-[#7661FF] dark:text-[#BF71F2]">{formatNumber(model.token_statistics.total_tokens)} tokens</span>
 											</div>
 										</div>
 										<div class="grid grid-cols-4 gap-4 text-xs">
@@ -805,7 +805,7 @@
 										<tr class="border-b border-gray-100 dark:border-gray-800">
 											<td class="py-2 font-medium text-gray-800 dark:text-gray-200">{nodeName}</td>
 											<td class="py-2">
-												<span class="text-xs px-2 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
+												<span class="text-xs px-2 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]">
 													{node.node_type}
 												</span>
 											</td>

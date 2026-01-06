@@ -83,7 +83,7 @@
 <svelte:window onclick={() => showMenu = false} />
 
 <div
-	class="group relative bg-white dark:bg-gray-800 border rounded-xl p-4 cursor-pointer transition-all hover:shadow-md {selected ? 'border-violet-500 ring-2 ring-violet-500/20' : 'border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-600'}"
+	class="group relative bg-white dark:bg-gray-800 border rounded-xl p-4 cursor-pointer transition-all hover:shadow-md {selected ? 'border-[#7661FF] ring-2 ring-[#7661FF]/20' : 'border-gray-200 dark:border-gray-700 hover:border-[#52B8FF] dark:hover:border-[#7661FF]'}"
 	onclick={onSelect}
 	role="button"
 	tabindex="0"
@@ -96,7 +96,7 @@
 				<StatusIcon size={20} class="{status.color} {run.status === 'running' ? 'animate-spin' : ''}" />
 			</div>
 			<div>
-				<h3 class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors line-clamp-1">
+				<h3 class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-[#7661FF] dark:group-hover:text-[#52B8FF] transition-colors line-clamp-1">
 					{run.workflow_name || 'Unknown Workflow'}
 				</h3>
 				<p class="text-xs text-gray-500 font-mono">{run.id.slice(0, 12)}...</p>
@@ -182,7 +182,7 @@
 			<span>{formatDuration(run.duration_ms)}</span>
 		</div>
 		<div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-			<Zap size={14} class="text-violet-400" />
+			<Zap size={14} class="text-[#7661FF]" />
 			<span>{formatTokens(run.metadata)}</span>
 		</div>
 		<div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
@@ -194,6 +194,6 @@
 	<!-- Footer -->
 	<div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
 		<span class="text-xs text-gray-500">{formatDate(run.started_at)}</span>
-		<ChevronRight size={16} class="text-gray-400 group-hover:text-violet-500 transition-colors" />
+		<ChevronRight size={16} class="text-gray-400 group-hover:text-[#7661FF] transition-colors" />
 	</div>
 </div>

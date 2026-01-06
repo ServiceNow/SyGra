@@ -44,7 +44,7 @@
 		disk: { icon: HardDrive, label: 'Disk', bgClass: 'bg-blue-100 dark:bg-blue-900/30', iconClass: 'text-blue-600 dark:text-blue-400' },
 		hf: { icon: Cloud, label: 'HuggingFace', bgClass: 'bg-amber-100 dark:bg-amber-900/30', iconClass: 'text-amber-600 dark:text-amber-400' },
 		servicenow: { icon: Server, label: 'ServiceNow', bgClass: 'bg-emerald-100 dark:bg-emerald-900/30', iconClass: 'text-emerald-600 dark:text-emerald-400' },
-		json: { icon: FileJson, label: 'JSON', bgClass: 'bg-violet-100 dark:bg-violet-900/30', iconClass: 'text-violet-600 dark:text-violet-400' },
+		json: { icon: FileJson, label: 'JSON', bgClass: 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20', iconClass: 'text-[#7661FF] dark:text-[#BF71F2]' },
 		jsonl: { icon: FileJson, label: 'JSONL', bgClass: 'bg-pink-100 dark:bg-pink-900/30', iconClass: 'text-pink-600 dark:text-pink-400' }
 	};
 
@@ -226,7 +226,7 @@
 								<label class="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Operation</label>
 								<div class="flex gap-2">
 									{#each ['insert', 'update'] as op}
-										<button type="button" onclick={() => editOperation = op as 'insert' | 'update'} class="flex-1 px-3 py-1.5 text-xs font-medium rounded border transition-all {editOperation === op ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300' : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400'}">
+										<button type="button" onclick={() => editOperation = op as 'insert' | 'update'} class="flex-1 px-3 py-1.5 text-xs font-medium rounded border transition-all {editOperation === op ? 'border-[#7661FF] bg-[#7661FF]/10 dark:bg-[#7661FF]/15 text-[#7661FF] dark:text-[#BF71F2]' : 'border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400'}">
 											{op.charAt(0).toUpperCase() + op.slice(1)}
 										</button>
 									{/each}

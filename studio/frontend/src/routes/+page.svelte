@@ -480,7 +480,7 @@
 {#snippet loadingSpinner()}
 	<div class="flex-1 flex items-center justify-center">
 		<div class="flex flex-col items-center gap-3">
-			<Loader2 size={32} class="animate-spin text-violet-500" />
+			<Loader2 size={32} class="animate-spin text-[#52B8FF]" />
 			<span class="text-sm text-gray-500">Loading...</span>
 		</div>
 	</div>
@@ -681,7 +681,7 @@
 				{:else if currentWorkflow}
 					<button
 						onclick={openRunModal}
-						class="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 rounded-lg text-white text-sm font-medium transition-colors"
+						class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#4BC93A] rounded-lg text-[#032D42] text-sm font-semibold transition-colors"
 					>
 						<Play size={16} />
 						Run Workflow
@@ -710,8 +710,8 @@
 					{:else}
 						<div class="h-full flex items-center justify-center">
 							<div class="text-center">
-								<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center">
-									<Play size={32} class="text-violet-500" />
+								<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#032D42]/20 to-[#52B8FF]/20 flex items-center justify-center">
+									<Play size={32} class="text-[#52B8FF]" />
 								</div>
 								<h2 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
 									No workflow selected

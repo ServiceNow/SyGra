@@ -2,42 +2,138 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =============================================================================
+   BRAND COLOR PALETTE
+   A bold, optimistic, and empathetic color system.
+   Primary: Infinite Blue #032D42 (main), Wasabi Green #63DF4E (accent - sparingly)
+   Supplementary: Bright Blue #52B8FF, Bright Indigo #7661FF, Bright Purple #BF71F2
+   ============================================================================= */
+
 :root {
-	/* Surface colors */
+	/* Surface colors - Light mode */
 	--surface: #ffffff;
 	--surface-secondary: #f9fafb;
 	--surface-tertiary: #f3f4f6;
 	--surface-hover: #f3f4f6;
-	--surface-selected: #ede9fe;
-	--surface-inverse: #1f2937;
+	--surface-selected: #e8f4f8;
+	--surface-inverse: #032D42;
 
 	/* Frost/overlay colors */
-	--frost: rgba(255, 255, 255, 0.8);
+	--frost: rgba(255, 255, 255, 0.85);
 	--frost-secondary: rgba(255, 255, 255, 0.6);
 
-	/* Brand colors */
-	--primary: #8b5cf6;
-	--primary-hover: #7c3aed;
-	--primary-light: #ede9fe;
+	/* Brand colors - Primary */
+	--brand-infinite-blue: #032D42;
+	--brand-wasabi-green: #63DF4E;
+	--brand-white: #ffffff;
+	--brand-black: #000000;
+
+	/* Brand colors - Supplementary */
+	--brand-bright-blue: #52B8FF;
+	--brand-bright-indigo: #7661FF;
+	--brand-bright-purple: #BF71F2;
+
+	/* Primary interactive colors */
+	--primary: #032D42;
+	--primary-hover: #021E2D;
+	--primary-light: #e8f4f8;
+	--primary-muted: #0A4D6E;
+
+	/* Accent colors (use sparingly) */
+	--accent: #63DF4E;
+	--accent-hover: #4BC93A;
+	--accent-light: rgba(99, 223, 78, 0.15);
+
+	/* Text colors */
+	--text-primary: #032D42;
+	--text-secondary: #4B5563;
+	--text-muted: #9CA3AF;
+	--text-inverse: #ffffff;
+
+	/* Border colors */
+	--border: #E5E7EB;
+	--border-hover: #D1D5DB;
+
+	/* Status colors */
+	--status-success: #63DF4E;
+	--status-success-bg: rgba(99, 223, 78, 0.15);
+	--status-info: #52B8FF;
+	--status-info-bg: rgba(82, 184, 255, 0.15);
+	--status-warning: #F59E0B;
+	--status-warning-bg: rgba(245, 158, 11, 0.15);
+	--status-error: #EF4444;
+	--status-error-bg: rgba(239, 68, 68, 0.15);
+
+	/* Node type colors */
+	--node-llm: #7661FF;
+	--node-lambda: #F97316;
+	--node-data: #52B8FF;
+	--node-start: #63DF4E;
+	--node-end: #EF4444;
+	--node-subgraph: #032D42;
+	--node-agent: #BF71F2;
+	--node-output: #63DF4E;
 }
 
 .dark {
-	--surface: #0f172a;
-	--surface-secondary: #1e293b;
-	--surface-tertiary: #334155;
-	--surface-hover: #334155;
-	--surface-selected: #3730a3;
+	/* Surface colors - Dark mode (Infinite Blue based) */
+	--surface: #032D42;
+	--surface-secondary: #064565;
+	--surface-tertiary: #0A4D6E;
+	--surface-hover: #0A4D6E;
+	--surface-selected: #7661FF;
 	--surface-inverse: #f9fafb;
 
-	--frost: rgba(15, 23, 42, 0.8);
-	--frost-secondary: rgba(15, 23, 42, 0.6);
+	/* Frost/overlay colors */
+	--frost: rgba(3, 45, 66, 0.85);
+	--frost-secondary: rgba(3, 45, 66, 0.6);
 
-	--primary: #a78bfa;
-	--primary-hover: #8b5cf6;
-	--primary-light: #3730a3;
+	/* Primary interactive colors - inverted for dark */
+	--primary: #52B8FF;
+	--primary-hover: #7dcbff;
+	--primary-light: #0A4D6E;
+	--primary-muted: #064565;
+
+	/* Accent colors remain same */
+	--accent: #63DF4E;
+	--accent-hover: #8AEB7D;
+	--accent-light: rgba(99, 223, 78, 0.2);
+
+	/* Text colors - inverted */
+	--text-primary: #ffffff;
+	--text-secondary: #E5E7EB;
+	--text-muted: #9CA3AF;
+	--text-inverse: #032D42;
+
+	/* Border colors */
+	--border: #0A4D6E;
+	--border-hover: #0E5A80;
+
+	/* Status colors - slightly adjusted for dark */
+	--status-success: #63DF4E;
+	--status-success-bg: rgba(99, 223, 78, 0.2);
+	--status-info: #52B8FF;
+	--status-info-bg: rgba(82, 184, 255, 0.2);
+	--status-warning: #FBBF24;
+	--status-warning-bg: rgba(251, 191, 36, 0.2);
+	--status-error: #F87171;
+	--status-error-bg: rgba(248, 113, 113, 0.2);
 }
 
-/* SvelteFlow customizations */
+/* =============================================================================
+   BASE STYLES
+   ============================================================================= */
+
+body {
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* =============================================================================
+   SVELTEFLOW CUSTOMIZATIONS
+   ============================================================================= */
+
 .svelte-flow {
 	--xy-background-color: var(--surface-secondary);
 	--xy-background-pattern-color: var(--surface-tertiary);
@@ -63,7 +159,7 @@
 }
 
 .svelte-flow__node.selected > div {
-	box-shadow: 0 0 0 2px var(--primary);
+	box-shadow: 0 0 0 2px var(--accent);
 	border-radius: 0.75rem;
 }
 
@@ -72,29 +168,52 @@
 	display: none !important;
 }
 
-/* SvelteFlow Controls dark mode */
+/* SvelteFlow Controls - Brand styled */
+.svelte-flow__controls {
+	background: var(--surface);
+	border: 1px solid var(--border);
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.svelte-flow__controls-button {
+	background: var(--surface);
+	border-bottom: 1px solid var(--border);
+	fill: var(--text-muted);
+	transition: all 0.15s ease;
+}
+
+.svelte-flow__controls-button:hover {
+	background: var(--surface-hover);
+	fill: var(--text-primary);
+}
+
+.svelte-flow__controls-button:last-child {
+	border-bottom: none;
+}
+
 .dark .svelte-flow__controls {
-	background: #1e293b;
-	border: 1px solid #334155;
+	background: var(--surface-secondary);
+	border: 1px solid var(--border);
 	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
 }
 
 .dark .svelte-flow__controls-button {
-	background: #1e293b;
-	border-bottom: 1px solid #334155;
-	fill: #94a3b8;
+	background: var(--surface-secondary);
+	border-bottom: 1px solid var(--border);
+	fill: var(--text-muted);
 }
 
 .dark .svelte-flow__controls-button:hover {
-	background: #334155;
-	fill: #e2e8f0;
+	background: var(--surface-tertiary);
+	fill: var(--text-primary);
 }
 
-.dark .svelte-flow__controls-button:last-child {
-	border-bottom: none;
-}
+/* =============================================================================
+   MINIMAP
+   ============================================================================= */
 
-/* MiniMap interactivity */
 .svelte-flow__panel.bottom.left {
 	z-index: 10;
 	pointer-events: auto !important;
@@ -103,6 +222,9 @@
 .svelte-flow__minimap {
 	cursor: pointer;
 	pointer-events: auto !important;
+	border-radius: 8px;
+	overflow: hidden;
+	border: 1px solid var(--border);
 }
 
 .svelte-flow__minimap-svg {
@@ -118,27 +240,40 @@
 	cursor: grabbing;
 }
 
-/* Ensure minimap nodes don't block pan/zoom events */
 .svelte-flow__minimap-svg rect,
 .svelte-flow__minimap-svg .svelte-flow__minimap-node {
 	pointer-events: none !important;
 }
 
-/* Mask should pass through events */
 .svelte-flow__minimap-mask {
 	pointer-events: none !important;
 }
 
-/* Execution status animations */
+/* =============================================================================
+   EXECUTION STATUS ANIMATIONS
+   ============================================================================= */
+
 @keyframes pulse-ring {
 	0% {
-		box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+		box-shadow: 0 0 0 0 rgba(82, 184, 255, 0.5);
 	}
 	70% {
-		box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+		box-shadow: 0 0 0 10px rgba(82, 184, 255, 0);
 	}
 	100% {
-		box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+		box-shadow: 0 0 0 0 rgba(82, 184, 255, 0);
+	}
+}
+
+@keyframes pulse-success {
+	0% {
+		box-shadow: 0 0 0 0 rgba(99, 223, 78, 0.5);
+	}
+	70% {
+		box-shadow: 0 0 0 10px rgba(99, 223, 78, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(99, 223, 78, 0);
 	}
 }
 
@@ -146,7 +281,14 @@
 	animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
 }
 
-/* Custom scrollbar */
+.node-completed {
+	animation: pulse-success 0.5s ease-out;
+}
+
+/* =============================================================================
+   CUSTOM SCROLLBAR - Brand styled
+   ============================================================================= */
+
 ::-webkit-scrollbar {
 	width: 8px;
 	height: 8px;
@@ -157,17 +299,102 @@
 }
 
 ::-webkit-scrollbar-thumb {
-	background: var(--surface-tertiary);
+	background: var(--border);
 	border-radius: 4px;
+	transition: background 0.15s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	background: #9ca3af;
+	background: var(--text-muted);
 }
 
-/* Monaco editor container */
+.dark ::-webkit-scrollbar-thumb {
+	background: var(--surface-tertiary);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+	background: var(--text-muted);
+}
+
+/* =============================================================================
+   MONACO EDITOR CONTAINER
+   ============================================================================= */
+
 .monaco-editor-container {
 	width: 100%;
 	height: 100%;
 	min-height: 200px;
+}
+
+/* =============================================================================
+   BRAND UTILITY CLASSES
+   ============================================================================= */
+
+/* Primary button style */
+.btn-primary {
+	background-color: var(--primary);
+	color: var(--text-inverse);
+	transition: all 0.15s ease;
+}
+
+.btn-primary:hover {
+	background-color: var(--primary-hover);
+}
+
+/* Accent button style (use sparingly) */
+.btn-accent {
+	background-color: var(--accent);
+	color: var(--brand-infinite-blue);
+	font-weight: 600;
+	transition: all 0.15s ease;
+}
+
+.btn-accent:hover {
+	background-color: var(--accent-hover);
+}
+
+/* Ghost button */
+.btn-ghost {
+	background-color: transparent;
+	color: var(--text-primary);
+	border: 1px solid var(--border);
+	transition: all 0.15s ease;
+}
+
+.btn-ghost:hover {
+	background-color: var(--surface-hover);
+	border-color: var(--border-hover);
+}
+
+/* Brand gradient backgrounds */
+.bg-gradient-brand {
+	background: linear-gradient(135deg, #032D42 0%, #52B8FF 100%);
+}
+
+.bg-gradient-accent {
+	background: linear-gradient(135deg, #63DF4E 0%, #52B8FF 100%);
+}
+
+.bg-gradient-ai {
+	background: linear-gradient(135deg, #7661FF 0%, #BF71F2 100%);
+}
+
+/* Focus ring - brand styled */
+.focus-ring {
+	outline: none;
+}
+
+.focus-ring:focus-visible {
+	box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+}
+
+/* Text selection */
+::selection {
+	background-color: rgba(99, 223, 78, 0.3);
+	color: var(--text-primary);
+}
+
+.dark ::selection {
+	background-color: rgba(99, 223, 78, 0.4);
+	color: var(--text-primary);
 }

@@ -5,7 +5,7 @@
 	import {
 		Search, RefreshCw, GitBranch, ChevronDown, ArrowUpDown, Plus,
 		Clock, Layers, ArrowRight, Calendar, X, Play, LayoutList, LayoutGrid,
-		MoreVertical, Edit, Copy, Trash2, ExternalLink, Pencil
+		MoreVertical, Edit, Copy, Trash2, ExternalLink, Pencil, FolderOpen
 	} from 'lucide-svelte';
 	import ConfirmationModal from '$lib/components/common/ConfirmationModal.svelte';
 
@@ -253,7 +253,7 @@
 				</button>
 				<button
 					onclick={createNewWorkflow}
-					class="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors"
+					class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg transition-colors font-medium"
 				>
 					<Plus size={16} />
 					Create Workflow
@@ -272,7 +272,7 @@
 					type="text"
 					placeholder="Search by workflow name or ID..."
 					bind:value={searchQuery}
-					class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm"
+					class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] text-sm"
 				/>
 			</div>
 
@@ -292,14 +292,14 @@
 			<div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
 				<button
 					onclick={() => setViewMode('card')}
-					class="p-2 rounded-md transition-colors {viewMode === 'card' ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+					class="p-2 rounded-md transition-colors {viewMode === 'card' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
 					title="Card view"
 				>
 					<LayoutGrid size={18} />
 				</button>
 				<button
 					onclick={() => setViewMode('list')}
-					class="p-2 rounded-md transition-colors {viewMode === 'list' ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+					class="p-2 rounded-md transition-colors {viewMode === 'list' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
 					title="List view"
 				>
 					<LayoutList size={18} />
@@ -321,7 +321,7 @@
 								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
 							>
 								Workflow
-								<ArrowUpDown size={14} class={sortField === 'name' ? 'text-violet-500' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'name' ? 'text-[#7661FF]' : ''} />
 							</button>
 						</th>
 						<th class="text-left px-6 py-3">
@@ -330,7 +330,7 @@
 								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
 							>
 								Nodes
-								<ArrowUpDown size={14} class={sortField === 'node_count' ? 'text-violet-500' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'node_count' ? 'text-[#7661FF]' : ''} />
 							</button>
 						</th>
 						<th class="text-left px-6 py-3">
@@ -339,7 +339,7 @@
 								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
 							>
 								Edges
-								<ArrowUpDown size={14} class={sortField === 'edge_count' ? 'text-violet-500' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'edge_count' ? 'text-[#7661FF]' : ''} />
 							</button>
 						</th>
 						<th class="text-right px-6 py-3">
@@ -353,12 +353,12 @@
 					{#each filteredWorkflows() as workflow (workflow.id)}
 						<tr
 							onclick={() => selectWorkflow(workflow.id)}
-							class="cursor-pointer transition-colors {currentWorkflow?.id === workflow.id ? 'bg-violet-50 dark:bg-violet-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}"
+							class="cursor-pointer transition-colors {currentWorkflow?.id === workflow.id ? 'bg-[#032D42]/10 dark:bg-[#52B8FF]/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}"
 						>
 							<td class="px-6 py-4">
 								<div class="flex items-center gap-3">
-									<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white">
-										<GitBranch size={20} />
+									<div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
+										<FolderOpen size={20} class="text-white" />
 									</div>
 									<div class="flex flex-col">
 										<span class="font-medium text-gray-900 dark:text-gray-100">
@@ -372,7 +372,7 @@
 							</td>
 							<td class="px-6 py-4">
 								<span class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
-									<Layers size={14} class="text-violet-500" />
+									<Layers size={14} class="text-[#032D42] dark:text-[#52B8FF]" />
 									{workflow.node_count} nodes
 								</span>
 							</td>
@@ -386,7 +386,7 @@
 								<div class="flex items-center justify-end gap-2">
 									<button
 										onclick={(e) => { e.stopPropagation(); selectWorkflow(workflow.id); }}
-										class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30 rounded-lg transition-colors"
+										class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#032D42] dark:text-[#52B8FF] hover:bg-[#032D42]/10 dark:hover:bg-[#52B8FF]/20 rounded-lg transition-colors"
 									>
 										<Play size={14} />
 										Open
@@ -445,14 +445,14 @@
 										<p class="text-lg font-medium mb-1">No matching workflows</p>
 										<p class="text-sm">Try adjusting your search</p>
 									{:else}
-										<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center">
-											<GitBranch size={32} class="text-violet-500" />
+										<div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
+											<FolderOpen size={32} class="text-white" />
 										</div>
 										<p class="text-lg font-medium mb-1">No workflows yet</p>
 										<p class="text-sm mb-4">Create your first workflow to get started</p>
 										<button
 											onclick={createNewWorkflow}
-											class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors"
+											class="inline-flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg transition-colors font-medium"
 										>
 											<Plus size={16} />
 											Create Workflow
@@ -473,14 +473,14 @@
 							<p class="text-lg font-medium mb-1">No matching workflows</p>
 							<p class="text-sm">Try adjusting your search</p>
 						{:else}
-							<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center">
-								<GitBranch size={32} class="text-violet-500" />
+							<div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
+								<FolderOpen size={32} class="text-white" />
 							</div>
 							<p class="text-lg font-medium mb-1">No workflows yet</p>
 							<p class="text-sm mb-4">Create your first workflow to get started</p>
 							<button
 								onclick={createNewWorkflow}
-								class="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors"
+								class="inline-flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg transition-colors font-medium"
 							>
 								<Plus size={16} />
 								Create Workflow
@@ -492,7 +492,7 @@
 						{#each filteredWorkflows() as workflow (workflow.id)}
 							<div
 								onclick={() => selectWorkflow(workflow.id)}
-								class="group relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 cursor-pointer transition-all hover:shadow-lg hover:border-violet-300 dark:hover:border-violet-600 {currentWorkflow?.id === workflow.id ? 'ring-2 ring-violet-500 border-violet-500' : ''}"
+								class="group relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 cursor-pointer transition-all hover:shadow-lg hover:border-[#7661FF]/50 dark:hover:border-[#52B8FF] {currentWorkflow?.id === workflow.id ? 'ring-2 ring-[#7661FF] border-[#7661FF]' : ''}"
 							>
 								<!-- Three-dot menu (top-right) -->
 								<div class="absolute top-3 right-3">
@@ -540,11 +540,11 @@
 
 								<!-- Header -->
 								<div class="flex items-start gap-3 mb-4">
-									<div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-violet-500/20">
-										<GitBranch size={24} />
+									<div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
+										<FolderOpen size={24} class="text-white" />
 									</div>
 									<div class="flex-1 min-w-0 pr-6">
-										<h3 class="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+										<h3 class="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-[#032D42] dark:group-hover:text-[#52B8FF] transition-colors">
 											{workflow.name}
 										</h3>
 										<p class="text-xs text-gray-500 dark:text-gray-500 font-mono truncate mt-0.5">
@@ -556,11 +556,11 @@
 								<!-- Stats -->
 								<div class="flex items-center gap-4 mb-4">
 									<div class="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
-										<Layers size={14} class="text-violet-500" />
+										<Layers size={14} class="text-[#032D42] dark:text-[#52B8FF]" />
 										<span>{workflow.node_count} nodes</span>
 									</div>
 									<div class="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
-										<ArrowRight size={14} class="text-blue-500" />
+										<ArrowRight size={14} class="text-[#52B8FF]" />
 										<span>{workflow.edge_count} edges</span>
 									</div>
 								</div>
@@ -568,7 +568,7 @@
 								<!-- Action Button -->
 								<button
 									onclick={(e) => { e.stopPropagation(); selectWorkflow(workflow.id); }}
-									class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/40 rounded-lg transition-colors"
+									class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-[#032D42] dark:text-[#52B8FF] bg-[#032D42]/10 dark:bg-[#52B8FF]/20 hover:bg-[#032D42]/20 dark:hover:bg-[#52B8FF]/30 rounded-lg transition-colors"
 								>
 									<Play size={14} />
 									Open Workflow
@@ -576,7 +576,7 @@
 
 								<!-- Selected indicator -->
 								{#if currentWorkflow?.id === workflow.id}
-									<div class="absolute -top-1 -right-1 w-4 h-4 bg-violet-500 rounded-full border-2 border-white dark:border-gray-800"></div>
+									<div class="absolute -top-1 -right-1 w-4 h-4 bg-[#63DF4E] rounded-full border-2 border-white dark:border-gray-800"></div>
 								{/if}
 							</div>
 						{/each}
@@ -623,7 +623,7 @@
 			<input
 				type="text"
 				bind:value={renameState.newName}
-				class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-violet-500 mb-4"
+				class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] mb-4"
 				placeholder="Enter new name..."
 				onkeydown={(e) => e.key === 'Enter' && confirmRename()}
 			/>
@@ -637,7 +637,7 @@
 				<button
 					onclick={confirmRename}
 					disabled={!renameState.newName.trim()}
-					class="px-4 py-2 text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+					class="px-4 py-2 text-sm font-medium bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					Rename
 				</button>

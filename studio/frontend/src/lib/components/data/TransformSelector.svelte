@@ -61,10 +61,10 @@
 		},
 		CreateImageUrlTransform: {
 			icon: Image,
-			color: 'violet',
-			bgClass: 'bg-violet-100 dark:bg-violet-900/30',
-			iconClass: 'text-violet-600 dark:text-violet-400',
-			borderHover: 'hover:border-violet-300 dark:hover:border-violet-600'
+			color: 'indigo',
+			bgClass: 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20',
+			iconClass: 'text-[#7661FF] dark:text-[#BF71F2]',
+			borderHover: 'hover:border-[#52B8FF] dark:hover:border-[#7661FF]'
 		},
 		CreateAudioUrlTransform: {
 			icon: AudioLines,
@@ -107,8 +107,8 @@
 			name: 'Media Transforms',
 			description: 'Convert media to data URLs',
 			icon: Image,
-			iconClass: 'text-violet-500',
-			bgClass: 'bg-violet-100 dark:bg-violet-900/30',
+			iconClass: 'text-[#7661FF]',
+			bgClass: 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20',
 			transforms: ['CreateImageUrlTransform', 'CreateAudioUrlTransform']
 		},
 		{
@@ -160,8 +160,8 @@
 			<!-- Header -->
 			<div class="flex items-center justify-between px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
 				<div class="flex items-center gap-4">
-					<div class="p-2.5 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/40 dark:to-purple-900/40 shadow-sm">
-						<Wand2 size={22} class="text-violet-600 dark:text-violet-400" />
+					<div class="p-2.5 rounded-xl bg-gradient-to-br from-[#7661FF]/20 to-[#BF71F2]/20 dark:from-[#7661FF]/30 dark:to-[#BF71F2]/30 shadow-sm">
+						<Wand2 size={22} class="text-[#7661FF] dark:text-[#BF71F2]" />
 					</div>
 					<div>
 						<h2 id="transform-selector-title" class="text-lg font-semibold text-gray-900 dark:text-gray-100">
@@ -206,7 +206,7 @@
 								{@const Icon = config?.icon || Settings}
 								<button
 									onclick={() => selectTransform(transformType)}
-									class="group relative flex flex-col rounded-xl border-2 border-gray-200 dark:border-gray-700 {config?.borderHover || 'hover:border-violet-300'} hover:shadow-lg transition-all duration-200 overflow-hidden text-left"
+									class="group relative flex flex-col rounded-xl border-2 border-gray-200 dark:border-gray-700 {config?.borderHover || 'hover:border-[#52B8FF]'} hover:shadow-lg transition-all duration-200 overflow-hidden text-left"
 								>
 									<!-- Visual Preview Area -->
 									<div class="relative h-16 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 overflow-hidden">
@@ -259,11 +259,11 @@
 												</div>
 											{:else if transformType === 'CreateImageUrlTransform'}
 												<div class="flex items-center gap-2">
-													<div class="w-6 h-6 rounded bg-violet-200 flex items-center justify-center">
-														<Image size={12} class="text-violet-500" />
+													<div class="w-6 h-6 rounded bg-[#7661FF]/20 flex items-center justify-center">
+														<Image size={12} class="text-[#7661FF]" />
 													</div>
-													<ArrowLeftRight size={10} class="text-violet-400" />
-													<div class="px-1 py-0.5 bg-violet-300 rounded text-[7px] font-mono text-violet-700">data:...</div>
+													<ArrowLeftRight size={10} class="text-[#7661FF]/60" />
+													<div class="px-1 py-0.5 bg-[#7661FF]/30 rounded text-[7px] font-mono text-[#7661FF]">data:...</div>
 												</div>
 											{:else if transformType === 'CreateAudioUrlTransform'}
 												<div class="flex items-center gap-2">
@@ -325,20 +325,20 @@
 
 					<button
 						onclick={() => selectTransform('custom')}
-						class="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-violet-400 dark:hover:border-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition-all group"
+						class="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-[#7661FF] dark:hover:border-[#7661FF] hover:bg-[#7661FF]/5 dark:hover:bg-[#7661FF]/10 transition-all group"
 					>
-						<div class="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 group-hover:bg-violet-100 dark:group-hover:bg-violet-900/30 transition-colors">
-							<Settings size={20} class="text-gray-400 group-hover:text-violet-500 transition-colors" />
+						<div class="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 group-hover:bg-[#7661FF]/15 dark:group-hover:bg-[#7661FF]/20 transition-colors">
+							<Settings size={20} class="text-gray-400 group-hover:text-[#7661FF] transition-colors" />
 						</div>
 						<div class="flex-1 text-left">
-							<div class="font-medium text-gray-700 dark:text-gray-300 group-hover:text-violet-700 dark:group-hover:text-violet-300">
+							<div class="font-medium text-gray-700 dark:text-gray-300 group-hover:text-[#7661FF] dark:group-hover:text-[#52B8FF]">
 								Custom Transform Module
 							</div>
 							<div class="text-xs text-gray-500 dark:text-gray-400">
 								Specify a custom module path for your own transform implementation
 							</div>
 						</div>
-						<div class="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 bg-gray-100 dark:bg-gray-800 group-hover:text-violet-600 group-hover:bg-violet-100 dark:group-hover:bg-violet-900/30 transition-colors">
+						<div class="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 bg-gray-100 dark:bg-gray-800 group-hover:text-[#7661FF] group-hover:bg-[#7661FF]/15 dark:group-hover:bg-[#7661FF]/20 transition-colors">
 							Advanced
 						</div>
 					</button>

@@ -58,7 +58,7 @@
 					onclick={() => handleSkipTypeChange('count')}
 					class="flex-1 px-3 py-2 text-sm rounded-lg border transition-all
 						{skipType === 'count'
-							? 'bg-violet-50 dark:bg-violet-900/30 border-violet-300 dark:border-violet-600 text-violet-700 dark:text-violet-300'
+							? 'bg-[#7661FF]/10 dark:bg-[#7661FF]/20 border-[#7661FF]/50 dark:border-[#7661FF]/40 text-[#7661FF] dark:text-[#52B8FF]'
 							: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'}"
 				>
 					By Count
@@ -67,7 +67,7 @@
 					onclick={() => handleSkipTypeChange('range')}
 					class="flex-1 px-3 py-2 text-sm rounded-lg border transition-all
 						{skipType === 'range'
-							? 'bg-violet-50 dark:bg-violet-900/30 border-violet-300 dark:border-violet-600 text-violet-700 dark:text-violet-300'
+							? 'bg-[#7661FF]/10 dark:bg-[#7661FF]/20 border-[#7661FF]/50 dark:border-[#7661FF]/40 text-[#7661FF] dark:text-[#52B8FF]'
 							: 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'}"
 				>
 					By Range

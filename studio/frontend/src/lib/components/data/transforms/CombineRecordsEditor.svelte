@@ -171,7 +171,7 @@
 			{#if isEditing}
 				<button
 					onclick={addJoinColumn}
-					class="flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300"
+					class="flex items-center gap-1 text-xs text-[#032D42] dark:text-[#52B8FF] hover:text-[#7661FF] dark:hover:text-[#BF71F2]"
 				>
 					<Plus size={12} />
 					Add Rule
@@ -206,7 +206,7 @@
 							</button>
 						{:else}
 							<code class="text-xs font-mono">
-								<span class="text-violet-600 dark:text-violet-400">{rule.column}</span>:
+								<span class="text-[#7661FF] dark:text-[#BF71F2]">{rule.column}</span>:
 								<span class="text-gray-600 dark:text-gray-400">{rule.pattern}</span>
 							</code>
 						{/if}

@@ -105,7 +105,7 @@
 		<!-- Header -->
 		<div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
 			<div class="flex items-center gap-3">
-				<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+				<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#7661FF] to-[#BF71F2] flex items-center justify-center">
 					<Save size={20} class="text-white" />
 				</div>
 				<div>
@@ -156,7 +156,7 @@
 					type="text"
 					bind:value={name}
 					placeholder="Enter recipe name..."
-					class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+					class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 				/>
 			</div>
 
@@ -170,7 +170,7 @@
 					bind:value={description}
 					placeholder="Describe what this recipe does..."
 					rows="3"
-					class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none"
+					class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent resize-none"
 				></textarea>
 			</div>
 
@@ -187,7 +187,7 @@
 							onclick={() => category = cat.value}
 							class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all {
 								category === cat.value
-									? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20'
+									? 'border-[#7661FF] bg-[#7661FF]/10 dark:bg-[#7661FF]/15'
 									: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
 							}"
 						>
@@ -209,7 +209,7 @@
 					type="text"
 					bind:value={tagsInput}
 					placeholder="Enter tags separated by commas..."
-					class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+					class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 				/>
 				{#if tags().length > 0}
 					<div class="flex flex-wrap gap-1.5 mt-2">
@@ -232,7 +232,7 @@
 					type="text"
 					bind:value={author}
 					placeholder="Your name..."
-					class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+					class="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 				/>
 			</div>
 
@@ -255,7 +255,7 @@
 			<button
 				onclick={handleSave}
 				disabled={isSaving}
-				class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
+				class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#032D42] bg-[#63DF4E] hover:bg-[#63DF4E]/90 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
 			>
 				{#if isSaving}
 					<span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>

@@ -514,7 +514,7 @@
 					<p class="text-sm text-gray-500 dark:text-gray-400">
 						{filteredRuns().length} of {executionHistory.length} runs
 						{#if selectionCount > 0}
-							<span class="ml-2 text-violet-600 dark:text-violet-400">• {selectionCount} selected</span>
+							<span class="ml-2 text-[#7661FF] dark:text-[#52B8FF]">• {selectionCount} selected</span>
 						{/if}
 					</p>
 				</div>
@@ -525,21 +525,21 @@
 				<div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
 					<button
 						onclick={() => setViewMode('table')}
-						class="p-2 rounded-md transition-colors {viewMode === 'table' ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+						class="p-2 rounded-md transition-colors {viewMode === 'table' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
 						title="Table view"
 					>
 						<Table size={16} />
 					</button>
 					<button
 						onclick={() => setViewMode('cards')}
-						class="p-2 rounded-md transition-colors {viewMode === 'cards' ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+						class="p-2 rounded-md transition-colors {viewMode === 'cards' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
 						title="Card view"
 					>
 						<LayoutGrid size={16} />
 					</button>
 					<button
 						onclick={() => setViewMode('analytics')}
-						class="p-2 rounded-md transition-colors {viewMode === 'analytics' ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+						class="p-2 rounded-md transition-colors {viewMode === 'analytics' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
 						title="Analytics"
 					>
 						<BarChart3 size={16} />
@@ -547,7 +547,7 @@
 					{#if selectionCount >= 2}
 						<button
 							onclick={() => setViewMode('compare')}
-							class="p-2 rounded-md transition-colors {viewMode === 'compare' ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+							class="p-2 rounded-md transition-colors {viewMode === 'compare' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
 							title="Compare {selectionCount} runs"
 						>
 							<GitCompare size={16} />
@@ -592,7 +592,7 @@
 
 				<button
 					onclick={refresh}
-					class="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors"
+					class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg transition-colors font-medium"
 				>
 					<RefreshCw size={16} />
 					Refresh
@@ -616,7 +616,7 @@
 					type="text"
 					placeholder="Search by workflow name or run ID..."
 					bind:value={searchQuery}
-					class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm"
+					class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] text-sm"
 				/>
 			</div>
 
@@ -672,9 +672,9 @@
 		{#if hasActiveFilters}
 			<div class="flex flex-wrap items-center gap-2 mt-3">
 				{#if statusFilter !== 'all'}
-					<span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300">
+					<span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]">
 						Status: {statusFilter}
-						<button onclick={() => statusFilter = 'all'} class="hover:text-violet-900 dark:hover:text-violet-100">
+						<button onclick={() => statusFilter = 'all'} class="hover:text-[#7661FF] dark:hover:text-[#BF71F2]">
 							<X size={12} />
 						</button>
 					</span>
@@ -731,8 +731,8 @@
 		<div class="flex-1 overflow-auto p-6">
 			{#if filteredRuns().length === 0}
 				<div class="text-center py-16">
-					<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center">
-						<Activity size={32} class="text-violet-500" />
+					<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#7661FF]/20 to-[#BF71F2]/20 flex items-center justify-center">
+						<Activity size={32} class="text-[#7661FF]" />
 					</div>
 					<p class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-1">
 						{hasActiveFilters ? 'No matching runs' : 'No runs yet'}
@@ -773,9 +773,9 @@
 								title={allSelected() ? 'Deselect all' : 'Select all'}
 							>
 								{#if allSelected()}
-									<CheckSquare size={18} class="text-violet-500" />
+									<CheckSquare size={18} class="text-[#7661FF]" />
 								{:else if someSelected()}
-									<MinusSquare size={18} class="text-violet-500" />
+									<MinusSquare size={18} class="text-[#7661FF]" />
 								{:else}
 									<Square size={18} />
 								{/if}
@@ -790,7 +790,7 @@
 								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
 							>
 								Workflow
-								<ArrowUpDown size={14} class={sortField === 'workflow_name' ? 'text-violet-500' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'workflow_name' ? 'text-[#7661FF]' : ''} />
 							</button>
 						</th>
 						<th class="text-left px-4 py-3">
@@ -799,7 +799,7 @@
 								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
 							>
 								Status
-								<ArrowUpDown size={14} class={sortField === 'status' ? 'text-violet-500' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'status' ? 'text-[#7661FF]' : ''} />
 							</button>
 						</th>
 						<th class="text-left px-4 py-3 w-48">
@@ -813,7 +813,7 @@
 								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
 							>
 								Started
-								<ArrowUpDown size={14} class={sortField === 'started_at' ? 'text-violet-500' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'started_at' ? 'text-[#7661FF]' : ''} />
 							</button>
 						</th>
 						<th class="text-left px-4 py-3">
@@ -822,7 +822,7 @@
 								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
 							>
 								Duration
-								<ArrowUpDown size={14} class={sortField === 'duration_ms' ? 'text-violet-500' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'duration_ms' ? 'text-[#7661FF]' : ''} />
 							</button>
 						</th>
 						<th class="text-left px-4 py-3">
@@ -831,7 +831,7 @@
 								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
 							>
 								Tokens
-								<ArrowUpDown size={14} class={sortField === 'tokens' ? 'text-violet-500' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'tokens' ? 'text-[#7661FF]' : ''} />
 							</button>
 						</th>
 						<th class="text-left px-4 py-3">
@@ -840,7 +840,7 @@
 								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
 							>
 								Cost
-								<ArrowUpDown size={14} class={sortField === 'cost' ? 'text-violet-500' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'cost' ? 'text-[#7661FF]' : ''} />
 							</button>
 						</th>
 						<th class="w-12"></th>
@@ -856,7 +856,7 @@
 						{@const isExpanded = expandedRowIds.has(run.id)}
 						<tr
 							onclick={() => selectRun(run)}
-							class="group cursor-pointer transition-colors {isSelected ? 'bg-violet-50 dark:bg-violet-900/20' : selectedRunId === run.id ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}"
+							class="group cursor-pointer transition-colors {isSelected ? 'bg-[#7661FF]/10 dark:bg-[#7661FF]/20' : selectedRunId === run.id ? 'bg-[#52B8FF]/10 dark:bg-[#52B8FF]/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}"
 						>
 							<td class="px-4 py-3">
 								<button
@@ -864,7 +864,7 @@
 									class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
 								>
 									{#if isSelected}
-										<CheckSquare size={18} class="text-violet-500" />
+										<CheckSquare size={18} class="text-[#7661FF]" />
 									{:else}
 										<Square size={18} class="text-gray-400" />
 									{/if}
@@ -881,7 +881,7 @@
 							</td>
 							<td class="px-4 py-3">
 								<div class="flex flex-col">
-									<span class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+									<span class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-[#7661FF] dark:group-hover:text-[#52B8FF] transition-colors">
 										{run.workflow_name || 'Unknown Workflow'}
 									</span>
 									<span class="text-xs text-gray-500 dark:text-gray-500 font-mono">
@@ -920,7 +920,7 @@
 							</td>
 							<td class="px-4 py-3">
 								<span class="text-sm text-gray-900 dark:text-gray-100 flex items-center gap-1">
-									<Zap size={14} class="text-violet-400" />
+									<Zap size={14} class="text-[#7661FF]" />
 									{formatTokens(run.metadata)}
 								</span>
 							</td>
@@ -982,7 +982,7 @@
 											</button>
 										</div>
 									{/if}
-									<ChevronRight size={16} class="text-gray-400 group-hover:text-violet-500 transition-colors" />
+									<ChevronRight size={16} class="text-gray-400 group-hover:text-[#7661FF] transition-colors" />
 								</div>
 							</td>
 						</tr>
@@ -998,13 +998,13 @@
 										<p class="text-sm mb-4">Try adjusting your filters</p>
 										<button
 											onclick={clearFilters}
-											class="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm transition-colors"
+											class="px-4 py-2 bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg text-sm transition-colors font-medium"
 										>
 											Clear Filters
 										</button>
 									{:else}
-										<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center">
-											<Activity size={32} class="text-violet-500" />
+										<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#7661FF]/20 to-[#BF71F2]/20 flex items-center justify-center">
+											<Activity size={32} class="text-[#7661FF]" />
 										</div>
 										<p class="text-lg font-medium mb-1">No runs yet</p>
 										<p class="text-sm">Execute a workflow to see runs here</p>

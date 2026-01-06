@@ -188,7 +188,7 @@
 			<!-- Header -->
 			<div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
 				<div class="flex items-center gap-3">
-					<div class="p-2 rounded-xl bg-gradient-to-br from-blue-100 to-violet-100 dark:from-blue-900/40 dark:to-violet-900/40">
+					<div class="p-2 rounded-xl bg-gradient-to-br from-blue-100 to-[#7661FF]/20 dark:from-blue-900/40 dark:to-[#7661FF]/30">
 						<Database size={20} class="text-blue-600 dark:text-blue-400" />
 					</div>
 					<div>
@@ -225,8 +225,8 @@
 				<!-- Section 2: Alias -->
 				<div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
 					<div class="flex items-center gap-2 mb-3">
-						<div class="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30">
-							<Tag size={14} class="text-violet-600 dark:text-violet-400" />
+						<div class="p-1.5 rounded-lg bg-[#7661FF]/15 dark:bg-[#7661FF]/20">
+							<Tag size={14} class="text-[#7661FF] dark:text-[#BF71F2]" />
 						</div>
 						<h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">
 							Alias
@@ -238,14 +238,14 @@
 						type="text"
 						bind:value={alias}
 						placeholder="e.g., incidents, users, products"
-						class="w-full px-4 py-2.5 border rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 transition-all {aliasError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200 dark:border-gray-700 focus:ring-violet-500 focus:border-violet-500'}"
+						class="w-full px-4 py-2.5 border rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 transition-all {aliasError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-200 dark:border-gray-700 focus:ring-[#52B8FF] focus:border-[#52B8FF]'}"
 					/>
 					{#if aliasError}
 						<p class="text-xs text-red-500 mt-1">{aliasError}</p>
 					{/if}
 					<p class="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-1">
 						<Info size={12} />
-						Use in prompts: <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded font-mono text-violet-600 dark:text-violet-400">{'{column_name}'}</code>
+						Use in prompts: <code class="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded font-mono text-[#7661FF] dark:text-[#BF71F2]">{'{column_name}'}</code>
 					</p>
 				</div>
 
@@ -266,8 +266,8 @@
 
 						<!-- Key Configuration (for column join) -->
 						{#if needsKeyConfig}
-							<div class="mt-4 p-4 bg-violet-50 dark:bg-violet-900/20 rounded-xl border border-violet-200 dark:border-violet-800">
-								<div class="text-xs font-medium text-violet-700 dark:text-violet-300 mb-3 flex items-center gap-1">
+							<div class="mt-4 p-4 bg-[#7661FF]/10 dark:bg-[#7661FF]/15 rounded-xl border border-[#7661FF]/30 dark:border-[#7661FF]/40">
+								<div class="text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] mb-3 flex items-center gap-1">
 									<Link size={12} />
 									Column Join Keys
 								</div>
@@ -280,7 +280,7 @@
 											type="text"
 											bind:value={primaryKey}
 											placeholder="Column in primary source"
-											class="w-full px-3 py-2 text-sm font-mono border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 {primaryKeyError ? 'border-red-500 focus:ring-red-500' : 'border-violet-200 dark:border-violet-700 focus:ring-violet-500'}"
+											class="w-full px-3 py-2 text-sm font-mono border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 {primaryKeyError ? 'border-red-500 focus:ring-red-500' : 'border-[#7661FF]/30 dark:border-[#7661FF]/40 focus:ring-[#52B8FF]'}"
 										/>
 										{#if primaryKeyError}
 											<p class="text-xs text-red-500 mt-1">{primaryKeyError}</p>
@@ -294,14 +294,14 @@
 											type="text"
 											bind:value={joinKey}
 											placeholder="Column in this source"
-											class="w-full px-3 py-2 text-sm font-mono border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 {joinKeyError ? 'border-red-500 focus:ring-red-500' : 'border-violet-200 dark:border-violet-700 focus:ring-violet-500'}"
+											class="w-full px-3 py-2 text-sm font-mono border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 {joinKeyError ? 'border-red-500 focus:ring-red-500' : 'border-[#7661FF]/30 dark:border-[#7661FF]/40 focus:ring-[#52B8FF]'}"
 										/>
 										{#if joinKeyError}
 											<p class="text-xs text-red-500 mt-1">{joinKeyError}</p>
 										{/if}
 									</div>
 								</div>
-								<div class="mt-3 text-xs text-violet-600 dark:text-violet-400 flex items-center gap-2 justify-center p-2 bg-white dark:bg-gray-800/50 rounded-lg">
+								<div class="mt-3 text-xs text-[#7661FF] dark:text-[#BF71F2] flex items-center gap-2 justify-center p-2 bg-white dark:bg-gray-800/50 rounded-lg">
 									<span class="font-mono font-medium">{primaryKey || 'primary_key'}</span>
 									<ArrowRight size={14} />
 									<span class="font-mono font-medium">{joinKey || 'join_key'}</span>
@@ -333,7 +333,7 @@
 										type="text"
 										bind:value={repoId}
 										placeholder="username/dataset-name"
-										class="w-full pl-10 pr-4 py-2.5 font-mono border rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 {repoIdError ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-700 focus:ring-violet-500'}"
+										class="w-full pl-10 pr-4 py-2.5 font-mono border rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 {repoIdError ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-700 focus:ring-[#52B8FF]'}"
 									/>
 								</div>
 								{#if repoIdError}
@@ -364,7 +364,7 @@
 								<input
 									type="checkbox"
 									bind:checked={streaming}
-									class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-violet-600 focus:ring-violet-500"
+									class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-[#7661FF] focus:ring-[#52B8FF]"
 								/>
 								<div>
 									<span class="text-sm text-gray-700 dark:text-gray-300 font-medium">Enable streaming mode</span>
@@ -386,7 +386,7 @@
 										type="text"
 										bind:value={filePath}
 										placeholder="/path/to/data.json"
-										class="w-full pl-10 pr-4 py-2.5 font-mono border rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 {filePathError ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-700 focus:ring-violet-500'}"
+										class="w-full pl-10 pr-4 py-2.5 font-mono border rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 {filePathError ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-700 focus:ring-[#52B8FF]'}"
 									/>
 								</div>
 								{#if filePathError}
@@ -432,7 +432,7 @@
 										type="text"
 										bind:value={table}
 										placeholder="incident"
-										class="w-full pl-10 pr-4 py-2.5 font-mono border rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 {tableError ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-700 focus:ring-violet-500'}"
+										class="w-full pl-10 pr-4 py-2.5 font-mono border rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 {tableError ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-700 focus:ring-[#52B8FF]'}"
 									/>
 								</div>
 								{#if tableError}
@@ -505,7 +505,7 @@
 											<input
 												type="checkbox"
 												bind:checked={orderDesc}
-												class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-violet-600"
+												class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-[#7661FF]"
 											/>
 											<span class="text-sm text-gray-700 dark:text-gray-300">Descending</span>
 										</label>
@@ -516,13 +516,13 @@
 
 					{:else if type === 'memory'}
 						<!-- Memory -->
-						<div class="flex items-start gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
-							<div class="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/40">
-								<MemoryStick size={16} class="text-purple-600 dark:text-purple-400" />
+						<div class="flex items-start gap-3 p-4 bg-[#BF71F2]/10 dark:bg-[#BF71F2]/15 rounded-xl border border-[#BF71F2]/30 dark:border-[#BF71F2]/40">
+							<div class="p-2 rounded-lg bg-[#BF71F2]/20 dark:bg-[#BF71F2]/30">
+								<MemoryStick size={16} class="text-[#BF71F2] dark:text-[#BF71F2]" />
 							</div>
-							<div class="text-sm text-purple-700 dark:text-purple-300">
+							<div class="text-sm text-[#BF71F2] dark:text-[#BF71F2]">
 								<p class="font-medium">In-Memory Data Source</p>
-								<p class="text-xs mt-1 text-purple-600 dark:text-purple-400">
+								<p class="text-xs mt-1 text-[#BF71F2]/80 dark:text-[#BF71F2]/80">
 									Data will be provided inline in the configuration or through input parameters at runtime.
 									Use this for small datasets or dynamic data passed from previous workflow steps.
 								</p>
@@ -550,7 +550,7 @@
 					</button>
 					<button
 						onclick={handleSave}
-						class="flex items-center gap-2 px-5 py-2 text-sm bg-violet-600 hover:bg-violet-700 text-white rounded-xl transition-colors shadow-sm hover:shadow-md"
+						class="flex items-center gap-2 px-5 py-2 text-sm bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-xl transition-colors shadow-sm hover:shadow-md font-medium"
 					>
 						<Save size={16} />
 						{source ? 'Save Changes' : 'Add Source'}

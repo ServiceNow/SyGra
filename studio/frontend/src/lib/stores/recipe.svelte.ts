@@ -261,10 +261,10 @@ export const recipeStore = createRecipeStore();
 
 // Category metadata for UI
 export const RECIPE_CATEGORIES: { value: RecipeCategory; label: string; icon: string; color: string }[] = [
-	{ value: 'llm', label: 'LLM Patterns', icon: 'brain', color: '#8b5cf6' },
-	{ value: 'data', label: 'Data Processing', icon: 'database', color: '#3b82f6' },
-	{ value: 'transform', label: 'Transformations', icon: 'shuffle', color: '#f59e0b' },
-	{ value: 'agent', label: 'Agents', icon: 'bot', color: '#ec4899' },
-	{ value: 'utility', label: 'Utilities', icon: 'wrench', color: '#6b7280' },
-	{ value: 'custom', label: 'Custom', icon: 'puzzle', color: '#10b981' }
+	{ value: 'llm', label: 'LLM Patterns', icon: 'brain', color: '#7661FF' },
+	{ value: 'data', label: 'Data Processing', icon: 'database', color: '#52B8FF' },
+	{ value: 'transform', label: 'Transformations', icon: 'shuffle', color: '#BF71F2' },
+	{ value: 'agent', label: 'Agents', icon: 'bot', color: '#63DF4E' },
+	{ value: 'utility', label: 'Utilities', icon: 'wrench', color: '#0A4D6E' },
+	{ value: 'custom', label: 'Custom', icon: 'puzzle', color: '#7661FF' }
 ];

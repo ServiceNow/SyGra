@@ -112,8 +112,8 @@
 		class="flex items-center justify-between px-3 py-2.5 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-750 transition-colors cursor-pointer"
 	>
 		<div class="flex items-center gap-2">
-			<div class="p-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30">
-				<Wand2 size={14} class="text-violet-600 dark:text-violet-400" />
+			<div class="p-1.5 rounded-lg bg-[#7661FF]/15 dark:bg-[#7661FF]/20">
+				<Wand2 size={14} class="text-[#7661FF] dark:text-[#BF71F2]" />
 			</div>
 			<div>
 				<div class="text-sm font-medium text-gray-900 dark:text-gray-100">Transforms</div>
@@ -130,7 +130,7 @@
 			{#if isEditing && isExpanded}
 				<button
 					onclick={(e) => { e.stopPropagation(); showSelector = true; }}
-					class="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-violet-600 dark:text-violet-400 bg-violet-100 dark:bg-violet-900/30 hover:bg-violet-200 dark:hover:bg-violet-900/50 rounded transition-colors"
+					class="flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-[#7661FF] dark:text-[#52B8FF] bg-[#7661FF]/15 dark:bg-[#7661FF]/20 hover:bg-[#7661FF]/25 dark:hover:bg-[#7661FF]/30 rounded transition-colors"
 				>
 					<Plus size={12} />
 					Add
@@ -151,7 +151,7 @@
 					{#if isEditing}
 						<button
 							onclick={() => showSelector = true}
-							class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors"
+							class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#63DF4E] hover:bg-[#63DF4E]/90 text-[#032D42] rounded-lg transition-colors"
 						>
 							<Plus size={14} />
 							Add Transform
@@ -162,7 +162,7 @@
 				<div class="space-y-1.5" role="list">
 					{#each transforms as transform, index (transform.id)}
 						{#if dragOverIndex === index && draggedIndex !== null && draggedIndex !== index}
-							<div class="h-0.5 bg-violet-400 rounded-full mx-2"></div>
+							<div class="h-0.5 bg-[#7661FF] rounded-full mx-2"></div>
 						{/if}
 						<TransformCard
 							{transform}
@@ -183,7 +183,7 @@
 				{#if isEditing}
 					<button
 						onclick={() => showSelector = true}
-						class="w-full mt-3 flex items-center justify-center gap-1.5 px-3 py-2 text-xs text-gray-500 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 bg-gray-50 dark:bg-gray-800 hover:bg-violet-50 dark:hover:bg-violet-900/20 border border-dashed border-gray-300 dark:border-gray-600 hover:border-violet-400 dark:hover:border-violet-500 rounded-lg transition-all"
+						class="w-full mt-3 flex items-center justify-center gap-1.5 px-3 py-2 text-xs text-gray-500 dark:text-gray-400 hover:text-[#7661FF] dark:hover:text-[#52B8FF] bg-gray-50 dark:bg-gray-800 hover:bg-[#7661FF]/5 dark:hover:bg-[#7661FF]/10 border border-dashed border-gray-300 dark:border-gray-600 hover:border-[#7661FF] dark:hover:border-[#7661FF] rounded-lg transition-all"
 					>
 						<Plus size={14} />
 						Add Transform

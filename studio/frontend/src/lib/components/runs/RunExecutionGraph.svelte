@@ -400,7 +400,7 @@
 		<!-- Header with stats -->
 		<div class="p-4 border-b border-gray-200 dark:border-gray-700">
 			<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2 mb-3">
-				<Activity size={16} class="text-violet-500" />
+				<Activity size={16} class="text-[#7661FF]" />
 				Execution Timeline
 			</h3>
 			<div class="flex items-center gap-3 text-xs">
@@ -432,7 +432,7 @@
 				{@const Icon = node.icon}
 				{@const widthPct = Math.min(Math.max((node.duration_ms || 0) / totalDuration() * 100, 8), 100)}
 				<button
-					class="w-full text-left p-2 rounded-lg transition-all {selectedNodeId === node.id ? 'bg-violet-100 dark:bg-violet-900/30 ring-1 ring-violet-500' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}"
+					class="w-full text-left p-2 rounded-lg transition-all {selectedNodeId === node.id ? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 ring-1 ring-[#7661FF]' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}"
 					onclick={() => handleNodeClick(node.id)}
 				>
 					<div class="flex items-center gap-2 mb-1">

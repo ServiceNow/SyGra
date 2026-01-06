@@ -222,8 +222,8 @@
 		<!-- Header -->
 		<div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
 			<div class="flex items-center gap-3">
-				<div class="p-2 bg-violet-100 dark:bg-violet-900/30 rounded-lg">
-					<Settings size={20} class="text-violet-600 dark:text-violet-400" />
+				<div class="p-2 bg-[#7661FF]/15 dark:bg-[#7661FF]/20 rounded-lg">
+					<Settings size={20} class="text-[#7661FF] dark:text-[#BF71F2]" />
 				</div>
 				<div>
 					<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Settings</h2>
@@ -247,7 +247,7 @@
 						onclick={() => activeTab = tab.id}
 						class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors w-full
 							{activeTab === tab.id
-								? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+								? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]'
 								: 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}"
 					>
 						<svelte:component this={tab.icon} size={18} />
@@ -285,7 +285,7 @@
 							<div class="space-y-4">
 								<div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
 									<div class="flex items-center gap-3 mb-2">
-										<Info size={18} class="text-violet-500" />
+										<Info size={18} class="text-[#7661FF]" />
 										<h4 class="font-medium text-gray-900 dark:text-gray-100">About SyGra Studio</h4>
 									</div>
 									<p class="text-sm text-gray-600 dark:text-gray-400">
@@ -321,7 +321,7 @@
 									onclick={() => themeStore.setTheme('light')}
 									class="group relative flex flex-col rounded-xl border-2 transition-all duration-200 overflow-hidden
 										{currentTheme === 'light'
-											? 'border-violet-500 shadow-lg shadow-violet-500/20'
+											? 'border-[#7661FF] shadow-lg shadow-[#7661FF]/20'
 											: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md'}"
 								>
 									<!-- Preview Window -->
@@ -349,7 +349,7 @@
 											<span class="text-sm font-medium text-gray-900 dark:text-gray-100">Light</span>
 										</div>
 										{#if currentTheme === 'light'}
-											<div class="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
+											<div class="w-5 h-5 rounded-full bg-[#7661FF] flex items-center justify-center">
 												<Check size={12} class="text-white" />
 											</div>
 										{/if}
@@ -361,7 +361,7 @@
 									onclick={() => themeStore.setTheme('dark')}
 									class="group relative flex flex-col rounded-xl border-2 transition-all duration-200 overflow-hidden
 										{currentTheme === 'dark'
-											? 'border-violet-500 shadow-lg shadow-violet-500/20'
+											? 'border-[#7661FF] shadow-lg shadow-[#7661FF]/20'
 											: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md'}"
 								>
 									<!-- Preview Window -->
@@ -389,7 +389,7 @@
 											<span class="text-sm font-medium text-gray-900 dark:text-gray-100">Dark</span>
 										</div>
 										{#if currentTheme === 'dark'}
-											<div class="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
+											<div class="w-5 h-5 rounded-full bg-[#7661FF] flex items-center justify-center">
 												<Check size={12} class="text-white" />
 											</div>
 										{/if}
@@ -401,7 +401,7 @@
 									onclick={() => themeStore.setTheme('system')}
 									class="group relative flex flex-col rounded-xl border-2 transition-all duration-200 overflow-hidden
 										{currentTheme === 'system'
-											? 'border-violet-500 shadow-lg shadow-violet-500/20'
+											? 'border-[#7661FF] shadow-lg shadow-[#7661FF]/20'
 											: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md'}"
 								>
 									<!-- Preview Window - Split -->
@@ -434,7 +434,7 @@
 											<span class="text-sm font-medium text-gray-900 dark:text-gray-100">System</span>
 										</div>
 										{#if currentTheme === 'system'}
-											<div class="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
+											<div class="w-5 h-5 rounded-full bg-[#7661FF] flex items-center justify-center">
 												<Check size={12} class="text-white" />
 											</div>
 										{/if}
@@ -472,7 +472,7 @@
 										onclick={() => themeStore.setEditorTheme(editorTheme.id)}
 										class="group relative flex flex-col rounded-xl border-2 transition-all duration-200 overflow-hidden text-left
 											{currentEditorTheme === editorTheme.id
-												? 'border-violet-500 shadow-lg shadow-violet-500/20'
+												? 'border-[#7661FF] shadow-lg shadow-[#7661FF]/20'
 												: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md'}"
 									>
 										<!-- Realistic Code Preview -->
@@ -529,7 +529,7 @@
 												</div>
 											</div>
 											{#if currentEditorTheme === editorTheme.id}
-												<div class="w-6 h-6 rounded-full bg-violet-500 flex items-center justify-center shadow-sm">
+												<div class="w-6 h-6 rounded-full bg-[#7661FF] flex items-center justify-center shadow-sm">
 													<Check size={14} class="text-white" />
 												</div>
 											{/if}
@@ -561,7 +561,7 @@
 								</button>
 								<button
 									onclick={() => showNewForm = !showNewForm}
-									class="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors"
+									class="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg transition-colors font-medium"
 								>
 									<Plus size={14} />
 									Add Variable
@@ -577,7 +577,7 @@
 
 						<!-- New Variable Form -->
 						{#if showNewForm}
-							<div class="p-4 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-lg space-y-3">
+							<div class="p-4 bg-[#7661FF]/10 dark:bg-[#7661FF]/15 border border-[#7661FF]/30 dark:border-[#7661FF]/40 rounded-lg space-y-3">
 								<div class="grid grid-cols-2 gap-3">
 									<div>
 										<label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -587,7 +587,7 @@
 											type="text"
 											bind:value={newKey}
 											placeholder="MY_VARIABLE"
-											class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 font-mono"
+											class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-[#52B8FF] focus:border-[#52B8FF] font-mono"
 										/>
 									</div>
 									<div>
@@ -598,7 +598,7 @@
 											type="text"
 											bind:value={newValue}
 											placeholder="value"
-											class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+											class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-[#52B8FF] focus:border-[#52B8FF]"
 										/>
 									</div>
 								</div>
@@ -612,7 +612,7 @@
 									<button
 										onclick={addVariable}
 										disabled={saving || !newKey.trim()}
-										class="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-violet-600 hover:bg-violet-700 disabled:bg-violet-400 text-white rounded-lg transition-colors"
+										class="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[#63DF4E] hover:bg-[#52c840] disabled:bg-[#63DF4E]/50 text-[#032D42] rounded-lg transition-colors font-medium"
 									>
 										{#if saving}
 											<RefreshCw size={14} class="animate-spin" />
@@ -666,7 +666,7 @@
 															type={revealedKeys.has(envVar.key) ? 'text' : 'password'}
 															value={revealedKeys.has(envVar.key) ? envVar.value : envVar.masked_value}
 															onchange={(e) => updateVariable(envVar.key, e.currentTarget.value)}
-															class="flex-1 px-2 py-1 text-sm font-mono border border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-violet-500 rounded bg-transparent text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-violet-500"
+															class="flex-1 px-2 py-1 text-sm font-mono border border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-[#52B8FF] rounded bg-transparent text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-[#52B8FF]"
 														/>
 														<button
 															onclick={() => toggleReveal(envVar.key)}
@@ -716,7 +716,7 @@
 		<div class="flex items-center justify-end px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
 			<button
 				onclick={onclose}
-				class="px-4 py-2 text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition-colors"
+				class="px-4 py-2 text-sm font-medium bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg transition-colors"
 			>
 				Done
 			</button>

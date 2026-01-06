@@ -80,8 +80,8 @@
 		<!-- Header -->
 		<div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-800">
 			<div class="flex items-center gap-3">
-				<div class="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center">
-					<Wrench size={18} class="text-violet-500" />
+				<div class="w-9 h-9 rounded-lg bg-[#7661FF]/10 flex items-center justify-center">
+					<Wrench size={18} class="text-[#7661FF]" />
 				</div>
 				<div>
 					<h3 class="text-base font-semibold text-gray-800 dark:text-gray-200">
@@ -105,10 +105,10 @@
 			<button
 				onclick={() => activeTab = 'library'}
 				class="flex-1 px-4 py-2.5 text-sm font-medium transition-colors"
-				class:text-violet-600={activeTab === 'library'}
-				class:dark:text-violet-400={activeTab === 'library'}
+				class:text-[#7661FF]={activeTab === 'library'}
+				class:dark:text-[#52B8FF]={activeTab === 'library'}
 				class:border-b-2={activeTab === 'library'}
-				class:border-violet-600={activeTab === 'library'}
+				class:border-[#7661FF]={activeTab === 'library'}
 				class:text-gray-500={activeTab !== 'library'}
 				class:hover:text-gray-700={activeTab !== 'library'}
 			>
@@ -116,7 +116,7 @@
 					<Library size={14} />
 					Library
 					{#if toolStore.tools.length > 0}
-						<span class="text-xs px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900 text-violet-600 dark:text-violet-400">
+						<span class="text-xs px-1.5 py-0.5 rounded-full bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]">
 							{toolStore.tools.length}
 						</span>
 					{/if}
@@ -125,10 +125,10 @@
 			<button
 				onclick={() => activeTab = 'manual'}
 				class="flex-1 px-4 py-2.5 text-sm font-medium transition-colors"
-				class:text-violet-600={activeTab === 'manual'}
-				class:dark:text-violet-400={activeTab === 'manual'}
+				class:text-[#7661FF]={activeTab === 'manual'}
+				class:dark:text-[#52B8FF]={activeTab === 'manual'}
 				class:border-b-2={activeTab === 'manual'}
-				class:border-violet-600={activeTab === 'manual'}
+				class:border-[#7661FF]={activeTab === 'manual'}
 				class:text-gray-500={activeTab !== 'manual'}
 				class:hover:text-gray-700={activeTab !== 'manual'}
 			>
@@ -151,7 +151,7 @@
 							type="text"
 							placeholder="Search tools..."
 							bind:value={searchQuery}
-							class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+							class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 						/>
 					</div>
 				</div>
@@ -168,7 +168,7 @@
 								{@const Icon = categoryIcons[tool.category]}
 								<button
 									onclick={() => handleSelectTool(tool)}
-									class="w-full flex items-start gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition-all text-left"
+									class="w-full flex items-start gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-[#52B8FF] dark:hover:border-[#7661FF] hover:bg-[#7661FF]/5 dark:hover:bg-[#7661FF]/10 transition-all text-left"
 								>
 									<div
 										class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -207,7 +207,7 @@
 						</p>
 						<button
 							onclick={() => activeTab = 'manual'}
-							class="mt-4 text-sm text-violet-600 dark:text-violet-400 hover:underline"
+							class="mt-4 text-sm text-[#032D42] dark:text-[#52B8FF] hover:underline"
 						>
 							Or enter a manual path →
 						</button>
@@ -226,7 +226,7 @@
 							type="text"
 							placeholder="package.module.tool_function"
 							bind:value={manualPath}
-							class="w-full px-3 py-2.5 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+							class="w-full px-3 py-2.5 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 						/>
 					</div>
 
@@ -238,14 +238,14 @@
 							<li><code class="px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">package.module</code> (all tools)</li>
 						</ul>
 						<p class="mt-2">
-							Functions must be decorated with <code class="px-1 py-0.5 bg-violet-100 dark:bg-violet-900 text-violet-600 dark:text-violet-400 rounded">@tool</code>
+							Functions must be decorated with <code class="px-1 py-0.5 bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF] rounded">@tool</code>
 						</p>
 					</div>
 
 					<button
 						onclick={handleManualAdd}
 						disabled={!manualPath.trim()}
-						class="w-full mt-4 px-4 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:bg-gray-300 disabled:dark:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors"
+						class="w-full mt-4 px-4 py-2.5 bg-[#63DF4E] hover:bg-[#63DF4E]/90 disabled:bg-gray-300 disabled:dark:bg-gray-700 text-[#032D42] text-sm font-medium rounded-lg transition-colors"
 					>
 						Add Tool
 					</button>

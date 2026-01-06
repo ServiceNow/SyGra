@@ -47,8 +47,8 @@
 	class="group relative flex flex-col {sizeConfig.radius} {sizeConfig.border} transition-all duration-200 overflow-hidden text-left w-full
 		{disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
 		{selected
-			? 'border-violet-500 shadow-lg shadow-violet-500/20 dark:shadow-violet-500/10 ring-1 ring-violet-500/30'
-			: 'border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-600 hover:shadow-md'}"
+			? 'border-[#7661FF] shadow-lg shadow-[#7661FF]/20 dark:shadow-[#7661FF]/10 ring-1 ring-[#7661FF]/30'
+			: 'border-gray-200 dark:border-gray-700 hover:border-[#52B8FF] dark:hover:border-[#7661FF] hover:shadow-md'}"
 >
 	<!-- Preview Area -->
 	<div class="relative {sizeConfig.preview} {previewBgClass} overflow-hidden">
@@ -71,7 +71,7 @@
 
 		<!-- Selected indicator glow -->
 		{#if selected}
-			<div class="absolute inset-0 bg-violet-500/5 dark:bg-violet-400/10"></div>
+			<div class="absolute inset-0 bg-[#7661FF]/5 dark:bg-[#7661FF]/10"></div>
 		{/if}
 	</div>
 
@@ -79,10 +79,10 @@
 	<div class="flex items-center justify-between {sizeConfig.padding} bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700/50">
 		<div class="flex items-center gap-1.5 min-w-0 flex-1">
 			{#if Icon}
-				<Icon size={sizeConfig.labelIcon} class="{selected ? 'text-violet-500' : iconClass} transition-colors flex-shrink-0" />
+				<Icon size={sizeConfig.labelIcon} class="{selected ? 'text-[#7661FF]' : iconClass} transition-colors flex-shrink-0" />
 			{/if}
 			<div class="min-w-0 flex-1">
-				<span class="{sizeConfig.labelText} font-medium {selected ? 'text-violet-700 dark:text-violet-300' : 'text-gray-900 dark:text-gray-100'} block truncate transition-colors">
+				<span class="{sizeConfig.labelText} font-medium {selected ? 'text-[#7661FF] dark:text-[#52B8FF]' : 'text-gray-900 dark:text-gray-100'} block truncate transition-colors">
 					{label}
 				</span>
 				{#if description && size !== 'sm' && size !== 'xs'}
@@ -95,11 +95,11 @@
 
 		<!-- Checkmark -->
 		{#if selected}
-			<div class="{size === 'xs' ? 'w-4 h-4' : 'w-5 h-5'} rounded-full bg-violet-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+			<div class="{size === 'xs' ? 'w-4 h-4' : 'w-5 h-5'} rounded-full bg-[#7661FF] flex items-center justify-center flex-shrink-0 shadow-sm">
 				<Check size={size === 'xs' ? 10 : 12} class="text-white" strokeWidth={3} />
 			</div>
 		{:else}
-			<div class="{size === 'xs' ? 'w-4 h-4' : 'w-5 h-5'} rounded-full border-2 border-gray-200 dark:border-gray-600 flex-shrink-0 group-hover:border-violet-300 dark:group-hover:border-violet-500 transition-colors"></div>
+			<div class="{size === 'xs' ? 'w-4 h-4' : 'w-5 h-5'} rounded-full border-2 border-gray-200 dark:border-gray-600 flex-shrink-0 group-hover:border-[#52B8FF] dark:group-hover:border-[#7661FF] transition-colors"></div>
 		{/if}
 	</div>
 </button>

@@ -32,7 +32,7 @@
 	class="group relative flex flex-col rounded-xl border-2 transition-all duration-200 overflow-hidden text-left w-full
 		{disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
 		{selected
-			? 'border-violet-500 shadow-lg shadow-violet-500/20 dark:shadow-violet-500/10'
+			? 'border-[#7661FF] shadow-lg shadow-[#7661FF]/20 dark:shadow-[#7661FF]/10'
 			: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md'}"
 >
 	<!-- Preview Slot -->
@@ -65,7 +65,7 @@
 			</div>
 		</div>
 		{#if selected}
-			<div class="w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center flex-shrink-0">
+			<div class="w-5 h-5 rounded-full bg-[#7661FF] flex items-center justify-center flex-shrink-0">
 				<Check size={12} class="text-white" />
 			</div>
 		{/if}

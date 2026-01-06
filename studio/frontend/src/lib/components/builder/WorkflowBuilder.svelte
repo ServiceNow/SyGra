@@ -1137,14 +1137,14 @@
 	<div class="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
 		<div class="flex items-center gap-4">
 			<div class="flex items-center gap-2">
-				<div class="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+				<div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#032D42] to-[#52B8FF] flex items-center justify-center">
 					<GitBranch size={16} class="text-white" />
 				</div>
 				<input
 					type="text"
 					bind:value={workflowName}
 					placeholder="Untitled Workflow"
-					class="text-lg font-semibold bg-transparent border border-gray-300 dark:border-gray-600 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 rounded-lg px-3 py-1.5 text-gray-900 dark:text-gray-100 min-w-[200px] transition-colors"
+					class="text-lg font-semibold bg-transparent border border-gray-300 dark:border-gray-600 focus:outline-none focus:border-[#52B8FF] focus:ring-1 focus:ring-[#52B8FF] rounded-lg px-3 py-1.5 text-gray-900 dark:text-gray-100 min-w-[200px] transition-colors"
 				/>
 			</div>
 			{#if hasChanges}
@@ -1204,10 +1204,10 @@
 			<button
 				onclick={() => showSaveModal = true}
 				disabled={isSaving}
-				class="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+				class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#4BC93A] text-[#032D42] rounded-lg font-semibold transition-colors disabled:opacity-50"
 			>
 				{#if isSaving}
-					<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+					<div class="w-4 h-4 border-2 border-[#032D42] border-t-transparent rounded-full animate-spin"></div>
 				{:else}
 					<Save size={16} />
 				{/if}
@@ -1227,7 +1227,7 @@
 						type="text"
 						bind:value={paletteSearch}
 						placeholder="Search nodes..."
-						class="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+						class="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] focus:border-[#52B8FF]"
 					/>
 					{#if paletteSearch}
 						<button
@@ -1275,10 +1275,7 @@
 												role="option"
 												aria-selected={draggedNodeType === nodeType.type}
 												tabindex="0"
-												class="flex items-center gap-2.5 p-2 rounded-lg border border-dashed border-gray-200 dark:border-gray-600 hover:border-violet-400 dark:hover:border-violet-500 cursor-grab active:cursor-grabbing transition-colors group"
-												class:border-violet-500={draggedNodeType === nodeType.type}
-												class:bg-violet-50={draggedNodeType === nodeType.type}
-												class:dark:bg-violet-900={draggedNodeType === nodeType.type}
+												class="flex items-center gap-2.5 p-2 rounded-lg border border-dashed border-gray-200 dark:border-gray-600 hover:border-[#52B8FF] dark:hover:border-[#52B8FF] cursor-grab active:cursor-grabbing transition-colors group {draggedNodeType === nodeType.type ? 'border-[#52B8FF] bg-sky-50 dark:bg-sky-900/20' : ''}"
 											>
 												<div
 													class="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
@@ -1418,8 +1415,8 @@
 
 			<!-- Drop indicator overlay -->
 			{#if draggedNodeType}
-				<div class="absolute inset-0 pointer-events-none border-4 border-dashed border-violet-400 dark:border-violet-500 bg-violet-50/20 dark:bg-violet-900/20 rounded-lg m-2 flex items-center justify-center">
-					<div class="bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-lg text-sm font-medium text-violet-600 dark:text-violet-400">
+				<div class="absolute inset-0 pointer-events-none border-4 border-dashed border-[#52B8FF] dark:border-[#52B8FF] bg-[#52B8FF]/10 dark:bg-[#52B8FF]/15 rounded-lg m-2 flex items-center justify-center">
+					<div class="bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-lg text-sm font-medium text-[#032D42] dark:text-[#52B8FF]">
 						Drop to add {NODE_TYPES.find(t => t.type === draggedNodeType)?.label} node
 					</div>
 				</div>

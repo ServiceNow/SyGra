@@ -211,7 +211,7 @@
 						<button
 							onclick={onSave}
 							disabled={!hasChanges || isSaving}
-							class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors bg-violet-600 hover:bg-violet-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+							class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors bg-[#63DF4E] hover:bg-[#63DF4E]/90 text-[#032D42] disabled:opacity-50 disabled:cursor-not-allowed"
 							title="Save changes (Cmd+S)"
 						>
 							{#if isSaving}
@@ -225,7 +225,7 @@
 					{:else}
 						<button
 							onclick={onStartEdit}
-							class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 hover:bg-violet-200 dark:hover:bg-violet-800/50"
+							class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF] hover:bg-[#7661FF]/25 dark:hover:bg-[#7661FF]/30"
 							title="Edit node (Cmd+E)"
 						>
 							<Edit3 size={12} />

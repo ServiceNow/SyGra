@@ -1970,22 +1970,22 @@ function createExecutionStore() {
 // View type for main content area
 export type ViewType = 'home' | 'workflow' | 'workflows' | 'runs' | 'builder' | 'library' | 'models';
 
-// Node type definitions for the builder
+// Node type definitions for the builder - using brand-aligned palette
 export const NODE_TYPES = [
 	// Core Flow
-	{ type: 'start', label: 'Start', color: '#22c55e', description: 'Entry point of the workflow', category: 'flow' },
-	{ type: 'end', label: 'End', color: '#ef4444', description: 'Exit point of the workflow', category: 'flow' },
+	{ type: 'start', label: 'Start', color: '#63DF4E', description: 'Entry point of the workflow', category: 'flow' },  // Wasabi Green
+	{ type: 'end', label: 'End', color: '#EF4444', description: 'Exit point of the workflow', category: 'flow' },       // Red (standard)
 	// AI Nodes (tools are configured on these nodes via the Tools tab)
-	{ type: 'llm', label: 'LLM', color: '#8b5cf6', description: 'Language model with optional tools', category: 'ai' },
-	{ type: 'agent', label: 'Agent', color: '#ec4899', description: 'ReAct agent with tool calling', category: 'ai' },
-	{ type: 'multi_llm', label: 'Multi-LLM', color: '#06b6d4', description: 'Parallel execution across multiple models', category: 'ai' },
+	{ type: 'llm', label: 'LLM', color: '#7661FF', description: 'Language model with optional tools', category: 'ai' }, // Bright Indigo
+	{ type: 'agent', label: 'Agent', color: '#BF71F2', description: 'ReAct agent with tool calling', category: 'ai' },  // Bright Purple
+	{ type: 'multi_llm', label: 'Multi-LLM', color: '#BF71F2', description: 'Parallel execution across multiple models', category: 'ai' }, // Bright Purple
 	// Data
-	{ type: 'data', label: 'Data', color: '#0ea5e9', description: 'Data source & sink configuration', category: 'data' },
-	{ type: 'output', label: 'Output', color: '#10b981', description: 'Output mapping & generator', category: 'data' },
+	{ type: 'data', label: 'Data', color: '#52B8FF', description: 'Data source & sink configuration', category: 'data' }, // Bright Blue
+	{ type: 'output', label: 'Output', color: '#63DF4E', description: 'Output mapping & generator', category: 'data' },   // Wasabi Green
 	// Processing
-	{ type: 'lambda', label: 'Lambda', color: '#f97316', description: 'Custom Python function', category: 'processing' },
-	{ type: 'weighted_sampler', label: 'Sampler', color: '#a855f7', description: 'Random weighted sampler', category: 'processing' },
-	{ type: 'subgraph', label: 'Subgraph', color: '#3b82f6', description: 'Nested workflow', category: 'processing' },
+	{ type: 'lambda', label: 'Lambda', color: '#F97316', description: 'Custom Python function', category: 'processing' }, // Orange
+	{ type: 'weighted_sampler', label: 'Sampler', color: '#7661FF', description: 'Random weighted sampler', category: 'processing' }, // Bright Indigo
+	{ type: 'subgraph', label: 'Subgraph', color: '#032D42', description: 'Nested workflow', category: 'processing' },  // Infinite Blue
 ] as const;
 
 // Node categories for palette grouping

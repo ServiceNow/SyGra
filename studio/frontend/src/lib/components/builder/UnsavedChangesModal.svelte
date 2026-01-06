@@ -66,7 +66,7 @@
 			</button>
 			<button
 				onclick={() => dispatch('saveDraft')}
-				class="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium transition-colors"
+				class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg font-medium transition-colors"
 			>
 				<Save size={16} />
 				Save Draft

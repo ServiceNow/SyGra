@@ -112,7 +112,7 @@
 	<div class="bg-gray-50 dark:bg-gray-800 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
 		<div class="flex items-center justify-between">
 			<div class="flex items-center gap-3">
-				<Database size={16} class="text-violet-500" />
+				<Database size={16} class="text-[#7661FF]" />
 				<span class="font-medium text-gray-700 dark:text-gray-300">{title}</span>
 				{#if columns().length > 0}
 					<span class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded">
@@ -130,7 +130,7 @@
 							type="text"
 							bind:value={searchQuery}
 							placeholder="Search..."
-							class="pl-8 pr-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 w-48"
+							class="pl-8 pr-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:ring-2 focus:ring-[#52B8FF]/40 focus:border-[#52B8FF] w-48"
 						/>
 					</div>
 				{/if}
@@ -167,7 +167,7 @@
 	<div class="relative">
 		{#if loading}
 			<div class="flex items-center justify-center py-12">
-				<Loader2 size={24} class="animate-spin text-violet-500" />
+				<Loader2 size={24} class="animate-spin text-[#7661FF]" />
 				<span class="ml-2 text-sm text-gray-500">Loading data...</span>
 			</div>
 		{:else if error}
@@ -242,7 +242,7 @@
 							{#if isExpanded(i)}
 								<tr class="bg-gray-50 dark:bg-gray-800/70">
 									<td colspan={columns().length + 1} class="p-0">
-										<div class="p-4 space-y-3 border-l-4 border-violet-400 dark:border-violet-500 ml-3">
+										<div class="p-4 space-y-3 border-l-4 border-[#7661FF] dark:border-[#BF71F2] ml-3">
 											{#each columns() as col}
 												{@const value = typeof record === 'object' && record !== null ? (record as Record<string, unknown>)[col] : record}
 												<div class="flex gap-4">
@@ -325,7 +325,7 @@
 					{#if pageNum < totalPages}
 						<button
 							onclick={() => goToPage(pageNum)}
-							class="w-7 h-7 text-xs rounded transition-colors {currentPage === pageNum ? 'bg-violet-500 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
+							class="w-7 h-7 text-xs rounded transition-colors {currentPage === pageNum ? 'bg-[#7661FF] text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'}"
 						>
 							{pageNum + 1}
 						</button>

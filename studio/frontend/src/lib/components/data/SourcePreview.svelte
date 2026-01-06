@@ -171,7 +171,7 @@
 													{formatted.display}
 												</span>
 											{:else if formatted.type === 'number'}
-												<span class="font-mono text-[10px] text-violet-600 dark:text-violet-400">{formatted.display}</span>
+												<span class="font-mono text-[10px] text-[#7661FF] dark:text-[#BF71F2]">{formatted.display}</span>
 											{:else if formatted.type === 'object'}
 												<span class="text-[10px] text-gray-500 dark:text-gray-400 font-mono truncate block">{formatted.display}</span>
 											{:else}
@@ -202,7 +202,7 @@
 																	{formatted.display}
 																</span>
 															{:else if formatted.type === 'number'}
-																<span class="text-xs font-mono text-violet-600 dark:text-violet-400">{value}</span>
+																<span class="text-xs font-mono text-[#7661FF] dark:text-[#BF71F2]">{value}</span>
 															{:else if formatted.type === 'object'}
 																<pre class="text-[10px] font-mono text-gray-600 dark:text-gray-300 whitespace-pre-wrap break-all bg-white dark:bg-gray-900 p-2 rounded border border-gray-200 dark:border-gray-700 max-h-32 overflow-auto">{formatted.full}</pre>
 															{:else}

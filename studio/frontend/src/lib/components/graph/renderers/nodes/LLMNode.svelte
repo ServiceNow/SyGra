@@ -25,7 +25,7 @@
 	label={data.summary || data.id}
 	sublabel={data.model?.name}
 	icon={Bot}
-	color="#8b5cf6"
+	color="#7661FF"
 	executionState={data.executionState}
 	isCurrentNode={data.isCurrentNode}
 	nodeType="llm"
@@ -34,7 +34,7 @@
 	<div class="space-y-1">
 		{#if data.model}
 			<div class="flex items-center gap-2 text-xs">
-				<Sparkles size={12} class="text-violet-500" />
+				<Sparkles size={12} class="text-[#7661FF]" />
 				<span class="text-gray-600 dark:text-gray-400">{data.model.provider}</span>
 			</div>
 		{/if}
@@ -52,7 +52,7 @@
 			</div>
 		{/if}
 		{#if toolCount > 0}
-			<div class="flex items-center gap-1.5 text-xs text-violet-600 dark:text-violet-400">
+			<div class="flex items-center gap-1.5 text-xs text-[#7661FF] dark:text-[#BF71F2]">
 				<Wrench size={12} />
 				<span>{toolCount} tool{toolCount !== 1 ? 's' : ''}</span>
 			</div>

@@ -148,7 +148,7 @@
 	<!-- Resize handle (only visible when expanded) -->
 	{#if expanded}
 		<div
-			class="absolute top-0 left-0 right-0 h-1 cursor-ns-resize hover:bg-violet-500/50 transition-colors z-20 group"
+			class="absolute top-0 left-0 right-0 h-1 cursor-ns-resize hover:bg-[#52B8FF]/50 transition-colors z-20 group"
 			onmousedown={handleResizeMouseDown}
 			role="separator"
 			aria-orientation="horizontal"
@@ -206,7 +206,7 @@
 			{#if execution.status === 'completed' || execution.status === 'failed'}
 				<button
 					onclick={() => uiStore.openResultsModal()}
-					class="flex items-center gap-2 px-3 py-1.5 bg-violet-100 hover:bg-violet-200 dark:bg-violet-900/30 dark:hover:bg-violet-900/50 rounded-lg text-violet-700 dark:text-violet-400 text-sm font-medium transition-colors"
+					class="flex items-center gap-2 px-3 py-1.5 bg-[#7661FF]/15 hover:bg-[#7661FF]/25 dark:bg-[#7661FF]/20 dark:hover:bg-[#7661FF]/30 rounded-lg text-[#7661FF] dark:text-[#BF71F2] text-sm font-medium transition-colors"
 				>
 					<Eye size={14} />
 					View Results

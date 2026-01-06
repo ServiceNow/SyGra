@@ -55,7 +55,7 @@
 		CombineRecords: { icon: Combine, bgClass: 'bg-blue-100 dark:bg-blue-900/30', iconClass: 'text-blue-600 dark:text-blue-400' },
 		RenameFieldsTransform: { icon: ArrowLeftRight, bgClass: 'bg-amber-100 dark:bg-amber-900/30', iconClass: 'text-amber-600 dark:text-amber-400' },
 		AddNewFieldTransform: { icon: PlusCircle, bgClass: 'bg-emerald-100 dark:bg-emerald-900/30', iconClass: 'text-emerald-600 dark:text-emerald-400' },
-		CreateImageUrlTransform: { icon: Image, bgClass: 'bg-violet-100 dark:bg-violet-900/30', iconClass: 'text-violet-600 dark:text-violet-400' },
+		CreateImageUrlTransform: { icon: Image, bgClass: 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20', iconClass: 'text-[#7661FF] dark:text-[#BF71F2]' },
 		CreateAudioUrlTransform: { icon: AudioLines, bgClass: 'bg-pink-100 dark:bg-pink-900/30', iconClass: 'text-pink-600 dark:text-pink-400' },
 		CartesianProductTransform: { icon: Grid3X3, bgClass: 'bg-cyan-100 dark:bg-cyan-900/30', iconClass: 'text-cyan-600 dark:text-cyan-400' }
 	};
@@ -129,14 +129,14 @@
 	<div class="flex items-center gap-2 p-2 bg-white dark:bg-gray-800 rounded-lg border transition-all
 		{isEnabled
 			? (isExpanded
-				? 'border-violet-300 dark:border-violet-600'
+				? 'border-[#7661FF]/50 dark:border-[#7661FF]/60'
 				: 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600')
 			: 'border-gray-200/50 dark:border-gray-700/50 opacity-50'}
 		{isEditing ? 'cursor-grab active:cursor-grabbing' : ''}">
 
 		<!-- Step number -->
 		<div class="w-5 h-5 flex items-center justify-center rounded text-[10px] font-bold flex-shrink-0
-			{isEnabled ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-400'}">
+			{isEnabled ? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]' : 'bg-gray-100 dark:bg-gray-700 text-gray-400'}">
 			{index + 1}
 		</div>
 

@@ -279,7 +279,7 @@
 	>
 		<!-- Resize handle -->
 		<div
-			class="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-violet-500/50 transition-colors z-20"
+			class="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-[#52B8FF]/50 transition-colors z-20"
 			onmousedown={handleResizeMouseDown}
 			role="separator"
 			aria-orientation="vertical"
@@ -320,7 +320,7 @@
 					<button
 						onclick={saveChanges}
 						disabled={isSaving}
-						class="p-2 text-violet-600 hover:text-violet-700 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30 rounded-lg transition-colors disabled:opacity-50"
+						class="p-2 text-[#63DF4E] hover:text-[#52c840] dark:text-[#63DF4E] hover:bg-[#63DF4E]/10 dark:hover:bg-[#63DF4E]/20 rounded-lg transition-colors disabled:opacity-50"
 						title="Save changes"
 					>
 						{#if isSaving}
@@ -479,7 +479,7 @@
 											href="https://huggingface.co/datasets/{source.repo_id}"
 											target="_blank"
 											rel="noopener noreferrer"
-											class="text-sm font-mono text-violet-600 dark:text-violet-400 hover:underline"
+											class="text-sm font-mono text-[#032D42] dark:text-[#52B8FF] hover:underline"
 										>
 											{source.repo_id}
 										</a>
@@ -662,7 +662,7 @@
 							{#if isEditing}
 								<button
 									onclick={addTransformation}
-									class="flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300"
+									class="flex items-center gap-1 text-xs text-[#7661FF] dark:text-[#BF71F2] hover:text-[#7661FF]/80 dark:hover:text-[#BF71F2]/80"
 								>
 									<Plus size={12} />
 									Add
