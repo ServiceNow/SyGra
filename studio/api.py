@@ -487,7 +487,7 @@ def create_app(
     if tasks_dir is None:
         tasks_dir = os.environ.get(
             "SYGRA_TASKS_DIR",
-            str(Path(__file__).parent.parent.parent.parent / "tasks" / "examples")
+            str(Path(__file__).parent.parent / "tasks" / "examples")  # studio -> project root
         )
 
     app.state.tasks_dir = tasks_dir
@@ -2643,7 +2643,7 @@ async def _run_code_execution(execution_id: str, file_path: Path, request: CodeE
             # Check if this is a SyGra workflow - if so, run via main.py
             workflow_dir = file_path.parent
             graph_config = workflow_dir / "graph_config.yaml"
-            project_root = Path(__file__).parent.parent.parent.parent
+            project_root = Path(__file__).parent.parent  # studio -> project root
             main_py = project_root / "main.py"
 
             if graph_config.exists() and main_py.exists():
@@ -2753,7 +2753,7 @@ runpy.run_path(run_target, run_name="__main__")
             graph_config = workflow_dir / "graph_config.yaml"
             if graph_config.exists():
                 # This is a SyGra workflow - run from project root
-                project_root = Path(__file__).parent.parent.parent.parent
+                project_root = Path(__file__).parent.parent  # studio -> project root
                 working_dir = project_root
             else:
                 working_dir = original_file_path.parent

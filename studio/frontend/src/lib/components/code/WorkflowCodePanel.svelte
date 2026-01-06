@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { onMount, createEventDispatcher } from 'svelte';
+	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 	import { workflowStore } from '$lib/stores/workflow.svelte';
+	import { subscribeToEditorTheme, EDITOR_THEMES, type EditorTheme } from '$lib/stores/theme.svelte';
 	import {
 		ChevronDown, ChevronUp, FileCode2, FileText,
 		Maximize2, Minimize2, RefreshCw, Copy, Check,
@@ -12,6 +13,45 @@
 	} from 'lucide-svelte';
 	import MonacoEditor from '$lib/components/editor/LazyMonacoEditor.svelte';
 	import ExecutionOutputPanel from './ExecutionOutputPanel.svelte';
+
+	// Theme state - track current editor theme
+	let currentEditorTheme = $state<EditorTheme>('vs-dark');
+	let unsubscribeTheme: (() => void) | null = null;
+
+	// Get theme colors from current editor theme
+	let themeColors = $derived.by(() => {
+		const themeConfig = EDITOR_THEMES.find(t => t.id === currentEditorTheme);
+		if (!themeConfig) {
+			// Fallback to dark theme colors
+			return {
+				bg: '#1e1e1e',
+				headerBg: '#252526',
+				border: '#3c3c3c',
+				text: '#d4d4d4',
+				textMuted: '#808080',
+				varName: '#9cdcfe',
+				varValue: '#ce9178',
+				varType: '#4ec9b0',
+				hoverBg: '#2a2d2e',
+				isDark: true
+			};
+		}
+		const isDark = themeConfig.category === 'dark' || themeConfig.category === 'high-contrast';
+		return {
+			bg: themeConfig.preview.bg,
+			headerBg: isDark ? themeConfig.preview.gutter : themeConfig.preview.border,
+			border: themeConfig.preview.border,
+			text: themeConfig.preview.text,
+			textMuted: themeConfig.preview.lineNumber,
+			varName: themeConfig.preview.function,
+			varValue: themeConfig.preview.string,
+			varType: themeConfig.preview.keyword,
+			hoverBg: isDark
+				? `color-mix(in srgb, ${themeConfig.preview.bg} 85%, white)`
+				: `color-mix(in srgb, ${themeConfig.preview.bg} 95%, black)`,
+			isDark
+		};
+	});
 
 	interface Props {
 		workflowId: string;
@@ -82,6 +122,23 @@
 	let childVariables = $state<Record<number, Array<{name: string; value: string; type?: string; variablesReference?: number}>>>({});
 	let loadingVars = $state<Set<number>>(new Set());
 
+	// Full value viewer state
+	let showValueViewer = $state(false);
+	let viewerVarName = $state('');
+	let viewerVarValue = $state('');
+	let viewerVarType = $state('');
+
+	function showFullValue(name: string, value: string, type?: string) {
+		viewerVarName = name;
+		viewerVarValue = value;
+		viewerVarType = type || '';
+		showValueViewer = true;
+	}
+
+	function closeValueViewer() {
+		showValueViewer = false;
+	}
+
 	// Debug state monitoring - only log significant changes
 	$effect(() => {
 		if (isDebugPaused || debugVariables.length > 0) {
@@ -98,6 +155,19 @@
 			groups[scope].push(v);
 		}
 		return groups;
+	});
+
+	// Subscribe to editor theme changes
+	$effect(() => {
+		unsubscribeTheme = subscribeToEditorTheme((theme) => {
+			currentEditorTheme = theme;
+		});
+		return () => {
+			if (unsubscribeTheme) {
+				unsubscribeTheme();
+				unsubscribeTheme = null;
+			}
+		};
 	});
 
 	// Copy state
@@ -992,16 +1062,23 @@
 		<div class="flex-1 flex overflow-hidden">
 			<!-- References Sidebar (only show when there are references) -->
 			{#if showFileSidebar && referencedFiles.length > 0 && (activeTab === 'yaml' || activeTab === 'code')}
-				<div class="bg-gray-900 border-r border-gray-700 flex flex-col" style="width: {sidebarWidth}px; min-width: {sidebarWidth}px">
+				<div
+					class="border-r flex flex-col"
+					style="width: {sidebarWidth}px; min-width: {sidebarWidth}px; background-color: {themeColors.bg}; border-color: {themeColors.border};"
+				>
 					<!-- Sidebar Header -->
-					<div class="flex items-center justify-between px-3 py-2 border-b border-gray-700">
-						<span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">References</span>
+					<div
+						class="flex items-center justify-between px-3 py-2 border-b"
+						style="background-color: {themeColors.headerBg}; border-color: {themeColors.border};"
+					>
+						<span class="text-xs font-semibold uppercase tracking-wide" style="color: {themeColors.textMuted};">References</span>
 						<button
 							onclick={() => showFileSidebar = false}
-							class="p-0.5 hover:bg-gray-700 rounded"
+							class="p-0.5 rounded transition-colors"
+							style="--hover-bg: {themeColors.hoverBg};"
 							title="Hide sidebar"
 						>
-							<ChevronLeft size={14} class="text-gray-500" />
+							<ChevronLeft size={14} style="color: {themeColors.textMuted};" />
 						</button>
 					</div>
 
@@ -1010,19 +1087,20 @@
 						{#each referencedFiles as ref}
 							<button
 								onclick={() => openReferencedFile(ref)}
-								class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm text-gray-400 hover:bg-gray-800 hover:text-gray-300 transition-colors group"
+								class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm transition-colors group ref-button"
+								style="color: {themeColors.text}; --hover-bg: {themeColors.hoverBg};"
 								title={ref.path}
 							>
 								{#if ref.type === 'subgraph'}
-									<FolderOpen size={14} class="text-blue-400" />
+									<FolderOpen size={14} style="color: {themeColors.varType};" />
 									<span class="truncate flex-1">{ref.name}</span>
-									<span class="text-xs text-gray-600">subgraph</span>
+									<span class="text-xs" style="color: {themeColors.textMuted};">subgraph</span>
 								{:else}
-									<File size={14} class="text-green-400" />
+									<File size={14} style="color: {themeColors.varName};" />
 									<span class="truncate flex-1">{ref.name}</span>
-									<span class="text-xs text-gray-600">module</span>
+									<span class="text-xs" style="color: {themeColors.textMuted};">module</span>
 								{/if}
-								<ExternalLink size={12} class="text-gray-600 group-hover:text-gray-400" />
+								<ExternalLink size={12} style="color: {themeColors.textMuted};" />
 							</button>
 						{/each}
 					</div>
@@ -1031,11 +1109,12 @@
 				<!-- Collapsed sidebar toggle (only show if there are references) -->
 				<button
 					onclick={() => showFileSidebar = true}
-					class="bg-gray-900 border-r border-gray-700 px-1 hover:bg-gray-800 transition-colors flex items-center"
+					class="border-r px-1 transition-colors flex items-center"
+					style="background-color: {themeColors.bg}; border-color: {themeColors.border}; --hover-bg: {themeColors.hoverBg};"
 					title="Show references ({referencedFiles.length})"
 				>
-					<ChevronRight size={14} class="text-gray-500" />
-					<span class="text-xs text-gray-500 writing-mode-vertical">{referencedFiles.length}</span>
+					<ChevronRight size={14} style="color: {themeColors.textMuted};" />
+					<span class="text-xs writing-mode-vertical" style="color: {themeColors.textMuted};">{referencedFiles.length}</span>
 				</button>
 			{/if}
 
@@ -1095,28 +1174,37 @@
 						<div class="flex flex-1 overflow-hidden">
 							<!-- Variables Panel - LEFT side when debugging -->
 							{#if isDebugPaused}
-								<div class="w-[320px] min-w-[280px] border-r border-[#3c3c3c] bg-[#252526] flex flex-col overflow-hidden">
-									<!-- VS Code style header -->
-									<div class="px-3 py-1.5 bg-[#3c3c3c] border-b border-[#252526] flex items-center justify-between">
-										<span class="text-[11px] font-semibold text-[#cccccc] uppercase tracking-wide">Variables</span>
+								<div
+									class="w-[320px] min-w-[280px] max-h-full border-r flex flex-col"
+									style="background-color: {themeColors.bg}; border-color: {themeColors.border};"
+								>
+									<!-- Theme-aware header -->
+									<div
+										class="px-3 py-1.5 border-b flex items-center justify-between flex-shrink-0"
+										style="background-color: {themeColors.headerBg}; border-color: {themeColors.border};"
+									>
+										<span class="text-[11px] font-semibold uppercase tracking-wide" style="color: {themeColors.text};">Variables</span>
 										{#if currentDebugLine}
-											<span class="text-[10px] text-[#cccccc]/70">
+											<span class="text-[10px]" style="color: {themeColors.textMuted};">
 												Line {currentDebugLine}
 											</span>
 										{/if}
 									</div>
-									<div class="flex-1 overflow-auto text-[12px]">
+									<div class="flex-1 overflow-y-auto min-h-0 text-[12px]">
 										{#if debugVariables.length === 0}
-											<div class="flex flex-col items-center justify-center py-8 text-[#808080]">
+											<div class="flex flex-col items-center justify-center py-8" style="color: {themeColors.textMuted};">
 												<Loader2 size={18} class="animate-spin mb-2" />
 												<span class="text-[11px]">Loading variables...</span>
 											</div>
 										{:else}
 											{#each Object.entries(groupedVariables) as [scope, vars]}
-												<div class="border-b border-[#3c3c3c]">
+												<div class="border-b" style="border-color: {themeColors.border};">
 													<!-- Scope header (collapsible) -->
-													<div class="flex items-center gap-1 px-2 py-1 bg-[#2d2d2d] text-[11px] font-semibold text-[#cccccc]">
-														<ChevronDown size={12} class="text-[#808080]" />
+													<div
+														class="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold"
+														style="background-color: {themeColors.headerBg}; color: {themeColors.text};"
+													>
+														<ChevronDown size={12} style="color: {themeColors.textMuted};" />
 														<span>{scope}</span>
 													</div>
 													<!-- Variables in scope -->
@@ -1128,30 +1216,36 @@
 														<div class="select-text">
 															<!-- Variable row -->
 															<div
-																class="flex items-center gap-1 px-2 py-0.5 hover:bg-[#2a2d2e] cursor-pointer"
+																class="flex items-center gap-1 px-2 py-0.5 cursor-pointer variable-row"
+																style="--hover-bg: {themeColors.hoverBg};"
 																onclick={() => hasChildren && toggleVarExpand(varKey, variable.variablesReference ?? 0)}
 															>
 																<!-- Expand/collapse icon -->
 																<span class="w-3 flex-shrink-0">
 																	{#if hasChildren}
 																		{#if isLoading}
-																			<Loader2 size={10} class="animate-spin text-[#808080]" />
+																			<Loader2 size={10} class="animate-spin" style="color: {themeColors.textMuted};" />
 																		{:else if isExpanded}
-																			<ChevronDown size={10} class="text-[#808080]" />
+																			<ChevronDown size={10} style="color: {themeColors.textMuted};" />
 																		{:else}
-																			<ChevronRight size={10} class="text-[#808080]" />
+																			<ChevronRight size={10} style="color: {themeColors.textMuted};" />
 																		{/if}
 																	{/if}
 																</span>
 																<!-- Variable name -->
-																<span class="text-[#9cdcfe]">{variable.name}</span>
-																<span class="text-[#808080] mx-1">=</span>
-																<!-- Variable value (truncated) -->
-																<span class="text-[#ce9178] truncate flex-1" title={variable.value}>
+																<span style="color: {themeColors.varName};">{variable.name}</span>
+																<span class="mx-1" style="color: {themeColors.textMuted};">=</span>
+																<!-- Variable value (truncated, click to see full) -->
+																<span
+																	class="truncate flex-1 cursor-pointer hover:underline"
+																	style="color: {themeColors.varValue};"
+																	title="Click to see full value"
+																	onclick={(e) => { e.stopPropagation(); showFullValue(variable.name, variable.value, variable.type); }}
+																>
 																	{variable.value.length > 50 ? variable.value.slice(0, 50) + '...' : variable.value}
 																</span>
 																{#if variable.type}
-																	<span class="text-[#4ec9b0] text-[10px] ml-1 flex-shrink-0">{variable.type}</span>
+																	<span class="text-[10px] ml-1 flex-shrink-0" style="color: {themeColors.varType};">{variable.type}</span>
 																{/if}
 															</div>
 															<!-- Child variables (if expanded) -->
@@ -1162,40 +1256,94 @@
 																	{@const childIsExpanded = expandedVars.has(childKey)}
 																	{@const childIsLoading = loadingVars.has(child.variablesReference ?? 0)}
 																	<div
-																		class="flex items-center gap-1 px-2 py-0.5 pl-6 hover:bg-[#2a2d2e] cursor-pointer"
+																		class="flex items-center gap-1 px-2 py-0.5 pl-6 cursor-pointer variable-row"
+																		style="--hover-bg: {themeColors.hoverBg};"
 																		onclick={() => childHasChildren && toggleVarExpand(childKey, child.variablesReference ?? 0)}
 																	>
 																		<span class="w-3 flex-shrink-0">
 																			{#if childHasChildren}
 																				{#if childIsLoading}
-																					<Loader2 size={10} class="animate-spin text-[#808080]" />
+																					<Loader2 size={10} class="animate-spin" style="color: {themeColors.textMuted};" />
 																				{:else if childIsExpanded}
-																					<ChevronDown size={10} class="text-[#808080]" />
+																					<ChevronDown size={10} style="color: {themeColors.textMuted};" />
 																				{:else}
-																					<ChevronRight size={10} class="text-[#808080]" />
+																					<ChevronRight size={10} style="color: {themeColors.textMuted};" />
 																				{/if}
 																			{/if}
 																		</span>
-																		<span class="text-[#9cdcfe]">{child.name}</span>
-																		<span class="text-[#808080] mx-1">=</span>
-																		<span class="text-[#ce9178] truncate flex-1" title={child.value}>
+																		<span style="color: {themeColors.varName};">{child.name}</span>
+																		<span class="mx-1" style="color: {themeColors.textMuted};">=</span>
+																		<span
+																			class="truncate flex-1 cursor-pointer hover:underline"
+																			style="color: {themeColors.varValue};"
+																			title="Click to see full value"
+																			onclick={(e) => { e.stopPropagation(); showFullValue(child.name, child.value, child.type); }}
+																		>
 																			{child.value.length > 40 ? child.value.slice(0, 40) + '...' : child.value}
 																		</span>
 																		{#if child.type}
-																			<span class="text-[#4ec9b0] text-[10px] ml-1 flex-shrink-0">{child.type}</span>
+																			<span class="text-[10px] ml-1 flex-shrink-0" style="color: {themeColors.varType};">{child.type}</span>
 																		{/if}
 																	</div>
 																	<!-- Level 2 children -->
 																	{#if childIsExpanded && childHasChildren && childVariables[child.variablesReference ?? 0]}
 																		{#each childVariables[child.variablesReference ?? 0] as grandchild}
-																			<div class="flex items-center gap-1 px-2 py-0.5 pl-10 hover:bg-[#2a2d2e]">
-																				<span class="w-3"></span>
-																				<span class="text-[#9cdcfe]">{grandchild.name}</span>
-																				<span class="text-[#808080] mx-1">=</span>
-																				<span class="text-[#ce9178] truncate flex-1" title={grandchild.value}>
+																			{@const grandchildKey = `${child.variablesReference}:${grandchild.name}`}
+																			{@const grandchildHasChildren = (grandchild.variablesReference ?? 0) > 0}
+																			{@const grandchildIsExpanded = expandedVars.has(grandchildKey)}
+																			{@const grandchildIsLoading = loadingVars.has(grandchild.variablesReference ?? 0)}
+																			<div
+																				class="flex items-center gap-1 px-2 py-0.5 pl-10 variable-row"
+																				style="--hover-bg: {themeColors.hoverBg};"
+																				class:cursor-pointer={grandchildHasChildren}
+																				onclick={() => grandchildHasChildren && toggleVarExpand(grandchildKey, grandchild.variablesReference ?? 0)}
+																			>
+																				<span class="w-3 flex-shrink-0">
+																					{#if grandchildHasChildren}
+																						{#if grandchildIsLoading}
+																							<Loader2 size={10} class="animate-spin" style="color: {themeColors.textMuted};" />
+																						{:else if grandchildIsExpanded}
+																							<ChevronDown size={10} style="color: {themeColors.textMuted};" />
+																						{:else}
+																							<ChevronRight size={10} style="color: {themeColors.textMuted};" />
+																						{/if}
+																					{/if}
+																				</span>
+																				<span style="color: {themeColors.varName};">{grandchild.name}</span>
+																				<span class="mx-1" style="color: {themeColors.textMuted};">=</span>
+																				<span
+																					class="truncate flex-1 cursor-pointer hover:underline"
+																					style="color: {themeColors.varValue};"
+																					title="Click to see full value"
+																					onclick={(e) => { e.stopPropagation(); showFullValue(grandchild.name, grandchild.value, grandchild.type); }}
+																				>
 																					{grandchild.value.length > 30 ? grandchild.value.slice(0, 30) + '...' : grandchild.value}
 																				</span>
+																				{#if grandchild.type}
+																					<span class="text-[10px] ml-1 flex-shrink-0" style="color: {themeColors.varType};">{grandchild.type}</span>
+																				{/if}
 																			</div>
+																			<!-- Level 3 children -->
+																			{#if grandchildIsExpanded && grandchildHasChildren && childVariables[grandchild.variablesReference ?? 0]}
+																				{#each childVariables[grandchild.variablesReference ?? 0] as greatgrandchild}
+																					<div
+																						class="flex items-center gap-1 px-2 py-0.5 pl-14 variable-row"
+																						style="--hover-bg: {themeColors.hoverBg};"
+																					>
+																						<span class="w-3"></span>
+																						<span style="color: {themeColors.varName};">{greatgrandchild.name}</span>
+																						<span class="mx-1" style="color: {themeColors.textMuted};">=</span>
+																						<span
+																							class="truncate flex-1 cursor-pointer hover:underline"
+																							style="color: {themeColors.varValue};"
+																							title="Click to see full value"
+																							onclick={(e) => { e.stopPropagation(); showFullValue(greatgrandchild.name, greatgrandchild.value, greatgrandchild.type); }}
+																						>
+																							{greatgrandchild.value.length > 25 ? greatgrandchild.value.slice(0, 25) + '...' : greatgrandchild.value}
+																						</span>
+																					</div>
+																				{/each}
+																			{/if}
 																		{/each}
 																	{/if}
 																{/each}
@@ -1253,10 +1401,88 @@
 	{/if}
 </div>
 
+<!-- Full Value Viewer Modal -->
+{#if showValueViewer}
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+		onclick={closeValueViewer}
+		role="dialog"
+		aria-modal="true"
+	>
+		<div
+			class="rounded-lg shadow-2xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col"
+			style="background-color: {themeColors.bg}; border: 1px solid {themeColors.border};"
+			onclick={(e) => e.stopPropagation()}
+		>
+			<!-- Modal Header -->
+			<div
+				class="flex items-center justify-between px-4 py-3 border-b"
+				style="border-color: {themeColors.border}; background-color: {themeColors.headerBg};"
+			>
+				<div class="flex items-center gap-2">
+					<span class="font-medium" style="color: {themeColors.varName};">{viewerVarName}</span>
+					{#if viewerVarType}
+						<span class="text-xs px-2 py-0.5 rounded" style="background-color: {themeColors.border}; color: {themeColors.varType};">
+							{viewerVarType}
+						</span>
+					{/if}
+				</div>
+				<button
+					onclick={closeValueViewer}
+					class="p-1 rounded hover:bg-gray-700/50 transition-colors"
+					title="Close"
+				>
+					<X size={18} style="color: {themeColors.textMuted};" />
+				</button>
+			</div>
+			<!-- Modal Body -->
+			<div class="flex-1 overflow-auto p-4">
+				<pre
+					class="text-sm font-mono whitespace-pre-wrap break-words select-text"
+					style="color: {themeColors.varValue};"
+				>{viewerVarValue}</pre>
+			</div>
+			<!-- Modal Footer -->
+			<div
+				class="flex items-center justify-end gap-2 px-4 py-3 border-t"
+				style="border-color: {themeColors.border};"
+			>
+				<button
+					onclick={async () => {
+						await navigator.clipboard.writeText(viewerVarValue);
+					}}
+					class="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded transition-colors"
+					style="background-color: {themeColors.border}; color: {themeColors.text};"
+				>
+					<Copy size={14} />
+					Copy
+				</button>
+				<button
+					onclick={closeValueViewer}
+					class="px-3 py-1.5 text-sm rounded transition-colors"
+					style="background-color: {themeColors.varType}; color: {themeColors.bg};"
+				>
+					Close
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
 <style>
 	/* Prevent text selection during resize */
 	:global(body.resizing) {
 		user-select: none;
 		cursor: ns-resize;
+	}
+
+	/* Variable row hover effect using CSS custom property */
+	.variable-row:hover {
+		background-color: var(--hover-bg);
+	}
+
+	/* Reference button hover effect */
+	.ref-button:hover {
+		background-color: var(--hover-bg);
 	}
 </style>

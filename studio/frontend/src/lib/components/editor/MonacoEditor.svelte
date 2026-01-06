@@ -424,42 +424,61 @@
 		box-shadow: 0 0 4px rgba(229, 20, 0, 0.5);
 	}
 
-	/* Breakpoint line background - subtle red tint */
+	/* Breakpoint line background - very subtle red tint (fainter by default) */
 	:global(.breakpoint-line) {
-		background-color: rgba(229, 20, 0, 0.15) !important;
+		background-color: rgba(229, 20, 0, 0.05) !important;
 	}
 
-	/* Breakpoint line margin - darker red strip */
+	/* Breakpoint line margin - subtle red strip (fainter by default) */
 	:global(.breakpoint-line-margin) {
-		background-color: rgba(229, 20, 0, 0.3) !important;
+		background-color: rgba(229, 20, 0, 0.08) !important;
 	}
 
-	/* Current execution line - bright yellow highlight (when paused at breakpoint) */
+	/* Current execution line - VERY prominent bright cyan/yellow highlight (when paused) */
+	/* Completely different color from breakpoints to make it instantly recognizable */
+	:global(.monaco-editor .view-overlays .current-execution-line),
 	:global(.current-execution-line) {
-		background-color: rgba(255, 238, 0, 0.35) !important;
-		border-left: 4px solid #ffee00 !important;
-		box-shadow: inset 0 0 0 1px rgba(255, 238, 0, 0.3) !important;
+		background: linear-gradient(to right, rgba(0, 255, 170, 0.35), rgba(255, 255, 0, 0.25)) !important;
+		border-left: 5px solid #00ff99 !important;
+		box-shadow:
+			inset 0 0 0 1px rgba(0, 255, 170, 0.6),
+			0 0 12px rgba(0, 255, 170, 0.5),
+			0 0 20px rgba(0, 255, 170, 0.3) !important;
 	}
 
-	/* Current execution glyph - bright yellow arrow */
+	/* Current execution glyph - bright cyan/green background in gutter */
+	:global(.monaco-editor .margin-view-overlays .current-execution-glyph),
 	:global(.current-execution-glyph) {
-		background-color: rgba(255, 238, 0, 0.2) !important;
+		background: linear-gradient(to right, rgba(0, 255, 170, 0.5), rgba(0, 255, 170, 0.3)) !important;
 	}
+
+	:global(.monaco-editor .margin-view-overlays .current-execution-glyph::before),
 	:global(.current-execution-glyph::before) {
 		content: '▶';
-		color: #ffee00;
+		color: #00ff99;
 		font-size: 14px;
 		font-weight: bold;
 		position: absolute;
 		left: 2px;
-		top: -1px;
-		text-shadow: 0 0 8px rgba(255, 238, 0, 1), 0 0 2px #000;
-		animation: pulse-glow 1.5s ease-in-out infinite;
+		top: 0px;
+		text-shadow: 0 0 10px rgba(0, 255, 170, 1), 0 0 20px rgba(0, 255, 170, 0.8), 0 0 3px #000;
+		animation: pulse-glow-green 1s ease-in-out infinite;
+		z-index: 100;
+	}
+
+	/* Ensure current line has higher z-index than breakpoint line */
+	:global(.monaco-editor .view-overlays .current-execution-line) {
+		z-index: 10 !important;
+	}
+
+	@keyframes pulse-glow-green {
+		0%, 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 4px #00ff99); }
+		50% { opacity: 0.85; transform: scale(1.1); filter: drop-shadow(0 0 8px #00ff99); }
 	}
 
 	@keyframes pulse-glow {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0.6; }
+		0%, 100% { opacity: 1; transform: scale(1); }
+		50% { opacity: 0.7; transform: scale(1.05); }
 	}
 
 	/* Hover effect for gutter area when breakpoints enabled */
