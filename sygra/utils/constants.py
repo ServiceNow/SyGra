@@ -59,7 +59,7 @@ MAX_FAILED_ERROR = 10
 MODEL_FAILURE_WINDOW_IN_SEC = 30
 
 # retry the request for below http errors
-RETRYABLE_HTTP_ERROR = [408, 429, 599, 444]
+RETRYABLE_HTTP_ERROR = [408, 429, 599, 444, 500]
 
 # all metadata variables for resumability
 META_TASK_NAME = "task_name"
@@ -97,6 +97,7 @@ INFERENCE_SERVER_TRITON = "triton"
 MODEL_BACKEND_CUSTOM = "custom"
 MODEL_BACKEND_LITELLM = "litellm"
 MODEL_BACKEND_LANGGRAPH = "langgraph"
+MODEL_BACKEND_PROXY = "proxy"
 
 # variables used for multiple datasets
 ALIAS_JOINER = "->"

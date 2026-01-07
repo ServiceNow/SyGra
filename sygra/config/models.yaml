@@ -133,21 +133,61 @@ gemini_2_5_pro:
     max_tokens: 5000
     temperature: 0.5
 
+# Vertex AI model
+gemini_3.0:
+  model_type: vertex_ai
+  model: gemini-3-pro-preview
+  parameters:
+  max_tokens: 5000
+  temperature: 0.5
+
 # Bedrock model
 bedrock_model:
   model_type: bedrock
-  model: anthropic.claude-sonnet-4-5-20250929-v1:0
+  model: us.anthropic.claude-sonnet-4-5-20250929-v1:0
   # aws_access_key_id, aws_secret_access_key, aws_region_name should be defined at .env file as SYGRA_BEDROCK_MODEL_AWS_ACCESS_KEY_ID, SYGRA_BEDROCK_MODEL_AWS_SECRET_ACCESS_KEY, SYGRA_BEDROCK_MODEL_AWS_REGION_NAME
   parameters:
     max_tokens: 5000
     temperature: 0.5
 
 
-#gpt 5
+openai_gpt41:
+  model_type: azure_openai
+  model: gpt-4.1
+  api_version: 2024-02-15-preview
+  parameters:
+    max_tokens: 5000
+    temperature: 0.1
+
 gpt-5:
   model_type: azure_openai
   model: gpt-5
-  # URL and auth_token should be defined at .env file as SYGRA_GPT-4O_URL and SYGRA_GPT-4O_TOKEN
-  api_version: 2024-08-01-preview
+  # URL and auth_token should be defined at .env file as SYGRA_GPT-5_URL and SYGRA_GPT-5_TOKEN
+  api_version: 2024-02-15-preview
   parameters:
     max_completion_tokens: 5000
+    temperature: 1
+
+claude_large:
+  model_type: claude_proxy
+  client_type: http
+  backend: proxy
+  extra_headers:
+    x-now-transaction-id: "19076269ff422210f429ffffffffff8f"
+    x-now-request-metadata: "{\"trace_id\":\"1d076269664222105c1a6ddecc4f6aa6\",\"solution_name\":\"NAA Reasoning Engine (Claude Large)\",\"instance_id\":\"66e9ef02ad712210a6f9e69efb0d20db\",\"instance_name\":\"glide_db_dump\",\"instance_version\":\"27\",\"system_id\":\"192.168.29.108:node-a\",\"traceparent\":\"00-1d076269664222105c1a6ddecc4f6aa6-1d07626966422210-01\",\"solution_id\":\"473b82a5ff022210f429ffffffffffa1\",\"solution_capability\":\"NAA Reasoning Claude\",\"node_id\":\"node-a\",\"anthropic-beta\":\"computer-use-2025-01-24\"}"
+  additional_params:
+    thinking:
+      type: disabled
+    anthropic_beta:
+      - computer-use-2025-01-24
+  parameters:
+    maxTokens: 2500
+    temperature: 0
+
+gemini_2.5_proxy:
+  model_type: gemini_proxy
+  client_type: http
+  backend: proxy
+  parameters:
+    maxOutputTokens: 2500
+    temperature: 0

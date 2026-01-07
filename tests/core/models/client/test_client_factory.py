@@ -61,7 +61,9 @@ class TestClientFactory(unittest.TestCase):
         }
         with self.assertRaises(ValueError) as context:
             ClientFactory.create_client(model_config, model_url)
-        self.assertIn("Auth token/API key is required for client creation", str(context.exception))
+            # Updated to match Pydantic validation error message
+            self.assertIn("api_key", str(context.exception))
+            self.assertIn("Input should be a valid string", str(context.exception))
 
     @patch("sygra.core.models.client.client_factory.OpenAIClient")
     @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
