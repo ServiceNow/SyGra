@@ -33,11 +33,11 @@ jobs:
           df -h
 
       # ---- Checkout ----
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # ---- Python setup ----
       # Pin to an explicit patch version so cached venv is always valid
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         id: setup-python
         with:
           python-version: "3.11.14"
@@ -51,7 +51,7 @@ jobs:
 
       # ---- Cache uv global + python installs ----
       - name: Cache uv global cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/uv
@@ -62,7 +62,7 @@ jobs:
 
       # ---- Cache project venv ----
       - name: Cache project .venv
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .venv
           key: uv-venv-${{ runner.os }}-py${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/uv.lock', '**/pyproject.toml') }}
@@ -92,7 +92,7 @@ jobs:
         run: make docs
 
       # ---- Upload docs artifact ----
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: site
 
