@@ -40,7 +40,7 @@ jobs:
       - uses: actions/setup-python@v6
         id: setup-python
         with:
-          python-version: "3.9.25"
+          python-version: "3.11.14"
 
       # ---- Install uv ----
       - name: Install uv

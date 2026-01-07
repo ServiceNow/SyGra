@@ -17,7 +17,7 @@ The **SyGra Library** provides a high-level Python interface for building and ex
 
 ## Installation
 
-Requirements: Python 3.9-3.11 recommended. We also recommend upgrading `pip` first.
+Requirements: Python 3.11-3.13 recommended. We also recommend upgrading `pip` first.
 
 **Install from PyPI**
 ```bash
@@ -117,7 +117,7 @@ workflow.llm("gpt-4o", "Summarize: {text}")
 ```python
 workflow.llm(
     model={
-        "name": "gpt-4o", 
+        "name": "gpt-4o",
         "parameters": {"temperature": 0.7, "max_tokens": 2000}
     },
     prompt=[
@@ -180,8 +180,8 @@ class TextProcessor(LambdaFunction):
     def apply(lambda_node_dict: dict, state: SygraState):
         text = state.get("text", "").strip().lower()
         return {
-            **state, 
-            "processed_text": text, 
+            **state,
+            "processed_text": text,
             "word_count": len(text.split())
         }
 
@@ -205,11 +205,11 @@ workflow.lambda_func(extract_keywords, output="keywords")
 class DataValidator:
     def __init__(self, config):
         self.config = config
-    
+
     def __call__(self, data):
         score = len(data["text"]) / 100
         return {
-            "quality_score": min(1.0, score), 
+            "quality_score": min(1.0, score),
             "is_valid": score > self.config["threshold"]
         }
 
@@ -239,9 +239,9 @@ workflow = sygra.Workflow("existing_task") \
 
 ```python
 workflow.override_model(
-    node_name="analyzer", 
-    model_name="gpt-4o", 
-    temperature=0.8, 
+    node_name="analyzer",
+    model_name="gpt-4o",
+    temperature=0.8,
     max_tokens=1500
 )
 ```
@@ -250,9 +250,9 @@ workflow.override_model(
 
 ```python
 workflow.override_prompt(
-    node_name="generator", 
-    role="system", 
-    content="You are a helpful assistant", 
+    node_name="generator",
+    role="system",
+    content="You are a helpful assistant",
     index=0
 )
 ```
@@ -263,15 +263,15 @@ workflow.override_prompt(
 # Override glaive_code_assistant task configuration
 workflow = sygra.Workflow("examples/glaive_code_assistant") \
     .override_prompt(
-        "generate_answer", 
-        "user", 
-        "Solve step by step: {question}", 
+        "generate_answer",
+        "user",
+        "Solve step by step: {question}",
         index=1
     ) \
     .override_prompt(
-        "critique_answer", 
-        "system", 
-        "Be thorough in your code review", 
+        "critique_answer",
+        "system",
+        "Be thorough in your code review",
         index=0
     ) \
     .override_model("generate_answer", "gpt-4o", temperature=0.2) \
@@ -342,17 +342,17 @@ class InputValidator(NodePreProcessor):
         # Validate required fields
         if "text" not in state or not state["text"]:
             state["text"] = "[MISSING_TEXT]"
-        
+
         # Add metadata
         state["validated"] = True
         state["timestamp"] = datetime.now().isoformat()
-        
+
         return state
 
 # Use in workflow
 workflow.llm(
-    "gpt-4o", 
-    "Process: {text}", 
+    "gpt-4o",
+    "Process: {text}",
     pre_process=InputValidator
 )
 ```
@@ -367,7 +367,7 @@ from sygra.core.graph.functions.node_processor import NodePostProcessor
 class ResponseFormatter(NodePostProcessor):
     def apply(self, response: SygraMessage) -> SygraState:
         content = response.message.content
-        
+
         return {
             "formatted_response": content.strip(),
             "response_length": len(content),
@@ -377,8 +377,8 @@ class ResponseFormatter(NodePostProcessor):
 
 # Use in workflow
 workflow.llm(
-    "gpt-4o", 
-    "Analyze: {text}", 
+    "gpt-4o",
+    "Analyze: {text}",
     post_process=ResponseFormatter
 )
 ```
@@ -394,17 +394,17 @@ class QualityAnalyzer(NodePostProcessorWithState):
     def apply(self, response: SygraMessage, state: SygraState) -> SygraState:
         content = response.message.content
         original_text = state.get("text", "")
-        
+
         # Calculate quality metrics
         quality_score = self._calculate_quality(original_text, content)
-        
+
         return {
             **state,  # Preserve original state
             "processed_response": content,
             "quality_score": quality_score,
             "is_high_quality": quality_score > 0.7
         }
-    
+
     def _calculate_quality(self, original, response):
         # Your quality calculation logic
         return 0.85
@@ -531,7 +531,7 @@ workflow = sygra.Workflow("research_assistant") \
     ) \
     .multi_llm(
         models={
-            "summarizer": "gpt-4o", 
+            "summarizer": "gpt-4o",
             "reviewer": "claude-3-sonnet"
         },
         prompt="Synthesize research findings: {messages}"
@@ -551,4 +551,3 @@ workflow = sygra.Workflow("research_assistant") \
 | `workflow.run()` | `List[Dict]` or `Any` | Processed results |
 | `graph.build()` | `ExecutableGraph` | Built graph object |
 | `graph.run()` | `List[Dict]` or `Any` | Execution results |
-
