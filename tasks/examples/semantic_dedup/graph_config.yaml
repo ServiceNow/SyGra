@@ -1,0 +1,46 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: "tasks/examples/semantic_dedup_demo/input.json"
+    file_format: "json"
+
+graph_config:
+  nodes:
+    respond:
+      node_type: llm
+      output_keys: answer
+      prompt:
+        - system: |
+            You are a helpful assistant.
+        - user: |
+            {prompt}
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.7
+
+  edges:
+    - from: START
+      to: respond
+    - from: respond
+      to: END
+
+graph_post_process:
+  - processor: sygra.core.graph.graph_postprocessor.SemanticDedupPostProcessor
+    params:
+      field: answer
+      similarity_threshold: 0.92
+      id_field: id
+      embedding_backend: sentence_transformers
+      embedding_model: all-MiniLM-L6-v2
+      keep: first
+      max_pairs_in_report: 1000
+
+output_config:
+  output_map:
+    id:
+      from: id
+    prompt:
+      from: prompt
+    answer:
+      from: answer
