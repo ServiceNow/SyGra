@@ -133,14 +133,6 @@ gemini_2_5_pro:
     max_tokens: 5000
     temperature: 0.5
 
-# Vertex AI model
-gemini_3.0:
-  model_type: vertex_ai
-  model: gemini-3-pro-preview
-  parameters:
-  max_tokens: 5000
-  temperature: 0.5
-
 # Bedrock model
 bedrock_model:
   model_type: bedrock
