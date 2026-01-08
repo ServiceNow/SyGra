@@ -2856,7 +2856,7 @@ class CustomGeminiProxy(BaseCustomModel):
                             if len(resp_text) > 0:
                                 # add newline if not empty
                                 resp_text = resp_text + "\n"
-                            resp_text = v
+                            resp_text = resp_text + v
                         elif k == "functionCall":
                             # use response id for tool call id in openai
                             resp_tool = self._convert_tool_use_to_openai(v, resp_id)
