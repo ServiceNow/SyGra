@@ -487,8 +487,6 @@ class BaseCustomModel(ABC):
         url_obj = self.model_config.get("url")
         if "auth_token" in self.model_config:
             auth_token = self.model_config.get("auth_token", "")
-        elif "api_key" in self.model_config:
-            auth_token = self.model_config.get("api_key", "")
         else:
             auth_token = None
 
@@ -2500,7 +2498,13 @@ class CustomClaudeProxy(BaseCustomModel):
                     if isinstance(content, str):
                         system_msg = content
                     elif content and len(content) > 0:
-                        system_msg = content[0].get("text", "")
+                        system_msg = " ".join(
+                            [
+                                item.get("text", "")
+                                for item in content
+                                if isinstance(item, dict) and "text" in item
+                            ]
+                        )
                 elif message.get("role") != "system":
                     input_message.append(message)
             input_message = self._convert_openai_tool_call_to_model_format(input_message)
@@ -2787,7 +2791,13 @@ class CustomGeminiProxy(BaseCustomModel):
                     if isinstance(content, str):
                         system_msg = content
                     elif content and len(content) > 0:
-                        system_msg = content[0].get("text", "")
+                        system_msg = " ".join(
+                            [
+                                item.get("text", "")
+                                for item in content
+                                if isinstance(item, dict) and "text" in item
+                            ]
+                        )
                 elif message.get("role") != "system":
                     input_messages.append(message)
             input_messages = self._convert_openai_tool_call_to_model_format(input_messages)

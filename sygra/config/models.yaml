@@ -164,9 +164,6 @@ claude_large:
   model_type: claude_proxy
   client_type: http
   backend: proxy
-  extra_headers:
-    x-now-transaction-id: "19076269ff422210f429ffffffffff8f"
-    x-now-request-metadata: "{\"trace_id\":\"1d076269664222105c1a6ddecc4f6aa6\",\"solution_name\":\"NAA Reasoning Engine (Claude Large)\",\"instance_id\":\"66e9ef02ad712210a6f9e69efb0d20db\",\"instance_name\":\"glide_db_dump\",\"instance_version\":\"27\",\"system_id\":\"192.168.29.108:node-a\",\"traceparent\":\"00-1d076269664222105c1a6ddecc4f6aa6-1d07626966422210-01\",\"solution_id\":\"473b82a5ff022210f429ffffffffffa1\",\"solution_capability\":\"NAA Reasoning Claude\",\"node_id\":\"node-a\",\"anthropic-beta\":\"computer-use-2025-01-24\"}"
   additional_params:
     thinking:
       type: disabled
