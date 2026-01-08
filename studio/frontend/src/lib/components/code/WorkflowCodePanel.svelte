@@ -116,6 +116,7 @@
 	let isDebugPaused = $state(false);
 	let debugVariables = $state<Array<{scope: string; name: string; value: string; type?: string; variablesReference?: number}>>([]);
 	let showDebugPanel = $state(true);
+	let variablesLoaded = $state(false);  // Track if we've received variables at least once
 
 	// Expanded variables tracking (key = "scope:name" or "parentRef:name")
 	let expandedVars = $state<Set<string>>(new Set());
@@ -681,7 +682,15 @@
 			await fetch(`${API_BASE}/code/executions/${executionId}/stop`, {
 				method: 'POST'
 			});
+			// Reset all execution and debug state
 			isRunning = false;
+			isDebugPaused = false;
+			currentDebugLine = null;
+			debugVariables = [];
+			variablesLoaded = false;
+			expandedVars = new Set();
+			childVariables = {};
+			loadingVars = new Set();
 		} catch (e) {
 			console.error('Stop failed:', e);
 		}
@@ -726,6 +735,18 @@
 	function handleDebugVariables(event: CustomEvent<{ variables: typeof debugVariables }>) {
 		console.log('[EVENT] debugVariables:', event.detail.variables?.length);
 		debugVariables = event.detail.variables || [];
+		variablesLoaded = true;  // Mark that we've received variables (even if empty)
+	}
+
+	function handleDebugTerminated() {
+		console.log('[EVENT] debugTerminated');
+		isDebugPaused = false;
+		currentDebugLine = null;
+		debugVariables = [];
+		variablesLoaded = false;
+		expandedVars = new Set();
+		childVariables = {};
+		loadingVars = new Set();
 	}
 
 	// Toggle variable expansion and fetch children if needed
@@ -1193,8 +1214,14 @@
 									<div class="flex-1 overflow-y-auto min-h-0 text-[12px]">
 										{#if debugVariables.length === 0}
 											<div class="flex flex-col items-center justify-center py-8" style="color: {themeColors.textMuted};">
-												<Loader2 size={18} class="animate-spin mb-2" />
-												<span class="text-[11px]">Loading variables...</span>
+												{#if variablesLoaded}
+													<!-- Variables were loaded but none available -->
+													<span class="text-[11px]">No variables in current scope</span>
+												{:else}
+													<!-- Still waiting for variables -->
+													<Loader2 size={18} class="animate-spin mb-2" />
+													<span class="text-[11px]">Loading variables...</span>
+												{/if}
 											</div>
 										{:else}
 											{#each Object.entries(groupedVariables) as [scope, vars]}
@@ -1394,6 +1421,7 @@
 						on:debugPaused={handleDebugPaused}
 						on:debugContinued={handleDebugContinued}
 						on:debugVariables={handleDebugVariables}
+						on:debugTerminated={handleDebugTerminated}
 					/>
 				</div>
 			</div>

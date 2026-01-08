@@ -50,6 +50,7 @@
 		debugVariables: { variables: DebugVariable[] };
 		debugPaused: { reason: string };
 		debugContinued: void;
+		debugTerminated: void;
 	}>();
 
 	// Debug state
@@ -175,11 +176,50 @@
 
 				const data = await response.json();
 
-				// Add new output lines
+				// Add new output lines and process debug events
 				if (data.output && data.output.length > lastOutputLength) {
 					const newLines = data.output.slice(lastOutputLength);
 					for (const line of newLines) {
-						if (line.type !== 'heartbeat') {
+						if (line.type === 'heartbeat') {
+							continue;
+						}
+
+						// Handle debug events the same way as WebSocket
+						if (line.type === 'debug_stopped') {
+							console.log('[Polling] Received debug_stopped:', line);
+							isPaused = true;
+							if (line.content) {
+								output = [...output, { type: 'debug', content: line.content }];
+							}
+							dispatch('debugPaused', { reason: line.reason || 'breakpoint' });
+						} else if (line.type === 'debug_location') {
+							console.log('[Polling] Received debug_location:', line);
+							currentDebugLine = line.line || null;
+							if (line.line && line.file) {
+								dispatch('debugLocation', { line: line.line, file: line.file });
+							}
+						} else if (line.type === 'debug_variables') {
+							console.log('[Polling] Received debug_variables:', line.variables?.length, 'vars');
+							debugVariables = line.variables || [];
+							dispatch('debugVariables', { variables: debugVariables });
+						} else if (line.type === 'debug_continued') {
+							isPaused = false;
+							currentDebugLine = null;
+							debugVariables = [];
+							dispatch('debugContinued');
+							if (line.content) {
+								output = [...output, { type: 'debug', content: line.content }];
+							}
+						} else if (line.type === 'debug_terminated') {
+							console.log('[Polling] Received debug_terminated:', line);
+							isPaused = false;
+							currentDebugLine = null;
+							debugVariables = [];
+							dispatch('debugTerminated');
+							if (line.content) {
+								output = [...output, { type: 'debug', content: line.content }];
+							}
+						} else {
 							output = [...output, line];
 						}
 					}
@@ -261,8 +301,11 @@
 				}
 			} else if (parsed.type === 'debug_terminated') {
 				// Debug session ended
+				console.log('[ExecutionOutputPanel] Received debug_terminated:', parsed);
 				isPaused = false;
 				currentDebugLine = null;
+				debugVariables = [];
+				dispatch('debugTerminated');
 				if (parsed.content) {
 					output = [...output, { type: 'debug', content: parsed.content }];
 					scrollToBottom();

@@ -2877,7 +2877,20 @@ runpy.run_path(run_target, run_name="__main__")
 
 
 async def _send_to_websocket(execution_id: str, data: dict):
-    """Send data to the WebSocket connection for this execution."""
+    """Send data to the WebSocket connection for this execution.
+
+    Also stores messages in execution's output array for polling fallback.
+    """
+    # Add timestamp if not present
+    if "timestamp" not in data:
+        data["timestamp"] = datetime.now().isoformat()
+
+    # Store in execution's output array for polling fallback
+    execution = _code_executions.get(execution_id)
+    if execution and "output" in execution:
+        execution["output"].append(data)
+
+    # Try to send via WebSocket
     ws = _websocket_connections.get(execution_id)
     if ws:
         try:
