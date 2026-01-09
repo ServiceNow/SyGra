@@ -8,6 +8,6 @@ class GraphPostProcessor(ABC):
     """
 
     @abstractmethod
-    def process(self, data: list, metadata: dict) -> list:
+    async def process(self, data: list, metadata: dict) -> list:
         # implement post processing logic with whole data, return the final data list
         pass

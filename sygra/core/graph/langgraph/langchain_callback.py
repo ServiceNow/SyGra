@@ -59,7 +59,7 @@ def calculate_cost(model_name: str, prompt_tokens: int, completion_tokens: int) 
                 return _get_anthropic_claude_token_cost(
                     prompt_tokens, completion_tokens, model_name
                 )
-            except (KeyError, ValueError):
+            except (KeyError, ValueError, IndexError):
                 # Claude model but not in Bedrock pricing table
                 pass
 
