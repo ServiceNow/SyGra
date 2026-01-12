@@ -62,7 +62,6 @@ class TestClientFactory(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             ClientFactory.create_client(model_config, model_url)
             # Updated to match Pydantic validation error message
-            self.assertIn("api_key", str(context.exception))
             self.assertIn("Input should be a valid string", str(context.exception))
 
     @patch("sygra.core.models.client.client_factory.OpenAIClient")
@@ -790,6 +789,419 @@ class TestClientFactory(unittest.TestCase):
         self.assertEqual(http_client.headers["Authorization"], "Bearer test-token")
         # json_payload remains False if not set to True
         self.assertFalse(http_client.json_payload)
+
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_create_http_client_for_claude_proxy(self, mock_validate):
+        """Test HTTP client creation for Claude proxy with all parameters"""
+        model_url = "http://claude-proxy.com/api"
+        model_config = {
+            "model_type": "claude_proxy",
+            "client_type": "http",
+            "backend": "proxy",
+            "url": model_url,
+            "timeout": 120,
+            "max_retries": 5,
+        }
+
+        # Claude proxy doesn't require auth_token
+        http_client = ClientFactory._create_http_client(model_config, model_url, None)
+
+        # Verify HttpClient was created correctly
+        self.assertIsNotNone(http_client)
+        self.assertEqual(http_client.base_url, model_url)
+        self.assertEqual(http_client.headers["Content-Type"], "application/json")
+        self.assertEqual(http_client.timeout, 120)
+        # No Authorization header when auth_token is None
+        self.assertNotIn("Authorization", http_client.headers)
+
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_create_http_client_for_gemini_proxy(self, mock_validate):
+        """Test HTTP client creation for Gemini proxy without auth token"""
+        model_url = "http://gemini-proxy.com/v1"
+        model_config = {
+            "model_type": "gemini_proxy",
+            "client_type": "http",
+            "backend": "proxy",
+            "url": model_url,
+            "timeout": 90,
+            "parameters": {"maxOutputTokens": 2500},
+        }
+
+        # Gemini proxy doesn't require auth_token
+        http_client = ClientFactory._create_http_client(model_config, model_url, None)
+
+        # Verify HttpClient was created correctly
+        self.assertIsNotNone(http_client)
+        self.assertEqual(http_client.base_url, model_url)
+        self.assertEqual(http_client.headers["Content-Type"], "application/json")
+        self.assertEqual(http_client.timeout, 90)
+        # No Authorization header when auth_token is None
+        self.assertNotIn("Authorization", http_client.headers)
+
+    @patch("sygra.core.models.client.client_factory.ClientFactory._create_http_client")
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_create_client_with_client_type_http(self, mock_validate, mock_create_http):
+        """Test that client_type=http takes priority and calls _create_http_client"""
+        mock_http_client = MagicMock()
+        mock_create_http.return_value = mock_http_client
+
+        model_url = "http://proxy-test.com"
+        model_auth_token = "test-token"
+        model_config = {
+            "model_type": "claude_proxy",
+            "client_type": "http",
+            "backend": "proxy",
+            "url": model_url,
+            "auth_token": model_auth_token,
+        }
+
+        result = ClientFactory.create_client(model_config, model_url, model_auth_token)
+
+        # Verify _create_http_client was called with correct parameters
+        mock_create_http.assert_called_once_with(model_config, model_url, model_auth_token)
+        self.assertEqual(result, mock_http_client)
+
+    @patch("sygra.core.models.client.client_factory.ClientFactory._create_http_client")
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_client_type_priority_over_model_type(self, mock_validate, mock_create_http):
+        """Test that client_type takes priority over model_type"""
+        mock_http_client = MagicMock()
+        mock_create_http.return_value = mock_http_client
+
+        model_url = "http://test.com"
+        model_auth_token = "test-token"
+
+        # Even though model_type is vllm (which normally uses OpenAI client),
+        # client_type=http should take priority
+        model_config = {
+            "model_type": "vllm",
+            "client_type": "http",
+            "url": model_url,
+            "auth_token": model_auth_token,
+        }
+
+        result = ClientFactory.create_client(model_config, model_url, model_auth_token)
+
+        # Should call _create_http_client, not _create_openai_client
+        mock_create_http.assert_called_once_with(model_config, model_url, model_auth_token)
+        self.assertEqual(result, mock_http_client)
+
+    # ============================================================================
+    # ERROR VALIDATION TESTS
+    # ============================================================================
+
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_invalid_client_type_raises_error(self, mock_validate):
+        """Test that invalid client_type raises ValueError with proper message"""
+        model_url = "http://test.com"
+        model_auth_token = "test-token"
+        model_config = {
+            "model_type": "vllm",
+            "client_type": "invalid_client_type",
+            "url": model_url,
+            "auth_token": model_auth_token,
+        }
+
+        with self.assertRaises(ValueError) as context:
+            ClientFactory.create_client(model_config, model_url, model_auth_token)
+
+        self.assertIn("Unsupported client type", str(context.exception))
+        self.assertIn("invalid_client_type", str(context.exception))
+
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_missing_client_type_uses_model_type(self, mock_validate):
+        """Test that when client_type is missing, model_type is used"""
+        model_url = "http://vllm-test.com"
+        model_auth_token = "test-token"
+        model_config = {
+            "model_type": "vllm",
+            # No client_type specified
+            "url": model_url,
+            "auth_token": model_auth_token,
+        }
+
+        # Should not raise error, should use model_type to determine client
+        # This would normally create OpenAIClient for vllm
+        # We're just testing it doesn't error out
+        try:
+            ClientFactory.create_client(model_config, model_url, model_auth_token)
+        except ValueError as e:
+            if "Unsupported client type" in str(e):
+                self.fail("Should not raise 'Unsupported client type' when client_type is missing")
+
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_proxy_backend_with_http_client_type_valid(self, mock_validate):
+        """Test that backend=proxy with client_type=http is valid combination"""
+        model_url = "http://proxy.com"
+        model_auth_token = "test-token"
+        model_config = {
+            "model_type": "claude_proxy",
+            "client_type": "http",
+            "backend": "proxy",
+            "url": model_url,
+            "auth_token": model_auth_token,
+        }
+
+        # Should not raise any errors
+        client = ClientFactory.create_client(model_config, model_url, model_auth_token)
+        self.assertIsNotNone(client)
+
+    # ============================================================================
+    # INTEGRATION TESTS - CLIENT TYPE + MODEL TYPE COMBINATIONS
+    # ============================================================================
+
+    @patch("sygra.core.models.client.client_factory.ClientFactory._create_openai_client")
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_vllm_without_client_type_uses_openai_client(self, mock_validate, mock_create_openai):
+        """Test that vllm model_type without client_type uses OpenAI client"""
+        mock_openai_client = MagicMock()
+        mock_create_openai.return_value = mock_openai_client
+
+        model_url = "http://vllm.com"
+        model_auth_token = "test-token"
+        model_config = {
+            "model_type": "vllm",
+            # No client_type
+            "url": model_url,
+            "auth_token": model_auth_token,
+        }
+
+        result = ClientFactory.create_client(model_config, model_url, model_auth_token)
+
+        # Should call _create_openai_client
+        mock_create_openai.assert_called_once()
+        self.assertEqual(result, mock_openai_client)
+
+    @patch("sygra.core.models.client.client_factory.ClientFactory._create_http_client")
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_azure_without_client_type_uses_http_client(self, mock_validate, mock_create_http):
+        """Test that azure model_type without client_type uses HTTP client"""
+        mock_http_client = MagicMock()
+        mock_create_http.return_value = mock_http_client
+
+        model_url = "http://azure.com"
+        model_auth_token = "test-token"
+        model_config = {
+            "model_type": "azure",
+            # No client_type
+            "url": model_url,
+            "auth_token": model_auth_token,
+        }
+
+        result = ClientFactory.create_client(model_config, model_url, model_auth_token)
+
+        # Should call _create_http_client
+        mock_create_http.assert_called_once_with(model_config, model_url, model_auth_token)
+        self.assertEqual(result, mock_http_client)
+
+    @patch("sygra.core.models.client.client_factory.ClientFactory._create_http_client")
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_openai_http_no_backend_calls_http_client(self, mock_validate, mock_create_http):
+        """Test that openai + http without backend specified uses HTTP client"""
+        mock_http_client = MagicMock()
+        mock_create_http.return_value = mock_http_client
+
+        model_url = "http://openai.com"
+        model_auth_token = "test-token"
+        model_config = {
+            "model_type": "openai",
+            "client_type": "http",
+            # No backend specified
+            "url": model_url,
+            "auth_token": model_auth_token,
+        }
+
+        result = ClientFactory.create_client(model_config, model_url, model_auth_token)
+
+        # client_type takes priority regardless of backend
+        mock_create_http.assert_called_once_with(model_config, model_url, model_auth_token)
+        self.assertEqual(result, mock_http_client)
+
+    @patch("sygra.core.models.client.client_factory.ClientFactory._create_openai_client")
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_vllm_without_client_type_custom_backend_uses_openai(
+        self, mock_validate, mock_create_openai
+    ):
+        """Test that vllm without client_type but with backend=custom still uses OpenAI client"""
+        mock_openai_client = MagicMock()
+        mock_create_openai.return_value = mock_openai_client
+
+        model_url = "http://vllm.com"
+        model_auth_token = "test-token"
+        model_config = {
+            "model_type": "vllm",
+            # No client_type
+            "backend": "custom",
+            "url": model_url,
+            "auth_token": model_auth_token,
+        }
+
+        result = ClientFactory.create_client(model_config, model_url, model_auth_token)
+
+        # Without client_type, model_type determines client (OpenAI for vllm)
+        mock_create_openai.assert_called_once()
+        self.assertEqual(result, mock_openai_client)
+
+    @patch("sygra.core.models.client.client_factory.ClientFactory._create_openai_client")
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_openai_without_client_type_custom_backend_uses_openai(
+        self, mock_validate, mock_create_openai
+    ):
+        """Test that openai without client_type but with backend=custom uses OpenAI client"""
+        mock_openai_client = MagicMock()
+        mock_create_openai.return_value = mock_openai_client
+
+        model_url = "http://openai.com"
+        model_auth_token = "test-token"
+        model_config = {
+            "model_type": "openai",
+            # No client_type
+            "backend": "custom",
+            "url": model_url,
+            "auth_token": model_auth_token,
+        }
+
+        result = ClientFactory.create_client(model_config, model_url, model_auth_token)
+
+        # model_type=openai uses OpenAI client when no client_type specified
+        mock_create_openai.assert_called_once()
+        self.assertEqual(result, mock_openai_client)
+
+    # ============================================================================
+    # PROXY BACKEND VALIDATION TESTS
+    # ============================================================================
+
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_proxy_model_requires_client_type_http(self, mock_validate):
+        """Test that proxy models require client_type=http to work correctly"""
+        model_url = "http://claude-proxy.com"
+        model_config = {
+            "model_type": "claude_proxy",
+            "client_type": "http",
+            "backend": "proxy",
+            "url": model_url,
+        }
+
+        # Should successfully create HTTP client
+        client = ClientFactory.create_client(model_config, model_url, None)
+
+        self.assertIsNotNone(client)
+        self.assertEqual(client.base_url, model_url)
+
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_claude_proxy_model_without_client_type_fails(self, mock_validate):
+        """Test that proxy models without client_type fail with proper error"""
+        model_url = "http://claude-proxy.com"
+        model_config = {
+            "model_type": "claude_proxy",  # Not a recognized model_type in ClientFactory
+            # Missing client_type
+            "backend": "proxy",
+            "url": model_url,
+        }
+
+        # Should raise ValueError because claude_proxy is not a supported model_type
+        with self.assertRaises(ValueError) as context:
+            ClientFactory.create_client(model_config, model_url, None)
+
+        self.assertIn("Unsupported model type", str(context.exception))
+        self.assertIn("claude_proxy", str(context.exception))
+
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_gemini_proxy_without_client_type_fails(self, mock_validate):
+        """Test that gemini_proxy without client_type fails with proper error"""
+        model_url = "http://gemini-proxy.com"
+        model_config = {
+            "model_type": "gemini_proxy",  # Not a recognized model_type in ClientFactory
+            # Missing client_type
+            "backend": "proxy",
+            "url": model_url,
+        }
+
+        # Should raise ValueError
+        with self.assertRaises(ValueError) as context:
+            ClientFactory.create_client(model_config, model_url, None)
+
+        self.assertIn("Unsupported model type", str(context.exception))
+        self.assertIn("gemini_proxy", str(context.exception))
+
+    # ============================================================================
+    # INVALID COMBINATION TESTS - HTTP CLIENT WITH NON-PROXY MODEL TYPES AND CUSTOM BACKEND
+    # ============================================================================
+
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_openai_with_http_client_creates_http_client(self, mock_validate):
+        """Test that openai + client_type=http creates HttpClient"""
+        model_url = "http://openai.com"
+        model_auth_token = "test-token"
+        model_config = {
+            "model_type": "openai",
+            "client_type": "http",
+            "backend": "custom",
+            "url": model_url,
+            "auth_token": model_auth_token,
+        }
+
+        # client_type takes priority, so HttpClient is created
+        client = ClientFactory.create_client(model_config, model_url, model_auth_token)
+
+        # Verify it's HttpClient
+        self.assertIsNotNone(client)
+        self.assertEqual(client.base_url, model_url)
+
+        # HttpClient.build_request raises NotImplementedError
+        with self.assertRaises(NotImplementedError) as context:
+            client.build_request(messages=[], **{})
+
+        self.assertIn("not supported", str(context.exception))
+
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_vllm_with_http_client_creates_http_client(self, mock_validate):
+        """Test that vllm + client_type=http creates HttpClient"""
+        model_url = "http://vllm.com"
+        model_auth_token = "test-token"
+        model_config = {
+            "model_type": "vllm",
+            "client_type": "http",
+            "backend": "custom",
+            "url": model_url,
+            "auth_token": model_auth_token,
+        }
+
+        # client_type takes priority
+        client = ClientFactory.create_client(model_config, model_url, model_auth_token)
+
+        self.assertIsNotNone(client)
+        self.assertEqual(client.base_url, model_url)
+
+        # HttpClient.build_request raises NotImplementedError
+        with self.assertRaises(NotImplementedError) as context:
+            client.build_request(messages=[], **{})
+
+        self.assertIn("not supported", str(context.exception))
+
+    @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
+    def test_azure_openai_with_http_client_creates_http_client(self, mock_validate):
+        """Test that azure_openai + client_type=http creates HttpClient"""
+        model_url = "http://azure-openai.com"
+        model_auth_token = "test-token"
+        model_config = {
+            "model_type": "azure_openai",
+            "client_type": "http",
+            "backend": "custom",
+            "url": model_url,
+            "auth_token": model_auth_token,
+        }
+
+        client = ClientFactory.create_client(model_config, model_url, model_auth_token)
+
+        self.assertIsNotNone(client)
+        self.assertEqual(client.base_url, model_url)
+
+        # HttpClient.build_request raises NotImplementedError
+        with self.assertRaises(NotImplementedError) as context:
+            client.build_request(messages=[], **{})
+
+        self.assertIn("not supported", str(context.exception))
 
 
 if __name__ == "__main__":
