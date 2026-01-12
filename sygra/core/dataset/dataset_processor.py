@@ -441,7 +441,7 @@ class DatasetProcessor:
                     metadata = {"output_file": output_file}
                     processor = utils.get_func_from_str(post_processor)
                     processor_name = post_processor.split(".")[-1]
-                    processed_output_data = await processor().process(output_data, metadata)
+                    processed_output_data = processor().process(output_data, metadata)
                     new_output_file = output_file[: output_file.rfind("/") + 1] + output_file[
                         output_file.rfind("/") + 1 :
                     ].replace("output", processor_name, 1)
