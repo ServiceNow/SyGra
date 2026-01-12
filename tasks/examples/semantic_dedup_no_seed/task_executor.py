@@ -18,11 +18,13 @@ def parse_response_as_json(s):
         if not p:
             logger.error("No json string found: " + e.msg)
             logger.error(s)
+            return {}
         try:
             return json.loads(p[0])
         except json.decoder.JSONDecodeError as e:
             logger.error("Unable to parse json string: " + e.msg)
             logger.error(s)
+            return {}
 
 
 class GenerateIncidentDataPostProcessor(NodePostProcessorWithState):

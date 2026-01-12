@@ -1,7 +1,7 @@
 data_config:
   source:
     type: "disk"
-    file_path: "tasks/examples/semantic_dedup_demo/input.json"
+    file_path: "tasks/examples/semantic_dedup/input.json"
     file_format: "json"
 
 graph_config:
@@ -30,6 +30,7 @@ graph_post_process:
     params:
       field: answer
       similarity_threshold: 0.92
+      dedup_mode: all_pairs
       id_field: id
       embedding_backend: sentence_transformers
       embedding_model: all-MiniLM-L6-v2
