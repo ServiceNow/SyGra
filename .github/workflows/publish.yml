@@ -4,8 +4,6 @@ on:
   push:
     tags:
       - "v*"  # Triggers when a new GitHub Tag is published eg: v1.2.3
-  release:
-    types: [published]  # Triggers when a new GitHub Release is published
 
 jobs:
   publish:
@@ -13,10 +11,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.9"
 
@@ -37,13 +35,13 @@ jobs:
       - name: Set version from GitHub tag
         run: |
           # Extract tag like "v1.2.3" → "1.2.3"
-          VERSION=${GITHUB_REF#refs/tags/v}
+          export VERSION="${GITHUB_REF#refs/tags/v}"
           echo "Setting [project].version to $VERSION"
           python - << 'PY'
           from pathlib import Path
           from tomlkit import parse, dumps
           import os
-          version = os.environ.get('VERSION')
+          version = os.environ["VERSION"]
           p = Path('pyproject.toml')
           doc = parse(p.read_text(encoding='utf-8'))
           # Update PEP 621 version

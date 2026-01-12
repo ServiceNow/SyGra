@@ -47,6 +47,13 @@ Technical reference for metric developers and platform code:
 - How to instantiate via registry
 - Understanding `UnitMetricResult`
 
+### [Unit Metrics Reference](unit_metrics_summary.md)
+Technical reference for unit metric developers and platform code:
+- What each unit metric validates
+- Required parameters (keys, thresholds, etc.)
+- How to instantiate and run batch evaluation
+- Understanding `UnitMetricResult`
+
 ## Quick Start: End User Perspective
 
 ### User Configuration (Simple!)
@@ -141,4 +148,3 @@ When adding new metrics documentation:
 3. Explain the "why" behind design decisions
 4. Cover edge cases and common pitfalls
 5. Provide real-world use case scenarios
-
