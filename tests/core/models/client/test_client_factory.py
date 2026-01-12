@@ -1090,7 +1090,7 @@ class TestClientFactory(unittest.TestCase):
 
     @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
     def test_claude_proxy_model_without_client_type_fails(self, mock_validate):
-        """Test that proxy models without client_type fail with proper error"""
+        """Test that proxy models without client_type fail with auth token error"""
         model_url = "http://claude-proxy.com"
         model_config = {
             "model_type": "claude_proxy",  # Not a recognized model_type in ClientFactory
@@ -1099,16 +1099,15 @@ class TestClientFactory(unittest.TestCase):
             "url": model_url,
         }
 
-        # Should raise ValueError because claude_proxy is not a supported model_type
+        # Should raise ValueError because auth_token is required when client_type is not specified
         with self.assertRaises(ValueError) as context:
             ClientFactory.create_client(model_config, model_url, None)
 
-        self.assertIn("Unsupported model type", str(context.exception))
-        self.assertIn("claude_proxy", str(context.exception))
+        self.assertIn("Auth token/API key is required", str(context.exception))
 
     @patch("sygra.core.models.client.client_factory.utils.validate_required_keys")
     def test_gemini_proxy_without_client_type_fails(self, mock_validate):
-        """Test that gemini_proxy without client_type fails with proper error"""
+        """Test that gemini_proxy without client_type fails with auth token error"""
         model_url = "http://gemini-proxy.com"
         model_config = {
             "model_type": "gemini_proxy",  # Not a recognized model_type in ClientFactory
@@ -1117,12 +1116,11 @@ class TestClientFactory(unittest.TestCase):
             "url": model_url,
         }
 
-        # Should raise ValueError
+        # Should raise ValueError because auth_token is required when client_type is not specified
         with self.assertRaises(ValueError) as context:
             ClientFactory.create_client(model_config, model_url, None)
 
-        self.assertIn("Unsupported model type", str(context.exception))
-        self.assertIn("gemini_proxy", str(context.exception))
+        self.assertIn("Auth token/API key is required", str(context.exception))
 
     # ============================================================================
     # INVALID COMBINATION TESTS - HTTP CLIENT WITH NON-PROXY MODEL TYPES AND CUSTOM BACKEND

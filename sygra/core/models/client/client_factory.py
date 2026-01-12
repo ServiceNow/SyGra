@@ -85,8 +85,13 @@ class ClientFactory:
             logger.error("URL is required for client creation.")
             raise ValueError("URL is required for client creation.")
 
-        if auth_token is None:
-            logger.warning("Auth token/API key is missing for this model.")
+        # Validate if auth_token is present
+        if auth_token is None and (
+            model_type not in NO_AUTH_TOKEN_NEEDED_MODEL_TYPES
+            and client_type not in NO_AUTH_TOKEN_NEEDED_CLIENT_TYPES
+        ):
+            logger.error("Auth token/API key is required for client creation.")
+            raise ValueError("Auth token/API key is required for client creation.")
 
         # TODO: add backend condition
 
