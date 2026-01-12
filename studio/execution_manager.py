@@ -4,7 +4,7 @@ Execution Manager for SyGra Studio Integration.
 Manages workflow execution with real-time progress tracking,
 providing updates for UI visualization.
 """
-
+import argparse
 import asyncio
 import logging
 import threading
@@ -378,11 +378,11 @@ class SygraExecutionRunner:
                 f"Initializing workflow from {workflow.source_path}"
             )
 
-            executor = BaseTaskExecutor(
-                config=workflow.source_path,
-                output_path="./output",
-                max_samples=max_samples,
-            )
+            args = argparse.Namespace()
+            args.config_path = workflow.source_path
+            args.output_dir = "./output"
+            args.num_records = max_samples
+            executor = BaseTaskExecutor(args=args)
 
             # Track each node execution
             # Note: This is a simplified approach - ideally we'd hook into

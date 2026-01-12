@@ -59,7 +59,23 @@ from studio.execution_manager import (
 
 # Server components are lazily imported to avoid circular import warnings
 # when running `python -m studio.server`
-_SERVER_AVAILABLE = True
+
+def create_server(*args, **kwargs):
+    """Create and return the Studio server instance (lazy import)."""
+    from studio.server import create_server as _create_server
+    return _create_server(*args, **kwargs)
+
+
+def run_server(*args, **kwargs):
+    """Run the Studio server (lazy import)."""
+    from studio.server import run_server as _run_server
+    return _run_server(*args, **kwargs)
+
+def create_app(*args, **kwargs):
+    """Create the FastAPI application (lazy import)."""
+    from studio.api import create_app as _create_app
+    return _create_app(*args, **kwargs)
+
 
 def __getattr__(name):
     """Lazy import for server components."""

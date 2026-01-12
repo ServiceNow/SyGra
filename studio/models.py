@@ -280,7 +280,7 @@ class ExecutionRequest(BaseModel):
 
     # Core execution parameters (from main.py)
     start_index: int = Field(default=0, description="Start index of the input dataset")
-    num_records: int = Field(default=10, description="Number of records to process")
+    num_records: int = Field(default=1, description="Number of records to process")
     batch_size: int = Field(default=25, description="Records to process in a batch")
     checkpoint_interval: int = Field(default=100, description="Records between checkpoints")
 
@@ -300,7 +300,6 @@ class ExecutionRequest(BaseModel):
 
     # Legacy fields for backward compatibility
     streaming: bool = False
-    max_samples: int = 1  # Deprecated: use num_records instead
 
 
 class ExecutionResponse(BaseModel):
