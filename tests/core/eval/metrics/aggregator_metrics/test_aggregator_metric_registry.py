@@ -16,8 +16,8 @@ from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry impor
 from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import BaseAggregatorMetric
 
 
-class TestMetric(BaseAggregatorMetric):
-    """Test metric for registry testing"""
+class SampleMetric(BaseAggregatorMetric):
+    """Sample metric for registry testing"""
 
     def __init__(self, **config):
         """Initialize with two-phase initialization."""
@@ -43,8 +43,8 @@ class TestMetric(BaseAggregatorMetric):
         return {"test": 1.0}
 
 
-class AnotherTestMetric(BaseAggregatorMetric):
-    """Another test metric for registry testing"""
+class AlternativeMetric(BaseAggregatorMetric):
+    """Alternative metric for registry testing"""
 
     def __init__(self, **config):
         """Initialize with two-phase initialization."""
@@ -82,13 +82,13 @@ class TestAggregatorMetricRegistry:
 
     def test_register_metric(self):
         """Test registering a metric"""
-        AggregatorMetricRegistry.register("test_metric", TestMetric)
+        AggregatorMetricRegistry.register("test_metric", SampleMetric)
         assert AggregatorMetricRegistry.has_metric("test_metric")
 
     def test_register_multiple_metrics(self):
         """Test registering multiple metrics"""
-        AggregatorMetricRegistry.register("test_metric", TestMetric)
-        AggregatorMetricRegistry.register("another_test_metric", AnotherTestMetric)
+        AggregatorMetricRegistry.register("test_metric", SampleMetric)
+        AggregatorMetricRegistry.register("another_test_metric", AlternativeMetric)
 
         assert AggregatorMetricRegistry.has_metric("test_metric")
         assert AggregatorMetricRegistry.has_metric("another_test_metric")
@@ -96,13 +96,13 @@ class TestAggregatorMetricRegistry:
     def test_register_raises_error_for_empty_name(self):
         """Test that registering with empty name raises ValueError"""
         with pytest.raises(ValueError) as exc_info:
-            AggregatorMetricRegistry.register("", TestMetric)
+            AggregatorMetricRegistry.register("", SampleMetric)
         assert "non-empty string" in str(exc_info.value)
 
     def test_register_raises_error_for_non_string_name(self):
         """Test that registering with non-string name raises ValueError"""
         with pytest.raises(ValueError) as exc_info:
-            AggregatorMetricRegistry.register(123, TestMetric)
+            AggregatorMetricRegistry.register(123, SampleMetric)
         assert "non-empty string" in str(exc_info.value)
 
     def test_register_raises_error_for_non_class(self):
@@ -123,25 +123,25 @@ class TestAggregatorMetricRegistry:
 
     def test_register_duplicate_metric_logs_warning(self):
         """Test that registering duplicate metric overwrites and logs warning"""
-        AggregatorMetricRegistry.register("test_metric", TestMetric)
+        AggregatorMetricRegistry.register("test_metric", SampleMetric)
         # Register again with different class
-        AggregatorMetricRegistry.register("test_metric", AnotherTestMetric)
+        AggregatorMetricRegistry.register("test_metric", AlternativeMetric)
 
         # Should be overwritten
         metric = AggregatorMetricRegistry.get_metric("test_metric")
-        assert isinstance(metric, AnotherTestMetric)
+        assert isinstance(metric, AlternativeMetric)
 
     def test_get_metric_returns_instance(self):
         """Test that get_metric returns an instance of the metric"""
-        AggregatorMetricRegistry.register("test_metric", TestMetric)
+        AggregatorMetricRegistry.register("test_metric", SampleMetric)
         metric = AggregatorMetricRegistry.get_metric("test_metric")
 
-        assert isinstance(metric, TestMetric)
+        assert isinstance(metric, SampleMetric)
         assert metric.get_metric_name() == "test_metric"
 
     def test_get_metric_with_kwargs(self):
         """Test that get_metric passes kwargs to constructor"""
-        AggregatorMetricRegistry.register("test_metric", TestMetric)
+        AggregatorMetricRegistry.register("test_metric", SampleMetric)
         metric = AggregatorMetricRegistry.get_metric(
             "test_metric", param1="value1", param2="value2"
         )
@@ -196,16 +196,16 @@ class TestAggregatorMetricRegistry:
 
     def test_list_metrics_returns_sorted_names(self):
         """Test that list_metrics returns sorted metric names"""
-        AggregatorMetricRegistry.register("zebra_metric", TestMetric)
-        AggregatorMetricRegistry.register("alpha_metric", AnotherTestMetric)
-        AggregatorMetricRegistry.register("beta_metric", TestMetric)
+        AggregatorMetricRegistry.register("zebra_metric", SampleMetric)
+        AggregatorMetricRegistry.register("alpha_metric", AlternativeMetric)
+        AggregatorMetricRegistry.register("beta_metric", SampleMetric)
 
         metrics = AggregatorMetricRegistry.list_metrics()
         assert metrics == ["alpha_metric", "beta_metric", "zebra_metric"]
 
     def test_has_metric_returns_true_for_registered(self):
         """Test that has_metric returns True for registered metrics"""
-        AggregatorMetricRegistry.register("test_metric", TestMetric)
+        AggregatorMetricRegistry.register("test_metric", SampleMetric)
         assert AggregatorMetricRegistry.has_metric("test_metric") is True
 
     def test_has_metric_returns_false_for_unregistered(self):
@@ -214,10 +214,10 @@ class TestAggregatorMetricRegistry:
 
     def test_get_metric_class_returns_class(self):
         """Test that get_metric_class returns the class, not instance"""
-        AggregatorMetricRegistry.register("test_metric", TestMetric)
+        AggregatorMetricRegistry.register("test_metric", SampleMetric)
         metric_class = AggregatorMetricRegistry.get_metric_class("test_metric")
 
-        assert metric_class is TestMetric
+        assert metric_class is SampleMetric
         assert isinstance(metric_class, type)
 
     def test_get_metric_class_raises_error_for_unregistered(self):
@@ -228,7 +228,7 @@ class TestAggregatorMetricRegistry:
 
     def test_unregister_existing_metric(self):
         """Test unregistering an existing metric"""
-        AggregatorMetricRegistry.register("test_metric", TestMetric)
+        AggregatorMetricRegistry.register("test_metric", SampleMetric)
         assert AggregatorMetricRegistry.has_metric("test_metric")
 
         result = AggregatorMetricRegistry.unregister("test_metric")
@@ -242,8 +242,8 @@ class TestAggregatorMetricRegistry:
 
     def test_clear_removes_all_metrics(self):
         """Test that clear removes all metrics"""
-        AggregatorMetricRegistry.register("test_metric1", TestMetric)
-        AggregatorMetricRegistry.register("test_metric2", AnotherTestMetric)
+        AggregatorMetricRegistry.register("test_metric1", SampleMetric)
+        AggregatorMetricRegistry.register("test_metric2", AlternativeMetric)
         assert len(AggregatorMetricRegistry.list_metrics()) == 2
 
         AggregatorMetricRegistry.clear()
@@ -256,23 +256,23 @@ class TestAggregatorMetricRegistry:
 
     def test_get_metrics_info_returns_correct_structure(self):
         """Test that get_metrics_info returns correct structure"""
-        AggregatorMetricRegistry.register("test_metric", TestMetric)
-        AggregatorMetricRegistry.register("another_test_metric", AnotherTestMetric)
+        AggregatorMetricRegistry.register("test_metric", SampleMetric)
+        AggregatorMetricRegistry.register("another_test_metric", AlternativeMetric)
 
         info = AggregatorMetricRegistry.get_metrics_info()
 
         assert "test_metric" in info
         assert "another_test_metric" in info
 
-        assert info["test_metric"]["class"] == "TestMetric"
+        assert info["test_metric"]["class"] == "SampleMetric"
         assert "test_aggregator_metric_registry" in info["test_metric"]["module"]
 
-        assert info["another_test_metric"]["class"] == "AnotherTestMetric"
+        assert info["another_test_metric"]["class"] == "AlternativeMetric"
         assert "test_aggregator_metric_registry" in info["another_test_metric"]["module"]
 
     def test_registry_is_singleton(self):
         """Test that registry maintains state across multiple accesses"""
-        AggregatorMetricRegistry.register("test_metric", TestMetric)
+        AggregatorMetricRegistry.register("test_metric", SampleMetric)
 
         # Access from different reference should see the same registry
         assert AggregatorMetricRegistry.has_metric("test_metric")
@@ -318,7 +318,7 @@ class TestAggregatorMetricRegistry:
 
     def test_multiple_instances_from_same_registration(self):
         """Test that multiple instances can be created from same registration"""
-        AggregatorMetricRegistry.register("test_metric", TestMetric)
+        AggregatorMetricRegistry.register("test_metric", SampleMetric)
 
         metric1 = AggregatorMetricRegistry.get_metric("test_metric", param1="value1")
         metric2 = AggregatorMetricRegistry.get_metric("test_metric", param1="value2")
@@ -362,12 +362,12 @@ class TestAggregatorMetricRegistry:
 
     def test_get_metric_class_can_be_used_for_manual_instantiation(self):
         """Test that get_metric_class can be used to manually instantiate metrics"""
-        AggregatorMetricRegistry.register("test_metric", TestMetric)
+        AggregatorMetricRegistry.register("test_metric", SampleMetric)
 
         metric_class = AggregatorMetricRegistry.get_metric_class("test_metric")
         manual_instance = metric_class(param1="manual_value")
 
-        assert isinstance(manual_instance, TestMetric)
+        assert isinstance(manual_instance, SampleMetric)
         assert manual_instance.param1 == "manual_value"
 
     def test_registry_handles_metrics_with_no_init_params(self):
