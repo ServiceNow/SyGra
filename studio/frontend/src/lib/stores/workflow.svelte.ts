@@ -1236,6 +1236,25 @@ function createWorkflowStore() {
 			return newNode;
 		},
 
+		// Add a complete node to the current workflow (for duplicating, importing, etc.)
+		addFullNode(node: WorkflowNode): WorkflowNode | null {
+			if (!currentWorkflow) return null;
+
+			// Check if node with this ID already exists
+			if (currentWorkflow.nodes.some(n => n.id === node.id)) {
+				console.warn(`[addFullNode] Node with ID ${node.id} already exists`);
+				return null;
+			}
+
+			currentWorkflow = {
+				...currentWorkflow,
+				nodes: [...currentWorkflow.nodes, node]
+			};
+
+			workflowVersion++;
+			return node;
+		},
+
 		// Add an edge to the current workflow
 		addEdge(source: string, target: string, isConditional: boolean = false) {
 			if (!currentWorkflow) return null;
@@ -1403,33 +1422,14 @@ function createWorkflowStore() {
 		},
 
 		// Delete a node (async version with return value)
+		// NOTE: This method updates LOCAL state only. Changes are persisted when saveWorkflow() is called.
+		// This ensures that Cancel/Discard works properly and doesn't lose other unsaved changes.
 		async deleteNode(nodeId: string): Promise<boolean> {
 			if (!currentWorkflow) return false;
 			if (nodeId === 'START' || nodeId === 'END') return false; // Can't remove start/end
 
-			// Check if this is a new workflow (not yet saved to backend)
-			const isNewWorkflow = currentWorkflow.id.startsWith('new_');
-
 			try {
-				// For existing workflows, call the API to persist changes
-				if (!isNewWorkflow) {
-					const response = await fetch(`${API_BASE}/workflows/${currentWorkflow.id}/nodes/${nodeId}`, {
-						method: 'DELETE'
-					});
-					if (!response.ok) {
-						const errorData = await response.json().catch(() => ({}));
-						throw new Error(errorData.detail || 'Failed to delete node');
-					}
-					// Reload workflow from backend to get consistent state
-					const reloadResponse = await fetch(`${API_BASE}/workflows/${currentWorkflow.id}`);
-					if (reloadResponse.ok) {
-						currentWorkflow = await reloadResponse.json();
-						workflowVersion++;
-						return true;
-					}
-				}
-
-				// For new workflows or as fallback, update local state
+				// Update local state only - changes will be persisted via saveWorkflow()
 				currentWorkflow = {
 					...currentWorkflow,
 					nodes: currentWorkflow.nodes.filter(n => n.id !== nodeId),
@@ -1444,6 +1444,8 @@ function createWorkflowStore() {
 		},
 
 		// Remove an edge from the current workflow
+		// NOTE: This method updates LOCAL state only. Changes are persisted when saveWorkflow() is called.
+		// This ensures that Cancel/Discard works properly and doesn't lose other unsaved changes.
 		async removeEdge(edgeId: string): Promise<boolean> {
 			if (!currentWorkflow) return false;
 
@@ -1469,31 +1471,8 @@ function createWorkflowStore() {
 
 			if (!edgeToRemove) return false;
 
-			// Check if this is a new workflow (not yet saved to backend)
-			const isNewWorkflow = currentWorkflow.id.startsWith('new_');
-
 			try {
-				// For existing workflows, call the API to persist changes
-				if (!isNewWorkflow) {
-					// Use source-target format for edge ID
-					const apiEdgeId = `${edgeToRemove.source}-${edgeToRemove.target}`;
-					const response = await fetch(`${API_BASE}/workflows/${currentWorkflow.id}/edges/${apiEdgeId}`, {
-						method: 'DELETE'
-					});
-					if (!response.ok) {
-						const errorData = await response.json().catch(() => ({}));
-						throw new Error(errorData.detail || 'Failed to delete edge');
-					}
-					// Reload workflow from backend to get consistent state
-					const reloadResponse = await fetch(`${API_BASE}/workflows/${currentWorkflow.id}`);
-					if (reloadResponse.ok) {
-						currentWorkflow = await reloadResponse.json();
-						workflowVersion++;
-						return true;
-					}
-				}
-
-				// For new workflows or as fallback, update local state
+				// Update local state only - changes will be persisted via saveWorkflow()
 				currentWorkflow = {
 					...currentWorkflow,
 					edges: currentWorkflow.edges.filter(e => e.id !== edgeToRemove!.id)

@@ -5,7 +5,7 @@
 	import UnsavedChangesModal from '$lib/components/builder/UnsavedChangesModal.svelte';
 	// WorkflowBuilder needs static import for proper drag-drop functionality
 	import WorkflowBuilder from '$lib/components/builder/WorkflowBuilder.svelte';
-	import { Play, StopCircle, LayoutGrid, Loader2 } from 'lucide-svelte';
+	import { Play, StopCircle, LayoutGrid, Loader2, Edit } from 'lucide-svelte';
 
 	// Dynamic component types
 	type SvelteComponent = typeof import('svelte').SvelteComponent;
@@ -319,13 +319,25 @@
 		uiStore.confirmPendingNavigation();
 	}
 
-	function handleDiscardChanges() {
+	async function handleDiscardChanges() {
 		// Clear the draft
 		if (workflowBuilderRef) {
 			workflowBuilderRef.clearDraftNow();
 		}
-		// Clear workflow since user is discarding changes
-		workflowStore.clearCurrentWorkflow();
+
+		// For existing workflows, reload from backend to restore original state
+		// For new workflows, just clear
+		const existingWorkflowId = currentWorkflow?.id;
+		const isExistingWorkflow = existingWorkflowId && !existingWorkflowId.startsWith('new_');
+
+		if (isExistingWorkflow) {
+			// Reload the original workflow from backend
+			await workflowStore.loadWorkflow(existingWorkflowId);
+		} else {
+			// Clear workflow since it's a new unsaved workflow
+			workflowStore.clearCurrentWorkflow();
+		}
+
 		uiStore.confirmPendingNavigation();
 	}
 
@@ -441,26 +453,30 @@
 		const nextNum = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
 		const newId = `${nodeType}_${nextNum}`;
 
+		// Deep clone the node using JSON (works for serializable workflow data)
+		// and update ID/summary/position
 		const newNode = {
-			...structuredClone(node),
+			...JSON.parse(JSON.stringify(node)),
 			id: newId,
 			summary: `${node.summary} (Copy)`,
-			position: node.position ? {
-				x: node.position.x + 100,
-				y: node.position.y + 50
-			} : undefined
+			position: {
+				x: (node.position?.x ?? 400) + 100,
+				y: (node.position?.y ?? 200) + 50
+			}
 		};
 
-		// Add the duplicated node to the workflow
-		workflowStore.updateNode(newId, newNode);
+		// Add the duplicated node to the workflow using addFullNode
+		const addedNode = workflowStore.addFullNode(newNode);
 
-		// Sync the builder UI
-		if (workflowBuilderRef) {
-			workflowBuilderRef.syncNodesFromStore();
+		if (addedNode) {
+			// Sync the builder UI
+			if (workflowBuilderRef) {
+				workflowBuilderRef.syncNodesFromStore();
+			}
+
+			// Select the new node
+			uiStore.selectNode(newId);
 		}
-
-		// Select the new node
-		uiStore.selectNode(newId);
 	}
 
 	// Handle YAML saved in code panel - reload workflow and sync visual UI
@@ -473,6 +489,20 @@
 			workflowBuilderRef.syncNodesFromStore();
 			workflowBuilderRef.syncEdgesFromStore();
 		}
+	}
+
+	// Handle Edit in Builder from workflow canvas view
+	function handleEditInBuilder() {
+		if (!currentWorkflow) return;
+		// Switch to builder view (workflow is already loaded)
+		uiStore.setView('builder');
+		// Update URL
+		const url = new URL(window.location.href);
+		url.searchParams.set('view', 'builder');
+		url.searchParams.set('workflow', currentWorkflow.id);
+		import('$app/navigation').then(({ pushState }) => {
+			pushState(url.toString(), {});
+		});
 	}
 </script>
 
@@ -661,6 +691,14 @@
 
 			<div class="flex items-center gap-2">
 				{#if currentWorkflow}
+					<button
+						onclick={handleEditInBuilder}
+						title="Edit this workflow in the visual builder"
+						class="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+					>
+						<Edit size={16} />
+						Edit in Builder
+					</button>
 					<button
 						onclick={() => sygraFlowRef?.applyAutoLayout()}
 						title="Auto-arrange nodes using DAG layout"

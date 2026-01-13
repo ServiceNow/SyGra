@@ -12,6 +12,7 @@
 	import PanelTabs from '$lib/components/panel/PanelTabs.svelte';
 	import DataConfigSection from '$lib/components/data/DataConfigSection.svelte';
 	import PromptTextarea from '$lib/components/ui/PromptTextarea.svelte';
+	import StateVariableInput from '$lib/components/ui/StateVariableInput.svelte';
 	import { collectStateVariablesForNode, validateNodePrompts, type StateVariable, type PromptValidationResult } from '$lib/utils/stateVariables';
 	import type { DataSourceDetails, DataSinkDetails, TransformConfig } from '$lib/stores/workflow.svelte';
 
@@ -973,69 +974,10 @@ class ${dataClassName}Transform:
 
 			// Initialize output node edit state
 			if (node.node_type === 'output') {
-				// Generate stub code as fallback
-				const outputClassName = (node.id || 'Output').replace(/-/g, '_').replace(/\s+/g, '').replace(/[^a-zA-Z0-9_]/g, '');
-				const outputGeneratorStub = `"""Output generator for ${node.summary || node.id}."""
-from typing import Any, Dict, List
-from sygra.core.graph.sygra_state import SygraState
-from sygra.processors.output_record_generator import BaseOutputGenerator
-from sygra.utils import utils
-
-
-class ${outputClassName}OutputGenerator(BaseOutputGenerator):
-    """Generate output records from workflow state.
-
-    Inherits from BaseOutputGenerator which handles output_map resolution.
-    Define custom transform methods referenced in output_map config.
-    """
-
-    def generate(self, state: SygraState) -> Dict[str, Any]:
-        """Generate the final output record.
-
-        Args:
-            state: Current workflow state with all variables
-
-        Returns:
-            Dict[str, Any]: The final output record
-        """
-        # Default: Use parent class to resolve output_map
-        return super().generate(state)
-
-    # Custom transform methods (referenced in output_map "transform" field)
-    # The method name must match the transform name in config
-
-    def build_conversation(self, data: Any, state: SygraState) -> List[Dict]:
-        """Example transform: Convert messages to chat format.
-
-        Args:
-            data: The data from 'from' or 'value' in output_map
-            state: Current workflow state
-
-        Returns:
-            Transformed data
-        """
-        # Example: Convert LangChain messages to chat format
-        # chat_messages = utils.convert_messages_from_langchain_to_chat_format(data)
-        # chat_messages.insert(0, {"role": "user", "content": state["question"]})
-        # return chat_messages
-
-        return data
-
-    def format_output(self, data: Any, state: SygraState) -> str:
-        """Example transform: Format data as string.
-
-        Args:
-            data: The data to format
-            state: Current workflow state
-
-        Returns:
-            Formatted string
-        """
-        return str(data)
-`;
-
-				// Start with stub code as default
-				editOutputGeneratorCode = outputGeneratorStub;
+				// Reset state - don't add default generator code
+				editOutputGeneratorCode = '';
+				editOutputGenerator = '';
+				editOutputMappings = [];
 
 				// Reset fetched code state
 				fetchedGeneratorCode = '';
@@ -1414,13 +1356,14 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 			if (editOutputGenerator) {
 				outputConfig.generator = editOutputGenerator;
 			}
-			// Include generator code if present
-			if (editOutputGeneratorCode && editOutputGeneratorCode.trim()) {
+			// Only include generator code if generator is set and code exists
+			if (editOutputGenerator && editOutputGeneratorCode && editOutputGeneratorCode.trim()) {
 				outputConfig._generator_code = editOutputGeneratorCode;
 			}
 			if (editOutputMappings.length > 0) {
 				outputConfig.output_map = {};
 				editOutputMappings.forEach(m => {
+					if (!m.key) return; // Skip mappings without a key
 					const mapping: any = {};
 					if (m.from) mapping.from = m.from;
 					if (m.value) {
@@ -1429,8 +1372,15 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 					if (m.transform) mapping.transform = m.transform;
 					outputConfig.output_map[m.key] = mapping;
 				});
+				// Remove output_map if it ended up empty (all mappings had no key)
+				if (Object.keys(outputConfig.output_map).length === 0) {
+					delete outputConfig.output_map;
+				}
 			}
-			updates.output_config = outputConfig;
+			// Only set output_config if it has content
+			if (Object.keys(outputConfig).length > 0) {
+				updates.output_config = outputConfig;
+			}
 		}
 
 		// Handle weighted sampler config updates
@@ -1972,7 +1922,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 		onSave={saveChanges}
 		showCopyId={!!node}
 		showDuplicate={!!node && !!onDuplicate && node.node_type !== 'start' && node.node_type !== 'end'}
-		showDelete={!!node && node.node_type !== 'start' && node.node_type !== 'end' && !isEditing}
+		showDelete={!!node && node.node_type !== 'start' && node.node_type !== 'end'}
 		{onDuplicate}
 		onDelete={requestDeleteNode}
 		onClose={() => dispatch('close')}
@@ -2059,8 +2009,8 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 						</div>
 					{/if}
 
-					<!-- Model info (for LLM nodes) -->
-					{#if node.node_type === 'llm'}
+					<!-- Model info (for LLM and Agent nodes) -->
+					{#if node.node_type === 'llm' || node.node_type === 'agent'}
 						<div>
 							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
 								Model
@@ -2267,13 +2217,11 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 														</div>
 														<div>
 															<span class="block text-xs text-gray-500 mb-1.5">From State</span>
-															<input
-																type="text"
+															<StateVariableInput
 																value={mapping.from}
-																oninput={(e) => updateOutputMapping(idx, 'from', e.currentTarget.value)}
-																placeholder="state_variable"
-																aria-label="From state"
-																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-[#52B8FF]"
+																variables={availableStateVariables().variables}
+																placeholder="Select state variable..."
+																oninput={(val) => updateOutputMapping(idx, 'from', val)}
 															/>
 														</div>
 													</div>
