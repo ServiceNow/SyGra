@@ -457,6 +457,9 @@ def convert_messages_from_chat_format_to_langchain(
             langchain_messages.append(HumanMessagePromptTemplate.from_template(content))
         elif role == "assistant":
             langchain_messages.append(AIMessagePromptTemplate.from_template(content))
+            if message.get("tool_call"):
+                logger.error("tool_call not implemented yet.")
+                raise NotImplementedError("tool_call not implemented yet.")
         elif role == "system":
             langchain_messages.append(SystemMessagePromptTemplate.from_template(content))
         elif role == "tool":
