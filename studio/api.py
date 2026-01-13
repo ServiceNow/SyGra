@@ -54,6 +54,28 @@ from studio.execution_storage import get_storage, ExecutionStorage
 # Persistent storage is handled by ExecutionStorage class
 _executions: Dict[str, WorkflowExecution] = {}
 
+
+def _convert_prompts_to_yaml_format(prompts: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+    """
+    Convert prompts from frontend format to SyGra YAML format.
+
+    Frontend format: [{"role": "system", "content": "..."}, {"role": "user", "content": "..."}]
+    SyGra YAML format: [{"system": "..."}, {"user": "..."}]
+    """
+    if not prompts:
+        return []
+
+    yaml_prompts = []
+    for msg in prompts:
+        if isinstance(msg, dict):
+            role = msg.get('role', 'user')
+            content = msg.get('content', '')
+            yaml_prompts.append({role: content})
+        elif hasattr(msg, 'role') and hasattr(msg, 'content'):
+            # Handle PromptMessage objects
+            yaml_prompts.append({msg.role: msg.content})
+    return yaml_prompts
+
 # Scalable execution storage instance (lazy initialized)
 _execution_storage: ExecutionStorage = None
 
@@ -1024,6 +1046,38 @@ def _register_routes(app: FastAPI) -> None:
                 "total": 0,
                 "message": f"Error loading sample data: {str(e)}"
             }
+
+    @app.get("/api/workflows/{workflow_id}/data-columns")
+    async def get_workflow_data_columns(workflow_id: str, source_index: int = 0):
+        """
+        Get column names from a workflow's data source.
+
+        This endpoint fetches a sample record and extracts column names.
+        Supports all data source types: HuggingFace, local files, memory, etc.
+
+        Args:
+            workflow_id: The workflow ID.
+            source_index: Index of the source to get columns from (default: 0).
+
+        Returns:
+            List of column names and source metadata.
+        """
+        # Use existing sample data logic to get columns
+        sample_result = await get_workflow_sample_data(workflow_id, limit=1, source_index=source_index)
+
+        columns = []
+        if sample_result.get("records") and len(sample_result["records"]) > 0:
+            # Extract column names from first record
+            first_record = sample_result["records"][0]
+            if isinstance(first_record, dict):
+                columns = list(first_record.keys())
+
+        return {
+            "columns": columns,
+            "source_type": sample_result.get("source_type"),
+            "source_index": source_index,
+            "message": sample_result.get("message") if not columns else None
+        }
 
     @app.post("/api/preview-source")
     async def preview_source_data(request: Request, limit: int = 5):
@@ -2004,6 +2058,12 @@ def _register_routes(app: FastAPI) -> None:
             node.post_process = node_data["post_process"]
         if "function_path" in node_data:
             node.function_path = node_data["function_path"]
+        if "output_config" in node_data:
+            node.output_config = node_data["output_config"]
+        if "data_config" in node_data:
+            node.data_config = node_data["data_config"]
+        if "output_keys" in node_data:
+            node.output_keys = node_data["output_keys"]
         if "metadata" in node_data:
             node.metadata.update(node_data["metadata"])
 
@@ -2015,40 +2075,60 @@ def _register_routes(app: FastAPI) -> None:
                     with open(yaml_path, 'r') as f:
                         config = yaml.safe_load(f)
 
-                    # Update the node in the config
-                    if 'graph_config' in config and 'nodes' in config['graph_config']:
-                        yaml_node = config['graph_config']['nodes'].get(node_id)
-                        if yaml_node is not None:
-                            # Update fields that were changed
-                            if "summary" in node_data:
-                                yaml_node['summary'] = node_data["summary"]
-                            if "description" in node_data:
-                                yaml_node['description'] = node_data["description"]
-                            if "prompt" in node_data:
-                                yaml_node['prompt'] = node_data["prompt"]
-                            if "model" in node_data:
-                                yaml_node['model'] = {
-                                    'name': node_data["model"].get("name"),
-                                    'parameters': node_data["model"].get("parameters", {})
-                                }
-                                # Remove empty parameters
-                                if not yaml_node['model']['parameters']:
-                                    del yaml_node['model']['parameters']
-                            if "pre_process" in node_data:
-                                if node_data["pre_process"]:
-                                    yaml_node['pre_process'] = node_data["pre_process"]
-                                elif 'pre_process' in yaml_node:
-                                    del yaml_node['pre_process']
-                            if "post_process" in node_data:
-                                if node_data["post_process"]:
-                                    yaml_node['post_process'] = node_data["post_process"]
-                                elif 'post_process' in yaml_node:
-                                    del yaml_node['post_process']
-                            if "function_path" in node_data:
-                                if node_data["function_path"]:
-                                    yaml_node['function_path'] = node_data["function_path"]
-                                elif 'function_path' in yaml_node:
-                                    del yaml_node['function_path']
+                    # Handle output nodes specially - they store config at workflow level
+                    if node.node_type == 'output':
+                        if "output_config" in node_data:
+                            output_config = node_data["output_config"]
+                            # Clean output_config - remove internal fields starting with '_'
+                            clean_output_config = {k: v for k, v in output_config.items() if not k.startswith('_')}
+                            if clean_output_config:
+                                if 'output_config' not in config:
+                                    config['output_config'] = {}
+                                config['output_config'].update(clean_output_config)
+                    elif node.node_type == 'data':
+                        # Handle data nodes - they store config at workflow level
+                        if "data_config" in node_data:
+                            config['data_config'] = node_data["data_config"]
+                    else:
+                        # Update regular nodes in graph_config.nodes
+                        if 'graph_config' in config and 'nodes' in config['graph_config']:
+                            yaml_node = config['graph_config']['nodes'].get(node_id)
+                            if yaml_node is not None:
+                                # Update fields that were changed
+                                if "summary" in node_data:
+                                    yaml_node['node_name'] = node_data["summary"]
+                                if "description" in node_data:
+                                    yaml_node['description'] = node_data["description"]
+                                if "prompt" in node_data:
+                                    yaml_node['prompt'] = _convert_prompts_to_yaml_format(node_data["prompt"])
+                                if "model" in node_data:
+                                    yaml_node['model'] = {
+                                        'name': node_data["model"].get("name"),
+                                        'parameters': node_data["model"].get("parameters", {})
+                                    }
+                                    # Remove empty parameters
+                                    if not yaml_node['model']['parameters']:
+                                        del yaml_node['model']['parameters']
+                                if "pre_process" in node_data:
+                                    if node_data["pre_process"]:
+                                        yaml_node['pre_process'] = node_data["pre_process"]
+                                    elif 'pre_process' in yaml_node:
+                                        del yaml_node['pre_process']
+                                if "post_process" in node_data:
+                                    if node_data["post_process"]:
+                                        yaml_node['post_process'] = node_data["post_process"]
+                                    elif 'post_process' in yaml_node:
+                                        del yaml_node['post_process']
+                                if "function_path" in node_data:
+                                    if node_data["function_path"]:
+                                        yaml_node['function_path'] = node_data["function_path"]
+                                    elif 'function_path' in yaml_node:
+                                        del yaml_node['function_path']
+                                if "output_keys" in node_data:
+                                    if node_data["output_keys"]:
+                                        yaml_node['output_keys'] = node_data["output_keys"]
+                                    elif 'output_keys' in yaml_node:
+                                        del yaml_node['output_keys']
 
                     with open(yaml_path, 'w') as f:
                         yaml.dump(config, f, default_flow_style=False, sort_keys=False)
@@ -2181,38 +2261,55 @@ def _register_routes(app: FastAPI) -> None:
                     if 'nodes' not in config['graph_config']:
                         config['graph_config']['nodes'] = {}
 
-                    # Create the node config
-                    yaml_node = {
-                        'node_type': node_data.get('node_type', 'llm'),
-                    }
-                    if 'summary' in node_data:
-                        yaml_node['summary'] = node_data['summary']
-                    if 'description' in node_data:
-                        yaml_node['description'] = node_data['description']
-                    if 'model' in node_data and node_data['model']:
-                        yaml_node['model'] = {
-                            'name': node_data['model'].get('name'),
-                        }
-                        if node_data['model'].get('parameters'):
-                            yaml_node['model']['parameters'] = node_data['model']['parameters']
-                    if 'prompt' in node_data:
-                        yaml_node['prompt'] = node_data['prompt']
-                    if 'pre_process' in node_data:
-                        yaml_node['pre_process'] = node_data['pre_process']
-                    if 'post_process' in node_data:
-                        yaml_node['post_process'] = node_data['post_process']
-                    if 'function_path' in node_data:
-                        yaml_node['function_path'] = node_data['function_path']
-                    if 'data_config' in node_data:
-                        yaml_node['data_config'] = node_data['data_config']
-                    if 'output_config' in node_data:
-                        yaml_node['output_config'] = node_data['output_config']
-                    if 'tools' in node_data:
-                        yaml_node['tools'] = node_data['tools']
-                    if 'tool_choice' in node_data:
-                        yaml_node['tool_choice'] = node_data['tool_choice']
+                    node_type = node_data.get('node_type', 'llm')
 
-                    config['graph_config']['nodes'][node_id] = yaml_node
+                    # Handle output nodes specially - store config at workflow level
+                    if node_type == 'output':
+                        if 'output_config' in node_data:
+                            output_config = node_data['output_config']
+                            # Clean output_config - remove internal fields starting with '_'
+                            clean_output_config = {k: v for k, v in output_config.items() if not k.startswith('_')}
+                            if clean_output_config:
+                                if 'output_config' not in config:
+                                    config['output_config'] = {}
+                                config['output_config'].update(clean_output_config)
+                        # Output nodes are not added to graph_config.nodes
+                    elif node_type == 'data':
+                        # Data nodes store config at workflow level as data_config
+                        if 'data_config' in node_data:
+                            config['data_config'] = node_data['data_config']
+                        # Data nodes are not added to graph_config.nodes
+                    else:
+                        # Create the node config for regular nodes
+                        yaml_node = {
+                            'node_type': node_type,
+                        }
+                        if 'summary' in node_data:
+                            yaml_node['node_name'] = node_data['summary']
+                        if 'description' in node_data:
+                            yaml_node['description'] = node_data['description']
+                        if 'model' in node_data and node_data['model']:
+                            yaml_node['model'] = {
+                                'name': node_data['model'].get('name'),
+                            }
+                            if node_data['model'].get('parameters'):
+                                yaml_node['model']['parameters'] = node_data['model']['parameters']
+                        if 'prompt' in node_data:
+                            yaml_node['prompt'] = _convert_prompts_to_yaml_format(node_data['prompt'])
+                        if 'pre_process' in node_data:
+                            yaml_node['pre_process'] = node_data['pre_process']
+                        if 'post_process' in node_data:
+                            yaml_node['post_process'] = node_data['post_process']
+                        if 'function_path' in node_data:
+                            yaml_node['function_path'] = node_data['function_path']
+                        if 'output_keys' in node_data:
+                            yaml_node['output_keys'] = node_data['output_keys']
+                        if 'tools' in node_data:
+                            yaml_node['tools'] = node_data['tools']
+                        if 'tool_choice' in node_data:
+                            yaml_node['tool_choice'] = node_data['tool_choice']
+
+                        config['graph_config']['nodes'][node_id] = yaml_node
 
                     with open(yaml_path, 'w') as f:
                         yaml.dump(config, f, default_flow_style=False, sort_keys=False)
@@ -3724,7 +3821,7 @@ def _serialize_inner_graph(inner_graph) -> dict:
         inner_node_type = inner_node.node_type if hasattr(inner_node, 'node_type') else inner_node.get('node_type')
         inner_node_config = {
             'node_type': inner_node_type,
-            'summary': inner_node.summary if hasattr(inner_node, 'summary') else inner_node.get('summary'),
+            'node_name': inner_node.summary if hasattr(inner_node, 'summary') else inner_node.get('summary'),
         }
         # Save position
         inner_pos = inner_node.position if hasattr(inner_node, 'position') else inner_node.get('position', {})
@@ -3810,6 +3907,34 @@ def _generate_graph_config(request: WorkflowCreateRequest, task_name: str) -> di
                     model_config['parameters'] = params
                 node_config['model'] = model_config
 
+            # Include output_keys for LLM nodes
+            if node.output_keys:
+                node_config['output_keys'] = node.output_keys
+
+        elif node.node_type == 'multi_llm':
+            if node.prompt:
+                # Convert prompt messages to YAML format
+                prompt_list = []
+                for msg in node.prompt:
+                    if hasattr(msg, 'role') and hasattr(msg, 'content'):
+                        prompt_list.append({msg.role: msg.content})
+                    elif isinstance(msg, dict):
+                        prompt_list.append({msg.get('role', 'user'): msg.get('content', '')})
+                if prompt_list:
+                    node_config['prompt'] = prompt_list
+
+            # Include models config for multi_llm nodes
+            if node.models:
+                node_config['models'] = node.models
+
+            # Include multi_llm_post_process
+            if node.multi_llm_post_process:
+                node_config['multi_llm_post_process'] = node.multi_llm_post_process
+
+            # Include output_keys for multi_llm nodes
+            if node.output_keys:
+                node_config['output_keys'] = node.output_keys
+
         elif node.node_type == 'lambda':
             if node.function_path:
                 node_config['function_path'] = node.function_path
@@ -3838,7 +3963,7 @@ def _generate_graph_config(request: WorkflowCreateRequest, task_name: str) -> di
                     inner_node_type = inner_node.node_type if hasattr(inner_node, 'node_type') else inner_node.get('node_type')
                     inner_node_config = {
                         'node_type': inner_node_type,
-                        'summary': inner_node.summary if hasattr(inner_node, 'summary') else inner_node.get('summary'),
+                        'node_name': inner_node.summary if hasattr(inner_node, 'summary') else inner_node.get('summary'),
                     }
                     # Save position for inner nodes
                     inner_pos = inner_node.position if hasattr(inner_node, 'position') else inner_node.get('position', {})
@@ -3909,6 +4034,10 @@ def _generate_graph_config(request: WorkflowCreateRequest, task_name: str) -> di
             node_config['pre_process'] = node.pre_process
         if node.post_process:
             node_config['post_process'] = node.post_process
+
+        # Add node_name - displayed in the graph
+        if node.summary:
+            node_config['node_name'] = node.summary
 
         # Add description as comment (via metadata)
         if node.description:

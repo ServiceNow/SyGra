@@ -573,6 +573,59 @@ export interface LatencyStats {
 	p99: number;
 }
 
+/**
+ * Apply transformation effects to column names.
+ * Currently handles:
+ * - RenameFieldsTransform: Renames columns based on mapping
+ */
+function applyTransformationsToColumns(columns: string[], transformations: TransformConfig[]): string[] {
+	let result = [...columns];
+
+	for (const transform of transformations) {
+		if (!transform.enabled && transform.enabled !== undefined) continue;
+
+		const transformName = transform.transform || '';
+
+		// Handle RenameFieldsTransform
+		if (transformName.includes('RenameFieldsTransform') || transformName.includes('rename')) {
+			const mapping = (transform.params?.mapping || {}) as Record<string, string>;
+			const overwrite = transform.params?.overwrite !== false;
+
+			for (const [oldName, newName] of Object.entries(mapping)) {
+				const oldIndex = result.indexOf(oldName);
+				if (oldIndex !== -1) {
+					// Remove old name
+					result.splice(oldIndex, 1);
+					// Add new name if not already present or if overwrite is true
+					if (overwrite || !result.includes(newName)) {
+						result.push(newName);
+					}
+				}
+			}
+		}
+
+		// Handle AddFieldsTransform - adds new fields
+		if (transformName.includes('AddFieldsTransform') || transformName.includes('add_field')) {
+			const fields = transform.params?.fields as Record<string, unknown> | undefined;
+			if (fields) {
+				for (const fieldName of Object.keys(fields)) {
+					if (!result.includes(fieldName)) {
+						result.push(fieldName);
+					}
+				}
+			}
+		}
+
+		// Handle RemoveFieldsTransform - removes fields
+		if (transformName.includes('RemoveFieldsTransform') || transformName.includes('remove_field')) {
+			const fieldsToRemove = (transform.params?.fields || []) as string[];
+			result = result.filter(col => !fieldsToRemove.includes(col));
+		}
+	}
+
+	return result;
+}
+
 // Workflow Store
 function createWorkflowStore() {
 	let workflows = $state<WorkflowSummary[]>([]);
@@ -589,6 +642,10 @@ function createWorkflowStore() {
 	let undoStack = $state<Array<{ nodes: WorkflowNode[]; edges: WorkflowEdge[] }>>([]);
 	let redoStack = $state<Array<{ nodes: WorkflowNode[]; edges: WorkflowEdge[] }>>([]);
 	let lastUndoTime = 0;
+
+	// Data columns cache - stores fetched columns from data sources
+	// Key is workflow ID, value is array of column names
+	let dataColumnsCache = $state<Record<string, string[]>>({});
 
 	// Push current state to undo stack (call before making changes)
 	function pushUndoState() {
@@ -622,6 +679,7 @@ function createWorkflowStore() {
 		get error() { return error; },
 		get canUndo() { return undoStack.length > 0; },
 		get canRedo() { return redoStack.length > 0; },
+		get dataColumns() { return currentWorkflow ? (dataColumnsCache[currentWorkflow.id] || []) : []; },
 
 		// Push state for undo (call before changes)
 		pushUndo() {
@@ -799,6 +857,79 @@ function createWorkflowStore() {
 			}
 		},
 
+		/**
+		 * Fetch and cache data columns for the current workflow's data source.
+		 * Applies transformations (like field renames) to show final column names.
+		 */
+		async fetchDataColumns(): Promise<string[]> {
+			if (!currentWorkflow) return [];
+
+			const workflowId = currentWorkflow.id;
+
+			// Skip for new unsaved workflows
+			if (workflowId.startsWith('new_')) {
+				// For new workflows, try to extract from inline data if available
+				const dataConfig = currentWorkflow.data_config;
+				if (dataConfig?.source) {
+					const sources = Array.isArray(dataConfig.source) ? dataConfig.source : [dataConfig.source];
+					const columns: string[] = [];
+					for (const source of sources) {
+						if (source.data && Array.isArray(source.data) && source.data.length > 0) {
+							const firstRecord = source.data[0];
+							if (typeof firstRecord === 'object' && firstRecord !== null) {
+								columns.push(...Object.keys(firstRecord));
+							}
+						}
+					}
+					if (columns.length > 0) {
+						dataColumnsCache[workflowId] = [...new Set(columns)];
+						return dataColumnsCache[workflowId];
+					}
+				}
+				return [];
+			}
+
+			try {
+				const response = await fetch(`${API_BASE}/workflows/${encodeURIComponent(workflowId)}/data-columns`);
+				if (!response.ok) {
+					console.warn(`[fetchDataColumns] API returned ${response.status}`);
+					return [];
+				}
+
+				const data = await response.json();
+				let columns = data.columns || [];
+
+				// Apply transformations to column names
+				const dataConfig = currentWorkflow.data_config;
+				if (dataConfig?.source) {
+					const sources = Array.isArray(dataConfig.source) ? dataConfig.source : [dataConfig.source];
+					for (const source of sources) {
+						if (source.transformations && Array.isArray(source.transformations)) {
+							columns = applyTransformationsToColumns(columns, source.transformations);
+						}
+					}
+				}
+
+				// Cache the result
+				dataColumnsCache[workflowId] = columns;
+				return columns;
+			} catch (e) {
+				console.error('[fetchDataColumns] Error:', e);
+				return [];
+			}
+		},
+
+		/**
+		 * Clear cached data columns for a workflow (call when data config changes)
+		 */
+		clearDataColumnsCache(workflowId?: string) {
+			if (workflowId) {
+				delete dataColumnsCache[workflowId];
+			} else if (currentWorkflow) {
+				delete dataColumnsCache[currentWorkflow.id];
+			}
+		},
+
 		async updateNode(nodeId: string, nodeData: Partial<WorkflowNode> & { newId?: string }) {
 			if (!currentWorkflow) {
 				console.error('updateNode: No current workflow');
@@ -869,6 +1000,38 @@ function createWorkflowStore() {
 						body: JSON.stringify(apiData)
 					}
 				);
+
+				// Handle 404 - node doesn't exist in backend yet (newly added in builder)
+				// Fall back to local-only update
+				if (response.status === 404) {
+					console.log(`[updateNode] Node ${nodeId} not in backend yet, updating locally`);
+					const nodeIndex = currentWorkflow.nodes.findIndex(n => n.id === nodeId);
+					if (nodeIndex !== -1) {
+						const finalId = newId || nodeId;
+						const updatedNode: WorkflowNode = {
+							...currentWorkflow.nodes[nodeIndex],
+							...restNodeData,
+							id: finalId
+						};
+						const newNodes = [
+							...currentWorkflow.nodes.slice(0, nodeIndex),
+							updatedNode,
+							...currentWorkflow.nodes.slice(nodeIndex + 1)
+						];
+						if (newId && newId !== nodeId) {
+							const updatedEdges = currentWorkflow.edges.map(edge => ({
+								...edge,
+								source: edge.source === nodeId ? newId : edge.source,
+								target: edge.target === nodeId ? newId : edge.target
+							}));
+							currentWorkflow = { ...currentWorkflow, nodes: newNodes, edges: updatedEdges };
+						} else {
+							currentWorkflow = { ...currentWorkflow, nodes: newNodes };
+						}
+						workflowVersion++;
+					}
+					return true;
+				}
 
 				if (!response.ok) {
 					const errorData = await response.json();

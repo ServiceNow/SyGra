@@ -167,12 +167,11 @@
 					const draft = JSON.parse(savedDraft);
 					if (draft.workflow) {
 						// Restore draft if:
-						// 1. No workflow is loaded, OR
-						// 2. Current workflow is NOT a draft (user was viewing an existing workflow
-						//    and returned to builder - their draft should be restored)
-						// Do NOT restore if current workflow IS a draft (e.g., recipe was just added)
+						// 1. No workflow is loaded (fresh builder), OR
+						// 2. Current workflow IS a draft (continue working on draft)
+						// Do NOT restore if an existing workflow is loaded (e.g., via Edit in Builder)
 						const isCurrentWorkflowDraft = workflow?.id?.startsWith('new_');
-						const shouldRestore = !workflow || !isCurrentWorkflowDraft;
+						const shouldRestore = !workflow || isCurrentWorkflowDraft;
 
 						if (shouldRestore) {
 							workflowStore.setCurrentWorkflow(draft.workflow);

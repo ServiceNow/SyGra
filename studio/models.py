@@ -92,6 +92,7 @@ class WorkflowNode(BaseModel):
     pre_process: Optional[str] = None
     post_process: Optional[str] = None
     multi_llm_post_process: Optional[str] = None  # For multi_llm nodes
+    output_keys: Optional[Union[str, List[str]]] = None  # Custom output key(s) for LLM/multi_llm nodes
 
     # For subgraph nodes
     subgraph_path: Optional[str] = None

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
-	import { X, Bot, Zap, Link, Play, Square, Globe, Boxes, Save, ChevronDown, ChevronRight, Code, Settings, MessageSquare, Info, GitBranch, Plus, Trash2, Edit3, GripVertical, Database, Download, Cloud, Server, HardDrive, ArrowRight, Map as MapIcon, Shuffle, Wrench, AlertCircle, Library, Eye, EyeOff, Loader2, Layers, Copy, GitCompareArrows, Thermometer } from 'lucide-svelte';
+	import { X, Bot, Zap, Link, Play, Square, Globe, Boxes, Save, ChevronDown, ChevronRight, Code, Settings, MessageSquare, Info, GitBranch, Plus, Trash2, Edit3, GripVertical, Database, Download, Cloud, Server, HardDrive, ArrowRight, Map as MapIcon, Shuffle, Wrench, AlertCircle, Library, Eye, EyeOff, Loader2, Layers, Copy, GitCompareArrows, Thermometer, Variable, Check, Search, AlertTriangle } from 'lucide-svelte';
 	import { workflowStore, type WorkflowNode, type NodeExecutionState, type PromptMessage, type NodeConfigOverride, type InnerGraph } from '$lib/stores/workflow.svelte';
 	import { toolStore } from '$lib/stores/tool.svelte';
 	import { panelStore } from '$lib/stores/panel.svelte';
@@ -11,6 +11,8 @@
 	import PanelHeader from '$lib/components/panel/PanelHeader.svelte';
 	import PanelTabs from '$lib/components/panel/PanelTabs.svelte';
 	import DataConfigSection from '$lib/components/data/DataConfigSection.svelte';
+	import PromptTextarea from '$lib/components/ui/PromptTextarea.svelte';
+	import { collectStateVariablesForNode, validateNodePrompts, type StateVariable, type PromptValidationResult } from '$lib/utils/stateVariables';
 	import type { DataSourceDetails, DataSinkDetails, TransformConfig } from '$lib/stores/workflow.svelte';
 
 	interface Props {
@@ -223,6 +225,66 @@
 	let editNodeConfigMap = $state<Record<string, NodeConfigOverride>>({});
 	let expandedOverrideNodes = $state<Set<string>>(new Set());
 	let overrideSearchQuery = $state('');
+
+	// State variables panel state (for prompt autocomplete)
+	let stateVariablesPanelExpanded = $state(true);
+	let activePromptIndex = $state<number | null>(null);
+	let variableFilter = $state('');
+	let copiedVariable = $state<string | null>(null);
+
+	// Filtered variables based on search
+	let filteredStateVariables = $derived(() => {
+		const vars = availableStateVariables();
+		if (!variableFilter.trim()) return vars;
+		const query = variableFilter.toLowerCase();
+		const filterVars = (arr: StateVariable[]) =>
+			arr.filter(v => v.name.toLowerCase().includes(query) || v.description?.toLowerCase().includes(query));
+		return {
+			variables: filterVars(vars.variables),
+			bySource: {
+				data: filterVars(vars.bySource.data),
+				output: filterVars(vars.bySource.output),
+				sampler: filterVars(vars.bySource.sampler),
+				framework: filterVars(vars.bySource.framework)
+			}
+		};
+	});
+
+	// Copy variable to clipboard with feedback
+	function copyVariable(variable: StateVariable) {
+		const text = `{${variable.name}}`;
+		navigator.clipboard.writeText(text);
+		copiedVariable = variable.name;
+		setTimeout(() => {
+			if (copiedVariable === variable.name) {
+				copiedVariable = null;
+			}
+		}, 1500);
+	}
+
+	// Fetch data columns when workflow is available
+	$effect(() => {
+		const workflow = workflowStore.currentWorkflow;
+		if (workflow && workflow.data_config) {
+			// Fetch columns in the background
+			workflowStore.fetchDataColumns();
+		}
+	});
+
+	// Collect available state variables for this node (using fetched columns)
+	let availableStateVariables = $derived(() => {
+		if (!node) return { variables: [], bySource: { data: [], output: [], sampler: [], framework: [] } };
+		const workflow = workflowStore.currentWorkflow;
+		const fetchedColumns = workflowStore.dataColumns;
+		return collectStateVariablesForNode(workflow, node.id, fetchedColumns);
+	});
+
+	// Validate prompt variables - checks if referenced variables exist
+	let promptValidation = $derived(() => {
+		const prompts = isEditing ? editPrompts : (node?.prompt ?? []);
+		const availableVars = availableStateVariables();
+		return validateNodePrompts(prompts, availableVars.variables);
+	});
 
 	// Source type options for CustomSelect
 	const sourceTypeOptions = [
@@ -1952,10 +2014,10 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 							{/if}
 						</div>
 
-						<!-- Summary (editable) -->
+						<!-- Node Name (editable) -->
 						<div>
 							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-								Summary
+								Node Name
 							</div>
 							{#if isEditing}
 								<input
@@ -1963,7 +2025,7 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 									bind:value={editSummary}
 									oninput={markChanged}
 									class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
-									placeholder="Enter node summary..."
+									placeholder="Enter node name..."
 								/>
 							{:else}
 								<div class="text-sm text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
@@ -2489,6 +2551,244 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 			<!-- Prompt Tab -->
 			{#if activeTab === 'prompt' && showPromptTab}
 				<div class="space-y-4">
+					<!-- State Variables Panel - Modern Redesign -->
+					{#if isEditing}
+						<div class="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-gray-800/80 dark:to-gray-900/80 rounded-xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm overflow-hidden">
+							<!-- Header -->
+							<div class="px-4 py-3 flex items-center justify-between">
+								<div class="flex items-center gap-2.5">
+									<div class="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-sm">
+										<Variable size={14} class="text-white" />
+									</div>
+									<div>
+										<h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Variables</h3>
+										<p class="text-[10px] text-gray-500 dark:text-gray-400">Type <kbd class="px-1 py-0.5 bg-white dark:bg-gray-700 rounded text-[9px] font-mono shadow-sm border border-gray-200 dark:border-gray-600">{'{'}</kbd> to autocomplete</p>
+									</div>
+								</div>
+								<span class="text-xs font-medium px-2 py-1 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300">
+									{availableStateVariables().variables.length}
+								</span>
+							</div>
+
+							<!-- Search Input -->
+							{#if availableStateVariables().variables.length > 5}
+								<div class="px-4 pb-2">
+									<div class="relative">
+										<Search size={14} class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+										<input
+											type="text"
+											bind:value={variableFilter}
+											placeholder="Filter variables..."
+											class="w-full pl-9 pr-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all placeholder:text-gray-400"
+										/>
+									</div>
+								</div>
+							{/if}
+
+							<!-- Variables Content -->
+							<div class="px-4 pb-4 space-y-3">
+								{#if true}
+								{@const vars = filteredStateVariables()}
+
+								<!-- Data Columns -->
+								{#if vars.bySource.data.length > 0}
+									<div class="space-y-1.5">
+										<div class="flex items-center gap-1.5">
+											<Database size={12} class="text-blue-500" />
+											<span class="text-[11px] font-medium text-gray-600 dark:text-gray-400">Data</span>
+										</div>
+										<div class="flex flex-wrap gap-1.5">
+											{#each vars.bySource.data as variable}
+												<button
+													onclick={() => copyVariable(variable)}
+													class="group relative inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono rounded-lg transition-all duration-200
+														{copiedVariable === variable.name
+															? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 ring-2 ring-green-500/30'
+															: 'bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-sm hover:shadow-blue-100 dark:hover:shadow-blue-900/20'
+														}"
+													title={variable.description || `Copy {${variable.name}}`}
+												>
+													{#if copiedVariable === variable.name}
+														<Check size={12} class="text-green-600 dark:text-green-400" />
+														<span>Copied!</span>
+													{:else}
+														<span class="text-blue-400 dark:text-blue-500 opacity-60 group-hover:opacity-100">{'{'}</span>
+														<span>{variable.name}</span>
+														<span class="text-blue-400 dark:text-blue-500 opacity-60 group-hover:opacity-100">{'}'}</span>
+													{/if}
+												</button>
+											{/each}
+										</div>
+									</div>
+								{/if}
+
+								<!-- Node Outputs -->
+								{#if vars.bySource.output.length > 0}
+									<div class="space-y-1.5">
+										<div class="flex items-center gap-1.5">
+											<Zap size={12} class="text-emerald-500" />
+											<span class="text-[11px] font-medium text-gray-600 dark:text-gray-400">Outputs</span>
+										</div>
+										<div class="flex flex-wrap gap-1.5">
+											{#each vars.bySource.output as variable}
+												<button
+													onclick={() => copyVariable(variable)}
+													class="group relative inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono rounded-lg transition-all duration-200
+														{copiedVariable === variable.name
+															? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 ring-2 ring-green-500/30'
+															: 'bg-white dark:bg-gray-800 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-sm hover:shadow-emerald-100 dark:hover:shadow-emerald-900/20'
+														}"
+													title="{variable.description || `From ${variable.sourceNode}`}"
+												>
+													{#if copiedVariable === variable.name}
+														<Check size={12} class="text-green-600 dark:text-green-400" />
+														<span>Copied!</span>
+													{:else}
+														<span class="text-emerald-400 dark:text-emerald-500 opacity-60 group-hover:opacity-100">{'{'}</span>
+														<span>{variable.name}</span>
+														<span class="text-emerald-400 dark:text-emerald-500 opacity-60 group-hover:opacity-100">{'}'}</span>
+														{#if variable.sourceNode}
+															<span class="ml-0.5 px-1.5 py-0.5 text-[9px] bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded">
+																{variable.sourceNode}
+															</span>
+														{/if}
+													{/if}
+												</button>
+											{/each}
+										</div>
+									</div>
+								{/if}
+
+								<!-- Sampler Attributes -->
+								{#if vars.bySource.sampler.length > 0}
+									<div class="space-y-1.5">
+										<div class="flex items-center gap-1.5">
+											<Shuffle size={12} class="text-purple-500" />
+											<span class="text-[11px] font-medium text-gray-600 dark:text-gray-400">Sampler</span>
+										</div>
+										<div class="flex flex-wrap gap-1.5">
+											{#each vars.bySource.sampler as variable}
+												<button
+													onclick={() => copyVariable(variable)}
+													class="group relative inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono rounded-lg transition-all duration-200
+														{copiedVariable === variable.name
+															? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 ring-2 ring-green-500/30'
+															: 'bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50 hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-sm hover:shadow-purple-100 dark:hover:shadow-purple-900/20'
+														}"
+													title="{variable.description || `Copy {${variable.name}}`}"
+												>
+													{#if copiedVariable === variable.name}
+														<Check size={12} class="text-green-600 dark:text-green-400" />
+														<span>Copied!</span>
+													{:else}
+														<span class="text-purple-400 dark:text-purple-500 opacity-60 group-hover:opacity-100">{'{'}</span>
+														<span>{variable.name}</span>
+														<span class="text-purple-400 dark:text-purple-500 opacity-60 group-hover:opacity-100">{'}'}</span>
+													{/if}
+												</button>
+											{/each}
+										</div>
+									</div>
+								{/if}
+
+								<!-- Framework Variables -->
+								{#if vars.bySource.framework.length > 0}
+									<div class="space-y-1.5">
+										<div class="flex items-center gap-1.5">
+											<Settings size={12} class="text-slate-500" />
+											<span class="text-[11px] font-medium text-gray-600 dark:text-gray-400">Framework</span>
+										</div>
+										<div class="flex flex-wrap gap-1.5">
+											{#each vars.bySource.framework as variable}
+												<button
+													onclick={() => copyVariable(variable)}
+													class="group relative inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono rounded-lg transition-all duration-200
+														{copiedVariable === variable.name
+															? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 ring-2 ring-green-500/30'
+															: 'bg-white dark:bg-gray-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700/50 hover:border-slate-400 dark:hover:border-slate-600 hover:shadow-sm hover:shadow-slate-100 dark:hover:shadow-slate-900/20'
+														}"
+													title="{variable.description}"
+												>
+													{#if copiedVariable === variable.name}
+														<Check size={12} class="text-green-600 dark:text-green-400" />
+														<span>Copied!</span>
+													{:else}
+														<span class="text-slate-400 dark:text-slate-500 opacity-60 group-hover:opacity-100">{'{'}</span>
+														<span>{variable.name}</span>
+														<span class="text-slate-400 dark:text-slate-500 opacity-60 group-hover:opacity-100">{'}'}</span>
+													{/if}
+												</button>
+											{/each}
+										</div>
+									</div>
+								{/if}
+
+								<!-- Empty State -->
+								{#if vars.variables.length === 0}
+									<div class="py-4 text-center">
+										{#if variableFilter}
+											<p class="text-xs text-gray-500 dark:text-gray-400">
+												No variables matching "<span class="font-medium">{variableFilter}</span>"
+											</p>
+										{:else}
+											<div class="flex flex-col items-center gap-2">
+												<div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+													<Variable size={18} class="text-gray-400" />
+												</div>
+												<div>
+													<p class="text-xs font-medium text-gray-600 dark:text-gray-400">No variables yet</p>
+													<p class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">Add a data source or upstream nodes with output_keys</p>
+												</div>
+											</div>
+										{/if}
+									</div>
+								{/if}
+								{/if}
+							</div>
+						</div>
+					{/if}
+
+					<!-- Validation Warnings -->
+					{#if promptValidation().errors.length > 0}
+						<div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl overflow-hidden">
+							<!-- Warning Header -->
+							<div class="px-4 py-3 flex items-start gap-3">
+								<div class="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+									<AlertTriangle size={16} class="text-amber-600 dark:text-amber-400" />
+								</div>
+								<div class="flex-1 min-w-0">
+									<h4 class="text-sm font-semibold text-amber-800 dark:text-amber-200">
+										{promptValidation().errors.length === 1 ? 'Undefined Variable' : `${promptValidation().errors.length} Undefined Variables`}
+									</h4>
+									<p class="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+										The following variables are referenced but not available in this node's context:
+									</p>
+								</div>
+							</div>
+
+							<!-- Error List -->
+							<div class="px-4 pb-3 space-y-2">
+								{#each promptValidation().invalidReferences as ref}
+									<div class="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800/50 rounded-lg border border-amber-200 dark:border-amber-800/30">
+										<code class="px-2 py-0.5 text-xs font-mono bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 rounded">
+											{'{' + ref.name + '}'}
+										</code>
+										<span class="text-xs text-amber-700 dark:text-amber-300">
+											is not defined
+										</span>
+									</div>
+								{/each}
+							</div>
+
+							<!-- Help Text -->
+							<div class="px-4 py-2.5 bg-amber-100/50 dark:bg-amber-900/30 border-t border-amber-200 dark:border-amber-800/30">
+								<p class="text-[11px] text-amber-700 dark:text-amber-400">
+									<strong>How to fix:</strong> Ensure the variable is either a data column, an output_key from an upstream node, or a framework variable. Check that upstream nodes are connected and have the correct output_keys configured.
+								</p>
+							</div>
+						</div>
+					{/if}
+
 					{#if isEditing}
 						{#each editPrompts as message, index}
 							<div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
@@ -2507,13 +2807,14 @@ class ${outputClassName}OutputGenerator(BaseOutputGenerator):
 										<X size={14} />
 									</button>
 								</div>
-								<textarea
-									value={message.content}
-									oninput={(e) => updatePromptContent(index, e.currentTarget.value)}
-									class="w-full px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 border-0 focus:ring-0 resize-none font-mono"
-									rows="6"
-									placeholder="Enter prompt content..."
-								></textarea>
+								<PromptTextarea
+									bind:value={message.content}
+									variables={availableStateVariables().variables}
+									rows={6}
+									placeholder={'Enter prompt content... Type \'{\' for variable autocomplete'}
+									oninput={(val) => { editPrompts[index].content = val; markChanged(); }}
+									class="border-0 rounded-none focus:ring-0"
+								/>
 							</div>
 						{/each}
 

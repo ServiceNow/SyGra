@@ -260,8 +260,8 @@ class SygraGraphBuilder:
         if "prompt" in node_config:
             prompts = self._parse_prompts(node_config["prompt"])
 
-        # Build summary from node config
-        summary = node_config.get("summary", node_name.replace("_", " ").title())
+        # Build summary from node config (node_name in YAML, with fallback to legacy 'summary')
+        summary = node_config.get("node_name") or node_config.get("summary") or node_name.replace("_", " ").title()
 
         # For subgraph nodes, try to load and expand the inner graph
         inner_graph = None
@@ -279,6 +279,9 @@ class SygraGraphBuilder:
         # Extract node_config_map for subgraph nodes (allows overriding inner node configs)
         node_config_map = node_config.get("node_config_map") if node_type == NodeType.SUBGRAPH else None
 
+        # Extract output_keys for LLM/multi_llm nodes
+        output_keys = node_config.get("output_keys")
+
         return WorkflowNode(
             id=node_name,
             node_type=node_type,
@@ -290,6 +293,7 @@ class SygraGraphBuilder:
             pre_process=node_config.get("pre_process"),
             post_process=node_config.get("post_process"),
             multi_llm_post_process=multi_llm_post_process,
+            output_keys=output_keys,
             subgraph_path=subgraph_path,
             inner_graph=inner_graph,
             node_config_map=node_config_map,
@@ -536,7 +540,7 @@ class SygraGraphBuilder:
                 inner_node = WorkflowNode(
                     id=node_id,
                     node_type=node_type,
-                    summary=node_config.get("summary", node_id.replace("_", " ").title()),
+                    summary=node_config.get("node_name") or node_config.get("summary") or node_id.replace("_", " ").title(),
                     position=position,
                     size=size,
                     inner_graph=nested_inner_graph,
