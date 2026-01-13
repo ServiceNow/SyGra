@@ -240,13 +240,13 @@ class LLMNode(BaseNode):
         for message in chat_frmt_messages:
             contents = message["content"]
             # if it's a normal text conversation then no need to expand
-            if isinstance(contents, str):
+            if isinstance(contents, str) or message.get("role", "") == "tool":
                 continue
             expanded_contents = []
             for item in contents:
-                if item["type"] == "image_url":
+                if item.get("type") and item.get("type") == "image_url":
                     expanded_contents.extend(expand_image_item(item, state))
-                elif item["type"] == "audio_url":
+                elif item.get("type") and item.get("type") == "audio_url":
                     expanded_contents.extend(expand_audio_item(item, state))
                 else:
                     expanded_contents.append(item)
