@@ -461,7 +461,7 @@ class DatasetProcessor:
                     )
                     new_output_file = output_file[: output_file.rfind("/") + 1] + output_file[
                         output_file.rfind("/") + 1 :
-                    ].replace("output_", processor_name + "_", 1)
+                    ].replace("output", processor_name, 1)
                     with open(new_output_file, "w") as f:
                         logger.info(f"Writing metrics output to file {new_output_file}")
                         json.dump(processed_output_data, f, indent=4)

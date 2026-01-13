@@ -136,18 +136,47 @@ gemini_2_5_pro:
 # Bedrock model
 bedrock_model:
   model_type: bedrock
-  model: anthropic.claude-sonnet-4-5-20250929-v1:0
+  model: us.anthropic.claude-sonnet-4-5-20250929-v1:0
   # aws_access_key_id, aws_secret_access_key, aws_region_name should be defined at .env file as SYGRA_BEDROCK_MODEL_AWS_ACCESS_KEY_ID, SYGRA_BEDROCK_MODEL_AWS_SECRET_ACCESS_KEY, SYGRA_BEDROCK_MODEL_AWS_REGION_NAME
   parameters:
     max_tokens: 5000
     temperature: 0.5
 
 
-#gpt 5
+openai_gpt41:
+  model_type: azure_openai
+  model: gpt-4.1
+  api_version: 2024-02-15-preview
+  parameters:
+    max_tokens: 5000
+    temperature: 0.1
+
 gpt-5:
   model_type: azure_openai
   model: gpt-5
-  # URL and auth_token should be defined at .env file as SYGRA_GPT-4O_URL and SYGRA_GPT-4O_TOKEN
-  api_version: 2024-08-01-preview
+  # URL and auth_token should be defined at .env file as SYGRA_GPT-5_URL and SYGRA_GPT-5_TOKEN
+  api_version: 2024-02-15-preview
   parameters:
     max_completion_tokens: 5000
+    temperature: 1
+
+claude_large:
+  model_type: claude_proxy
+  client_type: http
+  backend: proxy
+  additional_params:
+    thinking:
+      type: disabled
+    anthropic_beta:
+      - computer-use-2025-01-24
+  parameters:
+    maxTokens: 2500
+    temperature: 0
+
+gemini_2.5_proxy:
+  model_type: gemini_proxy
+  client_type: http
+  backend: proxy
+  parameters:
+    maxOutputTokens: 2500
+    temperature: 0

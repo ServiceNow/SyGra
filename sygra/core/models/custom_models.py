@@ -10,6 +10,7 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
+from copy import copy, deepcopy
 from typing import Any, DefaultDict, Dict, Optional, Sequence, Type, cast
 
 import openai
@@ -484,7 +485,11 @@ class BaseCustomModel(ABC):
         if returns 200, its success
         """
         url_obj = self.model_config.get("url")
-        auth_token = self.model_config.get("auth_token")
+        if "auth_token" in self.model_config:
+            auth_token = self.model_config.get("auth_token", "")
+        else:
+            auth_token = None
+
         if isinstance(url_obj, list):
             for i, url in enumerate(url_obj):
                 token = auth_token[i] if isinstance(auth_token, list) else auth_token
@@ -505,15 +510,18 @@ class BaseCustomModel(ABC):
     def get_chat_formatted_text(
         self, chat_format_object: Sequence[BaseMessage], **chat_template_params
     ) -> str:
-        chat_formatted_text = str(
-            self.tokenizer.apply_chat_template(
-                utils.convert_messages_from_langchain_to_chat_format(chat_format_object),
-                tokenize=False,
-                add_generation_prompt=True,
-                **chat_template_params,
+        if self.tokenizer:
+            chat_formatted_text = str(
+                self.tokenizer.apply_chat_template(
+                    utils.convert_messages_from_langchain_to_chat_format(chat_format_object),
+                    tokenize=False,
+                    add_generation_prompt=True,
+                    **chat_template_params,
+                )
             )
-        )
-        logger.debug(f"Chat formatted text: {chat_formatted_text}")
+            logger.debug(f"Chat formatted text: {chat_formatted_text}")
+        else:
+            chat_formatted_text = str(chat_format_object)
         return chat_formatted_text
 
     def _replace_special_tokens(self, text: Optional[str]) -> str:
@@ -2336,3 +2344,543 @@ class CustomTriton(BaseCustomModel):
             rcode = self._get_status_from_body(x)
             ret_code = rcode if rcode else 999
         return ModelResponse(llm_response=resp_text, response_code=ret_code)
+
+
+# claude model running on aws bedrock - access through proxy server
+class CustomClaudeProxy(BaseCustomModel):
+    def __init__(self, model_config: dict[str, Any]) -> None:
+        super().__init__(model_config)
+        utils.validate_required_keys(["url"], model_config, "model")
+        self.model_config = model_config
+        auth_token = model_config.get("auth_token")
+        if auth_token:
+            self.auth_token = auth_token.replace("Bearer ", "")
+        else:
+            self.auth_token = None
+
+    # convert from opanai format to claude running on proxy
+    def _convert_tools_to_model_format(self, **kwargs) -> list:
+        formatted_tools = []
+
+        if kwargs.get("tools"):
+            tools = [convert_to_openai_tool(tool) for tool in kwargs.get("tools", [])]
+            # tools = self.filter_tools(tools, self.model_config.get("name"))
+            for tool in tools:
+                # Convert StructuredTool to Bedrock tool format
+                function = tool.get("function", {})
+                tool_name = function.get("name", "")
+                tool_desc = function.get("description", "")
+                tool_params = function.get("parameters", {})
+                bedrock_tool = {
+                    "toolSpec": {
+                        "name": tool_name,
+                        "description": tool_desc,
+                        "type": "function",
+                        "inputSchema": {"json": tool_params},
+                    }
+                }
+                formatted_tools.append(bedrock_tool)
+        return formatted_tools
+
+    def _convert_content_type(self, msg):
+        """
+        openai has extra key 'type' delete from all content
+        convert image format
+        """
+        content = msg.get("content")
+        if isinstance(content, str):
+            msg["content"] = [{"text": content}]
+            return msg
+        for c in msg.get("content", []):
+            # type key is invalid, drop it
+            if isinstance(c, dict) and "type" in c:
+                # TODO audio conversion
+                if c["type"] == "image_url":
+                    image_content = c.get("image_url", {}).get("url")
+                    img_split = image_content.split(";base64,")
+                    if len(img_split) > 1:
+                        img_type = img_split[0].replace("data:image/", "")
+                        img_bytes = img_split[1]
+                        c["image"] = {"format": img_type, "source": {"bytes": img_bytes}}
+                    del c["image_url"]
+                del c["type"]
+        return msg
+
+    def _convert_openai_tool_call_to_model_format(self, messages: list[dict[str, Any]]) -> list:
+        """
+        Convert OpenAI tool and tool_calls to bedrock/claude format
+        tool role should merge with user
+        and convert assistant tool_call to claude format
+        """
+        converted_msgs = []
+        # build tool call results from assistant or tool list
+        assisstant_tool_call_results = []
+        for msg in messages:
+            m = deepcopy(msg)
+            m = self._convert_content_type(m)
+            if m.get("role") == "assistant":
+                tool_calls = m.get("tool_calls")
+                if tool_calls and len(tool_calls) > 0:
+                    for t in tool_calls:
+                        tool_call_id = t.get("id")
+                        name = t.get("function", {}).get("name")
+                        args = t.get("function", {}).get("arguments")
+                        if isinstance(args, str):
+                            try:
+                                args = json.loads(args)
+                            except Exception:
+                                args = {}
+                        # add each tool into assistant content as toolUse object
+                        m["content"].append(
+                            {"toolUse": {"name": name, "toolUseId": tool_call_id, "input": args}}
+                        )
+                        assisstant_tool_call_results.append(
+                            {
+                                "toolResult": {
+                                    "toolUseId": tool_call_id,
+                                    "status": "success",
+                                    "content": [{"success": "true"}],
+                                }
+                            }
+                        )
+                else:
+                    assisstant_tool_call_results = []
+                # delete the tool_calls, as it should be part of content only
+                if "tool_calls" in m:
+                    del m["tool_calls"]
+                converted_msgs.append(m)
+            elif m.get("role") == "tool":
+                # found tool, it should be dropped, as we are building tool result from assistant
+                logger.debug(
+                    "Claude Proxy Model: Found tool result as tool role, drop it for Claude model in proxy."
+                )
+            elif m.get("role") == "user":
+                # insert in same sequence
+                insert_index = 0
+                for tool_result in assisstant_tool_call_results:
+                    m["content"].insert(insert_index, copy(tool_result))
+                    insert_index += 1
+                converted_msgs.append(m)
+                assisstant_tool_call_results = []
+            elif m.get("role") == "system":
+                converted_msgs.append(m)
+            else:
+                logger.error(f"Claude Proxy Model:   Unknown role found. Skipping: {m.get('role')}")
+        return converted_msgs
+
+    def _convert_tool_use_to_openai(self, tool_use: dict) -> dict:
+        if tool_use and len(tool_use.keys()) > 0:
+            name = tool_use.get("name", "")
+            tool_use_id = tool_use.get("toolUseId", "")
+            input = tool_use.get("input", {})
+            return {
+                "id": tool_use_id,
+                "type": "function",
+                "function": {"name": name, "arguments": json.dumps(input)},
+            }
+        else:
+            return {}
+
+    @track_model_request
+    async def _generate_response(
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs
+    ) -> ModelResponse:
+        try:
+            # Set Client
+            self._set_client(model_params.url, model_params.auth_token)
+            # convert to multi modal message format
+            mmchat_messages = [_convert_message_to_dict(msg) for msg in input.messages]
+            input_message = []
+            system_msg = ""
+            for message in mmchat_messages:
+                if message.get("role") == "system" and len(message.get("content", [])) > 0:
+                    content = message.get("content")
+                    if isinstance(content, str):
+                        system_msg = content
+                    elif content and len(content) > 0:
+                        system_msg = " ".join(
+                            [
+                                item.get("text", "")
+                                for item in content
+                                if isinstance(item, dict) and "text" in item
+                            ]
+                        )
+                elif message.get("role") != "system":
+                    input_message.append(message)
+            input_message = self._convert_openai_tool_call_to_model_format(input_message)
+
+            # Build Request Payload - handle tool config conflicts
+            additional_params = self.model_config.get("additional_params", {}).copy()
+
+            # IMPORTANT: Keep static tools in additionalModelRequestFields
+            # Working example shows both additionalModelRequestFields.tools AND toolConfig.tools coexist
+
+            payload = {
+                "inferenceConfig": self.model_config.get("parameters", {}),
+                "additionalModelRequestFields": additional_params,
+                "messages": input_message,
+            }
+
+            # Convert to model format tools
+            formatted_tools = self._convert_tools_to_model_format(**kwargs)
+            if formatted_tools:
+                payload["toolConfig"] = {
+                    "tools": formatted_tools,
+                    "tool_choice": {"type": kwargs.get("tool_choice", "auto")},
+                }
+
+            # add if system message exists
+            if len(system_msg) > 0:
+                payload["systemPrompt"] = system_msg
+
+            # Send Request
+            resp = await self._client.async_send_request(payload, generation_params=None)
+
+            resp_text = resp.text
+            if resp.status_code != 200:
+                logger.error(
+                    f"HTTP request failed with code: {resp.status_code} and error: {resp_text}"
+                )
+                resp_text = f"{constants.ERROR_PREFIX} {resp_text}"
+                if (
+                    constants.ELEMAI_JOB_DOWN in resp_text
+                    or constants.CONNECTION_ERROR in resp_text
+                ):
+                    # server down
+                    resp.status = 503
+                model_response = ModelResponse(llm_response=resp_text, response_code=resp.status)
+            else:
+                json_resp = json.loads(resp_text)
+                stop_reason = json_resp.get("stopReason")
+                # reset storage/output variables
+                resp_tools = []
+                resp_text = ""
+                reasoning_text = None
+                # extract the response text output->message->content->[{"text":<response>}]
+                if len(json_resp.get("output", {}).get("message", {}).get("content", [])) > 0:
+                    for msg in json_resp.get("output", {}).get("message", {}).get("content", []):
+                        if msg.get("text"):
+                            # keep adding multiple response
+                            if len(resp_text) > 0:
+                                # add newline if not empty
+                                resp_text = resp_text + "\n"
+                            resp_text = resp_text + msg.get("text", "")
+                        elif msg.get("toolUse"):
+                            resp_tool = msg.get("toolUse", {})
+                            # convert to openai format and store in the list
+                            resp_tools.append(self._convert_tool_use_to_openai(resp_tool))
+                        elif msg.get("reasoningContent"):
+                            reasoning_text = (
+                                msg.get("reasoningContent", {})
+                                .get("reasoningText", "")
+                                .get("text", "")
+                            )
+                        else:
+                            logger.warning(f"Not implemented for this type of message: {str(msg)}")
+                            raise NotImplementedError(
+                                f"Not implemented for this type of message: {str(msg)}"
+                            )
+
+                model_response = ModelResponse(
+                    llm_response=resp_text,
+                    response_code=resp.status,
+                    tool_calls=resp_tools,
+                    finish_reason=stop_reason,
+                    reasoning_response=reasoning_text,
+                )
+            return model_response
+        except Exception as x:
+            resp_text = f"{constants.ERROR_PREFIX} Http request failed {x}"
+            logger.error(resp_text)
+            rcode = self._get_status_from_body(x)
+            ret_code = rcode if rcode else 999
+            model_response = ModelResponse(llm_response=resp_text, response_code=ret_code)
+            return model_response
+
+
+# Gemini model - access through proxy server
+class CustomGeminiProxy(BaseCustomModel):
+    def __init__(self, model_config: dict[str, Any]) -> None:
+        super().__init__(model_config)
+        utils.validate_required_keys(["url"], model_config, "model")
+        self.model_config = model_config
+        auth_token = model_config.get("auth_token")
+        if auth_token:
+            self.auth_token = auth_token.replace("Bearer ", "")
+        else:
+            self.auth_token = None
+
+    # convert from openai format to gemini tool format
+    def _convert_tools_to_model_format(self, **kwargs) -> list:
+        formatted_tools = []
+        if kwargs.get("tools"):
+            tools = [convert_to_openai_tool(tool) for tool in kwargs.get("tools", [])]
+            # tools = self.filter_tools(tools, self.model_config.get("name"))
+            for t in tools:
+                # Handle different tool formats
+                if isinstance(t, dict):
+                    if not t.get("function"):
+                        logger.debug(
+                            f"[CustomGemini] Skipping tool without function field (type: {t.get('type', 'unknown')})"
+                        )
+                        continue
+                    # FIX: Skip tools without 'name' field (e.g., computer_use tools for Claude)
+                    function = t.get("function")
+                    if not function or not function.get("name"):
+                        logger.debug(
+                            f"[CustomGemini] Skipping tool without name field (type: {t.get('type', 'unknown')})"
+                        )
+                        continue
+
+                    function = t.get("function")
+                    gemini_tool = copy(function) if function else {}
+                    parameters = gemini_tool.get("parameters")
+
+                    # Handle tools with parameters
+                    if parameters and isinstance(parameters, dict):
+                        properties = parameters.get("properties")
+                        if properties and isinstance(properties, dict):
+                            valid_properties = {}
+                            # delete properties keys other than type and description
+                            for prop, val in properties.items():
+                                if isinstance(val, dict):
+                                    properties_info = {
+                                        k: v for k, v in val.items() if k in ["type", "description"]
+                                    }
+                                    valid_properties[prop] = properties_info
+                            if gemini_tool.get("parameters"):
+                                gemini_tool["parameters"]["properties"] = copy(valid_properties)
+                        # If parameters exist but no properties, keep parameters as-is
+                    else:
+                        # Tools without parameters are valid (e.g., screenshot, left_click)
+                        logger.debug(f"[CustomGemini] Tool '{t.get('name')}' has no parameters")
+
+                    formatted_tools.append(gemini_tool)
+
+        return formatted_tools
+
+    def _convert_to_parts(self, contents):
+        parts: list[dict[str, Any]] = []
+        if isinstance(contents, str):
+            parts.append({"text": contents})
+            return parts
+
+        for c in contents:
+            for k, v in c.items():
+                if k == "type":
+                    continue
+
+                if k == "text":
+                    parts.append({k: v})
+                elif k == "image_url":
+                    # image format for Gemini
+                    """
+                    {
+                        "inline_data": {
+                            "mime_type":"image/jpeg",
+                            "data": image_data
+                            }
+                     }
+                    """
+                    if v.get("url") and len(v.get("url").split(";base64,")) == 2:
+                        mime_type = v.get("url").split(";base64,")[0].replace("data:", "")
+                        image_data = v.get("url").split(";base64,")[1]
+                        parts.append({"inline_data": {"mime_type": mime_type, "data": image_data}})
+                else:
+                    logger.error(f"Unsupported data type[{k}], passing to model as it is.")
+                    parts.append({k: v})
+        return parts
+
+    def _convert_functions_to_parts(self, contents):
+        func_parts = []
+        map_id_to_funcname = {}
+        for c in contents:
+            for k, v in c.items():
+                if k == "function":
+                    try:
+                        func_parts.append(
+                            {
+                                "functionCall": {
+                                    "name": v.get("name"),
+                                    "args": json.loads(v.get("arguments")),
+                                }
+                            }
+                        )
+                    except Exception:
+                        logger.error(f"Invalid function call arguments, it should be dict: {v}")
+                        raise Exception(f"Invalid function call arguments, it should be dict: {v}")
+                    map_id_to_funcname[c.get("id")] = v.get("name")
+        return func_parts, map_id_to_funcname
+
+    def _convert_openai_tool_call_to_model_format(self, messages: list[dict[str, Any]]) -> list:
+        """
+        Convert OpenAI tool and tool_calls to Gemini format
+        tool role should merge with user
+        and convert assistant tool_call to Gemini format
+        """
+        global_function_id_name = {}
+        converted_msgs = []
+        # build tool call results from assistant or tool list for LAST TURN only
+        assistant_tool_call_results: list[dict[str, Any]] = []
+        for msg in messages:
+            m = deepcopy(msg)
+            role = m.get("role")
+            if role == "user":
+                parts = self._convert_to_parts(m.get("content", []))
+                # tool results should appear first
+                if assistant_tool_call_results and len(assistant_tool_call_results) > 0:
+                    final_parts = copy(assistant_tool_call_results)
+                    final_parts.extend(parts)
+                else:
+                    final_parts = parts
+                converted_msgs.append({"role": "user", "parts": final_parts})
+                assistant_tool_call_results = []
+            elif role == "assistant":
+                # clear old tool call results and store new for this turn
+                assistant_tool_call_results = []
+                parts = self._convert_to_parts(m.get("content", []))
+                func_parts, map_id_name = self._convert_functions_to_parts(m.get("tool_calls", []))
+                parts.extend(func_parts)
+                global_function_id_name.update(map_id_name)
+                converted_msgs.append({"role": "model", "parts": parts})
+            elif role == "tool":
+                tool_call_id = m.get("tool_call_id")
+                funcname = global_function_id_name.get(tool_call_id)
+                # get result from content else form status as success or failure string
+                status = m.get("status") if m.get("status") else "success"
+                result = m.get("content") if m.get("content") else status
+
+                assistant_tool_call_results.append(
+                    {
+                        "functionResponse": {
+                            "name": funcname,
+                            "response": {"result": result, "status": status},
+                        }
+                    }
+                )
+            else:
+                logger.error(f"Gemini Custom Model: Unknown role found. Skipping: {m.get('role')}")
+        return converted_msgs
+
+    def _convert_tool_use_to_openai(self, tool_use: dict, toolcall_id: str) -> dict:
+        if tool_use and len(tool_use.keys()) > 0:
+            name = tool_use.get("name", "")
+            input = tool_use.get("args", {})
+            return {
+                "id": toolcall_id,
+                "type": "function",
+                "function": {"name": name, "arguments": json.dumps(input)},
+            }
+        else:
+            return {}
+
+    @track_model_request
+    async def _generate_response(
+        self, input: ChatPromptValue, model_params: ModelParams, **kwargs
+    ) -> ModelResponse:
+        try:
+            # Set Client
+            self._set_client(model_params.url, model_params.auth_token)
+            # convert to multi modal message format
+            mmchat_messages = [_convert_message_to_dict(msg) for msg in input.messages]
+            input_messages = []
+            system_msg = ""
+            for message in mmchat_messages:
+                if message.get("role") == "system" and len(message.get("content", [])) > 0:
+                    content = message.get("content")
+                    if isinstance(content, str):
+                        system_msg = content
+                    elif content and len(content) > 0:
+                        system_msg = " ".join(
+                            [
+                                item.get("text", "")
+                                for item in content
+                                if isinstance(item, dict) and "text" in item
+                            ]
+                        )
+                elif message.get("role") != "system":
+                    input_messages.append(message)
+            input_messages = self._convert_openai_tool_call_to_model_format(input_messages)
+
+            # IMPORTANT: Keep static tools in additionalModelRequestFields
+            # Working example shows both additionalModelRequestFields.tools AND toolConfig.tools coexist
+
+            payload = {
+                "generationConfig": self.model_config.get("parameters", {}),
+                "contents": input_messages,
+            }
+
+            # Convert to model format tools
+            formatted_tools = self._convert_tools_to_model_format(**kwargs)
+            if formatted_tools:
+                payload["tools"] = [{"functionDeclarations": formatted_tools}]
+
+            # add if system message exists
+            if len(system_msg) > 0:
+                payload["systemInstruction"] = {"parts": [{"text": system_msg}]}
+
+            # Send Request
+            resp = await self._client.async_send_request(payload, generation_params=None)
+
+            resp_text = resp.text
+            if resp.status_code != 200:
+                logger.error(
+                    f"HTTP request failed with code: {resp.status_code} and error: {resp_text}"
+                )
+                resp_text = f"{constants.ERROR_PREFIX} {resp_text}"
+                if (
+                    constants.ELEMAI_JOB_DOWN in resp_text
+                    or constants.CONNECTION_ERROR in resp_text
+                ):
+                    # server down
+                    resp.status = 503
+                model_response = ModelResponse(llm_response=resp_text, response_code=resp.status)
+            else:
+                json_resp = json.loads(resp_text)
+                resp_id = json_resp.get("responseId", "")
+                stop_reason = json_resp.get("candidates")[0].get("finishReason")
+                parts = json_resp.get("candidates")[0].get("content", {}).get("parts")
+                # reset storage/output variables
+                resp_tools = []
+                resp_text = ""
+                reasoning_text = None
+                for part in parts:
+                    for k, v in part.items():
+                        # Check if this part is a thought/reasoning
+                        if part.get("thought", False):
+                            # This is reasoning text
+                            reasoning_text = part.get("text", "")
+                            continue
+                        if k == "text":
+                            # keep adding multiple response
+                            if len(resp_text) > 0:
+                                # add newline if not empty
+                                resp_text = resp_text + "\n"
+                            resp_text = resp_text + v
+                        elif k == "functionCall":
+                            # use response id for tool call id in openai
+                            resp_tool = self._convert_tool_use_to_openai(v, resp_id)
+                            if resp_tool and len(resp_tool) > 0:
+                                resp_tools.append(resp_tool)
+                        else:
+                            # other data are ignored for now
+                            logger.warning(
+                                f"Gemini Custom Model: Only supports text and functionCall. Unknown type received: {k}"
+                            )
+                            continue
+
+                model_response = ModelResponse(
+                    llm_response=resp_text,
+                    response_code=resp.status,
+                    tool_calls=resp_tools,
+                    finish_reason=stop_reason,
+                    reasoning_response=reasoning_text,
+                )
+            return model_response
+        except Exception as x:
+            resp_text = f"{constants.ERROR_PREFIX} Http request failed {x}"
+            logger.error(resp_text)
+            rcode = self._get_status_from_body(x)
+            ret_code = rcode if rcode else 999
+            model_response = ModelResponse(llm_response=resp_text, response_code=ret_code)
+            return model_response
