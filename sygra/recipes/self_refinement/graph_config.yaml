@@ -1,0 +1,112 @@
+graph_config:
+  nodes:
+    init_self_refine:
+      node_type: lambda
+      lambda: sygra.recipes.self_refinement.task_executor.InitSelfRefinementState
+      params:
+        max_iterations: 2
+        score_threshold: 4
+      output_keys:
+        - _self_refine_iteration
+        - _self_refine_max_iterations
+        - _self_refine_score_threshold
+        - reflection_trajectory
+
+    generate_candidate:
+      node_type: llm
+      output_keys: candidate
+      prompt:
+        - system: |
+            You are a helpful assistant.
+        - user: |
+            {prompt}
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.7
+
+    judge_candidate:
+      node_type: llm
+      post_process: sygra.recipes.self_refinement.task_executor.SelfRefinementJudgePostProcessor
+      output_keys:
+        - self_refine_judge
+        - self_refine_is_good
+        - self_refine_critique
+      prompt:
+        - system: |
+            You are a strict judge. Evaluate the candidate against the user's request.
+            Return JSON only.
+        - user: |
+            User request:
+            {prompt}
+
+            Candidate:
+            {candidate}
+
+            Score the candidate from 1-5.
+            If score >= 4 it is good.
+
+            OUTPUT JSON:
+            {{"score": <int>, "is_good": <true/false>, "critique": "..."}}
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0
+        structured_output:
+          schema:
+            fields:
+              score:
+                type: float
+                description: "judge quality score of the candidate"
+              is_good:
+                type: bool
+                description: "Boolean value whether the candidate is good or bad"
+              critique:
+                type: str
+                description: "Judge's critique description of the candidate"
+
+    update_trajectory:
+      node_type: lambda
+      lambda: sygra.recipes.self_refinement.task_executor.UpdateSelfRefinementTrajectory
+      params:
+        candidate_key: candidate
+        judge_key: self_refine_judge
+
+    refine_candidate:
+      node_type: llm
+      output_keys: candidate
+      prompt:
+        - system: |
+            You improve the candidate based on critique. Return only the improved candidate.
+        - user: |
+            User request:
+            {prompt}
+
+            Previous candidate:
+            {candidate}
+
+            Critique:
+            {self_refine_critique}
+
+            Produce an improved candidate.
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.7
+
+  edges:
+    - from: START
+      to: init_self_refine
+    - from: init_self_refine
+      to: generate_candidate
+    - from: generate_candidate
+      to: judge_candidate
+    - from: judge_candidate
+      to: update_trajectory
+    - from: update_trajectory
+      condition: sygra.recipes.self_refinement.task_executor.SelfRefinementLoopCondition
+      path_map:
+        accept: END
+        refine: refine_candidate
+    - from: refine_candidate
+      to: judge_candidate
