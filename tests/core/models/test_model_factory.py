@@ -8,6 +8,8 @@ sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
 from sygra.core.models.custom_models import (
     CustomAzure,
+    CustomClaudeProxy,
+    CustomGeminiProxy,
     CustomMistralAPI,
     CustomOllama,
     CustomOpenAI,
@@ -525,6 +527,256 @@ class TestModelFactory(unittest.TestCase):
 
             # Verify RunnableLambda was called
             mock_runnable.assert_called()
+
+    # ============================================================================
+    # PROXY BACKEND TESTS
+    # ============================================================================
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_create_model_claude_proxy(self, mock_validate, mock_load_model_config):
+        """Test create_model with claude_proxy model type and proxy backend"""
+        mock_load_model_config.return_value = {
+            "claude_large": {
+                "model_type": "claude_proxy",
+                "client_type": "http",
+                "backend": "proxy",
+                "url": "http://claude-proxy.com",
+                "auth_token": None,
+                "parameters": {"maxTokens": 2500},
+            }
+        }
+
+        with patch.object(CustomClaudeProxy, "__init__", return_value=None) as mock_init:
+            model_config = {"name": "claude_large", "model_type": "claude_proxy"}
+            ModelFactory.create_model(model_config, backend="proxy")
+            mock_init.assert_called_once()
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_create_model_gemini_proxy(self, mock_validate, mock_load_model_config):
+        """Test create_model with gemini_proxy model type and proxy backend"""
+        mock_load_model_config.return_value = {
+            "gemini_2.5_proxy": {
+                "model_type": "gemini_proxy",
+                "client_type": "http",
+                "backend": "proxy",
+                "url": "http://gemini-proxy.com",
+                "auth_token": None,
+                "parameters": {"maxOutputTokens": 2500},
+            }
+        }
+
+        with patch.object(CustomGeminiProxy, "__init__", return_value=None) as mock_init:
+            model_config = {"name": "gemini_2.5_proxy", "model_type": "gemini_proxy"}
+            ModelFactory.create_model(model_config, backend="proxy")
+            mock_init.assert_called_once()
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_proxy_model_not_available_in_litellm_backend(
+        self, mock_validate, mock_load_model_config
+    ):
+        """Test that proxy models are not available in litellm backend"""
+        mock_load_model_config.return_value = {
+            "claude_large": {
+                "model_type": "claude_proxy",
+                "url": "http://claude-proxy.com",
+                "parameters": {},
+            }
+        }
+
+        model_config = {"name": "claude_large", "model_type": "claude_proxy"}
+
+        # Should raise NotImplementedError when trying to use proxy model with litellm backend
+        with self.assertRaises(NotImplementedError) as context:
+            ModelFactory.create_model(model_config, backend="litellm")
+
+        self.assertIn("claude_proxy", str(context.exception))
+        self.assertIn("litellm", str(context.exception))
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_proxy_model_not_available_in_custom_backend(
+        self, mock_validate, mock_load_model_config
+    ):
+        """Test that proxy models are not available in custom backend"""
+        mock_load_model_config.return_value = {
+            "gemini_2.5_proxy": {
+                "model_type": "gemini_proxy",
+                "url": "http://gemini-proxy.com",
+                "parameters": {},
+                "backend": "custom",
+            }
+        }
+
+        model_config = {"name": "gemini_2.5_proxy", "model_type": "gemini_proxy"}
+
+        # Should raise NotImplementedError when trying to use proxy model with custom backend
+        with self.assertRaises(NotImplementedError) as context:
+            ModelFactory.create_model(model_config, backend="custom")
+
+        self.assertIn("gemini_proxy", str(context.exception))
+        self.assertIn("custom", str(context.exception))
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_proxy_model_not_available_in_langgraph_backend(
+        self, mock_validate, mock_load_model_config
+    ):
+        """Test that proxy models are not available in langgraph backend"""
+        mock_load_model_config.return_value = {
+            "claude_large": {
+                "model_type": "claude_proxy",
+                "url": "http://claude-proxy.com",
+                "parameters": {},
+                "backend": "langgraph",
+            }
+        }
+
+        model_config = {"name": "claude_large", "model_type": "claude_proxy"}
+
+        # Should raise NotImplementedError for langgraph backend
+        with self.assertRaises(NotImplementedError) as context:
+            ModelFactory.create_model(model_config, backend="langgraph")
+
+        self.assertIn("claude_proxy", str(context.exception))
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_backend_override_from_model_config(self, mock_validate, mock_load_model_config):
+        """Test that backend in model_config overrides the parameter"""
+        mock_load_model_config.return_value = {
+            "claude_large": {
+                "model_type": "claude_proxy",
+                "client_type": "http",
+                "backend": "proxy",  # Backend in config
+                "url": "http://claude-proxy.com",
+                "parameters": {},
+            }
+        }
+
+        with patch.object(CustomClaudeProxy, "__init__", return_value=None) as mock_init:
+            model_config = {
+                "name": "claude_large",
+                "model_type": "claude_proxy",
+                "client_type": "http",
+                "backend": "proxy",
+            }
+            # Pass different backend as parameter, but config should override
+            ModelFactory.create_model(model_config, backend="litellm")
+            mock_init.assert_called_once()
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_create_model_claude_proxy_with_additional_params(
+        self, mock_validate, mock_load_model_config
+    ):
+        """Test create_model for claude_proxy with additional_params (no auth_token needed)"""
+        mock_load_model_config.return_value = {
+            "claude_large": {
+                "model_type": "claude_proxy",
+                "client_type": "http",
+                "backend": "proxy",
+                "url": "http://claude-proxy.com",
+                "parameters": {"maxTokens": 2500, "temperature": 0},
+                "additional_params": {
+                    "thinking": {"type": "disabled"},
+                    "anthropic_beta": ["computer-use-2025-01-24"],
+                },
+            }
+        }
+
+        with patch.object(CustomClaudeProxy, "__init__", return_value=None) as mock_init:
+            model_config = {"name": "claude_large", "model_type": "claude_proxy"}
+            ModelFactory.create_model(model_config, backend="proxy")
+
+            # Verify the model was initialized
+            mock_init.assert_called_once()
+
+            # Get the actual config passed to __init__
+            call_args = mock_init.call_args[0][0]
+            self.assertEqual(call_args["model_type"], "claude_proxy")
+            self.assertIn("additional_params", call_args)
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    @patch("langchain_core.runnables.RunnableLambda")
+    def test_get_model_with_proxy_backend(
+        self, mock_runnable, mock_validate, mock_load_model_config
+    ):
+        """Test get_model method with proxy backend (no auth_token required)"""
+        mock_load_model_config.return_value = {
+            "claude_large": {
+                "model_type": "claude_proxy",
+                "backend": "proxy",
+                "url": "http://claude-proxy.com",
+                "parameters": {},
+            }
+        }
+
+        # Mock the model instance
+        mock_model = MagicMock()
+        with patch.object(ModelFactory, "create_model", return_value=mock_model) as mock_create:
+            model_config = {"name": "claude_large", "model_type": "claude_proxy"}
+            ModelFactory.get_model(model_config, "proxy")
+
+            # Verify create_model was called with proxy backend
+            mock_create.assert_called_once_with(model_config, "proxy")
+
+            # Verify RunnableLambda was called
+            mock_runnable.assert_called()
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_proxy_backend_without_client_type_should_fail(
+        self, mock_validate, mock_load_model_config
+    ):
+        """Test that proxy backend without client_type=http raises error during model usage"""
+        mock_load_model_config.return_value = {
+            "claude_large": {
+                "model_type": "claude_proxy",
+                # Missing client_type - should cause error when client is created
+                "backend": "proxy",
+                "url": "http://claude-proxy.com",
+                "parameters": {},
+            }
+        }
+
+        # The error will occur when the model tries to create a client
+        model_config = {"name": "claude_large", "model_type": "claude_proxy"}
+
+        with patch.object(CustomClaudeProxy, "__init__") as mock_init:
+            # Mock the init to raise an error about missing client_type
+            mock_init.side_effect = ValueError("client_type=http is required for backend=proxy")
+
+            with self.assertRaises(ValueError) as context:
+                ModelFactory.create_model(model_config, backend="proxy")
+
+            self.assertIn("client_type", str(context.exception))
+
+    @patch("sygra.utils.utils.load_model_config")
+    @patch("sygra.utils.utils.validate_required_keys")
+    def test_error_message_for_invalid_proxy_model(self, mock_validate, mock_load_model_config):
+        """Test error message when proxy model type doesn't exist"""
+        mock_load_model_config.return_value = {
+            "invalid_proxy": {
+                "model_type": "invalid_proxy",
+                "backend": "proxy",
+                "parameters": {},
+            }
+        }
+        model_config = {"name": "invalid_proxy", "model_type": "invalid_proxy"}
+
+        with patch("sygra.core.models.model_factory.logger.error") as mock_error:
+            with self.assertRaises(NotImplementedError):
+                ModelFactory.create_model(model_config, backend="proxy")
+
+            mock_error.assert_called_once()
+            msg = mock_error.call_args[0][0]
+            self.assertIn(
+                "No model implementation for invalid_proxy found for backend(s): proxy", msg
+            )
 
     @patch("sygra.utils.utils.load_model_config")
     @patch("sygra.utils.utils.validate_required_keys")

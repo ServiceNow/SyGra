@@ -47,6 +47,13 @@ Technical reference for metric developers and platform code:
 - How to instantiate via registry
 - Understanding `UnitMetricResult`
 
+### [Unit Metrics Reference](unit_metrics_summary.md)
+Technical reference for unit metric developers and platform code:
+- What each unit metric validates
+- Required parameters (keys, thresholds, etc.)
+- How to instantiate and run batch evaluation
+- Understanding `UnitMetricResult`
+
 ## Quick Start: End User Perspective
 
 ### User Configuration (Simple!)
