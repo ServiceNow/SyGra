@@ -675,6 +675,11 @@
 		}
 	}
 
+	// Export function to trigger fitView (re-fit graph to viewport)
+	export function fitToView() {
+		fitViewTrigger.update(n => n + 1);
+	}
+
 	// Sync edges - only on workflow change, not execution state
 	$effect(() => {
 		if (workflow.id === lastWorkflowId || !lastWorkflowId) {

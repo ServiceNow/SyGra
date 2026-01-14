@@ -172,7 +172,7 @@
 		return selectedNodeIndex() >= 0 && selectedNodeIndex() < ids.length - 1;
 	});
 	let codePanelCollapsed = $state(true);  // Start collapsed by default
-	let sygraFlowRef = $state<{ applyAutoLayout: () => Promise<void> } | undefined>(undefined);
+	let sygraFlowRef = $state<{ applyAutoLayout: () => Promise<void>; fitToView: () => void } | undefined>(undefined);
 	let selectedEdge = $state<{
 		id: string;
 		source: string;
@@ -504,6 +504,27 @@
 			pushState(url.toString(), {});
 		});
 	}
+
+	// Handle code panel resize/expand - trigger fitToView on the graph
+	function handleCodePanelResize() {
+		// Small delay to allow DOM to update before fitting
+		setTimeout(() => {
+			sygraFlowRef?.fitToView();
+		}, 100);
+	}
+
+	// Trigger fitToView when code panel collapse state changes
+	$effect(() => {
+		// Track codePanelCollapsed changes
+		const collapsed = codePanelCollapsed;
+		// Only trigger if we have a flow ref and are in workflow view
+		if (sygraFlowRef && currentView === 'workflow') {
+			// Delay to allow the panel animation to complete
+			setTimeout(() => {
+				sygraFlowRef?.fitToView();
+			}, 250);
+		}
+	});
 </script>
 
 <!-- Loading spinner component -->
@@ -808,6 +829,7 @@
 					bind:isCollapsed={codePanelCollapsed}
 					on:close={() => codePanelCollapsed = true}
 					on:yamlSaved={handleYamlSaved}
+					on:resize={handleCodePanelResize}
 				/>
 			{/if}
 		</div>
