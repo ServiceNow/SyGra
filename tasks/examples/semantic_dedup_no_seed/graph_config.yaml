@@ -1,0 +1,82 @@
+graph_config:
+  nodes:
+    generate_attributes:
+      node_type: weighted_sampler
+      attributes:
+        category:
+          values: ["Email issues", "Network Issue", "Printer issues"]
+        domain:
+          values: ["ITSM (Information Technology Service Management) - A business function that involves managing IT services and process to meet business needs effectively."]
+        data_definition:
+          values: ["An incident is unplanned interruption or reduction in the quality or service, ie, something is broken or not working as expected. Incident management covers the entire lifecycle of an incident form its detection until its resolution and closure."]
+        metadata:
+          values: ["{{\"short_description\":\"Provide a brief text to capture the essence of the request. Keep it within 100 characters. Type = String\",\"description\":\"A detailed account of the incident, including comprehensive information about the issue, steps to reproduce, and any relevant context. Type = String\"}}"]
+    generate_incident_data:
+      node_type: llm
+      post_process: tasks.examples.semantic_dedup_no_seed.task_executor.GenerateIncidentDataPostProcessor
+      pre_process: tasks.examples.semantic_dedup_no_seed.task_executor.GenerateIncidentDataPreProcessor
+      output_keys:
+        - short_description
+        - description
+      prompt:
+        - user: |
+            Unique ID: {unique_id}
+
+            Follow these steps:
+            - Understand the Data Definition: Review the detailed description of the data to ensure it is realistic and meaningful.
+            - Understand the category: Review the category related to domain provided and generate meaningful data related to the category.
+            - Review the Metadata: Check the metadata carefully, including column names, data types, and descriptions. This will guide the generation of the data for each column.
+            - Generate the Data: Create values for each column as specified in the metadata. Ensure that the generated data is complete, realistic, consistent
+            - Maintain Column Integrity: Ensure that column names and types exactly match those specified in the metadata
+            Generate data for the following columns as described in the metadata specific to the domain mentioned.
+
+            Domain: {domain}
+            Category: {category}
+            Data Definition: {data_definition}
+            Metadata: {metadata}
+
+            Ensure that the output is complete and not truncated in JSON data.
+            {{ \"short_description\": \"<<value>>\", \"description\": \"<<value>>\" }}
+
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.8
+        structured_output:
+          schema:
+            fields:
+              short_description:
+                type: str
+                description: "Brief text to capture the essence of the request"
+              description:
+                type: str
+                description: "Detailed account of the incident, including comprehensive information about the issue, steps to reproduce, and any relevant context."
+  edges:
+    - from: START
+      to: generate_attributes
+    - from: generate_attributes
+      to: generate_incident_data
+    - from: generate_incident_data
+      to: END
+
+graph_post_process:
+  - processor: sygra.core.graph.graph_postprocessor.SemanticDedupPostProcessor
+    params:
+      field: description
+      similarity_threshold: 0.85
+      id_field: id
+      embedding_backend: sentence_transformers
+      embedding_model: all-MiniLM-L6-v2
+      keep: first
+      max_pairs_in_report: 1000
+
+output_config:
+  output_map:
+    short_description:
+      from: "short_description"
+    "description":
+      from: "description"
+    "category":
+      from: "category"
+    "domain":
+      from: "domain"

@@ -31,7 +31,7 @@ output_config:
   # Output generation configuration
 
 schema_config:
-  # Output schema validation 
+  # Output schema validation
 
 graph_post_process:
   # Graph post processing
@@ -69,7 +69,7 @@ data_config:
           mapping:
             task_id: id                     # Rename 'task_id' field to 'id'
           overwrite: false                  # Don't overwrite existing fields
-          
+
   # Optional sink configuration for where to store output data
   sink:
     # Example 1: HuggingFace dataset sink
@@ -77,9 +77,9 @@ data_config:
     repo_id: "output-dataset/synthetic-mbpp" # Where to upload the data
     split: "train"                           # Split to write to
     private: true                            # Create a private dataset
-    
+
     # OR
-    
+
     # Example 2: Local file sink
     type: "json"                             # File format (json, jsonl, csv, parquet)
     file_path: "/path/to/output/file.json"   # Path to save the file
@@ -120,7 +120,7 @@ Transformations allow you to modify the input data before processing.
 | `transform` | string | Fully qualified path to a transformation class |
 | `params` | object | Parameters for the transformation |
 
-#### Some of the available transformations are: 
+#### Some of the available transformations are:
 #### RenameFieldsTransform
 It renames the fields in the dataset, so the prompt variables used are meaningful and reusable.
 The Below example shows how the `page` is renamed to `id`, `llm_extract` is renamed to `text` and `type` is renamed to `text_format`.
@@ -135,8 +135,8 @@ The Below example shows how the `page` is renamed to `id`, `llm_extract` is rena
 #### CombineRecords
 When you want to combine records to form a new dataset, you can use this transformation.
 Below example shows how we can skip 10 records from beginning and from end, and combine 2 records by shifting 1.
-For example record `11` and `12` will be combined to form `page`=`11-12`, in this example, `pdf_reader` and `llm_extract` columns are combined with two new lines. 
-And `type`, `model`, `metadata` is just picking data from first record. `$1` denotes first record, `$2` denotes second record and so on. 
+For example record `11` and `12` will be combined to form `page`=`11-12`, in this example, `pdf_reader` and `llm_extract` columns are combined with two new lines.
+And `type`, `model`, `metadata` is just picking data from first record. `$1` denotes first record, `$2` denotes second record and so on.
 Once `11` and `12` is combined to form `11-12`, it shift by 1 and combines `12` with `13` to form `12-13`.
 ```yaml
       - transform: sygra.processors.data_transform.CombineRecords
@@ -209,7 +209,7 @@ To generate data without a source:
 ```yaml
 data_config:
   # No source configuration
-  
+
   # Only sink configuration
   sink:
     type: "json"
@@ -319,7 +319,7 @@ class ShouldContinueCondition(EdgeCondition):
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `from` | string | Source node name (can be a regular node or START) | 
+| `from` | string | Source node name (can be a regular node or START) |
 | `to` | string | Target node name (can be a regular node or END) |
 | `condition` | string | Fully qualified path to a condition class or function (for conditional edges) |
 | `path_map` | object | Map of condition results to target node names (for conditional edges) |
@@ -433,7 +433,7 @@ However, datasource is already mentioned in the current YAML file. output_map va
 \$ variables are only supported under `value` key.
 
 Below example shows how a dictionary value can have \$ variables as dictionary values,
-list values and direct string value. 
+list values and direct string value.
 It can read the path with dot format, also supports list with subscript operator.
 
 ```yaml
@@ -467,27 +467,27 @@ class CodeGenOutputGenerator(BaseOutputGenerator):
     def build_conversation(self, data: Any, state: dict[str, Any]) -> Any:
         """
         Transform messages into a conversation format
-        
+
         Args:
             data: The value from the state (from the 'from' field)
             state: The entire graph state
-            
+
         Returns:
             The transformed value
         """
         chat_format_messages = utils.convert_messages_from_langchain_to_chat_format(data)
-        
+
         # Example transformation logic:
         if chat_format_messages and "no more feedback" in chat_format_messages[-1]["content"].lower():
             # Remove the last message with "no more feedback"
             chat_format_messages = chat_format_messages[:-1]
-            
+
         # Add additional messages or modify existing ones
         if "rephrased_text" in state and state["rephrased_text"]:
             # output keys can be directly accessed from state
             question = state["rephrased_text"].replace("PARAPHRASED QUESTION: ", "")
             chat_format_messages.insert(0, {"role": "user", "content": question})
-            
+
         return chat_format_messages
 ```
 
@@ -500,17 +500,17 @@ class CustomOutputGenerator(BaseOutputGenerator):
     def generate(self, state: SygraState) -> dict[str, Any]:
         """
         Create a custom output record from the graph state
-        
+
         Args:
             state: The final graph state
-            
+
         Returns:
             The output record as a dictionary
         """
         # Custom logic to build the output record
         if "messages" not in state:
             return None  # Skip records that don't have messages
-            
+
         # Build your output record with custom logic
         record = {
             "id": state.get("id", ""),
@@ -518,13 +518,13 @@ class CustomOutputGenerator(BaseOutputGenerator):
             "metadata": self._build_metadata(state),
             # Other fields...
         }
-        
+
         return record
-        
+
     def _process_conversation(self, messages):
         # Helper method for processing messages
         # ...
-        
+
     def _build_metadata(self, state):
         # Helper method for building metadata
         # ...
@@ -564,44 +564,44 @@ graph_config:
           values: [high school teacher, college professor, software engineer]
 
     paraphrase_question:
-      node_type: llm        
+      node_type: llm  
       output_keys: rephrased_text
       prompt:
         - system: |
             Assume you are {persona1} persona.
             You are an assistant tasked with paraphrasing a user question.
         - user: |
-            QUESTION: {prompt}. Write the program in python.      
-      model:      
-        name: mistralai      
-        parameters:          
+            QUESTION: {prompt}. Write the program in python.  
+      model:  
+        name: mistralai  
+        parameters:  
           temperature: 1.0
 
     generate_answer:  
-      node_type: llm        
+      node_type: llm  
       prompt:
         - system: |
             You are an assistant tasked with solving python coding problems.
         - user: |
-            {prompt}      
-      model:      
+            {prompt}  
+      model:  
         name: gpt-4o            # Must match a model defined in config/models.yaml
         parameters:             # Override default parameters from models.yaml
           temperature: 0.1
-        
+
     critique_answer:  
       pre_process: tasks.mbpp.code_generation_with_graph_builder.task_executor.CritiqueAnsNodePreProcessor
-      node_type: llm 
-      output_role: user 
-      prompt:        
-        - system: |              
+      node_type: llm
+      output_role: user
+      prompt:  
+        - system: |  
             You are a teacher grading a solution to a python coding problem.
-          
-            QUESTION: {prompt}            
+
+            QUESTION: {prompt}  
             TEST CASES: {test_list}
-      model:      
+      model:  
         name: gpt-4o
-        parameters:          
+        parameters:  
           temperature: 1.0
 
   edges:
@@ -647,17 +647,17 @@ output_config:
 Schema validator enables users to ensure correctness of generated data before uploading to HF or File System.
 
 
-Key features supported for schema validation are as follows: 
+Key features supported for schema validation are as follows:
 
 1. **YAML based schema check:** Users can define their schema using YAML config files in the following ways:-
    - Define a custom schema class inside `custom_schemas.py` and add it's path in `schema` key inside `schema_config`.
    - Add expected schema config in a list of dict format inside `fields` key inside `schema_config`.
-   
+
 2. **Rule based validation support:** Aside from adding validator rules inside custom class, users can choose from validation methods supported(details in additional validation rules section) and add it as a key for a particular field's dict.
-   
+
 ### Usage Illustration
 
-Let's assume we have the following record generated which we want to validate: 
+Let's assume we have the following record generated which we want to validate:
 
 ```json
 {
@@ -691,8 +691,8 @@ Let's assume we have the following record generated which we want to validate:
         ]
 }
 ```
-For the above record, user can have the following class defined inside `custom_schemas.py` defining the 
-expected keys and values along with additional validation rules if any. 
+For the above record, user can have the following class defined inside `custom_schemas.py` defining the
+expected keys and values along with additional validation rules if any.
 
 ```python
 class CustomUserSchema(BaseModel):
@@ -719,7 +719,7 @@ class CustomUserSchema(BaseModel):
 schema_config:
   schema: sygra.validators.custom_schemas.CustomUserSchema
 ```
-#### Sample YAML configuration to define schema in YAML: 
+#### Sample YAML configuration to define schema in YAML:
 
 ```yaml
 schema_config:
@@ -739,12 +739,12 @@ schema_config:
       type: list[str]
 ```
 Note that `fields` is expected to be a list of dicts with `name` and `type` present in each dict with additional option
-of providing validation key. In the above example `is_greater_than` is a validation key shown for demonstration purpose 
-to ensure `id` key in each record has a value with 6 digits or more. 
+of providing validation key. In the above example `is_greater_than` is a validation key shown for demonstration purpose
+to ensure `id` key in each record has a value with 6 digits or more.
 
 
 ## Post Generation Tasks
-Post generation tasks are tasks that are executed after the graph has been executed. These tasks can be used to perform additional processing on the generated data, such as **OASST Mapper** and **Data Quality** tagging. 
+Post generation tasks are tasks that are executed after the graph has been executed. These tasks can be used to perform additional processing on the generated data, such as **OASST Mapper** and **Data Quality** tagging.
 
 ### `Data mapper` or `oasst_mapper`
 
@@ -799,3 +799,19 @@ class StatsCollatorPostProcessor(GraphPostProcessor):
 Each post processor persists the the processed data into file with name prefixed with the name of the post processor.
 For example Stats file name for `StatsCollatorPostProcessor` mentioned above will be prefixed with `StatsCollatorPostProcessor_.*`
 
+## Semantic Deduplication
+
+Semantic deduplication removes near-duplicate generated outputs by comparing embeddings of a configured field and dropping items whose cosine similarity is above a threshold.
+
+Feature documentation:
+[Semantic Deduplication](../features/semantic_deduplication.md)
+
+Minimal configuration:
+
+```yaml
+graph_post_process:
+  - processor: sygra.core.graph.graph_postprocessor.SemanticDedupPostProcessor
+    params:
+      field: answer
+      similarity_threshold: 0.92
+```
