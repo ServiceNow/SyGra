@@ -1,7 +1,7 @@
 data_config:
   source:
     type: "disk"
-    file_path: "tasks/examples/self_refinement_demo/input.json"
+    file_path: "tasks/examples/self_refinement/input.json"
     file_format: "json"
 
 graph_config:
