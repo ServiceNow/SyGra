@@ -83,6 +83,7 @@
 	let isInitialized = $state(false);
 	let breakpointDecorations: string[] = [];
 	let currentLineDecorations: string[] = [];
+	let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 
 	onMount(async () => {
 		// Subscribe to global theme changes
@@ -163,6 +164,55 @@
 				}
 			}
 		});
+
+		// Handle Cmd/Ctrl+V - we handle ALL paste attempts to ensure consistency
+		// Monaco's hasTextFocus() is unreliable and causes alternating behavior
+		keydownHandler = (e: KeyboardEvent) => {
+			const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+			const isPasteShortcut = (isMac ? e.metaKey : e.ctrlKey) && e.key === 'v';
+
+			if (!isPasteShortcut || readonly || !editor) return;
+
+			// Check if the event target is within our editor's DOM tree
+			const target = e.target as HTMLElement;
+			const wrapper = container.parentElement;
+			const isInEditor = container.contains(target) || wrapper?.contains(target);
+
+			if (!isInEditor) {
+				return;
+			}
+
+			// Always handle paste ourselves for consistency
+			// Don't rely on hasTextFocus() which is unreliable
+			e.preventDefault();
+			e.stopPropagation();
+
+			// Ensure editor has focus
+			if (!editor.hasTextFocus()) {
+				editor.focus();
+			}
+
+			// Read clipboard and paste
+			navigator.clipboard.readText().then(text => {
+				if (text && editor) {
+					const selection = editor.getSelection();
+					if (selection) {
+						editor.pushUndoStop();
+						editor.executeEdits('paste', [{
+							range: selection,
+							text: text,
+							forceMoveMarkers: true
+						}]);
+						editor.pushUndoStop();
+					}
+				}
+			}).catch(() => {
+				// Clipboard read failed - this shouldn't happen with user gesture
+				console.warn('Clipboard read failed');
+			});
+		};
+		// Add to document to catch events reliably
+		document.addEventListener('keydown', keydownHandler, true);
 
 		// Ctrl+S / Cmd+S to save
 		editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
@@ -271,6 +321,11 @@
 			unsubscribeTheme();
 			unsubscribeTheme = null;
 		}
+		// Remove keydown handler from document
+		if (keydownHandler) {
+			document.removeEventListener('keydown', keydownHandler, true);
+			keydownHandler = null;
+		}
 		if (editor) {
 			editor.dispose();
 			editor = null;
@@ -376,7 +431,13 @@
 	}
 </script>
 
-<div class="monaco-editor-wrapper relative rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700">
+<div
+	class="monaco-editor-wrapper relative rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700"
+	onclick={() => editor?.focus()}
+	onmousedown={() => editor?.focus()}
+	role="textbox"
+	tabindex="-1"
+>
 	{#if !isInitialized}
 		<div
 			class="flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-500 text-sm"

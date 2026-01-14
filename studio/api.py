@@ -19,7 +19,7 @@ import queue
 import signal
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,6 +30,7 @@ import yaml
 import json as json_module
 import traceback
 import httpx
+import re
 
 from sygra.utils import utils as sygra_utils
 from sygra.utils import constants as sygra_constants
@@ -1705,6 +1706,19 @@ def _register_routes(app: FastAPI) -> None:
                         if extract_only and class_or_func_name:
                             extracted_content = _extract_class_or_function(full_content, class_or_func_name)
 
+                        # If extraction was requested but failed, return empty string (not the full file)
+                        # This prevents showing the entire file when a specific class doesn't exist
+                        if extract_only and class_or_func_name and not extracted_content:
+                            return {
+                                "content": "",  # Class/function not found - return empty
+                                "full_content": full_content,
+                                "path": str(possible_path.resolve()),
+                                "module_path": file_path,
+                                "class_name": class_or_func_name,
+                                "extracted": False,
+                                "not_found": True
+                            }
+
                         return {
                             "content": extracted_content if extracted_content else full_content,
                             "full_content": full_content,
@@ -1824,6 +1838,56 @@ def _register_routes(app: FastAPI) -> None:
             "files": code_files,
             "file_list": python_files,
             "workflow_dir": str(workflow_dir.resolve())
+        }
+
+    @app.get("/api/workflows/{workflow_id}/node/{node_id}/code/{code_type}")
+    async def get_node_code(workflow_id: str, node_id: str, code_type: str):
+        """
+        Get the code for a specific node from task_executor.py.
+
+        Uses AST-based detection to find code blocks by checking base class inheritance.
+        This is the single source of truth - no markers or metadata copies.
+
+        Args:
+            workflow_id: The workflow ID
+            node_id: The node ID
+            code_type: Type of code ('pre_process', 'post_process', 'lambda', 'branch_condition', 'output_generator', 'data_transform')
+
+        Returns:
+            { "code": "...", "found": true/false }
+        """
+        import ast
+
+        if workflow_id not in _workflows:
+            await list_workflows()
+
+        if workflow_id not in _workflows:
+            raise HTTPException(status_code=404, detail=f"Workflow {workflow_id} not found")
+
+        workflow = _workflows[workflow_id]
+        workflow_dir = Path(workflow.source_path).parent
+        task_executor_path = workflow_dir / "task_executor.py"
+
+        valid_types = {'pre_process', 'post_process', 'lambda', 'branch_condition', 'output_generator', 'data_transform'}
+        if code_type not in valid_types:
+            raise HTTPException(status_code=400, detail=f"Invalid code_type: {code_type}")
+
+        if not task_executor_path.exists():
+            return {"code": "", "found": False, "path": None}
+
+        try:
+            with open(task_executor_path, 'r') as f:
+                content = f.read()
+        except Exception as e:
+            return {"code": "", "found": False, "error": str(e)}
+
+        # Find the code block using AST
+        code = _get_node_code_from_file(content, node_id, code_type)
+
+        return {
+            "code": code if code else "",
+            "found": code is not None,
+            "path": str(task_executor_path.resolve())
         }
 
     @app.put("/api/workflows/{workflow_id}/yaml")
@@ -2067,6 +2131,155 @@ def _register_routes(app: FastAPI) -> None:
         if "metadata" in node_data:
             node.metadata.update(node_data["metadata"])
 
+        # Handle inline code fields - save directly to task_executor.py (single source of truth)
+        # Empty string signals deletion of existing code
+        workflow_dir = Path(workflow.source_path).parent if workflow.source_path else None
+
+        if workflow_dir:
+            # Pre-processor code (empty string = delete)
+            if "_pre_process_code" in node_data:
+                code_content = node_data["_pre_process_code"]
+                # Write to task_executor.py (single source of truth - no metadata copy)
+                _update_task_executor_code(
+                    workflow_dir=workflow_dir,
+                    node_id=node_id,
+                    code_type='pre_process',
+                    code_content=code_content,
+                    node_summary=node.summary
+                )
+                # Auto-generate path only if code is not a stub
+                clean_code = _extract_class_or_function_body(code_content) if code_content else ""
+                is_stub = _is_stub_code(clean_code, 'pre_process') if clean_code else True
+                if code_content and code_content.strip() and not is_stub:
+                    task_name = _get_task_name_from_path(workflow_dir)
+                    safe_node_id = re.sub(r'[^a-zA-Z0-9_]', '', node_id.replace('-', '_').replace(' ', '_'))
+                    node.pre_process = f"tasks.{task_name}.task_executor.{safe_node_id}PreProcessor"
+                else:
+                    node.pre_process = None
+
+            # Post-processor code (empty string = delete)
+            if "_post_process_code" in node_data:
+                code_content = node_data["_post_process_code"]
+                _update_task_executor_code(
+                    workflow_dir=workflow_dir,
+                    node_id=node_id,
+                    code_type='post_process',
+                    code_content=code_content,
+                    node_summary=node.summary
+                )
+                # Auto-generate path only if code is not a stub
+                clean_code = _extract_class_or_function_body(code_content) if code_content else ""
+                is_stub = _is_stub_code(clean_code, 'post_process') if clean_code else True
+                if code_content and code_content.strip() and not is_stub:
+                    task_name = _get_task_name_from_path(workflow_dir)
+                    safe_node_id = re.sub(r'[^a-zA-Z0-9_]', '', node_id.replace('-', '_').replace(' ', '_'))
+                    node.post_process = f"tasks.{task_name}.task_executor.{safe_node_id}PostProcessor"
+                else:
+                    node.post_process = None
+
+            # Lambda function code (empty string = delete)
+            if "_lambda_code" in node_data:
+                code_content = node_data["_lambda_code"]
+                _update_task_executor_code(
+                    workflow_dir=workflow_dir,
+                    node_id=node_id,
+                    code_type='lambda',
+                    code_content=code_content,
+                    node_summary=node.summary
+                )
+                # Auto-generate path only if code is not a stub
+                clean_code = _extract_class_or_function_body(code_content) if code_content else ""
+                is_stub = _is_stub_code(clean_code, 'lambda') if clean_code else True
+                if code_content and code_content.strip() and not is_stub:
+                    task_name = _get_task_name_from_path(workflow_dir)
+                    safe_node_id = re.sub(r'[^a-zA-Z0-9_]', '', node_id.replace('-', '_').replace(' ', '_'))
+                    # Use class-based pattern (LambdaFunction) for new code
+                    node.function_path = f"tasks.{task_name}.task_executor.{safe_node_id}Lambda"
+                else:
+                    node.function_path = None
+
+            # Branch condition code (empty string = delete)
+            if "_branch_condition_code" in node_data:
+                code_content = node_data["_branch_condition_code"]
+                _update_task_executor_code(
+                    workflow_dir=workflow_dir,
+                    node_id=node_id,
+                    code_type='branch_condition',
+                    code_content=code_content,
+                    node_summary=node.summary
+                )
+
+            # Output generator code (from top-level _output_generator_code or output_config._generator_code)
+            # Empty string signals deletion
+            generator_code = node_data.get("_output_generator_code")
+            if generator_code is None and "output_config" in node_data:
+                generator_code = node_data["output_config"].get("_generator_code")
+            if generator_code is not None:  # Process if key exists (even if empty)
+                _update_task_executor_code(
+                    workflow_dir=workflow_dir,
+                    node_id=node_id,
+                    code_type='output_generator',
+                    code_content=generator_code,
+                    node_summary=node.summary
+                )
+                # Auto-generate the generator path only if code is not a stub
+                # (stubs are not actually saved to task_executor.py)
+                clean_code = _extract_class_or_function_body(generator_code) if generator_code else ""
+                is_stub = _is_stub_code(clean_code, 'output_generator') if clean_code else True
+
+                if generator_code and generator_code.strip() and not is_stub:
+                    task_name = _get_task_name_from_path(workflow_dir)
+                    safe_node_id = re.sub(r'[^a-zA-Z0-9_]', '', node_id.replace('-', '_').replace(' ', '_'))
+                    generator_path = f"tasks.{task_name}.task_executor.{safe_node_id}Generator"
+                    # Update output_config with the generator path
+                    if not hasattr(node, 'output_config') or node.output_config is None:
+                        node.output_config = {}
+                    node.output_config['generator'] = generator_path
+                else:
+                    # Clear generator path when code is deleted or is just a stub
+                    if hasattr(node, 'output_config') and node.output_config:
+                        node.output_config['generator'] = None
+
+            # Data transform code (from top-level _data_transform_code or data_config._transform_code)
+            # Empty string signals deletion
+            transform_code = node_data.get("_data_transform_code")
+            if transform_code is None and "data_config" in node_data:
+                transform_code = node_data["data_config"].get("_transform_code")
+            if transform_code is not None:  # Process if key exists (even if empty)
+                _update_task_executor_code(
+                    workflow_dir=workflow_dir,
+                    node_id=node_id,
+                    code_type='data_transform',
+                    code_content=transform_code,
+                    node_summary=node.summary
+                )
+                # Auto-generate the transform path only if code is not a stub
+                clean_code = _extract_class_or_function_body(transform_code) if transform_code else ""
+                is_stub = _is_stub_code(clean_code, 'data_transform') if clean_code else True
+                if transform_code and transform_code.strip() and not is_stub:
+                    task_name = _get_task_name_from_path(workflow_dir)
+                    safe_node_id = re.sub(r'[^a-zA-Z0-9_]', '', node_id.replace('-', '_').replace(' ', '_'))
+                    transform_path = f"tasks.{task_name}.task_executor.{safe_node_id}Transform"
+                    # Update data_config with the transform path
+                    if not hasattr(node, 'data_config') or node.data_config is None:
+                        node.data_config = {}
+                    if 'source' not in node.data_config:
+                        node.data_config['source'] = {}
+                    # Set transform class on the source (or first source if array)
+                    source = node.data_config['source']
+                    if isinstance(source, list) and len(source) > 0:
+                        source[0]['transform_class'] = transform_path
+                    elif isinstance(source, dict):
+                        source['transform_class'] = transform_path
+                else:
+                    # Clear transform class when code is deleted or is just a stub
+                    if hasattr(node, 'data_config') and node.data_config and 'source' in node.data_config:
+                        source = node.data_config['source']
+                        if isinstance(source, list) and len(source) > 0:
+                            source[0].pop('transform_class', None)
+                        elif isinstance(source, dict):
+                            source.pop('transform_class', None)
+
         # Persist changes to the YAML file
         if workflow.source_path:
             yaml_path = Path(workflow.source_path)
@@ -2088,7 +2301,9 @@ def _register_routes(app: FastAPI) -> None:
                     elif node.node_type == 'data':
                         # Handle data nodes - they store config at workflow level
                         if "data_config" in node_data:
-                            config['data_config'] = node_data["data_config"]
+                            # Clean data_config - remove internal fields starting with '_'
+                            clean_data_config = {k: v for k, v in node_data["data_config"].items() if not k.startswith('_')}
+                            config['data_config'] = clean_data_config
                     else:
                         # Update regular nodes in graph_config.nodes
                         if 'graph_config' in config and 'nodes' in config['graph_config']:
@@ -2277,7 +2492,9 @@ def _register_routes(app: FastAPI) -> None:
                     elif node_type == 'data':
                         # Data nodes store config at workflow level as data_config
                         if 'data_config' in node_data:
-                            config['data_config'] = node_data['data_config']
+                            # Clean data_config - remove internal fields starting with '_'
+                            clean_data_config = {k: v for k, v in node_data['data_config'].items() if not k.startswith('_')}
+                            config['data_config'] = clean_data_config
                         # Data nodes are not added to graph_config.nodes
                     else:
                         # Create the node config for regular nodes
@@ -3871,9 +4088,9 @@ def _generate_graph_config(request: WorkflowCreateRequest, task_name: str) -> di
 
     config = {}
 
-    # Data config
+    # Data config - filter out internal fields (starting with _)
     if request.data_config and request.data_config.get('source'):
-        config['data_config'] = request.data_config
+        config['data_config'] = {k: v for k, v in request.data_config.items() if not k.startswith('_')}
 
     # Graph config
     graph_config = {'nodes': {}, 'edges': []}
@@ -3941,7 +4158,7 @@ def _generate_graph_config(request: WorkflowCreateRequest, task_name: str) -> di
             else:
                 # Generate a readable function name from node summary or a simple counter
                 func_name = _generate_readable_name(node, 'lambda', request.nodes, 'function')
-                generated_path = f"tasks.examples.{task_name}.task_executor.{func_name}"
+                generated_path = f"tasks.{task_name}.task_executor.{func_name}"
                 node_config['function_path'] = generated_path
                 # Store back on node for task_executor generation
                 node.function_path = generated_path
@@ -4071,10 +4288,11 @@ def _generate_graph_config(request: WorkflowCreateRequest, task_name: str) -> di
 
     config['graph_config'] = graph_config
 
-    # Output config - filter out data/output nodes from output_map
+    # Output config - filter out data/output nodes from output_map and internal fields
     if request.output_config:
-        # Clean the output_config by removing data/output node references from output_map
-        output_config_clean = dict(request.output_config)
+        # Clean the output_config by removing internal fields (starting with _)
+        # and data/output node references from output_map
+        output_config_clean = {k: v for k, v in request.output_config.items() if not k.startswith('_')}
         if 'output_map' in output_config_clean:
             output_config_clean['output_map'] = {
                 k: v for k, v in output_config_clean['output_map'].items()
@@ -4089,7 +4307,7 @@ def _generate_graph_config(request: WorkflowCreateRequest, task_name: str) -> di
         if has_llm_nodes:
             # Use output generator with message transform for LLM outputs
             config['output_config'] = {
-                'generator': f'tasks.examples.{task_name}.task_executor.DefaultOutputGenerator',
+                'generator': f'tasks.{task_name}.task_executor.DefaultOutputGenerator',
                 'output_map': {
                     'id': {'from': 'id'},
                     'response': {'from': 'messages', 'transform': 'build_response'}
@@ -4291,6 +4509,992 @@ class DefaultOutputGenerator(BaseOutputGenerator):
         code_parts.append(func)
 
     return '\n'.join(code_parts)
+
+
+def _extract_class_or_function_body(code_content: str) -> str:
+    """
+    Extract just the class or function definition from code content,
+    removing any inline imports and docstrings that precede it.
+
+    Args:
+        code_content: Raw code that may include imports, docstrings, and class/function
+
+    Returns:
+        Clean class or function definition without preceding imports
+    """
+    lines = code_content.strip().split('\n')
+    result_lines = []
+    in_class_or_func = False
+    class_indent = 0
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+
+        # Skip empty lines before class/function
+        if not in_class_or_func and not stripped:
+            continue
+
+        # Skip import statements before class/function
+        if not in_class_or_func and (stripped.startswith('from ') or stripped.startswith('import ')):
+            continue
+
+        # Skip module-level docstrings (before class/function)
+        if not in_class_or_func and (stripped.startswith('"""') or stripped.startswith("'''")):
+            # Skip until closing quote
+            if stripped.count('"""') == 1 or stripped.count("'''") == 1:
+                quote = '"""' if '"""' in stripped else "'''"
+                for j in range(i + 1, len(lines)):
+                    if quote in lines[j]:
+                        break
+            continue
+
+        # Detect start of class or function
+        if stripped.startswith('class ') or stripped.startswith('def '):
+            in_class_or_func = True
+            class_indent = len(line) - len(line.lstrip())
+            result_lines.append(line)
+            continue
+
+        # Once in class/function, include everything
+        if in_class_or_func:
+            result_lines.append(line)
+
+    return '\n'.join(result_lines)
+
+
+def _detect_code_type_from_ast(code: str) -> Optional[Tuple[str, str, int, int]]:
+    """
+    Use AST to detect the type of code based on base class inheritance.
+
+    This is more robust than pattern matching on names because it actually
+    checks what the class inherits from.
+
+    Args:
+        code: Python source code to analyze
+
+    Returns:
+        Tuple of (code_type, name, start_line, end_line) or None if not recognized.
+        code_type is one of: 'pre_process', 'post_process', 'output_generator',
+                            'data_transform', 'lambda', 'branch_condition'
+    """
+    import ast
+
+    # Base class mappings - check these against actual inheritance
+    BASE_CLASS_TO_TYPE = {
+        # Pre-processors
+        'NodePreProcessor': 'pre_process',
+        # Post-processors
+        'NodePostProcessor': 'post_process',
+        'NodePostProcessorWithState': 'post_process',
+        # Output generators
+        'BaseOutputGenerator': 'output_generator',
+        # Data transforms
+        'DataTransform': 'data_transform',
+        # Edge conditions (branch)
+        'EdgeCondition': 'branch_condition',
+        # Lambda functions
+        'LambdaFunction': 'lambda',
+    }
+
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return None
+
+    for node in ast.walk(tree):
+        # Check class definitions
+        if isinstance(node, ast.ClassDef):
+            for base in node.bases:
+                # Handle simple base class names: class Foo(BaseClass)
+                if isinstance(base, ast.Name):
+                    base_name = base.id
+                    if base_name in BASE_CLASS_TO_TYPE:
+                        end_line = node.end_lineno if hasattr(node, 'end_lineno') else node.lineno
+                        return (BASE_CLASS_TO_TYPE[base_name], node.name, node.lineno, end_line)
+
+                # Handle attribute access: class Foo(module.BaseClass)
+                elif isinstance(base, ast.Attribute):
+                    base_name = base.attr
+                    if base_name in BASE_CLASS_TO_TYPE:
+                        end_line = node.end_lineno if hasattr(node, 'end_lineno') else node.lineno
+                        return (BASE_CLASS_TO_TYPE[base_name], node.name, node.lineno, end_line)
+
+        # Check function definitions (for lambda and branch_condition functions)
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            # Lambda functions: typically named {node_id}_function
+            if node.name.endswith('_function'):
+                end_line = node.end_lineno if hasattr(node, 'end_lineno') else node.lineno
+                # Extract node_id from function name
+                node_id = node.name[:-9]  # Remove '_function' suffix
+                return ('lambda', node.name, node.lineno, end_line)
+
+            # Branch conditions: typically named {node_id}_condition
+            elif node.name.endswith('_condition'):
+                end_line = node.end_lineno if hasattr(node, 'end_lineno') else node.lineno
+                return ('branch_condition', node.name, node.lineno, end_line)
+
+    return None
+
+
+def _find_code_blocks_by_ast(content: str) -> List[Dict[str, Any]]:
+    """
+    Parse file content using AST to find all code blocks and their types.
+
+    Returns a list of dicts with:
+        - type: code type ('pre_process', 'post_process', etc.)
+        - name: class/function name
+        - node_id: extracted node ID from the name
+        - start_line: 1-indexed start line
+        - end_line: 1-indexed end line
+        - code: the extracted code string
+    """
+    import ast
+
+    BASE_CLASS_TO_TYPE = {
+        'NodePreProcessor': 'pre_process',
+        'NodePostProcessor': 'post_process',
+        'NodePostProcessorWithState': 'post_process',
+        'BaseOutputGenerator': 'output_generator',
+        'DataTransform': 'data_transform',
+        'EdgeCondition': 'branch_condition',
+        'LambdaFunction': 'lambda',
+    }
+
+    # Suffixes for extracting node_id from names
+    SUFFIX_PATTERNS = {
+        'pre_process': ('PreProcessor',),
+        'post_process': ('PostProcessor',),
+        'output_generator': ('Generator',),
+        'data_transform': ('Transform',),
+        'lambda': ('Lambda', '_function'),  # Class-based pattern first, function-based for backwards compat
+        'branch_condition': ('Condition', '_condition'),  # Class-based pattern first, function-based for backwards compat
+    }
+
+    results = []
+    lines = content.splitlines(keepends=True)
+
+    try:
+        tree = ast.parse(content)
+    except SyntaxError:
+        return results
+
+    for node in ast.walk(tree):
+        code_type = None
+        name = None
+        node_id = None
+
+        # Check class definitions
+        if isinstance(node, ast.ClassDef):
+            for base in node.bases:
+                base_name = None
+                if isinstance(base, ast.Name):
+                    base_name = base.id
+                elif isinstance(base, ast.Attribute):
+                    base_name = base.attr
+
+                if base_name and base_name in BASE_CLASS_TO_TYPE:
+                    code_type = BASE_CLASS_TO_TYPE[base_name]
+                    name = node.name
+                    # Extract node_id from class name
+                    for suffix in SUFFIX_PATTERNS.get(code_type, ()):
+                        if name.endswith(suffix):
+                            node_id = name[:-len(suffix)]
+                            break
+                    if not node_id:
+                        node_id = name
+                    break
+
+        # Check function definitions
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if node.name.endswith('_function'):
+                code_type = 'lambda'
+                name = node.name
+                node_id = name[:-9]  # Remove '_function'
+            elif node.name.endswith('_condition'):
+                code_type = 'branch_condition'
+                name = node.name
+                node_id = name[:-10]  # Remove '_condition'
+
+        if code_type and name:
+            start_line = node.lineno - 1  # Convert to 0-indexed
+            end_line = node.end_lineno if hasattr(node, 'end_lineno') else start_line + 1
+
+            # Extract the code
+            code_lines = lines[start_line:end_line]
+            code = ''.join(code_lines).rstrip()
+
+            results.append({
+                'type': code_type,
+                'name': name,
+                'node_id': node_id,
+                'start_line': start_line,
+                'end_line': end_line,
+                'code': code
+            })
+
+    return results
+
+
+def _find_code_block_for_node(content: str, node_id: str, code_type: str) -> Optional[Tuple[int, int, str]]:
+    """
+    Find a specific code block for a node ID and code type using AST.
+
+    Args:
+        content: Full file content
+        node_id: The node ID to find
+        code_type: Type of code ('pre_process', 'post_process', etc.)
+
+    Returns:
+        Tuple of (start_pos, end_pos, code) for string replacement, or None if not found
+    """
+    # First try marker-based detection
+    marker_map = {
+        'pre_process': 'Pre-Processor',
+        'post_process': 'Post-Processor',
+        'lambda': 'Lambda Function',
+        'branch_condition': 'Branch Condition',
+        'output_generator': 'Output Generator',
+        'data_transform': 'Data Transformation',
+    }
+
+    marker_label = marker_map.get(code_type)
+    if marker_label:
+        # Pattern allows for blank lines between code blocks using \n\s*
+        marker_pattern = rf'# === {re.escape(marker_label)} for {re.escape(node_id)} ===\n.*?(?=\n\s*# ===|\n\s*class DefaultOutputGenerator|\Z)'
+        match = re.search(marker_pattern, content, re.DOTALL)
+        if match:
+            return (match.start(), match.end(), match.group(0))
+
+    # Fall back to AST-based detection
+    blocks = _find_code_blocks_by_ast(content)
+    lines = content.splitlines(keepends=True)
+
+    # Normalize node_id for comparison
+    safe_node_id = re.sub(r'[^a-zA-Z0-9_]', '', node_id.replace('-', '_').replace(' ', '_'))
+
+    for block in blocks:
+        if block['type'] != code_type:
+            continue
+
+        # Compare normalized node IDs
+        block_safe_id = re.sub(r'[^a-zA-Z0-9_]', '', block['node_id'].replace('-', '_').replace(' ', '_'))
+        if block_safe_id == safe_node_id:
+            # Check if there's a marker comment preceding the class/function
+            # Look at the line(s) before the block start
+            actual_start_line = block['start_line']
+            marker_prefix = f'# === {marker_label} for '
+
+            # Scan backwards to find marker comment (skip blank lines)
+            check_line = actual_start_line - 1
+            while check_line >= 0:
+                line_content = lines[check_line].strip()
+                if line_content.startswith(marker_prefix):
+                    # Found a marker, include it in the range
+                    actual_start_line = check_line
+                    break
+                elif line_content == '':
+                    # Blank line, continue searching backwards
+                    check_line -= 1
+                else:
+                    # Non-blank, non-marker line - stop searching
+                    break
+
+            # Calculate character positions from line numbers
+            start_pos = sum(len(lines[i]) for i in range(actual_start_line))
+            end_pos = sum(len(lines[i]) for i in range(block['end_line']))
+            return (start_pos, end_pos, block['code'])
+
+    return None
+
+
+def _is_stub_code(code: str, code_type: str) -> bool:
+    """
+    Detect if code is just a stub/template without actual user modifications.
+
+    Stub patterns:
+    - Pre-processor: Only has "return state" with comments
+    - Post-processor: Only has "return {"response": resp.message.content}" with comments
+    - Data transform: Only has "return record" with comments
+    - Lambda/Branch: Only has "return" with no real logic
+
+    Args:
+        code: The code to check
+        code_type: Type of code ('pre_process', 'post_process', 'data_transform', 'lambda', 'branch_condition', 'output_generator')
+
+    Returns:
+        True if this is stub code that should not be saved
+    """
+    if not code or not code.strip():
+        return True
+
+    # Extract just the meaningful lines (non-comment, non-empty, non-docstring)
+    lines = code.strip().split('\n')
+    meaningful_lines = []
+    in_docstring = False
+    docstring_quote = None
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Handle docstrings
+        if not in_docstring:
+            if stripped.startswith('"""') or stripped.startswith("'''"):
+                docstring_quote = '"""' if stripped.startswith('"""') else "'''"
+                # Check if docstring ends on same line
+                if stripped.count(docstring_quote) >= 2:
+                    continue  # Single-line docstring, skip
+                in_docstring = True
+                continue
+        else:
+            if docstring_quote in stripped:
+                in_docstring = False
+            continue
+
+        # Skip empty lines
+        if not stripped:
+            continue
+
+        # Skip comment lines
+        if stripped.startswith('#'):
+            continue
+
+        # Skip class/def declarations
+        if stripped.startswith('class ') or stripped.startswith('def '):
+            continue
+
+        # Skip decorator lines
+        if stripped.startswith('@'):
+            continue
+
+        # This is a meaningful line
+        meaningful_lines.append(stripped)
+
+    # Check for stub patterns based on code type
+    if code_type == 'pre_process':
+        # Stub pre-processor only has "return state" or assigns self.params
+        for line in meaningful_lines:
+            if line not in ('return state', 'self.params = params'):
+                return False
+        return True
+
+    elif code_type == 'post_process':
+        # Stub post-processor only has return {"response": resp.message.content}
+        for line in meaningful_lines:
+            if line not in ('return {"response": resp.message.content}',):
+                return False
+        return True
+
+    elif code_type == 'data_transform':
+        # Stub data transform only has "return data" or "return record" or assigns self.params
+        # Also allow the name property return (e.g., return "SomeTransform")
+        for line in meaningful_lines:
+            # Allow standard stub patterns
+            if line in ('return data', 'return record', 'self.params = params'):
+                continue
+            # Allow name property return (quoted string)
+            if line.startswith('return "') and line.endswith('"'):
+                continue
+            if line.startswith("return '") and line.endswith("'"):
+                continue
+            # Any other line means it's not a stub
+            return False
+        return True
+
+    elif code_type == 'lambda':
+        # Stub lambda has no meaningful lines or just returns state
+        if not meaningful_lines:
+            return True
+        if len(meaningful_lines) == 1 and meaningful_lines[0].startswith('return'):
+            if meaningful_lines[0] in ('return state', 'return None', 'return'):
+                return True
+        return False
+
+    elif code_type == 'branch_condition':
+        # Stub branch condition just returns a default string
+        if not meaningful_lines:
+            return True
+        if len(meaningful_lines) == 1 and meaningful_lines[0].startswith('return'):
+            # Check for stub returns like "return state", "return 'default'", etc.
+            if meaningful_lines[0] in ('return state', 'return None', 'return', 'return "default"', "return 'default'"):
+                return True
+        return False
+
+    elif code_type == 'output_generator':
+        # Stub output generator only has default return statements
+        stub_patterns = (
+            'return super()._build_record(state)',
+            'return {}',
+            'return',
+        )
+        for line in meaningful_lines:
+            if line not in stub_patterns:
+                return False
+        return True
+
+    return False
+
+
+def _rebuild_task_executor(workflow_dir: Path) -> bool:
+    """
+    Rebuild the entire task_executor.py file from stored node metadata.
+
+    This creates a clean, well-organized file with:
+    - Consolidated imports at the top
+    - Organized sections for each code type
+    - No duplicate imports
+
+    Args:
+        workflow_dir: Path to the workflow directory
+
+    Returns:
+        True if successful, False otherwise
+    """
+    task_executor_path = workflow_dir / "task_executor.py"
+    task_name = workflow_dir.name
+
+    # Collect all imports needed
+    imports = set()
+    imports.add('from typing import Any, Dict')
+
+    # Code sections
+    data_transforms = []
+    pre_processors = []
+    post_processors = []
+    lambda_functions = []
+    branch_conditions = []
+    output_generators = []
+
+    # Read existing file to extract current code blocks
+    existing_content = ""
+    has_default_generator = False
+
+    if task_executor_path.exists():
+        try:
+            with open(task_executor_path, 'r') as f:
+                existing_content = f.read()
+        except Exception:
+            pass
+
+    # Parse existing code blocks using AST-based detection (checks base class inheritance)
+    if existing_content:
+        # Track node_ids we've already extracted to avoid duplicates
+        extracted_ids = {
+            'data_transform': set(),
+            'pre_process': set(),
+            'post_process': set(),
+            'lambda': set(),
+            'branch_condition': set(),
+            'output_generator': set(),
+        }
+
+        # First, extract marker-based blocks (these take precedence)
+        # Note: The lookahead allows for blank lines between code blocks using \n\s*
+        marker_patterns = {
+            'data_transform': r'# === Data Transformation for ([^\n]+) ===\n(.*?)(?=\n\s*# ===|\n\s*class DefaultOutputGenerator|\Z)',
+            'pre_process': r'# === Pre-Processor for ([^\n]+) ===\n(.*?)(?=\n\s*# ===|\n\s*class DefaultOutputGenerator|\Z)',
+            'post_process': r'# === Post-Processor for ([^\n]+) ===\n(.*?)(?=\n\s*# ===|\n\s*class DefaultOutputGenerator|\Z)',
+            'lambda': r'# === Lambda Function for ([^\n]+) ===\n(.*?)(?=\n\s*# ===|\n\s*class DefaultOutputGenerator|\Z)',
+            'branch_condition': r'# === Branch Condition for ([^\n]+) ===\n(.*?)(?=\n\s*# ===|\n\s*class DefaultOutputGenerator|\Z)',
+            'output_generator': r'# === Output Generator for ([^\n]+) ===\n(.*?)(?=\n\s*# ===|\n\s*class DefaultOutputGenerator|\Z)',
+        }
+
+        code_lists = {
+            'data_transform': data_transforms,
+            'pre_process': pre_processors,
+            'post_process': post_processors,
+            'lambda': lambda_functions,
+            'branch_condition': branch_conditions,
+            'output_generator': output_generators,
+        }
+
+        # Extract marker-based blocks first
+        for code_type, pattern in marker_patterns.items():
+            for match in re.finditer(pattern, existing_content, re.DOTALL):
+                node_id = match.group(1).strip()
+                code = match.group(2).strip()
+                if code and node_id not in extracted_ids[code_type]:
+                    clean_code = _extract_class_or_function_body(code)
+                    if clean_code and not _is_stub_code(clean_code, code_type):
+                        code_lists[code_type].append((node_id, clean_code))
+                        extracted_ids[code_type].add(node_id)
+
+        # Now use AST-based detection for code without markers
+        # This checks actual base class inheritance for robust detection
+        ast_blocks = _find_code_blocks_by_ast(existing_content)
+
+        for block in ast_blocks:
+            code_type = block['type']
+            node_id = block['node_id']
+            code = block['code']
+
+            # Skip if already extracted via marker
+            if node_id in extracted_ids.get(code_type, set()):
+                continue
+
+            # Skip DefaultOutputGenerator
+            if block['name'] == 'DefaultOutputGenerator':
+                continue
+
+            # Skip stub code
+            if _is_stub_code(code, code_type):
+                continue
+
+            # Add to appropriate list
+            if code_type in code_lists:
+                code_lists[code_type].append((node_id, code))
+                extracted_ids[code_type].add(node_id)
+
+        # Add required imports based on what was found
+        if pre_processors:
+            imports.add('from sygra.core.graph.functions.node_processor import NodePreProcessor')
+            imports.add('from sygra.core.graph.sygra_state import SygraState')
+        if post_processors:
+            imports.add('from sygra.core.graph.functions.node_processor import NodePostProcessor')
+            imports.add('from sygra.core.graph.functions.node_processor import NodePostProcessorWithState')
+            imports.add('from sygra.core.graph.sygra_message import SygraMessage')
+            imports.add('from sygra.core.graph.sygra_state import SygraState')
+        if lambda_functions:
+            imports.add('from sygra.core.graph.functions.lambda_function import LambdaFunction')
+            imports.add('from sygra.core.graph.sygra_state import SygraState')
+        if branch_conditions:
+            imports.add('from sygra.core.graph.functions.edge_condition import EdgeCondition')
+            imports.add('from sygra.core.graph.sygra_state import SygraState')
+        if output_generators:
+            imports.add('from sygra.processors.output_record_generator import BaseOutputGenerator')
+        if data_transforms:
+            imports.add('from sygra.processors.data_transform import DataTransform')
+
+        # Check for DefaultOutputGenerator - only keep if explicitly present
+        has_default_generator = 'class DefaultOutputGenerator' in existing_content and not output_generators
+
+    # Build the clean file content
+    content_parts = [
+        '"""',
+        f'Task executor for {task_name} workflow.',
+        '',
+        'This file contains custom processors, lambda functions, and conditional edge logic.',
+        '"""',
+        '',
+    ]
+
+    # Add utility imports if needed for DefaultOutputGenerator
+    # Only add these imports if we're actually including the DefaultOutputGenerator
+    if has_default_generator:
+        imports.add('from sygra.processors.output_record_generator import BaseOutputGenerator')
+        imports.add('from sygra.utils import utils')
+
+    # Add sorted imports (deduplicated via set)
+    sorted_imports = sorted(imports)
+    for imp in sorted_imports:
+        content_parts.append(imp)
+
+    content_parts.append('')
+    content_parts.append('')
+
+    # Add Data Transformations section
+    if data_transforms:
+        for node_id, code in data_transforms:
+            content_parts.append(f'# === Data Transformation for {node_id} ===')
+            content_parts.append(code)
+            content_parts.append('')
+            content_parts.append('')
+
+    # Add Pre-Processors section
+    if pre_processors:
+        for node_id, code in pre_processors:
+            content_parts.append(f'# === Pre-Processor for {node_id} ===')
+            content_parts.append(code)
+            content_parts.append('')
+            content_parts.append('')
+
+    # Add Post-Processors section
+    if post_processors:
+        for node_id, code in post_processors:
+            content_parts.append(f'# === Post-Processor for {node_id} ===')
+            content_parts.append(code)
+            content_parts.append('')
+            content_parts.append('')
+
+    # Add Lambda Functions section
+    if lambda_functions:
+        for node_id, code in lambda_functions:
+            content_parts.append(f'# === Lambda Function for {node_id} ===')
+            content_parts.append(code)
+            content_parts.append('')
+            content_parts.append('')
+
+    # Add Branch Conditions section
+    if branch_conditions:
+        for node_id, code in branch_conditions:
+            content_parts.append(f'# === Branch Condition for {node_id} ===')
+            content_parts.append(code)
+            content_parts.append('')
+            content_parts.append('')
+
+    # Add Output Generators section
+    if output_generators:
+        for node_id, code in output_generators:
+            content_parts.append(f'# === Output Generator for {node_id} ===')
+            content_parts.append(code)
+            content_parts.append('')
+            content_parts.append('')
+    elif has_default_generator:
+        # Only add DefaultOutputGenerator if it was explicitly in the file before
+        # Don't add it automatically - user must explicitly want it
+        content_parts.append('class DefaultOutputGenerator(BaseOutputGenerator):')
+        content_parts.append('    """Output generator that converts LangChain messages to chat format."""')
+        content_parts.append('')
+        content_parts.append('    @staticmethod')
+        content_parts.append('    def build_response(data: Any, state: dict) -> list:')
+        content_parts.append('        """Convert LangChain AIMessage objects to serializable chat format."""')
+        content_parts.append('        return utils.convert_messages_from_langchain_to_chat_format(data)')
+        content_parts.append('')
+
+    try:
+        with open(task_executor_path, 'w') as f:
+            f.write('\n'.join(content_parts))
+        return True
+    except Exception as e:
+        print(f"Error writing task_executor.py: {e}")
+        return False
+
+
+def _update_task_executor_code(
+    workflow_dir: Path,
+    node_id: str,
+    code_type: str,  # 'pre_process', 'post_process', 'lambda', 'branch_condition', 'output_generator', 'data_transform'
+    code_content: str,
+    node_summary: Optional[str] = None
+) -> bool:
+    """
+    Update the task_executor.py file with new processor/function code.
+
+    Uses AST-based detection to find and replace code blocks by checking
+    base class inheritance. No markers needed - single source of truth.
+
+    Args:
+        workflow_dir: Path to the workflow directory
+        node_id: The node ID (used to generate class/function names)
+        code_type: Type of code ('pre_process', 'post_process', 'lambda', 'branch_condition', 'output_generator', 'data_transform')
+        code_content: The Python code content to save (can be empty to delete)
+        node_summary: Optional node summary for docstrings
+
+    Returns:
+        True if successful, False otherwise
+    """
+    import ast
+
+    task_executor_path = workflow_dir / "task_executor.py"
+
+    valid_types = {'pre_process', 'post_process', 'lambda', 'branch_condition', 'output_generator', 'data_transform'}
+    if code_type not in valid_types:
+        print(f"Unknown code_type: {code_type}")
+        return False
+
+    # Read existing content
+    existing_content = ""
+    if task_executor_path.exists():
+        try:
+            with open(task_executor_path, 'r') as f:
+                existing_content = f.read()
+        except Exception as e:
+            print(f"Error reading task_executor.py: {e}")
+            return False
+
+    # Extract just the class/function body from the code content
+    clean_code = _extract_class_or_function_body(code_content) if code_content else ""
+
+    # Skip saving if this is stub code (user hasn't added real logic)
+    if clean_code and _is_stub_code(clean_code, code_type):
+        # Don't save stub code - return success but don't write
+        return True
+
+    # If file doesn't exist or is empty, create it with the code
+    if not existing_content.strip():
+        if not clean_code:
+            return True  # Nothing to write
+
+        task_name = workflow_dir.name
+        content = _create_task_executor_file(task_name, code_type, clean_code)
+        try:
+            with open(task_executor_path, 'w') as f:
+                f.write(content)
+            return True
+        except Exception as e:
+            print(f"Error writing task_executor.py: {e}")
+            return False
+
+    # File exists - find the code block using AST
+    found_block = _find_code_block_by_ast(existing_content, node_id, code_type)
+
+    if clean_code:
+        # Ensure required imports exist
+        updated_content = _ensure_imports(existing_content, code_type)
+
+        if found_block:
+            # Replace existing block
+            start_pos, end_pos = found_block
+            # Recalculate positions if imports were added
+            if updated_content != existing_content:
+                # Re-find the block in updated content
+                found_block = _find_code_block_by_ast(updated_content, node_id, code_type)
+                if found_block:
+                    start_pos, end_pos = found_block
+                else:
+                    # Block no longer found after import changes, add at end
+                    updated_content = updated_content.rstrip() + '\n\n\n' + clean_code + '\n'
+                    try:
+                        with open(task_executor_path, 'w') as f:
+                            f.write(updated_content)
+                        return True
+                    except Exception as e:
+                        print(f"Error writing task_executor.py: {e}")
+                        return False
+
+            updated_content = updated_content[:start_pos] + clean_code + '\n' + updated_content[end_pos:]
+        else:
+            # Add new code at the end
+            updated_content = updated_content.rstrip() + '\n\n\n' + clean_code + '\n'
+
+        # Clean up excessive newlines
+        updated_content = re.sub(r'\n{4,}', '\n\n\n', updated_content)
+    else:
+        # Delete the code block (empty code_content)
+        if found_block:
+            start_pos, end_pos = found_block
+            updated_content = existing_content[:start_pos] + existing_content[end_pos:]
+            updated_content = re.sub(r'\n{3,}', '\n\n', updated_content)
+        else:
+            updated_content = existing_content
+
+    # Write the updated content
+    try:
+        with open(task_executor_path, 'w') as f:
+            f.write(updated_content)
+        return True
+    except Exception as e:
+        print(f"Error writing task_executor.py: {e}")
+        return False
+
+
+def _create_task_executor_file(task_name: str, code_type: str, code: str) -> str:
+    """Create a new task_executor.py file with initial code."""
+    imports = _get_imports_for_code_type(code_type)
+
+    content_parts = [
+        '"""',
+        f'Task executor for {task_name} workflow.',
+        '',
+        'This file contains custom processors, lambda functions, and conditional edge logic.',
+        '"""',
+        '',
+        'from typing import Any, Dict',
+    ]
+    content_parts.extend(imports)
+    content_parts.extend(['', '', code, ''])
+
+    return '\n'.join(content_parts)
+
+
+def _get_imports_for_code_type(code_type: str) -> List[str]:
+    """Get the required imports for a code type."""
+    imports = []
+    if code_type == 'pre_process':
+        imports.append('from sygra.core.graph.functions.node_processor import NodePreProcessor')
+        imports.append('from sygra.core.graph.sygra_state import SygraState')
+    elif code_type == 'post_process':
+        imports.append('from sygra.core.graph.functions.node_processor import NodePostProcessor')
+        imports.append('from sygra.core.graph.sygra_message import SygraMessage')
+        imports.append('from sygra.core.graph.sygra_state import SygraState')
+    elif code_type == 'lambda':
+        imports.append('from sygra.core.graph.functions.lambda_function import LambdaFunction')
+        imports.append('from sygra.core.graph.sygra_state import SygraState')
+    elif code_type == 'branch_condition':
+        imports.append('from sygra.core.graph.functions.edge_condition import EdgeCondition')
+        imports.append('from sygra.core.graph.sygra_state import SygraState')
+    elif code_type == 'output_generator':
+        imports.append('from sygra.processors.output_record_generator import BaseOutputGenerator')
+        imports.append('from sygra.core.graph.sygra_state import SygraState')
+    elif code_type == 'data_transform':
+        imports.append('from sygra.processors.data_transform import DataTransform')
+    return imports
+
+
+def _ensure_imports(content: str, code_type: str) -> str:
+    """Ensure the required imports for a code type exist in the file."""
+    required_imports = _get_imports_for_code_type(code_type)
+
+    # Find where imports end (look for first class or function definition)
+    lines = content.split('\n')
+    import_end_idx = 0
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith('from ') or stripped.startswith('import '):
+            import_end_idx = i + 1
+        elif stripped.startswith('class ') or stripped.startswith('def ') or stripped.startswith('@'):
+            break
+
+    # Check which imports are missing
+    missing_imports = []
+    for imp in required_imports:
+        if imp not in content:
+            missing_imports.append(imp)
+
+    if not missing_imports:
+        return content
+
+    # Insert missing imports
+    new_lines = lines[:import_end_idx] + missing_imports + lines[import_end_idx:]
+    return '\n'.join(new_lines)
+
+
+def _find_code_block_by_ast(content: str, node_id: str, code_type: str) -> Optional[Tuple[int, int]]:
+    """
+    Find a code block for a node using AST-based detection.
+
+    Returns (start_pos, end_pos) character positions for replacement, or None if not found.
+    """
+    import ast
+
+    # Base class to code type mapping
+    BASE_CLASS_TO_TYPE = {
+        'NodePreProcessor': 'pre_process',
+        'NodePostProcessor': 'post_process',
+        'NodePostProcessorWithState': 'post_process',
+        'BaseOutputGenerator': 'output_generator',
+        'DataTransform': 'data_transform',
+        'EdgeCondition': 'branch_condition',
+        'LambdaFunction': 'lambda',
+    }
+
+    # Expected class name suffixes
+    SUFFIX_MAP = {
+        'pre_process': 'PreProcessor',
+        'post_process': 'PostProcessor',
+        'output_generator': 'Generator',
+        'data_transform': 'Transform',
+        'lambda': 'Lambda',
+        'branch_condition': 'Condition',
+    }
+
+    # Normalize node_id for comparison
+    safe_node_id = re.sub(r'[^a-zA-Z0-9_]', '', node_id.replace('-', '_').replace(' ', '_'))
+    expected_suffix = SUFFIX_MAP.get(code_type, '')
+    expected_name = f"{safe_node_id}{expected_suffix}"
+
+    try:
+        tree = ast.parse(content)
+    except SyntaxError:
+        return None
+
+    lines = content.splitlines(keepends=True)
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef):
+            # Check if class name matches expected pattern
+            class_name = node.name
+            class_safe_id = class_name[:-len(expected_suffix)] if class_name.endswith(expected_suffix) else class_name
+
+            # Check base class inheritance
+            detected_type = None
+            for base in node.bases:
+                base_name = None
+                if isinstance(base, ast.Name):
+                    base_name = base.id
+                elif isinstance(base, ast.Attribute):
+                    base_name = base.attr
+
+                if base_name and base_name in BASE_CLASS_TO_TYPE:
+                    detected_type = BASE_CLASS_TO_TYPE[base_name]
+                    break
+
+            # Match if type and node_id match
+            if detected_type == code_type:
+                # Check if the class name contains the node_id
+                normalized_class_id = re.sub(r'[^a-zA-Z0-9_]', '', class_safe_id.replace('-', '_'))
+                if normalized_class_id == safe_node_id or class_name == expected_name:
+                    start_line = node.lineno - 1  # 0-indexed
+                    end_line = node.end_lineno if hasattr(node, 'end_lineno') else start_line + 1
+
+                    start_pos = sum(len(lines[i]) for i in range(start_line))
+                    end_pos = sum(len(lines[i]) for i in range(end_line))
+                    return (start_pos, end_pos)
+
+    return None
+
+
+def _get_node_code_from_file(content: str, node_id: str, code_type: str) -> Optional[str]:
+    """
+    Extract the code for a specific node from file content using AST.
+
+    Returns the code string if found, None otherwise.
+    """
+    import ast
+
+    # Base class to code type mapping
+    BASE_CLASS_TO_TYPE = {
+        'NodePreProcessor': 'pre_process',
+        'NodePostProcessor': 'post_process',
+        'NodePostProcessorWithState': 'post_process',
+        'BaseOutputGenerator': 'output_generator',
+        'DataTransform': 'data_transform',
+        'EdgeCondition': 'branch_condition',
+        'LambdaFunction': 'lambda',
+    }
+
+    # Expected class name suffixes
+    SUFFIX_MAP = {
+        'pre_process': 'PreProcessor',
+        'post_process': 'PostProcessor',
+        'output_generator': 'Generator',
+        'data_transform': 'Transform',
+        'lambda': 'Lambda',
+        'branch_condition': 'Condition',
+    }
+
+    # Normalize node_id for comparison
+    safe_node_id = re.sub(r'[^a-zA-Z0-9_]', '', node_id.replace('-', '_').replace(' ', '_'))
+    expected_suffix = SUFFIX_MAP.get(code_type, '')
+    expected_name = f"{safe_node_id}{expected_suffix}"
+
+    try:
+        tree = ast.parse(content)
+    except SyntaxError:
+        return None
+
+    lines = content.splitlines(keepends=True)
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef):
+            class_name = node.name
+            class_safe_id = class_name[:-len(expected_suffix)] if class_name.endswith(expected_suffix) else class_name
+
+            # Check base class inheritance
+            detected_type = None
+            for base in node.bases:
+                base_name = None
+                if isinstance(base, ast.Name):
+                    base_name = base.id
+                elif isinstance(base, ast.Attribute):
+                    base_name = base.attr
+
+                if base_name and base_name in BASE_CLASS_TO_TYPE:
+                    detected_type = BASE_CLASS_TO_TYPE[base_name]
+                    break
+
+            # Match if type and node_id match
+            if detected_type == code_type:
+                normalized_class_id = re.sub(r'[^a-zA-Z0-9_]', '', class_safe_id.replace('-', '_'))
+                if normalized_class_id == safe_node_id or class_name == expected_name:
+                    start_line = node.lineno - 1  # 0-indexed
+                    end_line = node.end_lineno if hasattr(node, 'end_lineno') else start_line + 1
+
+                    # Extract the code
+                    code_lines = lines[start_line:end_line]
+                    return ''.join(code_lines).rstrip()
+
+    return None
 
 
 def _execute_workflow_subprocess(

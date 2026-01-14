@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import type { EditorTheme } from '$lib/stores/theme.svelte';
 
 	interface Props {
@@ -16,6 +16,7 @@
 		breakpointsEnabled?: boolean;
 		breakpoints?: number[];
 		currentLine?: number | null;
+		autofocus?: boolean;
 	}
 
 	let {
@@ -31,10 +32,12 @@
 		placeholder = '',
 		breakpointsEnabled = false,
 		breakpoints = $bindable([]),
-		currentLine = null
+		currentLine = null,
+		autofocus = false
 	}: Props = $props();
 
 	let MonacoEditor: typeof import('./MonacoEditor.svelte').default | null = $state(null);
+	let editorRef: { focus: () => void; getValue: () => string; setValue: (v: string) => void } | null = $state(null);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 
@@ -49,6 +52,39 @@
 			loading = false;
 		}
 	});
+
+	// Auto-focus when editor is loaded and autofocus prop is set
+	$effect(() => {
+		if (autofocus && editorRef && !loading) {
+			// Wait for Monaco editor to fully initialize (it has its own async loading)
+			const attemptFocus = (retries = 5) => {
+				setTimeout(() => {
+					try {
+						editorRef?.focus();
+					} catch {
+						// Editor might not be ready yet, retry
+						if (retries > 0) {
+							attemptFocus(retries - 1);
+						}
+					}
+				}, 100);
+			};
+			attemptFocus();
+		}
+	});
+
+	// Expose focus method
+	export function focus() {
+		editorRef?.focus();
+	}
+
+	export function getValue(): string {
+		return editorRef?.getValue() ?? value;
+	}
+
+	export function setValue(newValue: string) {
+		editorRef?.setValue(newValue);
+	}
 </script>
 
 {#if loading}
@@ -73,6 +109,7 @@
 	</div>
 {:else if MonacoEditor}
 	<MonacoEditor
+		bind:this={editorRef}
 		bind:value
 		{language}
 		{theme}

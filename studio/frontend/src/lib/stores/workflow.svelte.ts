@@ -92,6 +92,11 @@ export interface WorkflowNode {
 	pre_process?: string;
 	post_process?: string;
 	function_path?: string;
+	// Inline code fields (stored when edited in UI)
+	_pre_process_code?: string;
+	_post_process_code?: string;
+	_lambda_code?: string;
+	_branch_condition_code?: string;
 	subgraph_path?: string;
 	inner_graph?: InnerGraph;  // Expanded subgraph contents
 	node_config_map?: Record<string, NodeConfigOverride>;  // Override configs for inner nodes (subgraph only)

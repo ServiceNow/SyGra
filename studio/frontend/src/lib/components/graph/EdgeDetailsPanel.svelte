@@ -22,9 +22,10 @@
 		sourceNode?: WorkflowNode;
 		targetNode?: WorkflowNode;
 		editable?: boolean;
+		startInEditMode?: boolean;
 	}
 
-	let { edge, sourceNode, targetNode, editable = false }: Props = $props();
+	let { edge, sourceNode, targetNode, editable = false, startInEditMode = false }: Props = $props();
 
 	const dispatch = createEventDispatcher<{
 		close: void;
@@ -81,6 +82,8 @@
 			: [];
 		editConditionCode = defaultConditionCode;
 		showCodeEditor = false;
+		// Start in edit mode if prop is set
+		isEditing = startInEditMode && editable;
 	});
 
 	function startEditing() {

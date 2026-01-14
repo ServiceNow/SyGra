@@ -768,12 +768,15 @@
 						this={NodeDetailsPanel}
 						node={currentWorkflow.nodes.find(n => n.id === selectedNodeId)}
 						nodeState={currentExecution?.node_states[selectedNodeId]}
+						startInEditMode={true}
 						showNavigation={true}
 						hasPrevious={hasPreviousNode()}
 						hasNext={hasNextNode()}
 						onPrevious={handleNavigateToPreviousNode}
 						onNext={handleNavigateToNextNode}
 						on:close={() => uiStore.selectNode(null)}
+						on:save={handleBuilderNodeSave}
+						on:delete={handleBuilderNodeDelete}
 						on:navigate={handleNavigateToNode}
 					/>
 				{/if}
@@ -786,7 +789,11 @@
 						edge={edge}
 						sourceNode={currentWorkflow.nodes.find(n => n.id === edge.source)}
 						targetNode={currentWorkflow.nodes.find(n => n.id === edge.target)}
+						editable={true}
+						startInEditMode={true}
 						on:close={() => selectedEdge = null}
+						on:update={handleBuilderEdgeUpdate}
+						on:delete={handleBuilderEdgeDelete}
 						on:navigate={handleNavigateToNode}
 					/>
 				{/if}

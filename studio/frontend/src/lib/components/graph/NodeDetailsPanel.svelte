@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { createEventDispatcher, onMount, tick } from 'svelte';
 	import { X, Bot, Zap, Link, Play, Square, Globe, Boxes, Save, ChevronDown, ChevronRight, Code, Settings, MessageSquare, Info, GitBranch, Plus, Trash2, Edit3, GripVertical, Database, Download, Cloud, Server, HardDrive, ArrowRight, Map as MapIcon, Shuffle, Wrench, AlertCircle, Library, Eye, EyeOff, Loader2, Layers, Copy, GitCompareArrows, Thermometer, Variable, Check, Search, AlertTriangle } from 'lucide-svelte';
 	import { workflowStore, type WorkflowNode, type NodeExecutionState, type PromptMessage, type NodeConfigOverride, type InnerGraph } from '$lib/stores/workflow.svelte';
 	import { toolStore } from '$lib/stores/tool.svelte';
@@ -90,6 +90,12 @@
 	let isSaving = $state(false);
 	let hasChanges = $state(false);
 
+	// Track last initialized node to prevent re-initialization on save
+	let lastInitializedNodeId = '';
+
+	// Track workflow ID for data columns fetch optimization
+	let lastFetchedWorkflowId = '';
+
 	// Editable fields
 	let editNodeId = $state('');
 	let editSummary = $state('');
@@ -105,6 +111,8 @@
 	let preProcessCodeLoaded = $state(false);
 	let postProcessCodeLoaded = $state(false);
 	let lambdaCodeLoaded = $state(false);
+	let outputGeneratorCodeLoaded = $state(false);
+	let dataTransformCodeLoaded = $state(false);
 	let isLoadingCode = $state(false);
 
 	// Code content for Monaco editor (for inline code editing)
@@ -233,6 +241,9 @@
 	let variableFilter = $state('');
 	let copiedVariable = $state<string | null>(null);
 
+	// Code tab editor ref for focus management
+	let codeEditorRef: { focus: () => void } | null = $state(null);
+
 	// Filtered variables based on search
 	let filteredStateVariables = $derived(() => {
 		const vars = availableStateVariables();
@@ -263,10 +274,11 @@
 		}, 1500);
 	}
 
-	// Fetch data columns when workflow is available
+	// Fetch data columns when workflow is available (only on workflow change, not node save)
 	$effect(() => {
 		const workflow = workflowStore.currentWorkflow;
-		if (workflow && workflow.data_config) {
+		if (workflow && workflow.data_config && workflow.id !== lastFetchedWorkflowId) {
+			lastFetchedWorkflowId = workflow.id;
 			// Fetch columns in the background
 			workflowStore.fetchDataColumns();
 		}
@@ -527,11 +539,22 @@
 		{ id: 'settings', label: 'Settings', icon: Settings, hidden: false }
 	]);
 
+	// Track when code tab is activated for auto-focus
+	let codeTabJustActivated = $state(false);
+
 	// Handle tab change
 	function handleTabChange(tabId: string) {
 		activeTab = tabId as TabId;
 		if (node?.node_type) {
 			panelStore.setLastTab(node.node_type, tabId);
+		}
+		// Set flag for auto-focus when switching to code tab
+		if (tabId === 'code') {
+			codeTabJustActivated = true;
+			// Reset flag after Monaco has time to load and focus
+			setTimeout(() => {
+				codeTabJustActivated = false;
+			}, 500);
 		}
 	}
 
@@ -551,7 +574,7 @@
 	// Get current workflow for resolving file paths
 	let currentWorkflow = $derived(workflowStore.currentWorkflow);
 
-	// Fetch code content from backend
+	// Fetch code content from backend (legacy - uses file path)
 	async function fetchCodeContent(filePath: string, workflowId?: string): Promise<string | null> {
 		try {
 			const params = new URLSearchParams({ file_path: filePath });
@@ -569,6 +592,34 @@
 		return null;
 	}
 
+	// Fetch node code directly from task_executor.py using AST-based detection
+	// This is the single source of truth - no metadata copies
+	async function fetchNodeCode(workflowId: string, nodeId: string, codeType: string): Promise<string | null> {
+		try {
+			const response = await fetch(`/api/workflows/${encodeURIComponent(workflowId)}/node/${encodeURIComponent(nodeId)}/code/${encodeURIComponent(codeType)}`);
+			if (response.ok) {
+				const text = await response.text();
+				if (!text) {
+					console.log(`Empty response for ${codeType} code for node ${nodeId}`);
+					return null;
+				}
+				try {
+					const data = JSON.parse(text);
+					if (data && data.found && data.code) {
+						return data.code;
+					}
+				} catch (parseError) {
+					console.error(`Failed to parse JSON for ${codeType} code for node ${nodeId}:`, text.substring(0, 100));
+				}
+			} else {
+				console.log(`Non-OK response (${response.status}) for ${codeType} code for node ${nodeId}`);
+			}
+		} catch (e) {
+			console.error(`Failed to fetch ${codeType} code for node ${nodeId}:`, e);
+		}
+		return null;
+	}
+
 	// Track code load errors for debugging
 	let codeLoadError = $state<string | null>(null);
 
@@ -576,52 +627,86 @@
 	async function loadExistingCode() {
 		if (!node || !currentWorkflow) return;
 
+		// Capture node info at start to handle race conditions
+		const nodeId = node.id;
+		const nodeType = node.node_type;
+		const workflowId = currentWorkflow.id;
+
 		isLoadingCode = true;
 		codeLoadError = null;
 		preProcessCodeLoaded = false;
 		postProcessCodeLoaded = false;
 		lambdaCodeLoaded = false;
+		outputGeneratorCodeLoaded = false;
+		dataTransformCodeLoaded = false;
 
-		console.log('loadExistingCode: Starting for node', node.id, {
-			pre_process: node.pre_process,
-			post_process: node.post_process,
-			function_path: node.function_path,
-			workflow_id: currentWorkflow.id
+		console.log('loadExistingCode: Starting for node', nodeId, {
+			workflow_id: workflowId
 		});
 
 		try {
-			// Fetch pre-process code if path exists
-			if (node.pre_process) {
-				console.log('Fetching pre_process:', node.pre_process);
-				const content = await fetchCodeContent(node.pre_process, currentWorkflow.id);
-				console.log('pre_process result:', content ? 'loaded' : 'failed');
-				if (content) {
-					preProcessCode = content;
-					preProcessCodeLoaded = true;
-				}
+			// Fetch code directly from task_executor.py using AST-based detection
+			// This is the single source of truth - no metadata copies
+
+			// Fetch pre-process code
+			const preContent = await fetchNodeCode(workflowId, nodeId, 'pre_process');
+			// Check if node changed during await
+			if (!node || node.id !== nodeId) return;
+			if (preContent) {
+				preProcessCode = preContent;
+				preProcessCodeLoaded = true;
+				console.log('pre_process loaded from task_executor.py');
 			}
 
-			// Fetch post-process code if path exists
-			if (node.post_process) {
-				console.log('Fetching post_process:', node.post_process);
-				const content = await fetchCodeContent(node.post_process, currentWorkflow.id);
-				console.log('post_process result:', content ? `loaded (${content.length} chars)` : 'failed');
-				if (content) {
-					postProcessCode = content;
-					postProcessCodeLoaded = true;
-				} else {
-					codeLoadError = `Failed to load post_process from ${node.post_process}`;
-				}
+			// Fetch post-process code
+			const postContent = await fetchNodeCode(workflowId, nodeId, 'post_process');
+			if (!node || node.id !== nodeId) return;
+			if (postContent) {
+				postProcessCode = postContent;
+				postProcessCodeLoaded = true;
+				console.log('post_process loaded from task_executor.py');
 			}
 
-			// Fetch lambda function code if path exists
-			if (node.function_path && node.node_type === 'lambda') {
-				console.log('Fetching function_path:', node.function_path);
-				const content = await fetchCodeContent(node.function_path, currentWorkflow.id);
-				console.log('function_path result:', content ? 'loaded' : 'failed');
-				if (content) {
-					lambdaCode = content;
+			// Fetch lambda function code
+			if (nodeType === 'lambda') {
+				const lambdaContent = await fetchNodeCode(workflowId, nodeId, 'lambda');
+				if (!node || node.id !== nodeId) return;
+				if (lambdaContent) {
+					lambdaCode = lambdaContent;
 					lambdaCodeLoaded = true;
+					console.log('lambda loaded from task_executor.py');
+				}
+			}
+
+			// Fetch branch condition code
+			if (nodeType === 'branch') {
+				const branchContent = await fetchNodeCode(workflowId, nodeId, 'branch_condition');
+				if (!node || node.id !== nodeId) return;
+				if (branchContent) {
+					branchConditionCode = branchContent;
+					console.log('branch_condition loaded from task_executor.py');
+				}
+			}
+
+			// Fetch output generator code
+			if (nodeType === 'output') {
+				const outputContent = await fetchNodeCode(workflowId, nodeId, 'output_generator');
+				if (!node || node.id !== nodeId) return;
+				if (outputContent) {
+					editOutputGeneratorCode = outputContent;
+					outputGeneratorCodeLoaded = true;
+					console.log('output_generator loaded from task_executor.py');
+				}
+			}
+
+			// Fetch data transform code
+			if (nodeType === 'data') {
+				const transformContent = await fetchNodeCode(workflowId, nodeId, 'data_transform');
+				if (!node || node.id !== nodeId) return;
+				if (transformContent) {
+					editTransformCode = transformContent;
+					dataTransformCodeLoaded = true;
+					console.log('data_transform loaded from task_executor.py');
 				}
 			}
 		} catch (e) {
@@ -629,12 +714,23 @@
 			codeLoadError = e instanceof Error ? e.message : 'Unknown error loading code';
 		} finally {
 			isLoadingCode = false;
-			console.log('loadExistingCode: Complete', { preProcessCodeLoaded, postProcessCodeLoaded, lambdaCodeLoaded });
+			console.log('loadExistingCode: Complete', { preProcessCodeLoaded, postProcessCodeLoaded, lambdaCodeLoaded, outputGeneratorCodeLoaded, dataTransformCodeLoaded });
 		}
 	}
 
 	// Initialize edit state when node changes
 	$effect(() => {
+		if (!node) {
+			lastInitializedNodeId = '';
+			return;
+		}
+
+		// Skip re-initialization if we're just saving the same node (not switching nodes)
+		if (node.id === lastInitializedNodeId) {
+			return;
+		}
+		lastInitializedNodeId = node.id;
+
 		if (node) {
 			editNodeId = node.id ?? '';
 			editSummary = node.summary ?? '';
@@ -733,6 +829,8 @@
 			preProcessCodeLoaded = false;
 			postProcessCodeLoaded = false;
 			lambdaCodeLoaded = false;
+			outputGeneratorCodeLoaded = false;
+			dataTransformCodeLoaded = false;
 
 			// Clear per-source preview data when switching nodes
 			sourcePreviewData = new Map();
@@ -786,20 +884,25 @@ class ${nodeClassName}PostProcessor(NodePostProcessor):
 `;
 
 			const generateLambdaStub = () => `"""Lambda function for ${node.summary || node.id}."""
-from typing import Any
+from sygra.core.graph.functions.lambda_function import LambdaFunction
 from sygra.core.graph.sygra_state import SygraState
 
 
-def ${nodeClassName}_function(state: SygraState) -> Any:
-    """Execute custom logic on workflow state.
+class ${nodeClassName}Lambda(LambdaFunction):
+    """Execute custom logic on workflow state."""
 
-    Args:
-        state: Current workflow state containing all variables
+    @staticmethod
+    def apply(lambda_node_dict: dict, state: SygraState) -> SygraState:
+        """Implement this method to apply lambda function.
 
-    Returns:
-        Any: Result to be stored in state
-    """
-    return state
+        Args:
+            lambda_node_dict: configuration dictionary
+            state: current state of the graph
+
+        Returns:
+            SygraState: the updated state object
+        """
+        return state
 `;
 
 			const generateBranchStub = () => `"""Branch condition for ${node.summary || node.id}."""
@@ -825,76 +928,117 @@ class ${nodeClassName}Condition(EdgeCondition):
         return "default"
 `;
 
-			// Try to load existing code from files first, use stubs as fallback
-			if (node.pre_process || node.post_process || node.function_path) {
-				loadExistingCode().then(() => {
-					// After loading, set stubs only for code that wasn't loaded
-					if (!preProcessCodeLoaded) {
-						preProcessCode = generatePreProcessStub();
-					}
-					if (!postProcessCodeLoaded) {
-						postProcessCode = generatePostProcessStub();
-					}
-					if (!lambdaCodeLoaded) {
-						lambdaCode = generateLambdaStub();
-					}
-				});
-			} else {
-				// No code paths configured, use stubs immediately
-				preProcessCode = generatePreProcessStub();
-				postProcessCode = generatePostProcessStub();
-				lambdaCode = generateLambdaStub();
-			}
+			// Generate stub functions for output generator and data transform
+			const generateOutputGeneratorStub = () => {
+				const outputClassName = (node.id || 'Output').replace(/-/g, '_').replace(/\s+/g, '').replace(/[^a-zA-Z0-9_]/g, '');
+				return `"""Output generator for ${node.summary || node.id}."""
+from typing import Any
 
-			// Always set branch stub (loaded separately if needed)
-			branchConditionCode = generateBranchStub();
-
-			// Initialize data node edit state
-			if (node.node_type === 'data') {
-				// Always set default transformation stub code
-				const dataClassName = (node.id || 'Data').replace(/-/g, '_').replace(/\s+/g, '').replace(/[^a-zA-Z0-9_]/g, '');
-				editTransformCode = `"""Data transformation for ${node.summary || node.id}."""
-from typing import Any, Dict
+from sygra.core.graph.sygra_state import SygraState
+from sygra.processors.output_record_generator import BaseOutputGenerator
 
 
-class ${dataClassName}Transform:
-    """Transform data records during processing.
+class ${outputClassName}Generator(BaseOutputGenerator):
+    """Generate output records from workflow state.
 
-    This class is called for each record in the data source.
-    Implement the transform method to modify records.
+    This class transforms the workflow state into the final output format.
+    Override _build_record for custom logic, or add transform methods
+    that can be referenced in the output_map configuration.
     """
 
-    def __init__(self, **params):
-        """Initialize with optional parameters from config."""
-        self.params = params
-
-    def transform(self, record: Dict[str, Any]) -> Dict[str, Any]:
-        """Transform a single data record.
+    def _build_record(self, state: SygraState) -> dict[str, Any]:
+        """Build the output record from state.
 
         Args:
-            record: Input data record from source
+            state: The workflow state containing all variables
 
         Returns:
-            Dict[str, Any]: Transformed record
+            dict: The final output record
+        """
+        # Default: use parent's output_map-based logic
+        # Override this method for fully custom record building
+        return super()._build_record(state)
+
+    # Example transform method (referenced in output_map via "transform" key)
+    # def format_response(self, data: Any, state: SygraState) -> Any:
+    #     """Transform data before including in output."""
+    #     return str(data)
+`;
+			};
+
+			const generateDataTransformStub = () => {
+				const dataClassName = (node.id || 'Data').replace(/-/g, '_').replace(/\s+/g, '').replace(/[^a-zA-Z0-9_]/g, '');
+				return `"""Data transformation for ${node.summary || node.id}."""
+from typing import Any
+
+from sygra.processors.data_transform import DataTransform
+
+
+class ${dataClassName}Transform(DataTransform):
+    """Transform data records during processing.
+
+    This class processes a list of records from the data source.
+    Implement the name property and transform method.
+    """
+
+    @property
+    def name(self) -> str:
+        """Get the unique identifier for this transformation."""
+        return "${dataClassName}Transform"
+
+    def transform(self, data: list[dict[str, Any]], params: dict[str, Any]) -> list[dict[str, Any]]:
+        """Apply transformation to a list of records.
+
+        Args:
+            data: List of dictionary records to transform
+            params: Parameters controlling the transformation
+
+        Returns:
+            list[dict[str, Any]]: Transformed list of records
         """
         # Example transformations:
         #
-        # Add new fields:
-        # record["new_field"] = compute_value(record["existing_field"])
+        # Add new fields to each record:
+        # for record in data:
+        #     record["new_field"] = compute_value(record["existing_field"])
         #
-        # Rename fields:
-        # record["new_name"] = record.pop("old_name", None)
+        # Filter records:
+        # data = [r for r in data if r.get("field") == "value"]
         #
-        # Filter fields:
-        # return {k: v for k, v in record.items() if k in ["field1", "field2"]}
-        #
-        # Type conversions:
-        # record["count"] = int(record.get("count", 0))
+        # Skip records by range:
+        # skip_count = params.get("skip", 0)
+        # data = data[skip_count:]
 
-        return record
+        return data
 `;
+			};
 
-				// Also load existing config if present
+			// Load code from task_executor.py (single source of truth)
+			// Always fetch from API - no metadata copies
+			loadExistingCode().then(() => {
+				// After loading, set stubs only for code that wasn't loaded
+				if (!preProcessCodeLoaded) {
+					preProcessCode = generatePreProcessStub();
+				}
+				if (!postProcessCodeLoaded) {
+					postProcessCode = generatePostProcessStub();
+				}
+				if (!lambdaCodeLoaded && node.node_type === 'lambda') {
+					lambdaCode = generateLambdaStub();
+				}
+				if (node.node_type === 'branch' && !branchConditionCode) {
+					branchConditionCode = generateBranchStub();
+				}
+				if (!outputGeneratorCodeLoaded && node.node_type === 'output') {
+					editOutputGeneratorCode = generateOutputGeneratorStub();
+				}
+				if (!dataTransformCodeLoaded && node.node_type === 'data') {
+					editTransformCode = generateDataTransformStub();
+				}
+			});
+
+			// Initialize data node edit state (config only, transform code loaded above)
+			if (node.node_type === 'data') {
 				if (node.data_config) {
 					// Initialize multi-source array
 					const sources = Array.isArray(node.data_config.source)
@@ -903,8 +1047,11 @@ class ${dataClassName}Transform:
 							? [node.data_config.source]
 							: [];
 
-					// Deep clone sources for editing
-					editDataSources = sources.map(s => ({ ...s }));
+					// Deep clone sources for editing, excluding transformations (managed separately)
+					editDataSources = sources.map(s => {
+						const { transformations, ...sourceWithoutTransforms } = s;
+						return { ...sourceWithoutTransforms };
+					});
 
 					// Initialize id_column
 					editIdColumn = node.data_config.id_column;
@@ -972,9 +1119,9 @@ class ${dataClassName}Transform:
 				}
 			}
 
-			// Initialize output node edit state
+			// Initialize output node edit state (config only, code loaded via loadExistingCode)
 			if (node.node_type === 'output') {
-				// Reset state - don't add default generator code
+				// Reset state - code will be loaded by loadExistingCode()
 				editOutputGeneratorCode = '';
 				editOutputGenerator = '';
 				editOutputMappings = [];
@@ -985,7 +1132,7 @@ class ${dataClassName}Transform:
 				transformCodeMap = {};
 				transformCodeExpanded = {};
 
-				// Load existing config if present
+				// Load existing config if present (not code - that comes from task_executor.py)
 				if (node.output_config) {
 					editOutputGenerator = node.output_config.generator ?? '';
 					const outputMap = node.output_config.output_map ?? {};
@@ -995,16 +1142,6 @@ class ${dataClassName}Transform:
 						value: val.value !== undefined ? JSON.stringify(val.value) : '',
 						transform: val.transform ?? ''
 					}));
-
-					// Fetch generator class code if available - this will update editOutputGeneratorCode
-					if (node.output_config.generator) {
-						fetchGeneratorCode(node.output_config.generator).then(() => {
-							// Update edit code with fetched code if successful
-							if (fetchedGeneratorCode) {
-								editOutputGeneratorCode = fetchedGeneratorCode;
-							}
-						});
-					}
 				}
 			}
 
@@ -1121,6 +1258,34 @@ class ${dataClassName}Transform:
 			editNodeConfigMap = node.node_config_map ? JSON.parse(JSON.stringify(node.node_config_map)) : {};
 			expandedOverrideNodes = new Set();
 			overrideSearchQuery = '';
+			// Reset output node state (code will be loaded by loadExistingCode below)
+			if (node.node_type === 'output') {
+				editOutputGenerator = node.output_config?.generator ?? '';
+				editOutputGeneratorCode = ''; // Will be loaded from task_executor.py
+				const outputMap = node.output_config?.output_map ?? {};
+				editOutputMappings = Object.entries(outputMap).map(([key, val]: [string, any]) => ({
+					key,
+					from: val.from ?? '',
+					value: val.value !== undefined ? JSON.stringify(val.value) : '',
+					transform: val.transform ?? ''
+				}));
+			}
+			// Reset data node state (code will be loaded by loadExistingCode below)
+			if (node.node_type === 'data') {
+				const source = node.data_config?.source;
+				const firstSource = Array.isArray(source) ? source[0] : source;
+				editDataSourceType = (firstSource?.type as 'hf' | 'disk' | 'servicenow') || 'hf';
+				editDataRepoId = firstSource?.repo_id ?? '';
+				editDataConfigName = firstSource?.config_name ?? '';
+				editDataSplit = Array.isArray(firstSource?.split) ? firstSource.split.join(', ') : (firstSource?.split ?? 'train');
+				editDataFilePath = firstSource?.file_path ?? '';
+				editDataTable = firstSource?.table ?? '';
+				editDataFilters = firstSource?.query ?? '';
+				editTransformCode = ''; // Will be loaded from task_executor.py
+			}
+			// Reset all code fields by reloading from task_executor.py
+			// This is the single source of truth - stubs will be generated if no code exists
+			loadExistingCode();
 		}
 		hasChanges = false;
 		isEditing = false;
@@ -1280,15 +1445,23 @@ class ${dataClassName}Transform:
 				// Serialize transforms into the sources (strip `id` field as it's for UI only)
 				const sourcesWithTransforms = editDataSources.map((src, idx) => {
 					const sourceCopy = { ...src };
-					// Only attach transforms to primary or first source
-					if (idx === 0 && editSourceTransforms.length > 0) {
-						sourceCopy.transformations = editSourceTransforms
-							.filter(t => t.enabled !== false) // Only include enabled transforms
+					// Handle transforms for primary/first source
+					if (idx === 0) {
+						// Get enabled transforms
+						const enabledTransforms = editSourceTransforms
+							.filter(t => t.enabled !== false)
 							.map(t => ({
 								transform: t.transform,
 								params: t.params
 								// Note: Don't include `id` or `enabled` - those are UI-only fields
 							}));
+
+						if (enabledTransforms.length > 0) {
+							sourceCopy.transformations = enabledTransforms;
+						} else {
+							// Explicitly remove transformations when all are deleted/disabled
+							delete sourceCopy.transformations;
+						}
 					}
 					return sourceCopy;
 				});
@@ -1356,8 +1529,8 @@ class ${dataClassName}Transform:
 			if (editOutputGenerator) {
 				outputConfig.generator = editOutputGenerator;
 			}
-			// Only include generator code if generator is set and code exists
-			if (editOutputGenerator && editOutputGeneratorCode && editOutputGeneratorCode.trim()) {
+			// Include generator code if it exists (code can be saved even without a generator path)
+			if (editOutputGeneratorCode && editOutputGeneratorCode.trim()) {
 				outputConfig._generator_code = editOutputGeneratorCode;
 			}
 			if (editOutputMappings.length > 0) {
@@ -1410,25 +1583,56 @@ class ${dataClassName}Transform:
 			}
 		}
 
-		if (Object.keys(updates).length > 0) {
-			const success = await workflowStore.updateNode(originalNodeId, updates);
-			if (success) {
-				hasChanges = false;
-				isEditing = false;
-				// Dispatch save event for parent to sync SvelteFlow
-				// Include newId if the node ID was changed so parent can update selection
-				console.log('[NodeDetailsPanel] Dispatching save event for node:', originalNodeId);
-				dispatch('save', { nodeId: originalNodeId, newId: updates.newId, updates });
-			} else {
-				console.error('[NodeDetailsPanel] updateNode returned false');
+		// Save inline code fields for processor/function nodes
+		// Code is written to task_executor.py (single source of truth)
+		// Backend handles stub detection - stubs won't be saved
+		// Send empty string to signal deletion
+		if (hasChanges) {
+			// Pre-processor code (for LLM/Agent nodes)
+			// Send code content or empty string (signals deletion)
+			updates._pre_process_code = preProcessCode?.trim() || '';
+
+			// Post-processor code (for LLM/Agent nodes)
+			updates._post_process_code = postProcessCode?.trim() || '';
+
+			// Lambda function code
+			if (node.node_type === 'lambda') {
+				updates._lambda_code = lambdaCode?.trim() || '';
 			}
-		} else {
-			console.log('[NodeDetailsPanel] No updates to save');
-			hasChanges = false;
-			isEditing = false;
+
+			// Branch condition code
+			if (node.node_type === 'branch') {
+				updates._branch_condition_code = branchConditionCode?.trim() || '';
+			}
+
+			// Output generator code
+			if (node.node_type === 'output') {
+				updates._output_generator_code = editOutputGeneratorCode?.trim() || '';
+			}
+
+			// Data transform code
+			if (node.node_type === 'data') {
+				updates._data_transform_code = editTransformCode?.trim() || '';
+			}
 		}
 
-		isSaving = false;
+		try {
+			if (Object.keys(updates).length > 0) {
+				const success = await workflowStore.updateNode(originalNodeId, updates);
+				if (success) {
+					hasChanges = false;
+					isEditing = false;
+					dispatch('save', { nodeId: originalNodeId, newId: updates.newId, updates });
+				}
+			} else {
+				hasChanges = false;
+				isEditing = false;
+			}
+		} catch (error) {
+			console.error('[NodeDetailsPanel] Error saving:', error);
+		} finally {
+			isSaving = false;
+		}
 	}
 
 	// Output mapping helpers
@@ -1925,7 +2129,10 @@ class ${dataClassName}Transform:
 		showDelete={!!node && node.node_type !== 'start' && node.node_type !== 'end'}
 		{onDuplicate}
 		onDelete={requestDeleteNode}
-		onClose={() => dispatch('close')}
+		onClose={() => {
+			cancelEditing();
+			dispatch('close');
+		}}
 	/>
 
 	{#if node}
@@ -3289,12 +3496,15 @@ class ${dataClassName}Transform:
 							</div>
 							<div class="monaco-editor-wrapper">
 								<MonacoEditor
+									bind:this={codeEditorRef}
 									bind:value={editTransformCode}
 									language="python"
 									height="clamp(250px, 35vh, 450px)"
-																		fontSize={12}
+									fontSize={12}
 									readonly={!isEditing}
+									autofocus={codeTabJustActivated}
 									on:change={() => markChanged()}
+									on:save={saveChanges}
 								/>
 							</div>
 						</div>
@@ -3348,12 +3558,15 @@ class ${dataClassName}Transform:
 											</div>
 											<div class="monaco-editor-wrapper">
 												<MonacoEditor
+													bind:this={codeEditorRef}
 													bind:value={editOutputGeneratorCode}
 													language="python"
 													height="clamp(300px, 40vh, 500px)"
-																										fontSize={12}
+													fontSize={12}
 													readonly={false}
+													autofocus={codeTabJustActivated}
 													on:change={() => markChanged()}
+													on:save={saveChanges}
 												/>
 											</div>
 										{:else}
@@ -3449,88 +3662,14 @@ class ${dataClassName}Transform:
 						</div>
 					{/if}
 
-					<!-- Pre-processor (only for execution nodes) -->
-					{#if canHaveProcessors && (node.pre_process || isEditing)}
-						<div>
-							<div class="flex items-center justify-between mb-2">
-								<div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Pre-processor
-								</div>
-								<span class="text-xs text-gray-400">Python module path</span>
-							</div>
-							{#if isEditing}
-								<input
-									type="text"
-									bind:value={editPreProcess}
-									oninput={markChanged}
-									class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] mb-2"
-									placeholder="module.path.ClassName"
-								/>
-							{:else}
-								<div class="text-sm text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg break-all mb-2">
-									{node.pre_process}
-								</div>
-							{/if}
-							<!-- Monaco Editor - read-only when not editing -->
-							<div class="mt-2 monaco-editor-wrapper">
-								<div class="text-xs text-gray-500 mb-1">{isEditing ? 'Code Editor:' : 'Code Preview:'}</div>
-								<MonacoEditor
-									bind:value={preProcessCode}
-									language="python"
-									height="clamp(200px, 25vh, 350px)"
-																		fontSize={12}
-									readonly={!isEditing}
-									on:change={() => markChanged()}
-								/>
-							</div>
-						</div>
-					{/if}
-
-					<!-- Post-processor (only for execution nodes) -->
-					{#if canHaveProcessors && (node.post_process || isEditing)}
-						<div>
-							<div class="flex items-center justify-between mb-2">
-								<div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
-									Post-processor
-								</div>
-								<span class="text-xs text-gray-400">Python module path</span>
-							</div>
-							{#if isEditing}
-								<input
-									type="text"
-									bind:value={editPostProcess}
-									oninput={markChanged}
-									class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] mb-2"
-									placeholder="module.path.ClassName"
-								/>
-							{:else}
-								<div class="text-sm text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg break-all mb-2">
-									{node.post_process}
-								</div>
-							{/if}
-							<!-- Monaco Editor - read-only when not editing -->
-							<div class="mt-2 monaco-editor-wrapper">
-								<div class="text-xs text-gray-500 mb-1">{isEditing ? 'Code Editor:' : 'Code Preview:'}</div>
-								<MonacoEditor
-									bind:value={postProcessCode}
-									language="python"
-									height="clamp(200px, 25vh, 350px)"
-																		fontSize={12}
-									readonly={!isEditing}
-									on:change={() => markChanged()}
-								/>
-							</div>
-						</div>
-					{/if}
-
-					<!-- Lambda function -->
+					<!-- Lambda function (PRIMARY code for lambda nodes - shown first) -->
 					{#if node.node_type === 'lambda'}
 						<div>
 							<div class="flex items-center justify-between mb-2">
 								<div class="text-xs font-medium text-orange-600 dark:text-orange-400 uppercase tracking-wider">
 									Lambda Function
 								</div>
-								<span class="text-xs text-gray-400">Python function</span>
+								<span class="text-xs text-gray-400">Primary function code</span>
 							</div>
 							{#if isEditing}
 								<div class="mb-2">
@@ -3558,25 +3697,28 @@ class ${dataClassName}Transform:
 							</div>
 							<div class="monaco-editor-wrapper">
 								<MonacoEditor
+									bind:this={codeEditorRef}
 									bind:value={lambdaCode}
 									language="python"
 									height="clamp(250px, 35vh, 450px)"
-																		fontSize={12}
+									fontSize={12}
 									readonly={!isEditing}
+									autofocus={codeTabJustActivated}
 									on:change={() => markChanged()}
+									on:save={saveChanges}
 								/>
 							</div>
 						</div>
 					{/if}
 
-					<!-- Branch condition (for branch nodes) -->
+					<!-- Branch condition (PRIMARY code for branch nodes - shown first) -->
 					{#if node.node_type === 'branch'}
 						<div>
 							<div class="flex items-center justify-between mb-2">
 								<div class="text-xs font-medium text-yellow-600 dark:text-yellow-400 uppercase tracking-wider">
 									Branch Condition
 								</div>
-								<span class="text-xs text-gray-400">Python function</span>
+								<span class="text-xs text-gray-400">Primary condition code</span>
 							</div>
 							<div class="text-xs text-gray-500 mb-2">
 								{isEditing ? 'Edit the condition logic that determines which path to take.' : 'Condition logic that determines which path to take. This code will be saved to task_executor.py.'}
@@ -3586,9 +3728,88 @@ class ${dataClassName}Transform:
 									bind:value={branchConditionCode}
 									language="python"
 									height="clamp(250px, 35vh, 450px)"
-																		fontSize={12}
+									fontSize={12}
 									readonly={!isEditing}
 									on:change={() => markChanged()}
+									on:save={saveChanges}
+								/>
+							</div>
+						</div>
+					{/if}
+
+					<!-- Pre-processor (optional hook for execution nodes) -->
+					{#if canHaveProcessors && (node.pre_process || isEditing)}
+						<div>
+							<div class="flex items-center justify-between mb-2">
+								<div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+									Pre-processor
+								</div>
+								<span class="text-xs text-gray-400">Optional hook</span>
+							</div>
+							{#if isEditing}
+								<input
+									type="text"
+									bind:value={editPreProcess}
+									oninput={markChanged}
+									class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] mb-2"
+									placeholder="module.path.ClassName"
+								/>
+							{:else}
+								<div class="text-sm text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg break-all mb-2">
+									{node.pre_process}
+								</div>
+							{/if}
+							<!-- Monaco Editor - read-only when not editing -->
+							<div class="mt-2 monaco-editor-wrapper">
+								<div class="text-xs text-gray-500 mb-1">{isEditing ? 'Code Editor:' : 'Code Preview:'}</div>
+								<MonacoEditor
+									bind:this={codeEditorRef}
+									bind:value={preProcessCode}
+									language="python"
+									height="clamp(200px, 25vh, 350px)"
+									fontSize={12}
+									readonly={!isEditing}
+									autofocus={codeTabJustActivated}
+									on:change={() => markChanged()}
+									on:save={saveChanges}
+								/>
+							</div>
+						</div>
+					{/if}
+
+					<!-- Post-processor (optional hook for execution nodes) -->
+					{#if canHaveProcessors && (node.post_process || isEditing)}
+						<div>
+							<div class="flex items-center justify-between mb-2">
+								<div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+									Post-processor
+								</div>
+								<span class="text-xs text-gray-400">Optional hook</span>
+							</div>
+							{#if isEditing}
+								<input
+									type="text"
+									bind:value={editPostProcess}
+									oninput={markChanged}
+									class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] mb-2"
+									placeholder="module.path.ClassName"
+								/>
+							{:else}
+								<div class="text-sm text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg break-all mb-2">
+									{node.post_process}
+								</div>
+							{/if}
+							<!-- Monaco Editor - read-only when not editing -->
+							<div class="mt-2 monaco-editor-wrapper">
+								<div class="text-xs text-gray-500 mb-1">{isEditing ? 'Code Editor:' : 'Code Preview:'}</div>
+								<MonacoEditor
+									bind:value={postProcessCode}
+									language="python"
+									height="clamp(200px, 25vh, 350px)"
+									fontSize={12}
+									readonly={!isEditing}
+									on:change={() => markChanged()}
+									on:save={saveChanges}
 								/>
 							</div>
 						</div>
