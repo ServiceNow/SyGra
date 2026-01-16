@@ -49,6 +49,14 @@ CONNECTION_ERROR = "Connection error"
 # model config file
 MODEL_CONFIG_YAML = os.path.join(ROOT_DIR, "config", "models.yaml")
 
+# Custom models config file (for studio-added models)
+# This allows users to add models via Studio UI without modifying the builtin models.yaml
+# The path can be overridden via SYGRA_CUSTOM_MODELS_PATH environment variable
+CUSTOM_MODELS_CONFIG_YAML = os.environ.get(
+    "SYGRA_CUSTOM_MODELS_PATH",
+    os.path.join(os.path.dirname(ROOT_DIR), "studio", "config", "custom_models.yaml"),
+)
+
 # model failure handling - shutdown the process after some try
 HANDLE_SERVER_DOWN = True
 # list of error code to handle - service is down or unavailable

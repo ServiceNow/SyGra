@@ -148,4 +148,3 @@ When adding new metrics documentation:
 3. Explain the "why" behind design decisions
 4. Cover edge cases and common pitfalls
 5. Provide real-world use case scenarios
-

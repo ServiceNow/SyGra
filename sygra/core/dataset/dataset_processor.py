@@ -36,6 +36,7 @@ class DatasetProcessor:
         output_record_generator: Optional[Callable] = None,
         resumable: bool = False,
         task_name: Optional[str] = None,
+        execution_callbacks: Optional[Any] = None,  # ExecutionCallbacks for node-level tracking
     ):
         assert (
             checkpoint_interval % batch_size == 0
@@ -52,6 +53,7 @@ class DatasetProcessor:
         self.input_record_generator = input_record_generator
         self.output_record_generator = output_record_generator
         self.is_valid_schema = True
+        self.execution_callbacks = execution_callbacks
 
         # initialize the state variables
         self.dataset_indx = start_index
@@ -485,6 +487,8 @@ class DatasetProcessor:
                 self.graph,
                 debug=self.debug,
                 input_record_generator=self.input_record_generator,
+                execution_callbacks=self.execution_callbacks,
+                record_index=self.dataset_indx - 1,
             )
 
             if self.num_records_processed < self.num_records_total:

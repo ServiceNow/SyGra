@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SyGra Workflow Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/elkjs@0.9.3/lib/elk.bundled.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .workflow-canvas {
+            background-image:
+                radial-gradient(circle, #e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .node {
+            transition: all 0.2s ease;
+        }
+        .node:hover {
+            transform: scale(1.02);
+        }
+        .node-llm {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .node-start {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        .node-end {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        }
+        .node-lambda {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .node-connector {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .node-running {
+            animation: pulse 2s infinite;
+        }
+        .node-completed {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        }
+        .node-failed {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .edge-path {
+            stroke: #9ca3af;
+            stroke-width: 2;
+            fill: none;
+        }
+        .edge-path.conditional {
+            stroke: #f59e0b;
+            stroke-dasharray: 5,5;
+        }
+        .edge-path.animated {
+            animation: dash 1s linear infinite;
+        }
+        @keyframes dash {
+            to { stroke-dashoffset: -10; }
+        }
+        .sidebar {
+            width: 320px;
+            transition: width 0.3s ease;
+        }
+        .sidebar.collapsed {
+            width: 60px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen overflow-hidden">
+    <div id="app" class="h-full flex flex-col">
+        <!-- Header -->
+        <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-xl font-bold text-gray-800">
+                    <span class="text-purple-600">SyGra</span> Workflow Visualizer
+                </h1>
+                <span id="workflow-name" class="text-gray-500 text-sm"></span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="btn-refresh" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors">
+                    🔄 Refresh
+                </button>
+                <button id="btn-run" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium text-white transition-colors">
+                    ▶️ Run Workflow
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 flex overflow-hidden">
+            <!-- Sidebar - Workflow List -->
+            <aside id="sidebar" class="sidebar bg-white border-r border-gray-200 overflow-y-auto">
+                <div class="p-4">
+                    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Workflows</h2>
+                    <div id="workflow-list" class="space-y-2">
+                        <div class="text-gray-400 text-sm">Loading workflows...</div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Canvas -->
+            <main class="flex-1 relative overflow-hidden">
+                <div id="canvas" class="workflow-canvas w-full h-full relative">
+                    <svg id="edges-svg" class="absolute inset-0 w-full h-full pointer-events-none"></svg>
+                    <div id="nodes-container" class="absolute inset-0"></div>
+                </div>
+
+                <!-- Zoom Controls -->
+                <div class="absolute bottom-4 right-4 flex flex-col space-y-2">
+                    <button id="btn-zoom-in" class="w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center hover:bg-gray-50">
+                        <span class="text-xl">+</span>
+                    </button>
+                    <button id="btn-zoom-out" class="w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center hover:bg-gray-50">
+                        <span class="text-xl">−</span>
+                    </button>
+                    <button id="btn-fit" class="w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center hover:bg-gray-50">
+                        <span class="text-sm">Fit</span>
+                    </button>
+                </div>
+            </main>
+
+            <!-- Right Panel - Node Details -->
+            <aside id="details-panel" class="w-80 bg-white border-l border-gray-200 overflow-y-auto hidden">
+                <div class="p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 id="detail-title" class="text-lg font-semibold text-gray-800">Node Details</h2>
+                        <button id="btn-close-details" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="detail-content"></div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Execution Status Bar -->
+        <footer id="status-bar" class="bg-white border-t border-gray-200 px-6 py-3 hidden">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <span id="status-indicator" class="w-3 h-3 rounded-full bg-gray-300"></span>
+                    <span id="status-text" class="text-sm text-gray-600">Ready</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="status-duration" class="text-sm text-gray-500"></span>
+                    <button id="btn-view-results" class="px-3 py-1 bg-purple-100 hover:bg-purple-200 rounded text-sm font-medium text-purple-700 hidden">
+                        📊 View Results
+                    </button>
+                    <button id="btn-cancel" class="px-3 py-1 bg-red-100 hover:bg-red-200 rounded text-sm font-medium text-red-700 hidden">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Run Workflow Modal -->
+    <div id="run-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Run Workflow</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Input Data (JSON)</label>
+                        <textarea id="input-data" class="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm" placeholder='{"key": "value"}'>{}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Max Samples</label>
+                        <input id="max-samples" type="number" value="1" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 rounded-b-xl flex justify-end space-x-3">
+                <button id="btn-cancel-run" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium text-gray-700">
+                    Cancel
+                </button>
+                <button id="btn-confirm-run" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium text-white">
+                    Run
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Modal -->
+    <div id="results-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <span id="results-title">Execution Results</span>
+                        <span id="results-status" class="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Completed</span>
+                    </h3>
+                    <button id="btn-close-results" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6">
+                <div class="space-y-6">
+                    <!-- Execution Summary -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-xs font-medium text-gray-500 uppercase">Duration</div>
+                            <div id="results-duration" class="text-2xl font-bold text-gray-800">-</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-xs font-medium text-gray-500 uppercase">Records</div>
+                            <div id="results-records" class="text-2xl font-bold text-gray-800">-</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-xs font-medium text-gray-500 uppercase">Nodes</div>
+                            <div id="results-nodes" class="text-2xl font-bold text-gray-800">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Output File -->
+                    <div id="results-file-section">
+                        <div class="text-sm font-medium text-gray-700 mb-2">📁 Output File</div>
+                        <div class="bg-gray-900 rounded-lg p-3">
+                            <code id="results-file" class="text-sm text-green-400 break-all">-</code>
+                        </div>
+                    </div>
+
+                    <!-- Output Data -->
+                    <div>
+                        <div class="text-sm font-medium text-gray-700 mb-2">📊 Output Data</div>
+                        <div class="bg-gray-900 rounded-lg p-4 max-h-96 overflow-auto">
+                            <pre id="results-data" class="text-sm text-gray-300 whitespace-pre-wrap"></pre>
+                        </div>
+                    </div>
+
+                    <!-- Error (if any) -->
+                    <div id="results-error-section" class="hidden">
+                        <div class="text-sm font-medium text-red-700 mb-2">❌ Error</div>
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <pre id="results-error" class="text-sm text-red-800 whitespace-pre-wrap"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 rounded-b-xl flex justify-end space-x-3">
+                <button id="btn-copy-results" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-sm font-medium text-gray-700">
+                    📋 Copy Output
+                </button>
+                <button id="btn-close-results-footer" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium text-white">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // SyGra Workflow Visualizer Application
+        const API_BASE = '/api';
+
+        // State
+        let workflows = [];
+        let currentWorkflow = null;
+        let currentExecution = null;
+        let zoom = 1;
+        let pan = { x: 0, y: 0 };
+
+        // DOM Elements
+        const workflowList = document.getElementById('workflow-list');
+        const workflowName = document.getElementById('workflow-name');
+        const canvas = document.getElementById('canvas');
+        const nodesContainer = document.getElementById('nodes-container');
+        const edgesSvg = document.getElementById('edges-svg');
+        const detailsPanel = document.getElementById('details-panel');
+        const detailTitle = document.getElementById('detail-title');
+        const detailContent = document.getElementById('detail-content');
+        const statusBar = document.getElementById('status-bar');
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const statusDuration = document.getElementById('status-duration');
+        const runModal = document.getElementById('run-modal');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', init);
+
+        async function init() {
+            setupEventListeners();
+            await loadWorkflows();
+        }
+
+        function setupEventListeners() {
+            document.getElementById('btn-refresh').addEventListener('click', loadWorkflows);
+            document.getElementById('btn-run').addEventListener('click', showRunModal);
+            document.getElementById('btn-cancel-run').addEventListener('click', hideRunModal);
+            document.getElementById('btn-confirm-run').addEventListener('click', runWorkflow);
+            document.getElementById('btn-close-details').addEventListener('click', hideDetails);
+            document.getElementById('btn-zoom-in').addEventListener('click', () => setZoom(zoom + 0.1));
+            document.getElementById('btn-zoom-out').addEventListener('click', () => setZoom(zoom - 0.1));
+            document.getElementById('btn-fit').addEventListener('click', fitToScreen);
+            document.getElementById('btn-cancel').addEventListener('click', cancelExecution);
+
+            // Results modal
+            document.getElementById('btn-close-results').addEventListener('click', hideResultsModal);
+            document.getElementById('btn-close-results-footer').addEventListener('click', hideResultsModal);
+            document.getElementById('btn-copy-results').addEventListener('click', copyResults);
+            document.getElementById('btn-view-results').addEventListener('click', showResultsModal);
+
+            // Canvas pan/zoom
+            canvas.addEventListener('wheel', handleWheel);
+            canvas.addEventListener('mousedown', handlePanStart);
+        }
+
+        async function loadWorkflows() {
+            try {
+                const response = await fetch(`${API_BASE}/workflows`);
+                workflows = await response.json();
+                renderWorkflowList();
+
+                if (workflows.length > 0 && !currentWorkflow) {
+                    await loadWorkflow(workflows[0].id);
+                }
+            } catch (error) {
+                console.error('Error loading workflows:', error);
+                workflowList.innerHTML = '<div class="text-red-500 text-sm">Error loading workflows</div>';
+            }
+        }
+
+        function renderWorkflowList() {
+            workflowList.innerHTML = workflows.map(wf => `
+                <button
+                    class="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors ${currentWorkflow?.id === wf.id ? 'bg-purple-100 text-purple-700' : 'text-gray-700'}"
+                    onclick="loadWorkflow('${wf.id}')"
+                >
+                    <div class="font-medium text-sm">${wf.name}</div>
+                    <div class="text-xs text-gray-500">${wf.node_count} nodes · ${wf.edge_count} edges</div>
+                </button>
+            `).join('');
+        }
+
+        async function loadWorkflow(workflowId) {
+            try {
+                const response = await fetch(`${API_BASE}/workflows/${workflowId}`);
+                currentWorkflow = await response.json();
+
+                workflowName.textContent = currentWorkflow.name;
+                renderWorkflowList();
+                await layoutAndRender();
+            } catch (error) {
+                console.error('Error loading workflow:', error);
+            }
+        }
+
+        async function layoutAndRender() {
+            if (!currentWorkflow) return;
+
+            // Use ELK for layout
+            const elk = new ELK();
+
+            const graph = {
+                id: 'root',
+                layoutOptions: {
+                    'elk.algorithm': 'layered',
+                    'elk.direction': 'RIGHT',
+                    'elk.spacing.nodeNode': '80',
+                    'elk.layered.spacing.nodeNodeBetweenLayers': '100',
+                },
+                children: currentWorkflow.nodes.map(node => ({
+                    id: node.id,
+                    width: 200,
+                    height: 80,
+                })),
+                edges: currentWorkflow.edges.map(edge => ({
+                    id: edge.id,
+                    sources: [edge.source],
+                    targets: [edge.target],
+                })),
+            };
+
+            try {
+                const layout = await elk.layout(graph);
+
+                // Update node positions
+                layout.children.forEach(child => {
+                    const node = currentWorkflow.nodes.find(n => n.id === child.id);
+                    if (node) {
+                        node.position = { x: child.x, y: child.y };
+                    }
+                });
+
+                renderGraph();
+            } catch (error) {
+                console.error('Layout error:', error);
+                renderGraph(); // Render with original positions
+            }
+        }
+
+        function renderGraph() {
+            renderNodes();
+            renderEdges();
+        }
+
+        function renderNodes() {
+            nodesContainer.innerHTML = currentWorkflow.nodes.map(node => {
+                const nodeClass = getNodeClass(node);
+                const statusClass = getNodeStatusClass(node);
+
+                return `
+                    <div
+                        class="node absolute rounded-xl shadow-lg p-4 cursor-pointer ${nodeClass} ${statusClass}"
+                        style="left: ${node.position.x}px; top: ${node.position.y}px; width: 200px; transform: scale(${zoom}) translate(${pan.x}px, ${pan.y}px);"
+                        onclick="showNodeDetails('${node.id}')"
+                    >
+                        <div class="flex items-center space-x-2 mb-1">
+                            <span class="text-white text-lg">${getNodeIcon(node.node_type)}</span>
+                            <span class="text-white font-semibold text-sm truncate">${node.summary || node.id}</span>
+                        </div>
+                        <div class="text-white text-xs opacity-80">${node.node_type}</div>
+                        ${node.model ? `<div class="text-white text-xs opacity-60 mt-1">${node.model.name}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderEdges() {
+            const padding = 50;
+
+            edgesSvg.innerHTML = currentWorkflow.edges.map(edge => {
+                const sourceNode = currentWorkflow.nodes.find(n => n.id === edge.source);
+                const targetNode = currentWorkflow.nodes.find(n => n.id === edge.target);
+
+                if (!sourceNode || !targetNode) return '';
+
+                const sourceX = sourceNode.position.x + 200; // Right edge of source
+                const sourceY = sourceNode.position.y + 40;  // Center height
+                const targetX = targetNode.position.x;       // Left edge of target
+                const targetY = targetNode.position.y + 40;  // Center height
+
+                // Bezier curve
+                const midX = (sourceX + targetX) / 2;
+                const path = `M ${sourceX} ${sourceY} C ${midX} ${sourceY}, ${midX} ${targetY}, ${targetX} ${targetY}`;
+
+                const edgeClass = edge.is_conditional ? 'conditional' : '';
+                const animated = edge.animated ? 'animated' : '';
+
+                return `
+                    <path class="edge-path ${edgeClass} ${animated}" d="${path}" marker-end="url(#arrowhead)"/>
+                    ${edge.label ? `<text x="${midX}" y="${(sourceY + targetY) / 2 - 10}" text-anchor="middle" class="text-xs fill-gray-500">${edge.label}</text>` : ''}
+                `;
+            }).join('');
+
+            // Add arrowhead marker
+            edgesSvg.innerHTML = `
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#9ca3af"/>
+                    </marker>
+                </defs>
+            ` + edgesSvg.innerHTML;
+        }
+
+        function getNodeClass(node) {
+            const classes = {
+                'start': 'node-start',
+                'end': 'node-end',
+                'llm': 'node-llm',
+                'lambda': 'node-lambda',
+                'connector': 'node-connector',
+            };
+            return classes[node.node_type] || 'node-llm';
+        }
+
+        function getNodeStatusClass(node) {
+            if (!currentExecution) return '';
+
+            const nodeState = currentExecution.node_states[node.id];
+            if (!nodeState) return '';
+
+            const classes = {
+                'running': 'node-running',
+                'completed': 'node-completed',
+                'failed': 'node-failed',
+            };
+            return classes[nodeState.status] || '';
+        }
+
+        function getNodeIcon(nodeType) {
+            const icons = {
+                'start': '▶️',
+                'end': '⏹️',
+                'llm': '🤖',
+                'lambda': '⚡',
+                'connector': '🔗',
+                'subgraph': '📦',
+                'web_agent': '🌐',
+                'tool': '🔧',
+            };
+            return icons[nodeType] || '📋';
+        }
+
+        function showNodeDetails(nodeId) {
+            const node = currentWorkflow.nodes.find(n => n.id === nodeId);
+            if (!node) return;
+
+            detailTitle.textContent = node.summary || node.id;
+
+            let content = `
+                <div class="space-y-4">
+                    <div>
+                        <div class="text-xs font-medium text-gray-500 uppercase">Type</div>
+                        <div class="text-sm text-gray-800">${node.node_type}</div>
+                    </div>
+            `;
+
+            if (node.model) {
+                content += `
+                    <div>
+                        <div class="text-xs font-medium text-gray-500 uppercase">Model</div>
+                        <div class="text-sm text-gray-800">${node.model.name}</div>
+                    </div>
+                `;
+            }
+
+            if (node.prompt && node.prompt.length > 0) {
+                content += `
+                    <div>
+                        <div class="text-xs font-medium text-gray-500 uppercase mb-2">Prompt</div>
+                        ${node.prompt.map(p => `
+                            <div class="bg-gray-50 rounded-lg p-3 mb-2">
+                                <div class="text-xs font-medium text-purple-600 mb-1">${p.role}</div>
+                                <div class="text-sm text-gray-700 whitespace-pre-wrap">${escapeHtml(p.content)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            if (currentExecution) {
+                const nodeState = currentExecution.node_states[node.id];
+                if (nodeState) {
+                    content += `
+                        <div>
+                            <div class="text-xs font-medium text-gray-500 uppercase">Execution Status</div>
+                            <div class="text-sm ${getStatusColor(nodeState.status)}">${nodeState.status}</div>
+                            ${nodeState.duration_ms ? `<div class="text-xs text-gray-500">${nodeState.duration_ms}ms</div>` : ''}
+                            ${nodeState.error ? `<div class="text-xs text-red-500 mt-1">${nodeState.error}</div>` : ''}
+                        </div>
+                    `;
+                }
+            }
+
+            content += '</div>';
+            detailContent.innerHTML = content;
+            detailsPanel.classList.remove('hidden');
+        }
+
+        function hideDetails() {
+            detailsPanel.classList.add('hidden');
+        }
+
+        function showRunModal() {
+            if (!currentWorkflow) return;
+            runModal.classList.remove('hidden');
+        }
+
+        function hideRunModal() {
+            runModal.classList.add('hidden');
+        }
+
+        async function runWorkflow() {
+            if (!currentWorkflow) return;
+
+            const inputData = document.getElementById('input-data').value;
+            const maxSamples = document.getElementById('max-samples').value;
+
+            let parsedInput;
+            try {
+                parsedInput = JSON.parse(inputData);
+            } catch (error) {
+                alert('Invalid JSON input');
+                return;
+            }
+
+            hideRunModal();
+            showStatusBar('Running...');
+
+            try {
+                const requestBody = {
+                    input_data: parsedInput,
+                    max_samples: parseInt(maxSamples),
+                };
+                console.log('Sending request:', JSON.stringify(requestBody));
+
+                const response = await fetch(`${API_BASE}/workflows/${currentWorkflow.id}/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody),
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    console.error('Execution error:', result);
+                    // Handle Pydantic validation errors
+                    let errorMsg = 'Failed to start';
+                    if (result.detail) {
+                        if (Array.isArray(result.detail)) {
+                            errorMsg = result.detail.map(e => e.msg || e).join(', ');
+                        } else if (typeof result.detail === 'string') {
+                            errorMsg = result.detail;
+                        } else {
+                            errorMsg = JSON.stringify(result.detail);
+                        }
+                    }
+                    showStatusBar(`Error: ${errorMsg}`, 'failed');
+                    return;
+                }
+
+                if (!result.execution_id) {
+                    console.error('No execution_id in response:', result);
+                    showStatusBar('Error: Invalid response', 'failed');
+                    return;
+                }
+
+                currentExecution = { id: result.execution_id, node_states: {} };
+
+                // Poll for updates
+                pollExecution(result.execution_id);
+            } catch (error) {
+                console.error('Error starting execution:', error);
+                showStatusBar('Error: ' + error.message, 'failed');
+            }
+        }
+
+        async function pollExecution(executionId) {
+            try {
+                const response = await fetch(`${API_BASE}/executions/${executionId}`);
+                currentExecution = await response.json();
+
+                updateExecutionStatus();
+                renderNodes(); // Re-render to show status
+
+                if (currentExecution.status === 'running' || currentExecution.status === 'pending') {
+                    setTimeout(() => pollExecution(executionId), 1000);
+                } else if (currentExecution.status === 'completed' || currentExecution.status === 'failed') {
+                    // Show results modal when execution finishes
+                    showResultsModal();
+                }
+            } catch (error) {
+                console.error('Error polling execution:', error);
+            }
+        }
+
+        function showResultsModal() {
+            if (!currentExecution) return;
+
+            const resultsModal = document.getElementById('results-modal');
+            const status = currentExecution.status;
+
+            // Update status badge
+            const statusEl = document.getElementById('results-status');
+            if (status === 'completed') {
+                statusEl.className = 'ml-2 px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800';
+                statusEl.textContent = 'Completed';
+            } else if (status === 'failed') {
+                statusEl.className = 'ml-2 px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800';
+                statusEl.textContent = 'Failed';
+            }
+
+            // Update duration
+            const durationMs = currentExecution.duration_ms || 0;
+            const durationSec = (durationMs / 1000).toFixed(2);
+            document.getElementById('results-duration').textContent = `${durationSec}s`;
+
+            // Update records count
+            const outputData = currentExecution.output_data;
+            let recordCount = '-';
+            if (Array.isArray(outputData)) {
+                recordCount = outputData.length;
+            } else if (outputData && typeof outputData === 'object') {
+                recordCount = 1;
+            }
+            document.getElementById('results-records').textContent = recordCount;
+
+            // Update nodes count
+            const nodeCount = Object.keys(currentExecution.node_states || {}).length;
+            document.getElementById('results-nodes').textContent = nodeCount;
+
+            // Update output file path
+            const outputFile = currentExecution.output_file || 'Check ./output directory';
+            document.getElementById('results-file').textContent = outputFile;
+
+            // Update output data
+            const dataEl = document.getElementById('results-data');
+            if (outputData) {
+                dataEl.textContent = JSON.stringify(outputData, null, 2);
+            } else {
+                dataEl.textContent = 'No output data available.\nCheck the output directory for generated files.';
+            }
+
+            // Show/hide error section
+            const errorSection = document.getElementById('results-error-section');
+            const errorEl = document.getElementById('results-error');
+            if (currentExecution.error) {
+                errorSection.classList.remove('hidden');
+                errorEl.textContent = currentExecution.error;
+            } else {
+                errorSection.classList.add('hidden');
+            }
+
+            resultsModal.classList.remove('hidden');
+        }
+
+        function hideResultsModal() {
+            document.getElementById('results-modal').classList.add('hidden');
+        }
+
+        function copyResults() {
+            const outputData = currentExecution?.output_data;
+            const text = outputData ? JSON.stringify(outputData, null, 2) : '';
+            const btn = document.getElementById('btn-copy-results');
+            const originalText = btn.textContent;
+
+            // Try modern clipboard API first, fallback to execCommand
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => {
+                    btn.textContent = '✅ Copied!';
+                    setTimeout(() => btn.textContent = originalText, 2000);
+                }).catch(() => fallbackCopy(text, btn, originalText));
+            } else {
+                fallbackCopy(text, btn, originalText);
+            }
+        }
+
+        function fallbackCopy(text, btn, originalText) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                btn.textContent = '✅ Copied!';
+            } catch (err) {
+                btn.textContent = '❌ Failed';
+            }
+            document.body.removeChild(textarea);
+            setTimeout(() => btn.textContent = originalText, 2000);
+        }
+
+        function updateExecutionStatus() {
+            if (!currentExecution) return;
+
+            const status = currentExecution.status;
+            const duration = currentExecution.duration_ms ? `${currentExecution.duration_ms}ms` : '';
+
+            statusIndicator.className = `w-3 h-3 rounded-full ${getStatusBgColor(status)}`;
+            statusText.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            statusDuration.textContent = duration;
+
+            document.getElementById('btn-cancel').classList.toggle('hidden', status !== 'running');
+            document.getElementById('btn-view-results').classList.toggle('hidden', status !== 'completed' && status !== 'failed');
+        }
+
+        async function cancelExecution() {
+            if (!currentExecution) return;
+
+            try {
+                await fetch(`${API_BASE}/executions/${currentExecution.id}/cancel`, {
+                    method: 'POST',
+                });
+                showStatusBar('Cancelled', 'cancelled');
+            } catch (error) {
+                console.error('Error cancelling execution:', error);
+            }
+        }
+
+        function showStatusBar(text, status = 'running') {
+            statusBar.classList.remove('hidden');
+            statusText.textContent = text;
+            statusIndicator.className = `w-3 h-3 rounded-full ${getStatusBgColor(status)}`;
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                'pending': 'text-gray-500',
+                'running': 'text-blue-500',
+                'completed': 'text-green-500',
+                'failed': 'text-red-500',
+                'cancelled': 'text-yellow-500',
+            };
+            return colors[status] || 'text-gray-500';
+        }
+
+        function getStatusBgColor(status) {
+            const colors = {
+                'pending': 'bg-gray-300',
+                'running': 'bg-blue-500 animate-pulse',
+                'completed': 'bg-green-500',
+                'failed': 'bg-red-500',
+                'cancelled': 'bg-yellow-500',
+            };
+            return colors[status] || 'bg-gray-300';
+        }
+
+        function setZoom(newZoom) {
+            zoom = Math.max(0.5, Math.min(2, newZoom));
+            renderNodes();
+        }
+
+        function fitToScreen() {
+            zoom = 1;
+            pan = { x: 0, y: 0 };
+            renderNodes();
+        }
+
+        function handleWheel(event) {
+            event.preventDefault();
+            const delta = event.deltaY > 0 ? -0.05 : 0.05;
+            setZoom(zoom + delta);
+        }
+
+        let isPanning = false;
+        let panStart = { x: 0, y: 0 };
+
+        function handlePanStart(event) {
+            if (event.target !== canvas) return;
+            isPanning = true;
+            panStart = { x: event.clientX - pan.x, y: event.clientY - pan.y };
+
+            document.addEventListener('mousemove', handlePanMove);
+            document.addEventListener('mouseup', handlePanEnd);
+        }
+
+        function handlePanMove(event) {
+            if (!isPanning) return;
+            pan = { x: event.clientX - panStart.x, y: event.clientY - panStart.y };
+            renderNodes();
+        }
+
+        function handlePanEnd() {
+            isPanning = false;
+            document.removeEventListener('mousemove', handlePanMove);
+            document.removeEventListener('mouseup', handlePanEnd);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

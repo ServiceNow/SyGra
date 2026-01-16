@@ -9,5 +9,17 @@ logs/*
 .env
 *.egg-info/*
 site/
-build/
 dist/
+**/metadata/*.json
+
+# Studio frontend build artifacts
+**/node_modules/*
+**/.svelte-kit/*
+studio/frontend/build/
+
+# Studio runtime data
+studio/.executions_history.json
+studio/.executions/*
+
+# Studio config
+studio/config/custom_models.yaml

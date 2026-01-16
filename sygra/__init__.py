@@ -25,6 +25,11 @@ from .workflow import Workflow, create_graph
 try:
     from .core.base_task_executor import BaseTaskExecutor, DefaultTaskExecutor  # noqa: F401
     from .core.dataset.dataset_processor import DatasetProcessor  # noqa: F401
+    from .core.execution_callbacks import (  # noqa: F401
+        ExecutionCallbacks,
+        NodeExecutionTracker,
+        create_execution_tracker,
+    )
     from .core.graph.graph_config import GraphConfig  # noqa: F401
     from .core.graph.sygra_message import SygraMessage  # noqa: F401
     from .core.graph.sygra_state import SygraState  # noqa: F401
@@ -356,6 +361,9 @@ if CORE_AVAILABLE:
             "SygraMessage",
             "ResumableExecutionManager",
             "DatasetProcessor",
+            "ExecutionCallbacks",
+            "NodeExecutionTracker",
+            "create_execution_tracker",
         ]
     )
 

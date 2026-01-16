@@ -68,6 +68,9 @@ qwen3_32b:
   parameters:
     max_tokens: 2048
     temperature: 0
+#    extra_body:
+#      chat_template_kwargs:
+#        enable_thinking: false
 
 #qwen3_1.7b
 qwen3_1.7b:
@@ -85,7 +88,7 @@ gpt-audio:
   # URL and auth_token should be defined at .env file as SYGRA_GPT-4O-AUDIO-PREVIEW_URL and SYGRA_GPT-4O-AUDIO-PREVIEW_TOKEN
   api_version: 2025-01-01-preview
   parameters:
-    max_tokens: 1000
+    max_tokens: 10240
     temperature: 1.0
 
 # TTS openai model
@@ -96,8 +99,9 @@ tts_openai:
   api_version: 2025-03-01-preview
   # URL and api_key should be defined at .env file as SYGRA_TTS_OPENAI_URL and SYGRA_TTS_OPENAI_TOKEN
   parameters:
-    voice: "alloy"
-    response_format: "wav"
+    audio:
+      voice: "alloy"
+      response_format: "wav"
 
 transcribe:
   model: gpt-4o-transcribe
@@ -140,7 +144,21 @@ bedrock_model:
   # aws_access_key_id, aws_secret_access_key, aws_region_name should be defined at .env file as SYGRA_BEDROCK_MODEL_AWS_ACCESS_KEY_ID, SYGRA_BEDROCK_MODEL_AWS_SECRET_ACCESS_KEY, SYGRA_BEDROCK_MODEL_AWS_REGION_NAME
   parameters:
     max_tokens: 5000
-    temperature: 0.5
+#    temperature: 1
+#    reasoning_effort: high
+#    thinking:
+#      type: enabled
+#      budget_tokens: 2048
+
+qwq_32b:
+  model_type: vllm
+  hf_chat_template_model_id: Qwen/QwQ-32B
+  multi_modal: false
+  parameters:
+   temperature: 0.15
+   max_tokens: 128000
+   stop: ["<|endoftext|>", "<|im_end|>", "<|eod_id|>"]
+   reasoning_effort: high
 
 
 openai_gpt41:
@@ -159,6 +177,53 @@ gpt-5:
   parameters:
     max_completion_tokens: 5000
     temperature: 1
+    reasoning_effort: high
+
+llama_3_1_405b_instruct:
+  model_type: azure
+  hf_chat_template_model_id: meta-llama/Meta-Llama-3.1-405B-Instruct
+  parameters:
+    max_tokens: 4096
+    temperature: 0.8
+
+qwen_2.5_32b_vl:
+  model_type: vllm
+  model_serving_name: qwen_2.5_32b_vl
+  hf_chat_template_model_id: Qwen/Qwen2.5-VL-32B-Instruct
+#  completions_api: true
+  parameters:
+    temperature: 0
+    max_tokens: 5000
+    stop: ["<|endoftext|>", "<|im_end|>", "<|eod_id|>"]
+
+gpt-oss-120b:
+  model_type: vllm
+  hf_chat_template_model_id: openai/gpt-oss-120b
+  parameters:
+    temperature: 0.15
+    max_tokens: 128000
+
+apriel_1p6_15b_thinker:
+  model_serving_name: Apriel-1p6-15B-Thinker
+  model_type: vllm
+  parameters:
+    temperature: 0.0
+    max_tokens: 150000
+    "stop": ["<|end|>", "[END FINAL RESPONSE]"]
+
+gpt-oss-20b:
+  model_type: vllm
+  hf_chat_template_model_id: openai/gpt-oss-20b
+  parameters:
+    temperature: 0.15
+    max_tokens: 128000
+
+eval_model:
+  model_type: bedrock
+  model: us.anthropic.claude-sonnet-4-5-20250929-v1:0
+#  api_version: 2024-08-01-preview
+  parameters:
+    temperature: 0.1
 
 claude_large:
   model_type: claude_proxy
