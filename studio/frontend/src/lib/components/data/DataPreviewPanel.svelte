@@ -2,8 +2,11 @@
 	import { createEventDispatcher } from 'svelte';
 	import {
 		Eye, EyeOff, Database, Table2, ChevronDown, ChevronUp,
-		RefreshCw, Loader2, ChevronRight, Columns3, Rows3, AlertCircle
+		RefreshCw, Loader2, ChevronRight, Columns3, Rows3, AlertCircle,
+		Music, ImageIcon
 	} from 'lucide-svelte';
+	import MediaRenderer from '$lib/components/common/MediaRenderer.svelte';
+	import { isAudio, isImage, isDataUrl, truncateDataUrl } from '$lib/utils/mediaUtils';
 
 	interface DataPreviewData {
 		records: Record<string, unknown>[];
@@ -15,9 +18,10 @@
 		data?: DataPreviewData | null;
 		loading?: boolean;
 		hasSource?: boolean;
+		workflowId?: string;
 	}
 
-	let { data = null, loading = false, hasSource = false }: Props = $props();
+	let { data = null, loading = false, hasSource = false, workflowId = '' }: Props = $props();
 
 	const dispatch = createEventDispatcher<{
 		fetch: void;
@@ -60,6 +64,13 @@
 		if (typeof value === 'number') {
 			return { type: 'number', display: String(value) };
 		}
+		// Check for audio/image before checking for string/object
+		if (isAudio(value)) {
+			return { type: 'audio', display: 'Audio' };
+		}
+		if (isImage(value)) {
+			return { type: 'image', display: 'Image' };
+		}
 		if (typeof value === 'object') {
 			const str = JSON.stringify(value);
 			return {
@@ -67,6 +78,10 @@
 				display: str.length > 50 ? str.slice(0, 50) + '...' : str,
 				full: JSON.stringify(value, null, 2)
 			};
+		}
+		// Check for data URLs
+		if (typeof value === 'string' && isDataUrl(value)) {
+			return { type: 'dataurl', display: truncateDataUrl(value, 40) };
 		}
 		const str = String(value);
 		return {
@@ -238,7 +253,21 @@
 														</span>
 													{:else if formatted.type === 'number'}
 														<span class="font-mono text-[#7661FF] dark:text-[#52B8FF]">{formatted.display}</span>
+													{:else if formatted.type === 'audio'}
+														<!-- Audio indicator -->
+														<span class="inline-flex items-center gap-1.5 px-2 py-1 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-full text-[10px]">
+															<Music size={10} />
+															<span>Audio</span>
+														</span>
+													{:else if formatted.type === 'image'}
+														<!-- Image indicator -->
+														<span class="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full text-[10px]">
+															<ImageIcon size={10} />
+															<span>Image</span>
+														</span>
 													{:else if formatted.type === 'object'}
+														<span class="text-gray-500 dark:text-gray-400 font-mono truncate block">{formatted.display}</span>
+													{:else if formatted.type === 'dataurl'}
 														<span class="text-gray-500 dark:text-gray-400 font-mono truncate block">{formatted.display}</span>
 													{:else}
 														<span class="text-gray-700 dark:text-gray-300 truncate block">{formatted.display}</span>
@@ -260,7 +289,16 @@
 																	{col}
 																</span>
 																<div class="flex-1 min-w-0">
-																	{#if formatted.type === 'null'}
+																	{#if formatted.type === 'audio' || formatted.type === 'image'}
+																		<!-- Use MediaRenderer for audio/image content -->
+																		<MediaRenderer
+																			{value}
+																			fieldName={col}
+																			{workflowId}
+																			compact={false}
+																			maxImageHeight="200px"
+																		/>
+																	{:else if formatted.type === 'null'}
 																		<span class="text-xs text-gray-300 dark:text-gray-600 italic">null</span>
 																	{:else if formatted.type === 'boolean'}
 																		<span class="px-2 py-0.5 rounded text-xs font-semibold

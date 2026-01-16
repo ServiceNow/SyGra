@@ -60,6 +60,9 @@ class ModelConfig(BaseModel):
 
     name: str
     parameters: Dict[str, Any] = Field(default_factory=dict)
+    # Structured output config - flexible dict to support both inline schema and class path
+    # Structure: { enabled: bool, schema: {fields: {...}} | "class.path.Name", fallback_strategy?: str, ... }
+    structured_output: Optional[Dict[str, Any]] = None
 
 
 class PromptMessage(BaseModel):

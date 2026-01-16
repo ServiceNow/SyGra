@@ -1315,6 +1315,13 @@ class ${dataClassName}Transform(DataTransform):
 		}
 		// Build structured output config if enabled (for LLM/Agent nodes)
 		let structuredOutputConfig: import('$lib/stores/workflow.svelte').StructuredOutputConfig | undefined;
+		console.log('[saveChanges] Structured output debug:', {
+			node_type: node.node_type,
+			editStructuredOutputEnabled,
+			editSchemaMode,
+			editSchemaFields,
+			editSchemaClassPath
+		});
 		if ((node.node_type === 'llm' || node.node_type === 'agent') && editStructuredOutputEnabled) {
 			if (editSchemaMode === 'class_path' && editSchemaClassPath.trim()) {
 				structuredOutputConfig = {
@@ -1334,6 +1341,7 @@ class ${dataClassName}Transform(DataTransform):
 						...(f.hasDefault && { default: parseFieldDefault(f.default, f.type) })
 					};
 				}
+				console.log('[saveChanges] Built fields:', fields);
 				if (Object.keys(fields).length > 0) {
 					structuredOutputConfig = {
 						enabled: true,
@@ -1345,11 +1353,13 @@ class ${dataClassName}Transform(DataTransform):
 				}
 			}
 		}
+		console.log('[saveChanges] structuredOutputConfig:', structuredOutputConfig);
 
 		// Check if model config changed (including structured output)
 		const modelChanged = editModel !== (node.model?.name ?? '') ||
 			JSON.stringify(editModelParameters) !== JSON.stringify(node.model?.parameters ?? {}) ||
 			JSON.stringify(structuredOutputConfig) !== JSON.stringify(node.model?.structured_output);
+		console.log('[saveChanges] modelChanged:', modelChanged);
 
 		if (modelChanged) {
 			updates.model = {
@@ -1357,6 +1367,7 @@ class ${dataClassName}Transform(DataTransform):
 				parameters: editModelParameters,
 				...(structuredOutputConfig && { structured_output: structuredOutputConfig })
 			};
+			console.log('[saveChanges] updates.model:', updates.model);
 		}
 		if (JSON.stringify(editPrompts) !== JSON.stringify(node.prompt ?? [])) {
 			updates.prompt = editPrompts;
@@ -1617,14 +1628,17 @@ class ${dataClassName}Transform(DataTransform):
 		}
 
 		try {
+			console.log('[saveChanges] Final updates object:', JSON.stringify(updates, null, 2));
 			if (Object.keys(updates).length > 0) {
 				const success = await workflowStore.updateNode(originalNodeId, updates);
+				console.log('[saveChanges] updateNode result:', success);
 				if (success) {
 					hasChanges = false;
 					isEditing = false;
 					dispatch('save', { nodeId: originalNodeId, newId: updates.newId, updates });
 				}
 			} else {
+				console.log('[saveChanges] No updates to save');
 				hasChanges = false;
 				isEditing = false;
 			}
@@ -4351,114 +4365,116 @@ class ${dataClassName}Transform(DataTransform):
 							{#if isEditing && editStructuredOutputEnabled}
 								<!-- Schema Mode Toggle -->
 								<div class="mb-4">
-									<div class="text-xs text-gray-500 mb-2">Schema Type</div>
-									<div class="flex gap-4">
-										<label class="flex items-center gap-2 cursor-pointer">
-											<input
-												type="radio"
-												bind:group={editSchemaMode}
-												value="inline"
-												onchange={() => markChanged()}
-												class="w-4 h-4 text-[#7661FF] border-gray-300 focus:ring-[#52B8FF]"
-											/>
-											<span class="text-sm text-gray-700 dark:text-gray-300">Inline Schema</span>
-										</label>
-										<label class="flex items-center gap-2 cursor-pointer">
-											<input
-												type="radio"
-												bind:group={editSchemaMode}
-												value="class_path"
-												onchange={() => markChanged()}
-												class="w-4 h-4 text-[#7661FF] border-gray-300 focus:ring-[#52B8FF]"
-											/>
-											<span class="text-sm text-gray-700 dark:text-gray-300">Class Path</span>
-										</label>
+									<span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-2">
+										Schema Type
+									</span>
+									<div class="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-1 bg-gray-100 dark:bg-gray-800">
+										<button
+											type="button"
+											onclick={() => { editSchemaMode = 'inline'; markChanged(); }}
+											class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {editSchemaMode === 'inline' ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}"
+										>
+											Inline Schema
+										</button>
+										<button
+											type="button"
+											onclick={() => { editSchemaMode = 'class_path'; markChanged(); }}
+											class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {editSchemaMode === 'class_path' ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}"
+										>
+											Class Path
+										</button>
 									</div>
 								</div>
 
 								{#if editSchemaMode === 'inline'}
 									<!-- Inline Schema Fields -->
 									<div class="mb-4">
-										<div class="flex items-center justify-between mb-2">
-											<div class="text-xs text-gray-500">Output Fields</div>
+										<div class="flex items-center justify-between mb-3">
+											<span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+												Output Fields
+											</span>
 											<button
 												onclick={addSchemaField}
-												class="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[#7661FF] hover:text-[#5a4dcc] hover:bg-[#7661FF]/10 dark:hover:bg-[#7661FF]/15 rounded transition-colors"
+												class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] hover:bg-[#7661FF]/10 dark:hover:bg-[#7661FF]/15 rounded-md transition-colors"
 											>
-												<Plus size={12} />
+												<Plus size={14} />
 												Add Field
 											</button>
 										</div>
 
 										{#if editSchemaFields.length === 0}
-											<div class="text-center py-4 text-gray-400 text-xs border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
-												No fields defined. Click "Add Field" to add one.
+											<div class="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
+												<Code size={28} class="mx-auto mb-2 text-gray-300 dark:text-gray-600" />
+												<p class="text-sm text-gray-500 dark:text-gray-400 mb-1">No fields defined</p>
+												<p class="text-xs text-gray-400 dark:text-gray-500">Click "Add Field" to define output schema</p>
 											</div>
 										{:else}
 											<div class="space-y-2">
 												{#each editSchemaFields as field (field.id)}
-													<div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-														<div class="flex items-start gap-2">
-															<!-- Field Name -->
-															<div class="flex-1">
+													<div class="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 group hover:border-[#7661FF]/50 dark:hover:border-[#7661FF]/60 transition-colors">
+														<!-- Type Icon -->
+														<div class="w-8 h-8 rounded-md bg-[#7661FF]/15 dark:bg-[#7661FF]/20 flex items-center justify-center flex-shrink-0">
+															<Code size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
+														</div>
+														<!-- Field Content -->
+														<div class="flex-1 min-w-0 space-y-2">
+															<!-- Name & Type Row -->
+															<div class="flex items-center gap-2">
 																<input
 																	type="text"
 																	value={field.name}
 																	oninput={(e) => updateSchemaField(field.id, 'name', e.currentTarget.value)}
 																	placeholder="field_name"
-																	class="w-full px-2 py-1.5 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+																	class="flex-1 px-2 py-1.5 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 																/>
+																<div class="w-24">
+																	<CustomSelect
+																		options={schemaFieldTypeOptions}
+																		value={field.type}
+																		compact={true}
+																		searchable={false}
+																		onchange={(val) => updateSchemaField(field.id, 'type', val)}
+																	/>
+																</div>
 															</div>
-															<!-- Field Type -->
-															<div class="w-28">
-																<CustomSelect
-																	options={schemaFieldTypeOptions}
-																	value={field.type}
-																	compact={true}
-																	searchable={false}
-																	onchange={(val) => updateSchemaField(field.id, 'type', val)}
-																/>
-															</div>
-															<!-- Delete Button -->
-															<button
-																onclick={() => removeSchemaField(field.id)}
-																class="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
-																title="Remove field"
-															>
-																<Trash2 size={14} />
-															</button>
-														</div>
-														<!-- Description -->
-														<div class="mt-2">
+															<!-- Description -->
 															<input
 																type="text"
 																value={field.description}
 																oninput={(e) => updateSchemaField(field.id, 'description', e.currentTarget.value)}
 																placeholder="Field description (optional)"
-																class="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+																class="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 															/>
+															<!-- Default Value -->
+															<div class="flex items-center gap-2">
+																<label class="flex items-center gap-1.5 cursor-pointer">
+																	<input
+																		type="checkbox"
+																		checked={field.hasDefault}
+																		onchange={(e) => updateSchemaField(field.id, 'hasDefault', e.currentTarget.checked)}
+																		class="w-3.5 h-3.5 text-[#7661FF] border-gray-300 rounded focus:ring-[#52B8FF]"
+																	/>
+																	<span class="text-xs text-gray-500 dark:text-gray-400">Default value</span>
+																</label>
+																{#if field.hasDefault}
+																	<input
+																		type="text"
+																		value={field.default}
+																		oninput={(e) => updateSchemaField(field.id, 'default', e.currentTarget.value)}
+																		placeholder="Enter default"
+																		class="flex-1 px-2 py-1 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
+																	/>
+																{/if}
+															</div>
 														</div>
-														<!-- Default Value (optional) -->
-														<div class="mt-2 flex items-center gap-2">
-															<label class="flex items-center gap-1.5 cursor-pointer">
-																<input
-																	type="checkbox"
-																	checked={field.hasDefault}
-																	onchange={(e) => updateSchemaField(field.id, 'hasDefault', e.currentTarget.checked)}
-																	class="w-3.5 h-3.5 text-[#7661FF] border-gray-300 rounded focus:ring-[#52B8FF]"
-																/>
-																<span class="text-xs text-gray-500">Default:</span>
-															</label>
-															{#if field.hasDefault}
-																<input
-																	type="text"
-																	value={field.default}
-																	oninput={(e) => updateSchemaField(field.id, 'default', e.currentTarget.value)}
-																	placeholder="default value"
-																	class="flex-1 px-2 py-1 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-																/>
-															{/if}
-														</div>
+														<!-- Delete Button -->
+														<button
+															onclick={() => removeSchemaField(field.id)}
+															class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+															title="Remove field"
+														>
+															<X size={14} />
+														</button>
 													</div>
 												{/each}
 											</div>
@@ -4467,17 +4483,26 @@ class ${dataClassName}Transform(DataTransform):
 								{:else}
 									<!-- Class Path Input -->
 									<div class="mb-4">
-										<div class="text-xs text-gray-500 mb-2">Class Path</div>
-										<input
-											type="text"
-											bind:value={editSchemaClassPath}
-											oninput={() => markChanged()}
-											placeholder="module.path.ClassName"
-											class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
-										/>
-										<p class="mt-1 text-xs text-gray-400">
-											e.g., sygra.core.models.structured_output.schemas_factory.SimpleResponse
-										</p>
+										<span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-2">
+											Class Path
+										</span>
+										<div class="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+											<div class="w-8 h-8 rounded-md bg-[#7661FF]/15 dark:bg-[#7661FF]/20 flex items-center justify-center flex-shrink-0">
+												<Code size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
+											</div>
+											<div class="flex-1 min-w-0 space-y-2">
+												<input
+													type="text"
+													bind:value={editSchemaClassPath}
+													oninput={() => markChanged()}
+													placeholder="module.path.ClassName"
+													class="w-full px-2 py-1.5 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
+												/>
+												<p class="text-xs text-gray-400 dark:text-gray-500">
+													e.g., sygra.core.models.structured_output.schemas_factory.SimpleResponse
+												</p>
+											</div>
+										</div>
 									</div>
 								{/if}
 
@@ -4485,31 +4510,31 @@ class ${dataClassName}Transform(DataTransform):
 								<div class="mb-4">
 									<button
 										onclick={() => showSchemaPreview = !showSchemaPreview}
-										class="flex items-center gap-1.5 text-xs text-[#7661FF] hover:text-[#5a4dcc] transition-colors"
+										class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] hover:bg-[#7661FF]/10 dark:hover:bg-[#7661FF]/15 rounded-md transition-colors"
 									>
 										{#if showSchemaPreview}
-											<EyeOff size={12} />
+											<EyeOff size={14} />
 											Hide Preview
 										{:else}
-											<Eye size={12} />
+											<Eye size={14} />
 											Preview JSON Schema
 										{/if}
 									</button>
 									{#if showSchemaPreview}
-										<pre class="mt-2 p-3 text-xs font-mono bg-gray-900 text-green-400 rounded-lg overflow-auto max-h-48">{generateSchemaPreview()}</pre>
+										<pre class="mt-2 p-3 text-xs font-mono bg-gray-900 text-green-400 rounded-lg overflow-auto max-h-48 border border-gray-700">{generateSchemaPreview()}</pre>
 									{/if}
 								</div>
 
 								<!-- Advanced Options (collapsible) -->
-								<details class="group">
-									<summary class="flex items-center gap-2 cursor-pointer text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-										<ChevronRight size={12} class="transition-transform group-open:rotate-90" />
+								<details class="group border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+									<summary class="flex items-center gap-2 cursor-pointer px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+										<ChevronRight size={14} class="transition-transform group-open:rotate-90" />
 										Advanced Options
 									</summary>
-									<div class="mt-3 pl-4 space-y-3">
+									<div class="px-3 pb-3 pt-2 space-y-3 bg-gray-50/50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
 										<!-- Fallback Strategy -->
 										<div>
-											<label class="text-xs text-gray-500 block mb-1">Fallback Strategy</label>
+											<label class="text-xs text-gray-500 dark:text-gray-400 block mb-1.5">Fallback Strategy</label>
 											<CustomSelect
 												options={fallbackStrategyOptions}
 												bind:value={editFallbackStrategy}
@@ -4518,8 +4543,8 @@ class ${dataClassName}Transform(DataTransform):
 											/>
 										</div>
 										<!-- Retry on Parse Error -->
-										<div class="flex items-center justify-between">
-											<label class="text-xs text-gray-500">Retry on Parse Error</label>
+										<div class="flex items-center justify-between py-1">
+											<label class="text-xs text-gray-600 dark:text-gray-400">Retry on Parse Error</label>
 											<input
 												type="checkbox"
 												bind:checked={editRetryOnParseError}
@@ -4528,47 +4553,71 @@ class ${dataClassName}Transform(DataTransform):
 											/>
 										</div>
 										<!-- Max Retries -->
-										<div class="flex items-center justify-between">
-											<label class="text-xs text-gray-500">Max Parse Retries</label>
+										<div class="flex items-center justify-between py-1">
+											<label class="text-xs text-gray-600 dark:text-gray-400">Max Parse Retries</label>
 											<input
 												type="number"
 												bind:value={editMaxParseRetries}
 												oninput={() => markChanged()}
 												min="0"
 												max="10"
-												class="w-16 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+												class="w-16 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
 											/>
 										</div>
 									</div>
 								</details>
 							{:else if !isEditing && node.model?.structured_output?.enabled}
 								<!-- View Mode - Show configured schema -->
-								<div class="space-y-2">
+								<div class="space-y-3">
 									{#if typeof node.model.structured_output.schema === 'string'}
-										<div class="p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs">
-											<span class="text-gray-500">Class Path:</span>
-											<span class="ml-2 font-mono text-gray-800 dark:text-gray-200">{node.model.structured_output.schema}</span>
+										<div class="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+											<div class="w-8 h-8 rounded-md bg-[#7661FF]/15 dark:bg-[#7661FF]/20 flex items-center justify-center flex-shrink-0">
+												<Code size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
+											</div>
+											<div class="flex-1 min-w-0">
+												<div class="text-xs text-gray-500 dark:text-gray-400 mb-1">Class Path</div>
+												<div class="font-mono text-sm text-gray-800 dark:text-gray-200 break-all">{node.model.structured_output.schema}</div>
+											</div>
 										</div>
 									{:else if node.model.structured_output.schema?.fields}
-										<div class="text-xs text-gray-500 mb-1">Fields:</div>
-										<div class="flex flex-wrap gap-1.5">
-											{#each Object.entries(node.model.structured_output.schema.fields) as [fieldName, fieldDef]}
-												<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] border border-[#7661FF]/30 dark:border-[#7661FF]/40">
-													{fieldName}
-													<span class="text-[#BF71F2]">({fieldDef.type})</span>
-												</span>
-											{/each}
+										<div class="space-y-2">
+											<span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+												Output Fields
+											</span>
+											<div class="space-y-2">
+												{#each Object.entries(node.model.structured_output.schema.fields) as [fieldName, fieldDef]}
+													<div class="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+														<div class="w-8 h-8 rounded-md bg-[#7661FF]/15 dark:bg-[#7661FF]/20 flex items-center justify-center flex-shrink-0">
+															<Code size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
+														</div>
+														<div class="flex-1 min-w-0">
+															<div class="flex items-center gap-2 mb-1">
+																<span class="font-mono text-sm font-medium text-gray-800 dark:text-gray-200">{fieldName}</span>
+																<span class="px-1.5 py-0.5 text-xs rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]">{fieldDef.type}</span>
+															</div>
+															{#if fieldDef.description}
+																<div class="text-xs text-gray-500 dark:text-gray-400">{fieldDef.description}</div>
+															{/if}
+															{#if fieldDef.default !== undefined}
+																<div class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+																	Default: <span class="font-mono">{JSON.stringify(fieldDef.default)}</span>
+																</div>
+															{/if}
+														</div>
+													</div>
+												{/each}
+											</div>
 										</div>
 									{/if}
 									{#if node.model.structured_output.fallback_strategy}
-										<div class="p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs">
-											<span class="text-gray-500">Fallback:</span>
-											<span class="ml-2 text-gray-800 dark:text-gray-200">{node.model.structured_output.fallback_strategy}</span>
+										<div class="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs">
+											<span class="text-gray-500 dark:text-gray-400">Fallback Strategy:</span>
+											<span class="font-medium text-gray-700 dark:text-gray-300 capitalize">{node.model.structured_output.fallback_strategy}</span>
 										</div>
 									{/if}
 								</div>
 							{:else if !isEditing}
-								<div class="text-center py-3 text-gray-400 text-xs">
+								<div class="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">
 									Structured output not configured
 								</div>
 							{/if}

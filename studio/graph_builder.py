@@ -243,9 +243,22 @@ class SygraGraphBuilder:
         model_config = None
         if "model" in node_config:
             model = node_config["model"]
+            # Parse structured_output if present in YAML
+            structured_output = None
+            if "structured_output" in model:
+                so = model["structured_output"]
+                # YAML format doesn't have 'enabled' field - presence implies enabled
+                structured_output = {
+                    "enabled": True,
+                    "schema": so.get("schema"),
+                    "fallback_strategy": so.get("fallback_strategy", "instruction"),
+                    "retry_on_parse_error": so.get("retry_on_parse_error", True),
+                    "max_parse_retries": so.get("max_parse_retries", 2),
+                }
             model_config = ModelConfig(
                 name=model.get("name", "unknown"),
                 parameters=model.get("parameters", {}),
+                structured_output=structured_output,
             )
 
         # Extract models configuration (for multi_llm nodes)

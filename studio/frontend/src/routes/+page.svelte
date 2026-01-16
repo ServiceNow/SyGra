@@ -549,7 +549,20 @@
 					on:edgeSelect={handleBuilderEdgeSelect}
 					on:save={handleBuilderSave}
 					on:cancel={handleBuilderCancel}
-				/>
+				>
+					{#snippet bottom()}
+						{#if currentWorkflow && !currentWorkflow.id.startsWith('new_') && WorkflowCodePanel}
+							<svelte:component
+								this={WorkflowCodePanel}
+								bind:this={codePanelRef}
+								workflowId={currentWorkflow.id}
+								bind:isCollapsed={codePanelCollapsed}
+								on:close={() => codePanelCollapsed = true}
+								on:yamlSaved={handleYamlSaved}
+							/>
+						{/if}
+					{/snippet}
+				</WorkflowBuilder>
 			</div>
 
 			<!-- Right panel for editing selected node/edge -->
@@ -586,18 +599,6 @@
 				/>
 			{/if}
 		</div>
-
-		<!-- Code Panel (YAML and Python code) for builder view -->
-		{#if currentWorkflow && !currentWorkflow.id.startsWith('new_') && WorkflowCodePanel}
-			<svelte:component
-				this={WorkflowCodePanel}
-				bind:this={codePanelRef}
-				workflowId={currentWorkflow.id}
-				bind:isCollapsed={codePanelCollapsed}
-				on:close={() => codePanelCollapsed = true}
-				on:yamlSaved={handleYamlSaved}
-			/>
-		{/if}
 	</div>
 {:else if currentView === 'home'}
 	<!-- Home Dashboard View -->

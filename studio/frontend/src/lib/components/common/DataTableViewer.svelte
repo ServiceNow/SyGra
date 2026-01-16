@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { Database, ChevronDown, ChevronRight, Table, Code, Loader2, AlertCircle, Search, ChevronLeft, ChevronsLeft, ChevronsRight } from 'lucide-svelte';
+	import { Database, ChevronDown, ChevronRight, Table, Code, Loader2, AlertCircle, Search, ChevronLeft, ChevronsLeft, ChevronsRight, Music, ImageIcon } from 'lucide-svelte';
+	import MediaRenderer from './MediaRenderer.svelte';
+	import { isAudio, isImage, detectMediaType, truncateDataUrl, isDataUrl } from '$lib/utils/mediaUtils';
 
 	interface Props {
 		data: unknown[] | null;
@@ -11,6 +13,7 @@
 		showViewToggle?: boolean;
 		defaultView?: 'table' | 'json';
 		compact?: boolean;
+		workflowId?: string;
 	}
 
 	let {
@@ -22,7 +25,8 @@
 		error = null,
 		showViewToggle = true,
 		defaultView = 'table',
-		compact = false
+		compact = false,
+		workflowId = ''
 	}: Props = $props();
 
 	// View state
@@ -226,9 +230,26 @@
 											</span>
 										{:else if typeof value === 'number'}
 											<span class="font-mono text-blue-600 dark:text-blue-400 text-xs">{value.toLocaleString()}</span>
+										{:else if isAudio(value)}
+											<!-- Audio indicator in compact view -->
+											<span class="inline-flex items-center gap-1.5 px-2 py-1 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-full text-xs">
+												<Music size={12} />
+												<span>Audio</span>
+											</span>
+										{:else if isImage(value)}
+											<!-- Image indicator in compact view -->
+											<span class="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full text-xs">
+												<ImageIcon size={12} />
+												<span>Image</span>
+											</span>
 										{:else if typeof value === 'object'}
 											<span class="text-gray-500 dark:text-gray-400 font-mono text-xs truncate block max-w-[250px]">
 												{JSON.stringify(value).slice(0, 60)}{JSON.stringify(value).length > 60 ? '...' : ''}
+											</span>
+										{:else if typeof value === 'string' && isDataUrl(value)}
+											<!-- Data URL indicator -->
+											<span class="text-gray-500 dark:text-gray-400 font-mono text-xs truncate block max-w-[250px]">
+												{truncateDataUrl(value, 50)}
 											</span>
 										{:else}
 											<span class="text-gray-700 dark:text-gray-300 text-xs truncate block max-w-[250px]">
@@ -250,7 +271,16 @@
 														{col}
 													</span>
 													<div class="flex-1 min-w-0">
-														{#if value === null || value === undefined}
+														{#if isAudio(value) || isImage(value)}
+															<!-- Use MediaRenderer for audio/image content -->
+															<MediaRenderer
+																{value}
+																fieldName={col}
+																{workflowId}
+																compact={false}
+																maxImageHeight="200px"
+															/>
+														{:else if value === null || value === undefined}
 															<span class="text-xs text-gray-300 dark:text-gray-600 italic">null</span>
 														{:else if typeof value === 'boolean'}
 															<span class="px-2 py-0.5 rounded text-xs font-medium {value ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}">

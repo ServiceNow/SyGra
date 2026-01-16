@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount, onDestroy, tick } from 'svelte';
+	import { createEventDispatcher, onMount, onDestroy, tick, type Snippet } from 'svelte';
 	import {
 		SvelteFlow,
 		Controls,
@@ -20,10 +20,13 @@
 	import { workflowStore, uiStore, NODE_TYPES, NODE_CATEGORIES, type Workflow, type WorkflowNode } from '$lib/stores/workflow.svelte';
 	import {
 		Play, Square, Bot, Zap, Boxes, GitBranch, Shuffle,
-		Save, X, Database, Download, GripVertical, LayoutGrid, Group,
+		Save, X, Database, Settings, GripVertical, LayoutGrid, Group,
 		Search, ChevronDown, ChevronRight, Sparkles, FilePlus2, Trash2, MousePointerClick,
-		Map as MapIcon, EyeOff, GitCompareArrows
+		Map as MapIcon, EyeOff
 	} from 'lucide-svelte';
+
+	// Custom icons
+	import StackedBotsIcon from '../graph/renderers/nodes/icons/StackedBotsIcon.svelte';
 
 	// Node components
 	import StartNode from '../graph/renderers/nodes/StartNode.svelte';
@@ -61,6 +64,9 @@
 		save: void;
 		cancel: void;
 	}>();
+
+	// Props - bottom snippet for content below canvas (e.g., CodePanel)
+	let { bottom }: { bottom?: Snippet } = $props();
 
 	let workflow = $derived(workflowStore.currentWorkflow);
 
@@ -247,18 +253,18 @@
 		sygra: SygraEdge
 	} as unknown as EdgeTypes;
 
-	// Node icons
+	// Node icons - matches icons used in canvas node components
 	const nodeIcons: Record<string, any> = {
 		data: Database,
 		start: Play,
 		end: Square,
-		output: Download,
+		output: Settings,          // Matches OutputNode
 		llm: Bot,
 		lambda: Zap,
 		subgraph: Boxes,
 		weighted_sampler: Shuffle,
-		agent: Sparkles,
-		multi_llm: GitCompareArrows
+		agent: Sparkles,           // Keep Sparkles per user preference
+		multi_llm: StackedBotsIcon // Matches MultiLLMNode (stacked bots)
 	};
 
 	// Search and category state for palette
@@ -1324,15 +1330,17 @@
 			</div>
 		</div>
 
-		<!-- Canvas -->
-		<div
-			bind:this={canvasRef}
-			class="flex-1 relative"
-			ondrop={handleDrop}
-			ondragover={handleDragOver}
-			role="application"
-			aria-label="Workflow canvas"
-		>
+		<!-- Canvas + Bottom content column -->
+		<div class="flex-1 flex flex-col overflow-hidden">
+			<!-- Canvas -->
+			<div
+				bind:this={canvasRef}
+				class="flex-1 relative min-h-0"
+				ondrop={handleDrop}
+				ondragover={handleDragOver}
+				role="application"
+				aria-label="Workflow canvas"
+			>
 			{#if workflow}
 				<SvelteFlow
 					nodes={nodes}
@@ -1458,6 +1466,12 @@
 					{/if}
 					<span class="text-gray-400 text-xs">Esc to clear</span>
 				</div>
+			{/if}
+			</div>
+
+			<!-- Bottom content (e.g., CodePanel) -->
+			{#if bottom}
+				{@render bottom()}
 			{/if}
 		</div>
 	</div>
