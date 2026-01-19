@@ -1990,8 +1990,12 @@ def _register_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=404, detail="Workflow config file not found")
 
         content = data.get("content", "")
-        if not content:
-            raise HTTPException(status_code=400, detail="Content is required")
+
+        # Empty content is allowed - save an empty file
+        if not content or not content.strip():
+            with open(config_path, 'w') as f:
+                f.write("")
+            return {"status": "saved", "path": str(config_path), "message": "Empty file saved"}
 
         try:
             # Validate YAML syntax
@@ -2041,8 +2045,12 @@ def _register_routes(app: FastAPI) -> None:
         file_path = workflow_dir / safe_filename
 
         content = data.get("content", "")
-        if not content:
-            raise HTTPException(status_code=400, detail="Content is required")
+
+        # Empty content is allowed - just save an empty file
+        if not content or not content.strip():
+            with open(file_path, 'w') as f:
+                f.write("")
+            return {"status": "saved", "path": str(file_path), "message": "Empty file saved"}
 
         try:
             # Basic Python syntax check
@@ -2179,8 +2187,35 @@ def _register_routes(app: FastAPI) -> None:
 
         # Find the node
         node = next((n for n in workflow.nodes if n.id == node_id), None)
+
+        # UPSERT: If node doesn't exist, create it first
         if not node:
-            raise HTTPException(status_code=404, detail=f"Node {node_id} not found in workflow")
+            # Create a new node based on node_data
+            from studio.models import WorkflowNode, ModelConfig as StudioModelConfig
+
+            node_type = node_data.get('node_type', 'output')  # Default to output since that's common case
+
+            # Create the node object
+            node = WorkflowNode(
+                id=node_id,
+                node_type=node_type,
+                summary=node_data.get('summary', node_data.get('node_name', node_id)),
+                description=node_data.get('description', ''),
+            )
+
+            # Set type-specific attributes
+            if node_type == 'output':
+                node.output_config = node_data.get('output_config', {})
+            elif node_type == 'data':
+                node.data_config = node_data.get('data_config', {})
+            elif node_type == 'llm':
+                if 'model' in node_data:
+                    node.model = StudioModelConfig(**node_data['model']) if isinstance(node_data['model'], dict) else node_data['model']
+                if 'prompt' in node_data:
+                    node.prompt = node_data['prompt']
+
+            # Add to workflow
+            workflow.nodes.append(node)
 
         # Update in-memory node fields
         if "summary" in node_data:
@@ -2323,6 +2358,25 @@ def _register_routes(app: FastAPI) -> None:
                     if hasattr(node, 'output_config') and node.output_config:
                         node.output_config['generator'] = None
 
+            # For OUTPUT nodes: Check if task_executor.py already has a generator
+            # This handles the case when OUTPUT node is added via UI and task_executor.py already has code
+            if node.node_type == 'output' and generator_code is None:
+                task_executor_path = workflow_dir / "task_executor.py"
+                if task_executor_path.exists():
+                    try:
+                        existing_content = task_executor_path.read_text()
+                        safe_node_id = re.sub(r'[^a-zA-Z0-9_]', '', node_id.replace('-', '_').replace(' ', '_'))
+                        # Check if there's a generator class for this node
+                        existing_generator = _find_code_block_by_ast(existing_content, node_id, 'output_generator')
+                        if existing_generator and not _is_stub_code(existing_generator, 'output_generator'):
+                            task_name = _get_task_name_from_path(workflow_dir)
+                            generator_path = f"tasks.{task_name}.task_executor.{safe_node_id}Generator"
+                            if not hasattr(node, 'output_config') or node.output_config is None:
+                                node.output_config = {}
+                            node.output_config['generator'] = generator_path
+                    except Exception as e:
+                        print(f"Warning: Could not check existing generator code: {e}")
+
             # Data transform code (from top-level _data_transform_code or data_config._transform_code)
             # Empty string signals deletion
             transform_code = node_data.get("_data_transform_code")
@@ -2373,14 +2427,26 @@ def _register_routes(app: FastAPI) -> None:
 
                     # Handle output nodes specially - they store config at workflow level
                     if node.node_type == 'output':
+                        # Build output_config from node.output_config (which has generator path)
+                        # and merge with any output_config from node_data
+                        output_config = {}
+
+                        # Start with node.output_config (has generator path set above)
+                        if hasattr(node, 'output_config') and node.output_config:
+                            output_config.update(node.output_config)
+
+                        # Merge in output_config from node_data (has output_map, etc.)
                         if "output_config" in node_data:
-                            output_config = node_data["output_config"]
-                            # Clean output_config - remove internal fields starting with '_'
-                            clean_output_config = {k: v for k, v in output_config.items() if not k.startswith('_')}
-                            if clean_output_config:
-                                if 'output_config' not in config:
-                                    config['output_config'] = {}
-                                config['output_config'].update(clean_output_config)
+                            output_config.update(node_data["output_config"])
+
+                        # Clean output_config - remove internal fields starting with '_'
+                        clean_output_config = {k: v for k, v in output_config.items() if not k.startswith('_') and v is not None}
+
+                        # REPLACE entire output_config (not merge) so removed fields are deleted
+                        if clean_output_config:
+                            config['output_config'] = clean_output_config
+                        elif 'output_config' in config:
+                            del config['output_config']
                     elif node.node_type == 'data':
                         # Handle data nodes - they store config at workflow level
                         if "data_config" in node_data:
@@ -2389,66 +2455,76 @@ def _register_routes(app: FastAPI) -> None:
                             config['data_config'] = clean_data_config
                     else:
                         # Update regular nodes in graph_config.nodes
-                        if 'graph_config' in config and 'nodes' in config['graph_config']:
-                            yaml_node = config['graph_config']['nodes'].get(node_id)
-                            if yaml_node is not None:
-                                # Update fields that were changed
-                                if "summary" in node_data:
-                                    yaml_node['node_name'] = node_data["summary"]
-                                if "description" in node_data:
-                                    yaml_node['description'] = node_data["description"]
-                                if "prompt" in node_data:
-                                    yaml_node['prompt'] = _convert_prompts_to_yaml_format(node_data["prompt"])
-                                if "model" in node_data:
-                                    yaml_node['model'] = {
-                                        'name': node_data["model"].get("name"),
-                                        'parameters': node_data["model"].get("parameters", {})
-                                    }
-                                    # Remove empty parameters
-                                    if not yaml_node['model']['parameters']:
-                                        del yaml_node['model']['parameters']
-                                    # Include structured_output if present and enabled
-                                    so = node_data["model"].get("structured_output")
-                                    if so and so.get("enabled", True):
-                                        # Convert to YAML format (without 'enabled' field)
-                                        yaml_so = {}
-                                        if so.get("schema"):
-                                            yaml_so["schema"] = so["schema"]
-                                        # Only include non-default options
-                                        if so.get("fallback_strategy") and so["fallback_strategy"] != "instruction":
-                                            yaml_so["fallback_strategy"] = so["fallback_strategy"]
-                                        if so.get("retry_on_parse_error") is False:
-                                            yaml_so["retry_on_parse_error"] = False
-                                        if so.get("max_parse_retries") and so["max_parse_retries"] != 2:
-                                            yaml_so["max_parse_retries"] = so["max_parse_retries"]
-                                        if yaml_so:
-                                            yaml_node['model']['structured_output'] = yaml_so
-                                    elif 'structured_output' in yaml_node.get('model', {}):
-                                        # Remove structured_output if it was disabled
-                                        del yaml_node['model']['structured_output']
-                                if "pre_process" in node_data:
-                                    if node_data["pre_process"]:
-                                        yaml_node['pre_process'] = node_data["pre_process"]
-                                    elif 'pre_process' in yaml_node:
-                                        del yaml_node['pre_process']
-                                if "post_process" in node_data:
-                                    if node_data["post_process"]:
-                                        yaml_node['post_process'] = node_data["post_process"]
-                                    elif 'post_process' in yaml_node:
-                                        del yaml_node['post_process']
-                                if "function_path" in node_data:
-                                    if node_data["function_path"]:
-                                        yaml_node['function_path'] = node_data["function_path"]
-                                    elif 'function_path' in yaml_node:
-                                        del yaml_node['function_path']
-                                if "output_keys" in node_data:
-                                    if node_data["output_keys"]:
-                                        yaml_node['output_keys'] = node_data["output_keys"]
-                                    elif 'output_keys' in yaml_node:
-                                        del yaml_node['output_keys']
+                        if 'graph_config' not in config:
+                            config['graph_config'] = {}
+                        if 'nodes' not in config['graph_config']:
+                            config['graph_config']['nodes'] = {}
+
+                        yaml_node = config['graph_config']['nodes'].get(node_id)
+
+                        # Create node if it doesn't exist (upsert)
+                        if yaml_node is None:
+                            yaml_node = {
+                                'node_type': node.node_type or 'llm',
+                            }
+                            config['graph_config']['nodes'][node_id] = yaml_node
+
+                        # Update fields that were changed
+                        if "summary" in node_data:
+                            yaml_node['node_name'] = node_data["summary"]
+                        if "description" in node_data:
+                            yaml_node['description'] = node_data["description"]
+                        if "prompt" in node_data:
+                            yaml_node['prompt'] = _convert_prompts_to_yaml_format(node_data["prompt"])
+                        if "model" in node_data:
+                            yaml_node['model'] = {
+                                'name': node_data["model"].get("name"),
+                                'parameters': node_data["model"].get("parameters", {})
+                            }
+                            # Remove empty parameters
+                            if not yaml_node['model']['parameters']:
+                                del yaml_node['model']['parameters']
+                            # Include structured_output if present and enabled
+                            so = node_data["model"].get("structured_output")
+                            if so and so.get("enabled", True):
+                                # Convert to YAML format (without 'enabled' field)
+                                yaml_so = {}
+                                if so.get("schema"):
+                                    yaml_so["schema"] = so["schema"]
+                                # Only include non-default options
+                                if so.get("fallback_strategy") and so["fallback_strategy"] != "instruction":
+                                    yaml_so["fallback_strategy"] = so["fallback_strategy"]
+                                if so.get("retry_on_parse_error") is False:
+                                    yaml_so["retry_on_parse_error"] = False
+                                if so.get("max_parse_retries") and so["max_parse_retries"] != 2:
+                                    yaml_so["max_parse_retries"] = so["max_parse_retries"]
+                                if yaml_so:
+                                    yaml_node['model']['structured_output'] = yaml_so
+                            elif 'structured_output' in yaml_node.get('model', {}):
+                                # Remove structured_output if it was disabled
+                                del yaml_node['model']['structured_output']
+                        # Use node.pre_process/post_process which are auto-generated from code
+                        # (not node_data which only has explicit path overrides)
+                        if node.pre_process:
+                            yaml_node['pre_process'] = node.pre_process
+                        elif 'pre_process' in yaml_node:
+                            del yaml_node['pre_process']
+                        if node.post_process:
+                            yaml_node['post_process'] = node.post_process
+                        elif 'post_process' in yaml_node:
+                            del yaml_node['post_process']
+                        if node.function_path:
+                            yaml_node['function_path'] = node.function_path
+                        elif 'function_path' in yaml_node:
+                            del yaml_node['function_path']
+                        if "output_keys" in node_data:
+                            if node_data["output_keys"]:
+                                yaml_node['output_keys'] = node_data["output_keys"]
+                            elif 'output_keys' in yaml_node:
+                                del yaml_node['output_keys']
 
                     with open(yaml_path, 'w') as f:
-                        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+                        yaml.dump(config, f, Dumper=_get_yaml_dumper(), default_flow_style=False, sort_keys=False, allow_unicode=True)
 
                     # Reload workflow from disk to ensure in-memory cache is consistent
                     try:
@@ -2470,19 +2546,31 @@ def _register_routes(app: FastAPI) -> None:
             }
             if node.model.structured_output:
                 model_data["structured_output"] = node.model.structured_output
+
+        # Build response with all node data including output/data config
+        response_node = {
+            "id": node.id,
+            "summary": node.summary,
+            "description": node.description,
+            "model": model_data,
+            "prompt": node.prompt,
+            "pre_process": node.pre_process,
+            "post_process": node.post_process,
+            "function_path": node.function_path,
+        }
+
+        # Include output_config for output nodes
+        if node.node_type == 'output' and node.output_config:
+            response_node["output_config"] = node.output_config
+
+        # Include data_config for data nodes
+        if node.node_type == 'data' and node.data_config:
+            response_node["data_config"] = node.data_config
+
         return {
             "status": "updated",
             "node_id": node_id,
-            "node": {
-                "id": node.id,
-                "summary": node.summary,
-                "description": node.description,
-                "model": model_data,
-                "prompt": node.prompt,
-                "pre_process": node.pre_process,
-                "post_process": node.post_process,
-                "function_path": node.function_path,
-            }
+            "node": response_node
         }
 
     @app.delete("/api/workflows/{workflow_id}/nodes/{node_id}")
@@ -2512,25 +2600,82 @@ def _register_routes(app: FastAPI) -> None:
         # Persist changes to the YAML file
         if workflow.source_path:
             yaml_path = Path(workflow.source_path)
+            workflow_dir = yaml_path.parent
             if yaml_path.exists():
                 try:
                     with open(yaml_path, 'r') as f:
                         config = yaml.safe_load(f)
 
-                    # Delete the node from config
+                    # ========================================
+                    # STEP 1: Clean up ALL code in task_executor.py for this node
+                    # This handles all node types comprehensively
+                    # ========================================
+                    task_executor_path = workflow_dir / "task_executor.py"
+                    if task_executor_path.exists():
+                        try:
+                            existing_content = task_executor_path.read_text()
+                            updated_content = existing_content
+
+                            # Remove ALL possible code types for this node
+                            # This covers: LLM nodes (pre/post), Lambda nodes, Branch nodes,
+                            # OUTPUT nodes (generator), DATA nodes (transform)
+                            all_code_types = [
+                                'pre_process',
+                                'post_process',
+                                'lambda',
+                                'branch_condition',
+                                'output_generator',
+                                'data_transform'
+                            ]
+                            for code_type in all_code_types:
+                                updated_content = _remove_code_block_from_file(updated_content, node_id, code_type)
+
+                            # Write updated content or delete file if empty
+                            if updated_content != existing_content:
+                                if updated_content.strip():
+                                    with open(task_executor_path, 'w') as f:
+                                        f.write(updated_content)
+                                else:
+                                    task_executor_path.unlink()
+                        except Exception as e:
+                            print(f"Warning: Could not clean up node code from task_executor.py: {e}")
+
+                    # ========================================
+                    # STEP 2: Clean up YAML config based on node type
+                    # ========================================
+
+                    # OUTPUT nodes: Remove output_config from YAML
+                    if node.node_type == 'output':
+                        if 'output_config' in config:
+                            del config['output_config']
+
+                    # DATA nodes: Remove data_config from YAML
+                    elif node.node_type == 'data':
+                        if 'data_config' in config:
+                            del config['data_config']
+
+                    # Regular nodes (LLM, Lambda, Branch, etc.): Remove from graph_config.nodes
+                    # Also remove any YAML references like pre_process, post_process paths
                     if 'graph_config' in config and 'nodes' in config['graph_config']:
                         if node_id in config['graph_config']['nodes']:
                             del config['graph_config']['nodes'][node_id]
 
-                    # Delete edges connected to this node
+                    # ========================================
+                    # STEP 3: Clean up edges connected to this node
+                    # Also clean up condition references in edges
+                    # ========================================
                     if 'graph_config' in config and 'edges' in config['graph_config']:
+                        # Remove edges that connect to/from this node
                         config['graph_config']['edges'] = [
                             e for e in config['graph_config']['edges']
                             if e.get('from') != node_id and e.get('to') != node_id
                         ]
 
+                    # ========================================
+                    # STEP 4: Save YAML and reload workflow
+                    # ========================================
                     with open(yaml_path, 'w') as f:
-                        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+                        yaml.dump(config, f, Dumper=_get_yaml_dumper(), default_flow_style=False, sort_keys=False, allow_unicode=True)
 
                     # Reload workflow from disk to update cache
                     try:
@@ -2587,17 +2732,34 @@ def _register_routes(app: FastAPI) -> None:
                         config['graph_config']['nodes'] = {}
 
                     node_type = node_data.get('node_type', 'llm')
+                    workflow_dir = yaml_path.parent
 
                     # Handle output nodes specially - store config at workflow level
                     if node_type == 'output':
+                        output_config = {}
+
+                        # Check if task_executor.py has existing generator code for this node
+                        task_executor_path = workflow_dir / "task_executor.py"
+                        if task_executor_path.exists():
+                            try:
+                                existing_content = task_executor_path.read_text()
+                                safe_node_id = re.sub(r'[^a-zA-Z0-9_]', '', node_id.replace('-', '_').replace(' ', '_'))
+                                existing_generator = _find_code_block_by_ast(existing_content, node_id, 'output_generator')
+                                if existing_generator and not _is_stub_code(existing_generator, 'output_generator'):
+                                    task_name = _get_task_name_from_path(workflow_dir)
+                                    generator_path = f"tasks.{task_name}.task_executor.{safe_node_id}Generator"
+                                    output_config['generator'] = generator_path
+                            except Exception as e:
+                                print(f"Warning: Could not check existing generator code: {e}")
+
+                        # Merge in output_config from node_data
                         if 'output_config' in node_data:
-                            output_config = node_data['output_config']
-                            # Clean output_config - remove internal fields starting with '_'
-                            clean_output_config = {k: v for k, v in output_config.items() if not k.startswith('_')}
-                            if clean_output_config:
-                                if 'output_config' not in config:
-                                    config['output_config'] = {}
-                                config['output_config'].update(clean_output_config)
+                            output_config.update(node_data['output_config'])
+
+                        # Clean output_config - remove internal fields starting with '_'
+                        clean_output_config = {k: v for k, v in output_config.items() if not k.startswith('_') and v is not None}
+                        if clean_output_config:
+                            config['output_config'] = clean_output_config
                         # Output nodes are not added to graph_config.nodes
                     elif node_type == 'data':
                         # Data nodes store config at workflow level as data_config
@@ -2639,7 +2801,7 @@ def _register_routes(app: FastAPI) -> None:
                         config['graph_config']['nodes'][node_id] = yaml_node
 
                     with open(yaml_path, 'w') as f:
-                        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+                        yaml.dump(config, f, Dumper=_get_yaml_dumper(), default_flow_style=False, sort_keys=False, allow_unicode=True)
 
                     # Reload workflow from disk to update cache
                     try:
@@ -4037,13 +4199,20 @@ async def _save_workflow_to_disk(app: FastAPI, request: WorkflowCreateRequest, i
         yaml.dump(graph_config, f, Dumper=_get_yaml_dumper(), default_flow_style=False, sort_keys=False, allow_unicode=True)
     files_created.append(str(config_path))
 
-    # Generate task_executor.py if there are custom processors
-    executor_code = _generate_task_executor(request, sanitized_name)
+    # Generate task_executor.py with code preservation
+    # Use the merge function to preserve existing non-stub code while removing
+    # code for deleted nodes and adding stubs for new nodes
+    executor_code = _generate_task_executor_with_merge(request, sanitized_name, workflow_dir)
+    executor_path = workflow_dir / "task_executor.py"
     if executor_code:
-        executor_path = workflow_dir / "task_executor.py"
         with open(executor_path, 'w') as f:
             f.write(executor_code)
         files_created.append(str(executor_path))
+    elif executor_path.exists():
+        # No code needed anymore - remove the file if it exists
+        # This happens when all nodes that needed code have been removed
+        executor_path.unlink()
+        print(f"Removed unused task_executor.py")
 
     # Generate workflow ID
     workflow_id = sanitized_name
@@ -4398,10 +4567,28 @@ def _generate_graph_config(request: WorkflowCreateRequest, task_name: str) -> di
 
     config['graph_config'] = graph_config
 
-    # Output config - filter out data/output nodes from output_map and internal fields
-    if request.output_config:
-        # Clean the output_config by removing internal fields (starting with _)
-        # and data/output node references from output_map
+    # Check if there's an OUTPUT node in the request
+    has_output_node = any(n.node_type == 'output' for n in request.nodes)
+    has_output_node_with_config = any(
+        n.node_type == 'output' and n.output_config
+        for n in request.nodes
+    )
+
+    # CRITICAL: Handle output_config based on OUTPUT node presence
+    # If no OUTPUT node exists, completely remove output_config
+    if not has_output_node:
+        # No OUTPUT node - remove any output_config entirely
+        config.pop('output_config', None)
+    elif has_output_node_with_config:
+        # OUTPUT node exists and has config - it was already processed in node loop above
+        # Just clean up any internal fields (starting with _)
+        if 'output_config' in config:
+            config['output_config'] = {
+                k: v for k, v in config['output_config'].items()
+                if not k.startswith('_')
+            }
+    elif request.output_config:
+        # OUTPUT node exists but uses workflow-level output_config
         output_config_clean = {k: v for k, v in request.output_config.items() if not k.startswith('_')}
         if 'output_map' in output_config_clean:
             output_config_clean['output_map'] = {
@@ -4409,23 +4596,6 @@ def _generate_graph_config(request: WorkflowCreateRequest, task_name: str) -> di
                 if k not in excluded_node_ids
             }
         config['output_config'] = output_config_clean
-    else:
-        # Generate default output config with id and messages mapping
-        # Check if we have LLM nodes that need message conversion
-        has_llm_nodes = any(n.node_type == 'llm' for n in request.nodes)
-
-        if has_llm_nodes:
-            # Use output generator with message transform for LLM outputs
-            config['output_config'] = {
-                'generator': f'tasks.{task_name}.task_executor.DefaultOutputGenerator',
-                'output_map': {
-                    'id': {'from': 'id'},
-                    'response': {'from': 'messages', 'transform': 'build_response'}
-                }
-            }
-        else:
-            # Minimal output config for non-LLM workflows
-            config['output_config'] = {'output_map': {'id': {'from': 'id'}}}
 
     # Schema config
     if request.schema_config:
@@ -4573,9 +4743,17 @@ def {func_name}(state: SygraState) -> str:
     return "{path_map_keys[0]}"
 ''')
 
-    # Check if we have LLM nodes - always generate DefaultOutputGenerator for them
+    # Check if we need DefaultOutputGenerator
+    # Only generate if there's an OUTPUT node that needs it
+    has_output_node = any(n.node_type == 'output' for n in request.nodes)
     has_llm_nodes = any(n.node_type == 'llm' for n in request.nodes)
-    if has_llm_nodes:
+
+    # Generate DefaultOutputGenerator only if:
+    # 1. There's an OUTPUT node, OR
+    # 2. There's an output_config with generator path pointing to DefaultOutputGenerator
+    needs_default_generator = has_output_node and has_llm_nodes
+
+    if needs_default_generator:
         needs_executor = True
         imports.add("from typing import Any")
         imports.add("from sygra.processors.output_record_generator import BaseOutputGenerator")
@@ -4590,6 +4768,286 @@ class DefaultOutputGenerator(BaseOutputGenerator):
         """Convert LangChain AIMessage objects to serializable chat format."""
         return utils.convert_messages_from_langchain_to_chat_format(data)
 ''')
+
+    if not needs_executor:
+        return None
+
+    # Build the file content
+    code_parts = [
+        '"""',
+        f'Task executor for {request.name} workflow.',
+        '',
+        'This file contains custom processors, lambda functions, and conditional edge logic.',
+        '"""',
+        '',
+    ]
+
+    # Add imports
+    for imp in sorted(imports):
+        code_parts.append(imp)
+
+    code_parts.append('')
+
+    # Add classes
+    for cls in classes:
+        code_parts.append(cls)
+
+    # Add functions
+    for func in functions:
+        code_parts.append(func)
+
+    return '\n'.join(code_parts)
+
+
+def _generate_task_executor_with_merge(
+    request: WorkflowCreateRequest,
+    task_name: str,
+    workflow_dir: Path
+) -> Optional[str]:
+    """
+    Generate task_executor.py content while preserving existing user code.
+
+    This function merges:
+    1. Code explicitly included in the request (takes priority)
+    2. Existing non-stub code from the current task_executor.py file
+    3. New stubs for nodes that need code but don't have any
+
+    Code for deleted nodes (not in request) is NOT preserved.
+
+    Args:
+        request: Workflow creation request
+        task_name: Sanitized task name for paths
+        workflow_dir: Path to the workflow directory
+
+    Returns:
+        Python code as string, or None if no custom code needed
+    """
+    task_executor_path = workflow_dir / "task_executor.py"
+
+    # Get current node IDs from the request (only preserve code for these)
+    current_node_ids = {node.id for node in request.nodes}
+    current_edge_sources = {edge.source for edge in request.edges if edge.is_conditional}
+
+    # Read existing code blocks from file
+    existing_blocks = {}  # {(node_id, code_type): code}
+    if task_executor_path.exists():
+        try:
+            with open(task_executor_path, 'r') as f:
+                existing_content = f.read()
+
+            # Extract code blocks using AST-based detection
+            ast_blocks = _find_code_blocks_by_ast(existing_content)
+            for block in ast_blocks:
+                code_type = block['type']
+                node_id = block['node_id']
+                code = block['code']
+                name = block['name']
+
+                # Skip DefaultOutputGenerator - handled separately
+                if name == 'DefaultOutputGenerator':
+                    continue
+
+                # Skip stub code
+                if _is_stub_code(code, code_type):
+                    continue
+
+                # Only preserve code for nodes that still exist in the request
+                if node_id in current_node_ids or node_id in current_edge_sources:
+                    existing_blocks[(node_id, code_type)] = code
+        except Exception as e:
+            print(f"Warning: Could not read existing task_executor.py: {e}")
+
+    # Now build the merged code
+    imports = set()
+    classes = []
+    functions = []
+    needs_executor = False
+    has_custom_output_generator = False  # Track if custom generator exists
+
+    for node in request.nodes:
+        # Check for pre-processor
+        if node.pre_process and task_name in node.pre_process:
+            needs_executor = True
+            imports.add("from sygra.core.graph.functions.node_processor import NodePreProcessorWithState")
+            imports.add("from sygra.core.graph.sygra_state import SygraState")
+
+            class_name = node.pre_process.split('.')[-1]
+
+            # Check if there's existing code in task_executor.py to preserve
+            if (node.id, 'pre_process') in existing_blocks:
+                # Preserve existing non-stub code
+                classes.append(f'''
+# === Pre-Processor for {node.id} ===
+{existing_blocks[(node.id, 'pre_process')]}
+''')
+            else:
+                # Generate new stub
+                classes.append(f'''
+# === Pre-Processor for {node.id} ===
+class {class_name}(NodePreProcessorWithState):
+    """Pre-processor for {node.id} node."""
+
+    def apply(self, state: SygraState) -> SygraState:
+        # TODO: Implement pre-processing logic
+        # Access state variables: state["variable_name"]
+        # Modify state as needed
+        return state
+''')
+
+        # Check for post-processor
+        if node.post_process and task_name in node.post_process:
+            needs_executor = True
+            imports.add("from sygra.core.graph.functions.node_processor import NodePostProcessorWithState")
+            imports.add("from sygra.core.graph.sygra_message import SygraMessage")
+            imports.add("from sygra.core.graph.sygra_state import SygraState")
+
+            class_name = node.post_process.split('.')[-1]
+
+            # Check if there's existing code in task_executor.py to preserve
+            if (node.id, 'post_process') in existing_blocks:
+                # Preserve existing non-stub code
+                classes.append(f'''
+# === Post-Processor for {node.id} ===
+{existing_blocks[(node.id, 'post_process')]}
+''')
+            else:
+                # Generate new stub
+                classes.append(f'''
+# === Post-Processor for {node.id} ===
+class {class_name}(NodePostProcessorWithState):
+    """Post-processor for {node.id} node."""
+
+    def apply(self, resp: SygraMessage, state: SygraState) -> SygraState:
+        # TODO: Implement post-processing logic
+        # Access LLM response: resp.message.content
+        # Modify state as needed: state["output_key"] = processed_value
+        return state
+''')
+
+        # Check for lambda functions
+        if node.node_type == 'lambda' and node.function_path:
+            if task_name in node.function_path or 'task_executor' in node.function_path:
+                needs_executor = True
+                imports.add("from sygra.core.graph.sygra_state import SygraState")
+                imports.add("from typing import Any")
+
+                func_name = node.function_path.split('.')[-1]
+
+                # Check if request has explicit code
+                lambda_code = getattr(node, '_lambda_code', None)
+                if lambda_code and lambda_code.strip():
+                    functions.append(f'''
+# === Lambda Function for {node.id} ===
+{lambda_code.strip()}
+''')
+                elif (node.id, 'lambda') in existing_blocks:
+                    # Preserve existing non-stub code
+                    functions.append(f'''
+# === Lambda Function for {node.id} ===
+{existing_blocks[(node.id, 'lambda')]}
+''')
+                else:
+                    # Generate new stub
+                    node_desc = node.summary if node.summary else f"Lambda node {node.id}"
+                    functions.append(f'''
+# === Lambda Function for {node.id} ===
+def {func_name}(state: SygraState) -> Any:
+    """
+    Lambda function: {node_desc}
+
+    This function is executed as part of the workflow pipeline.
+    Modify the state and return it, or return a value to be stored.
+
+    Args:
+        state: Current workflow state containing all variables
+
+    Returns:
+        Modified state or a value to store in state["{node.id}"]
+    """
+    # TODO: Implement your processing logic here
+    return state
+''')
+
+        # Check for data node transformations
+        if node.node_type == 'data' and node.data_config:
+            transform_code = node.data_config.get('_transform_code', '')
+            if transform_code and transform_code.strip():
+                needs_executor = True
+                classes.append(f'''
+# === Data Transformation for {node.id} ===
+{transform_code}
+''')
+            elif (node.id, 'data_transform') in existing_blocks:
+                needs_executor = True
+                classes.append(f'''
+# === Data Transformation for {node.id} ===
+{existing_blocks[(node.id, 'data_transform')]}
+''')
+
+        # Check for output node generators
+        # Track if custom generator is added (to avoid adding DefaultOutputGenerator)
+        if node.node_type == 'output' and node.output_config:
+            generator_code = node.output_config.get('_generator_code', '')
+            if generator_code and generator_code.strip():
+                needs_executor = True
+                has_custom_output_generator = True
+                # Add imports needed for output generators
+                imports.add("from typing import Any")
+                imports.add("from sygra.processors.output_record_generator import BaseOutputGenerator")
+                imports.add("from sygra.core.graph.sygra_state import SygraState")
+                classes.append(f'''
+# === Output Generator for {node.id} ===
+{generator_code}
+''')
+            elif (node.id, 'output_generator') in existing_blocks:
+                needs_executor = True
+                has_custom_output_generator = True
+                # Add imports needed for output generators
+                imports.add("from typing import Any")
+                imports.add("from sygra.processors.output_record_generator import BaseOutputGenerator")
+                imports.add("from sygra.core.graph.sygra_state import SygraState")
+                classes.append(f'''
+# === Output Generator for {node.id} ===
+{existing_blocks[(node.id, 'output_generator')]}
+''')
+
+    # Check for conditional edges
+    for edge in request.edges:
+        if edge.is_conditional and edge.condition and edge.condition.condition_path:
+            if task_name in edge.condition.condition_path:
+                needs_executor = True
+                imports.add("from sygra.core.graph.sygra_state import SygraState")
+
+                func_name = edge.condition.condition_path.split('.')[-1]
+
+                # Check for existing code
+                condition_code = getattr(edge.condition, '_code', None)
+                if condition_code and condition_code.strip():
+                    functions.append(f'''
+# === Branch Condition for {edge.source} ===
+{condition_code.strip()}
+''')
+                elif (edge.source, 'branch_condition') in existing_blocks:
+                    functions.append(f'''
+# === Branch Condition for {edge.source} ===
+{existing_blocks[(edge.source, 'branch_condition')]}
+''')
+                else:
+                    path_map_keys = list(edge.condition.path_map.keys()) if edge.condition.path_map else ['default']
+                    functions.append(f'''
+# === Branch Condition for {edge.source} ===
+def {func_name}(state: SygraState) -> str:
+    """Conditional edge function from {edge.source} to determine next node."""
+    # TODO: Implement condition logic
+    # Return one of: {path_map_keys}
+    # Access state variables: state["variable_name"]
+    return "{path_map_keys[0]}"
+''')
+
+    # DefaultOutputGenerator is NOT needed if:
+    # 1. There's no OUTPUT node, OR
+    # 2. A custom output generator already exists
+    # It IS needed only when there's an OUTPUT node with LLM nodes but no custom generator
 
     if not needs_executor:
         return None
@@ -5532,6 +5990,146 @@ def _find_code_block_by_ast(content: str, node_id: str, code_type: str) -> Optio
                     return (start_pos, end_pos)
 
     return None
+
+
+def _remove_code_block_from_file(content: str, node_id: str, code_type: str) -> str:
+    """
+    Remove a code block for a specific node from file content.
+
+    Uses AST-based detection to find and remove the code block.
+    Also removes associated marker comments.
+
+    Args:
+        content: The file content
+        node_id: The node ID to remove code for
+        code_type: Type of code ('pre_process', 'post_process', 'output_generator', etc.)
+
+    Returns:
+        Updated content with the code block removed
+    """
+    import ast
+
+    if not content or not content.strip():
+        return content
+
+    # Base class to code type mapping
+    BASE_CLASS_TO_TYPE = {
+        'NodePreProcessor': 'pre_process',
+        'NodePreProcessorWithState': 'pre_process',
+        'NodePostProcessor': 'post_process',
+        'NodePostProcessorWithState': 'post_process',
+        'BaseOutputGenerator': 'output_generator',
+        'DataTransform': 'data_transform',
+        'EdgeCondition': 'branch_condition',
+        'LambdaFunction': 'lambda',
+    }
+
+    # Expected class name suffixes
+    SUFFIX_MAP = {
+        'pre_process': 'PreProcessor',
+        'post_process': 'PostProcessor',
+        'output_generator': 'Generator',
+        'data_transform': 'Transform',
+        'lambda': 'Lambda',
+        'branch_condition': 'Condition',
+    }
+
+    # Marker patterns for each code type
+    MARKER_PATTERNS = {
+        'pre_process': r'# === Pre-?[Pp]rocessor for ',
+        'post_process': r'# === Post-?[Pp]rocessor for ',
+        'output_generator': r'# === Output Generator for ',
+        'data_transform': r'# === Data Transform for ',
+        'lambda': r'# === Lambda for ',
+        'branch_condition': r'# === Branch Condition for ',
+    }
+
+    # Normalize node_id for comparison
+    safe_node_id = re.sub(r'[^a-zA-Z0-9_]', '', node_id.replace('-', '_').replace(' ', '_'))
+    expected_suffix = SUFFIX_MAP.get(code_type, '')
+    expected_name = f"{safe_node_id}{expected_suffix}"
+
+    try:
+        tree = ast.parse(content)
+    except SyntaxError:
+        return content
+
+    lines = content.splitlines(keepends=True)
+    lines_to_remove = set()
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef):
+            class_name = node.name
+            class_safe_id = class_name[:-len(expected_suffix)] if class_name.endswith(expected_suffix) else class_name
+
+            # Check base class inheritance
+            detected_type = None
+            for base in node.bases:
+                base_name = None
+                if isinstance(base, ast.Name):
+                    base_name = base.id
+                elif isinstance(base, ast.Attribute):
+                    base_name = base.attr
+
+                if base_name and base_name in BASE_CLASS_TO_TYPE:
+                    detected_type = BASE_CLASS_TO_TYPE[base_name]
+                    break
+
+            # Match if type and node_id match
+            if detected_type == code_type:
+                normalized_class_id = re.sub(r'[^a-zA-Z0-9_]', '', class_safe_id.replace('-', '_'))
+                if normalized_class_id == safe_node_id or class_name == expected_name:
+                    start_line = node.lineno - 1  # 0-indexed
+                    end_line = node.end_lineno if hasattr(node, 'end_lineno') else start_line + 1
+
+                    # Mark class lines for removal
+                    for i in range(start_line, end_line):
+                        lines_to_remove.add(i)
+
+                    # Also look for marker comment and docstrings before the class
+                    marker_pattern = MARKER_PATTERNS.get(code_type)
+                    if marker_pattern:
+                        # Search backwards for marker and associated content
+                        search_start = max(0, start_line - 20)  # Look up to 20 lines back
+                        for i in range(start_line - 1, search_start - 1, -1):
+                            if i < 0:
+                                break
+                            line = lines[i].strip()
+                            # Check for marker
+                            if re.match(marker_pattern + re.escape(node_id), lines[i]):
+                                lines_to_remove.add(i)
+                                # Also remove empty line before marker if present
+                                if i > 0 and not lines[i-1].strip():
+                                    lines_to_remove.add(i - 1)
+                                break
+                            # Remove docstrings, import statements, and empty lines between marker and class
+                            elif line.startswith('"""') or line.startswith("'''") or line.startswith('from ') or line.startswith('import ') or not line:
+                                # Check if this is part of a docstring block
+                                if line.startswith('"""') or line.startswith("'''"):
+                                    lines_to_remove.add(i)
+                                elif not line:
+                                    lines_to_remove.add(i)
+                                # Stop at imports (they might be shared)
+                            else:
+                                # Hit something else, stop searching
+                                break
+
+    if not lines_to_remove:
+        return content
+
+    # Rebuild content without removed lines
+    new_lines = [lines[i] for i in range(len(lines)) if i not in lines_to_remove]
+
+    # Clean up multiple consecutive empty lines
+    result = ''.join(new_lines)
+
+    # Remove excessive blank lines (more than 2 consecutive)
+    result = re.sub(r'\n{4,}', '\n\n\n', result)
+
+    # Ensure file ends with single newline
+    result = result.rstrip() + '\n' if result.strip() else ''
+
+    return result
 
 
 def _get_node_code_from_file(content: str, node_id: str, code_type: str) -> Optional[str]:

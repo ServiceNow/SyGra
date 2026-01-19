@@ -694,6 +694,7 @@
 				if (!node || node.id !== nodeId) return;
 				if (outputContent) {
 					editOutputGeneratorCode = outputContent;
+					fetchedGeneratorCode = outputContent;  // Also set for preview mode
 					outputGeneratorCodeLoaded = true;
 					console.log('output_generator loaded from task_executor.py');
 				}
@@ -1635,6 +1636,13 @@ class ${dataClassName}Transform(DataTransform):
 				if (success) {
 					hasChanges = false;
 					isEditing = false;
+
+					// Update fetchedGeneratorCode so preview mode shows saved content
+					// (only output generator uses a separate "fetched" variable; other code types use the same variable for both)
+					if (node?.node_type === 'output' && editOutputGeneratorCode) {
+						fetchedGeneratorCode = editOutputGeneratorCode;
+					}
+
 					dispatch('save', { nodeId: originalNodeId, newId: updates.newId, updates });
 				}
 			} else {
@@ -3527,91 +3535,48 @@ class ${dataClassName}Transform(DataTransform):
 					<!-- Output Node: Generator Code -->
 					{#if node.node_type === 'output'}
 						<div class="space-y-4">
-							<!-- Generator Class Section -->
-							<div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-								<button
-									type="button"
-									onclick={() => generatorCodeExpanded = !generatorCodeExpanded}
-									class="w-full flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-								>
-									<div class="flex items-center gap-2">
-										<Code size={14} class="text-[#BF71F2]" />
-										<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Generator Class</span>
-										{#if node.output_config?.generator}
-											<span class="text-xs font-mono text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
-												{node.output_config.generator.split('.').pop()}
-											</span>
-										{/if}
+							<!-- Generator Class Section (non-collapsible) -->
+							<div>
+								<div class="flex items-center justify-between mb-2">
+									<div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+										Generator Class
 									</div>
-									<div class="flex items-center gap-2">
-										{#if fetchedGeneratorLoading}
-											<Loader2 size={14} class="animate-spin text-gray-400" />
-										{:else if fetchedGeneratorCode}
-											<span class="text-xs text-green-500">Loaded</span>
-										{/if}
-										<ChevronDown size={16} class="text-gray-400 transition-transform {generatorCodeExpanded ? 'rotate-180' : ''}" />
-									</div>
-								</button>
-
-								{#if generatorCodeExpanded}
-									<div class="p-3 border-t border-gray-200 dark:border-gray-700">
-										{#if isEditing}
-											<div class="mb-3">
-												<span class="block text-xs text-gray-500 mb-1">Generator Class Path</span>
-												<input
-													type="text"
-													bind:value={editOutputGenerator}
-													oninput={markChanged}
-													aria-label="Generator class path"
-													class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
-													placeholder="tasks.my_task.task_executor.MyOutputGenerator"
-												/>
-											</div>
-											<div class="text-xs text-gray-500 mb-2">
-												Edit the generator class code below. Changes will be saved to task_executor.py.
-											</div>
-											<div class="monaco-editor-wrapper">
-												<MonacoEditor
-													bind:this={codeEditorRef}
-													bind:value={editOutputGeneratorCode}
-													language="python"
-													height="clamp(300px, 40vh, 500px)"
-													fontSize={12}
-													readonly={false}
-													autofocus={codeTabJustActivated}
-													on:change={() => markChanged()}
-													on:save={saveChanges}
-												/>
-											</div>
-										{:else}
-											{#if node.output_config?.generator}
-												<div class="text-xs text-gray-500 mb-2 font-mono break-all">
-													{node.output_config.generator}
-												</div>
-											{/if}
-											{#if fetchedGeneratorLoading}
-												<div class="flex items-center justify-center py-8">
-													<Loader2 size={20} class="animate-spin text-gray-400" />
-													<span class="ml-2 text-sm text-gray-500">Loading code...</span>
-												</div>
-											{:else if fetchedGeneratorCode}
-												<div class="monaco-editor-wrapper">
-													<MonacoEditor
-														value={fetchedGeneratorCode}
-														language="python"
-														height="clamp(300px, 40vh, 500px)"
-																												fontSize={12}
-														readonly={true}
-													/>
-												</div>
-											{:else}
-												<div class="text-center py-6 text-gray-400 text-sm">
-													No generator code found. The file may not exist yet.
-												</div>
-											{/if}
-										{/if}
-									</div>
-								{/if}
+									<span class="text-xs text-gray-400">Output transformer</span>
+								</div>
+								<!-- Monaco Editor - read-only when not editing -->
+								<div class="monaco-editor-wrapper">
+									<div class="text-xs text-gray-500 mb-1">{isEditing ? 'Code Editor:' : 'Code Preview:'}</div>
+									{#if isEditing}
+										<MonacoEditor
+											bind:this={codeEditorRef}
+											bind:value={editOutputGeneratorCode}
+											language="python"
+											height="clamp(300px, 40vh, 500px)"
+											fontSize={12}
+											readonly={false}
+											autofocus={codeTabJustActivated}
+											on:change={() => markChanged()}
+											on:save={saveChanges}
+										/>
+									{:else if fetchedGeneratorLoading}
+										<div class="flex items-center justify-center py-8 border border-gray-200 dark:border-gray-700 rounded-lg">
+											<Loader2 size={20} class="animate-spin text-gray-400" />
+											<span class="ml-2 text-sm text-gray-500">Loading code...</span>
+										</div>
+									{:else if fetchedGeneratorCode}
+										<MonacoEditor
+											value={fetchedGeneratorCode}
+											language="python"
+											height="clamp(300px, 40vh, 500px)"
+											fontSize={12}
+											readonly={true}
+										/>
+									{:else}
+										<div class="text-center py-6 text-gray-400 text-sm border border-gray-200 dark:border-gray-700 rounded-lg">
+											No generator code found. The file may not exist yet.
+										</div>
+									{/if}
+								</div>
 							</div>
 
 							<!-- Transform Functions Section (if any mappings have transforms) -->
@@ -3760,19 +3725,6 @@ class ${dataClassName}Transform(DataTransform):
 								</div>
 								<span class="text-xs text-gray-400">Optional hook</span>
 							</div>
-							{#if isEditing}
-								<input
-									type="text"
-									bind:value={editPreProcess}
-									oninput={markChanged}
-									class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] mb-2"
-									placeholder="module.path.ClassName"
-								/>
-							{:else}
-								<div class="text-sm text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg break-all mb-2">
-									{node.pre_process}
-								</div>
-							{/if}
 							<!-- Monaco Editor - read-only when not editing -->
 							<div class="mt-2 monaco-editor-wrapper">
 								<div class="text-xs text-gray-500 mb-1">{isEditing ? 'Code Editor:' : 'Code Preview:'}</div>
@@ -3800,19 +3752,6 @@ class ${dataClassName}Transform(DataTransform):
 								</div>
 								<span class="text-xs text-gray-400">Optional hook</span>
 							</div>
-							{#if isEditing}
-								<input
-									type="text"
-									bind:value={editPostProcess}
-									oninput={markChanged}
-									class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] mb-2"
-									placeholder="module.path.ClassName"
-								/>
-							{:else}
-								<div class="text-sm text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg break-all mb-2">
-									{node.post_process}
-								</div>
-							{/if}
 							<!-- Monaco Editor - read-only when not editing -->
 							<div class="mt-2 monaco-editor-wrapper">
 								<div class="text-xs text-gray-500 mb-1">{isEditing ? 'Code Editor:' : 'Code Preview:'}</div>

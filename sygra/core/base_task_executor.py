@@ -414,9 +414,12 @@ class BaseTaskExecutor(ABC):
     def _configure_sink(self, data_config: dict) -> None:
         """Configure the sink settings from data config"""
         sink_config = data_config.get("sink")
-        if sink_config and isinstance(sink_config, dict):
+        if not sink_config:
+            # No sink configured - this is valid (sink is optional)
+            return
+        if isinstance(sink_config, dict):
             self.output_config = OutputConfig.from_dict(sink_config)
-        elif sink_config and isinstance(sink_config, list):
+        elif isinstance(sink_config, list):
             self.output_config = []
             for cfg in sink_config:
                 self.output_config.append(OutputConfig.from_dict(cfg))
