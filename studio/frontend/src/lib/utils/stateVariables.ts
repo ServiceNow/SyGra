@@ -39,6 +39,9 @@ const FRAMEWORK_VARIABLES: StateVariable[] = [
 /**
  * Extract column names from data source configuration.
  * Uses fetchedColumns if available (from API), otherwise falls back to inline data.
+ * 
+ * When aliases are defined in multiple data sources, columns are transformed to
+ * {alias}->{column} format to match the actual variable names used in prompts.
  *
  * @param dataConfig The data source configuration
  * @param fetchedColumns Optional pre-fetched columns from the API (with transformations applied)
@@ -46,8 +49,14 @@ const FRAMEWORK_VARIABLES: StateVariable[] = [
 function extractDataColumns(dataConfig?: DataSourceConfig, fetchedColumns?: string[]): StateVariable[] {
 	const variables: StateVariable[] = [];
 
-	// If we have fetched columns (from API), use them directly
-	if (fetchedColumns && fetchedColumns.length > 0) {
+	// Check if we have multiple sources with aliases - in that case, we need special handling
+	const sources = dataConfig?.source 
+		? (Array.isArray(dataConfig.source) ? dataConfig.source : [dataConfig.source])
+		: [];
+	const hasMultipleSources = sources.length > 1;
+
+	// If we have fetched columns (from API) and it's a simple single source scenario, use them directly
+	if (fetchedColumns && fetchedColumns.length > 0 && !hasMultipleSources) {
 		for (const colName of fetchedColumns) {
 			if (!variables.some(v => v.name === colName)) {
 				variables.push({
@@ -61,26 +70,47 @@ function extractDataColumns(dataConfig?: DataSourceConfig, fetchedColumns?: stri
 		return variables;
 	}
 
-	// Fallback: Extract from data config (for inline data)
+	// For multiple sources with aliases, we need to handle each source separately
+	// The API only returns columns for source_index=0 by default, so we use fetchedColumns
+	// for the first source (with its alias) and extract from dataConfig for others.
 	if (!dataConfig?.source) return [];
 
-	const sources = Array.isArray(dataConfig.source) ? dataConfig.source : [dataConfig.source];
+	// When there are multiple sources with aliases, extract columns from each source
+	// and apply the alias->{column} notation
 
-	for (const source of sources) {
+	for (let sourceIndex = 0; sourceIndex < sources.length; sourceIndex++) {
+		const source = sources[sourceIndex];
+		const alias = source.alias;
+		let columnsForSource: string[] = [];
+		
+		// For the first source (index 0), use fetchedColumns if available
+		// since the API returns columns for source_index=0 by default
+		if (sourceIndex === 0 && fetchedColumns && fetchedColumns.length > 0) {
+			columnsForSource = fetchedColumns;
+		}
 		// Extract from inline data (memory type)
-		if (source.data && Array.isArray(source.data) && source.data.length > 0) {
+		else if (source.data && Array.isArray(source.data) && source.data.length > 0) {
 			const firstRecord = source.data[0];
 			if (typeof firstRecord === 'object' && firstRecord !== null) {
-				for (const key of Object.keys(firstRecord)) {
-					if (!variables.some(v => v.name === key)) {
-						variables.push({
-							name: key,
-							source: 'data',
-							sourceNode: 'DATA',
-							description: `Column from data source${source.alias ? ` (${source.alias})` : ''}`
-						});
-					}
-				}
+				columnsForSource = Object.keys(firstRecord);
+			}
+		}
+		// Extract from ServiceNow or other sources with explicit fields
+		else if (source.fields && Array.isArray(source.fields)) {
+			columnsForSource = source.fields;
+		}
+		
+		// Add columns with proper alias notation
+		for (const colName of columnsForSource) {
+			// Use arrow notation for multiple sources with aliases
+			const varName = (hasMultipleSources && alias) ? `${alias}->${colName}` : colName;
+			if (!variables.some(v => v.name === varName)) {
+				variables.push({
+					name: varName,
+					source: 'data',
+					sourceNode: 'DATA',
+					description: `Column from data source${alias ? ` (${alias})` : ''}`
+				});
 			}
 		}
 	}
@@ -183,9 +213,10 @@ export function collectStateVariablesForNode(
 		result.variables.push(...dataVars);
 	}
 
-	// Also check workflow-level data_config (skip if fetchedColumns already provided)
-	if (workflow.data_config && !fetchedColumns) {
-		const workflowDataVars = extractDataColumns(workflow.data_config);
+	// Also check workflow-level data_config if no DATA node exists
+	// We pass fetchedColumns here too so alias notation can be applied correctly
+	if (workflow.data_config && !dataNode) {
+		const workflowDataVars = extractDataColumns(workflow.data_config, fetchedColumns);
 		for (const v of workflowDataVars) {
 			if (!result.variables.some(existing => existing.name === v.name)) {
 				result.bySource.data.push(v);
@@ -476,9 +507,10 @@ export function validatePromptVariables(
 
 /**
  * Validate all prompts in a node
+ * Handles both simple string content and multi-modal content (array of parts)
  */
 export function validateNodePrompts(
-	prompts: Array<{ role: string; content: string }> | undefined,
+	prompts: Array<{ role: string; content: string | Array<{ type: string; text?: string; audio_url?: string; image_url?: string; video_url?: string }> }> | undefined,
 	availableVariables: StateVariable[]
 ): PromptValidationResult {
 	if (!prompts || prompts.length === 0) {
@@ -490,10 +522,30 @@ export function validateNodePrompts(
 	const allErrors: PromptValidationError[] = [];
 
 	for (const prompt of prompts) {
-		const result = validatePromptVariables(prompt.content, availableVariables);
-		allReferences.push(...result.references);
-		allInvalidReferences.push(...result.invalidReferences);
-		allErrors.push(...result.errors);
+		if (typeof prompt.content === 'string') {
+			// Simple string content
+			const result = validatePromptVariables(prompt.content, availableVariables);
+			allReferences.push(...result.references);
+			allInvalidReferences.push(...result.invalidReferences);
+			allErrors.push(...result.errors);
+		} else if (Array.isArray(prompt.content)) {
+			// Multi-modal content - validate each part
+			for (const part of prompt.content) {
+				// Extract the text value from the part based on type
+				let textValue: string | undefined;
+				if (part.type === 'text') textValue = part.text;
+				else if (part.type === 'audio_url') textValue = part.audio_url;
+				else if (part.type === 'image_url') textValue = part.image_url;
+				else if (part.type === 'video_url') textValue = part.video_url;
+				
+				if (textValue) {
+					const result = validatePromptVariables(textValue, availableVariables);
+					allReferences.push(...result.references);
+					allInvalidReferences.push(...result.invalidReferences);
+					allErrors.push(...result.errors);
+				}
+			}
+		}
 	}
 
 	return {

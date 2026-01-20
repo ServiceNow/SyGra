@@ -60,7 +60,7 @@ graph_config:
     analyzer:
       node_type: llm
       model:
-        name: gpt-5
+        name: openai_gpt41
         temperature: 0.1
         max_tokens: 1024
         structured_output:
