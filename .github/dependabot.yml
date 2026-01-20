@@ -26,3 +26,19 @@ updates:
     groups:
       uv-dependencies:
         patterns: ["*"]
+
+  # Update JS deps for studio frontend
+  - package-ecosystem: npm
+    directory: "/studio/frontend"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - javascript
+    commit-message:
+      prefix: "deps"
+      include: scope
+    groups:
+      npm-dependencies:
+        patterns: ["*"]
