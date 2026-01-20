@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount, tick } from 'svelte';
 	import { X, Bot, Zap, Link, Play, Square, Globe, Boxes, Save, ChevronDown, ChevronRight, Code, Settings, MessageSquare, Info, GitBranch, Plus, Trash2, Edit3, GripVertical, Database, Download, Cloud, Server, HardDrive, ArrowRight, Map as MapIcon, Shuffle, Wrench, AlertCircle, Library, Eye, EyeOff, Loader2, Layers, Copy, GitCompareArrows, Thermometer, Variable, Check, Search, AlertTriangle } from 'lucide-svelte';
-	import { workflowStore, type WorkflowNode, type NodeExecutionState, type PromptMessage, type NodeConfigOverride, type InnerGraph } from '$lib/stores/workflow.svelte';
+	import { workflowStore, type WorkflowNode, type NodeExecutionState, type PromptMessage, type NodeConfigOverride, type InnerGraph, type MultiModalContentPart } from '$lib/stores/workflow.svelte';
 	import { toolStore } from '$lib/stores/tool.svelte';
 	import { panelStore } from '$lib/stores/panel.svelte';
 	import MonacoEditor from '$lib/components/editor/LazyMonacoEditor.svelte';
@@ -2073,6 +2073,82 @@ class ${dataClassName}Transform(DataTransform):
 		markChanged();
 	}
 
+	// Multi-modal prompt helpers
+	function isMultiModalContent(content: string | MultiModalContentPart[]): content is MultiModalContentPart[] {
+		return Array.isArray(content);
+	}
+
+	function toggleMultiModal(index: number) {
+		const message = editPrompts[index];
+		if (isMultiModalContent(message.content)) {
+			// Convert multi-modal to simple text (take first text content)
+			const textPart = message.content.find(p => p.type === 'text');
+			message.content = textPart?.text ?? '';
+		} else {
+			// Convert simple text to multi-modal
+			const textContent = message.content;
+			message.content = textContent ? [{ type: 'text', text: textContent }] : [];
+		}
+		editPrompts = [...editPrompts];
+		markChanged();
+	}
+
+	function addMultiModalPart(index: number, type: 'text' | 'audio_url' | 'image_url' | 'video_url') {
+		const message = editPrompts[index];
+		if (!isMultiModalContent(message.content)) return;
+		
+		const newPart: MultiModalContentPart = { type };
+		if (type === 'text') newPart.text = '';
+		else if (type === 'audio_url') newPart.audio_url = '';
+		else if (type === 'image_url') newPart.image_url = '';
+		else if (type === 'video_url') newPart.video_url = '';
+		
+		message.content = [...message.content, newPart];
+		editPrompts = [...editPrompts];
+		markChanged();
+	}
+
+	function removeMultiModalPart(promptIndex: number, partIndex: number) {
+		const message = editPrompts[promptIndex];
+		if (!isMultiModalContent(message.content)) return;
+		
+		message.content = message.content.filter((_, i) => i !== partIndex);
+		editPrompts = [...editPrompts];
+		markChanged();
+	}
+
+	function updateMultiModalPart(promptIndex: number, partIndex: number, value: string) {
+		const message = editPrompts[promptIndex];
+		if (!isMultiModalContent(message.content)) return;
+		
+		const part = message.content[partIndex];
+		if (part.type === 'text') part.text = value;
+		else if (part.type === 'audio_url') part.audio_url = value;
+		else if (part.type === 'image_url') part.image_url = value;
+		else if (part.type === 'video_url') part.video_url = value;
+		
+		editPrompts = [...editPrompts];
+		markChanged();
+	}
+
+	function getMultiModalPartValue(part: MultiModalContentPart): string {
+		if (part.type === 'text') return part.text ?? '';
+		if (part.type === 'audio_url') return part.audio_url ?? '';
+		if (part.type === 'image_url') return part.image_url ?? '';
+		if (part.type === 'video_url') return part.video_url ?? '';
+		return '';
+	}
+
+	function getMultiModalPartLabel(type: string): string {
+		switch (type) {
+			case 'text': return 'Text';
+			case 'audio_url': return 'Audio URL';
+			case 'image_url': return 'Image URL';
+			case 'video_url': return 'Video URL';
+			default: return type;
+		}
+	}
+
 	function updateModelParameter(key: string, value: any) {
 		editModelParameters[key] = value;
 		editModelParameters = { ...editModelParameters };
@@ -2970,13 +3046,30 @@ class ${dataClassName}Transform(DataTransform):
 						{#each editPrompts as message, index}
 							<div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
 								<div class="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-									<CustomSelect
-										options={roleOptions}
-										value={message.role}
-										compact={true}
-										searchable={false}
-										onchange={(val) => updatePromptRole(index, val)}
-									/>
+									<div class="flex items-center gap-2">
+										<CustomSelect
+											options={roleOptions}
+											value={message.role}
+											compact={true}
+											searchable={false}
+											onchange={(val) => updatePromptRole(index, val)}
+										/>
+										<!-- Multi-modal toggle -->
+										<label class="flex items-center gap-1.5 cursor-pointer ml-2">
+											<span class="text-[10px] text-gray-500 dark:text-gray-400">Multi-modal</span>
+											<button
+												type="button"
+												onclick={() => toggleMultiModal(index)}
+												class="relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {isMultiModalContent(message.content) ? 'bg-[#7661FF]' : 'bg-gray-200 dark:bg-gray-700'}"
+												role="switch"
+												aria-checked={isMultiModalContent(message.content)}
+											>
+												<span
+													class="pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {isMultiModalContent(message.content) ? 'translate-x-3' : 'translate-x-0'}"
+												></span>
+											</button>
+										</label>
+									</div>
 									<button
 										onclick={() => removePromptMessage(index)}
 										class="text-gray-400 hover:text-red-500 p-1"
@@ -2984,14 +3077,84 @@ class ${dataClassName}Transform(DataTransform):
 										<X size={14} />
 									</button>
 								</div>
-								<PromptTextarea
-									bind:value={message.content}
-									variables={availableStateVariables().variables}
-									rows={6}
-									placeholder={'Enter prompt content... Type \'{\' for variable autocomplete'}
-									oninput={(val) => { editPrompts[index].content = val; markChanged(); }}
-									class="border-0 rounded-none focus:ring-0"
-								/>
+								
+								{#if isMultiModalContent(message.content)}
+									<!-- Multi-modal content editing -->
+									<div class="p-3 space-y-2 bg-white dark:bg-gray-900">
+										{#each message.content as part, partIndex}
+											<div class="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+												<div class="flex-shrink-0 pt-1">
+													<span class="inline-block px-2 py-0.5 text-[10px] font-medium rounded bg-[#7661FF]/10 text-[#7661FF] dark:bg-[#7661FF]/20 dark:text-[#BF71F2]">
+														{getMultiModalPartLabel(part.type)}
+													</span>
+												</div>
+												<div class="flex-1">
+													{#if part.type === 'text'}
+														<PromptTextarea
+															value={part.text ?? ''}
+															variables={availableStateVariables().variables}
+															rows={3}
+															placeholder={'Enter text content... Type \'{\' for variable autocomplete'}
+															oninput={(val) => updateMultiModalPart(index, partIndex, val)}
+															class="border border-gray-200 dark:border-gray-700 rounded"
+														/>
+													{:else}
+														<StateVariableInput
+															value={getMultiModalPartValue(part)}
+															variables={availableStateVariables().variables}
+															placeholder={part.type === 'audio_url' ? 'Enter audio URL or variable...' : part.type === 'image_url' ? 'Enter image URL or variable...' : 'Enter video URL or variable...'}
+															oninput={(val) => updateMultiModalPart(index, partIndex, val)}
+														/>
+													{/if}
+												</div>
+												<button
+													onclick={() => removeMultiModalPart(index, partIndex)}
+													class="flex-shrink-0 p-1 text-gray-400 hover:text-red-500"
+												>
+													<X size={12} />
+												</button>
+											</div>
+										{/each}
+										
+										<!-- Add content part buttons -->
+										<div class="flex flex-wrap gap-1.5 pt-1">
+											<button
+												onclick={() => addMultiModalPart(index, 'text')}
+												class="px-2 py-1 text-[10px] font-medium border border-dashed border-gray-300 dark:border-gray-600 rounded text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
+											>
+												+ Text
+											</button>
+											<button
+												onclick={() => addMultiModalPart(index, 'audio_url')}
+												class="px-2 py-1 text-[10px] font-medium border border-dashed border-gray-300 dark:border-gray-600 rounded text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
+											>
+												+ Audio URL
+											</button>
+											<button
+												onclick={() => addMultiModalPart(index, 'image_url')}
+												class="px-2 py-1 text-[10px] font-medium border border-dashed border-gray-300 dark:border-gray-600 rounded text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
+											>
+												+ Image URL
+											</button>
+											<button
+												onclick={() => addMultiModalPart(index, 'video_url')}
+												class="px-2 py-1 text-[10px] font-medium border border-dashed border-gray-300 dark:border-gray-600 rounded text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
+											>
+												+ Video URL
+											</button>
+										</div>
+									</div>
+								{:else}
+									<!-- Simple text content editing -->
+									<PromptTextarea
+										bind:value={message.content}
+										variables={availableStateVariables().variables}
+										rows={6}
+										placeholder={'Enter prompt content... Type \'{\' for variable autocomplete'}
+										oninput={(val) => { editPrompts[index].content = val; markChanged(); }}
+										class="border-0 rounded-none focus:ring-0"
+									/>
+								{/if}
 							</div>
 						{/each}
 
@@ -3008,17 +3171,46 @@ class ${dataClassName}Transform(DataTransform):
 							>
 								+ User
 							</button>
+							<button
+								onclick={() => addPromptMessage('assistant')}
+								class="flex-1 px-3 py-2 text-xs font-medium border border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
+							>
+								+ Assistant
+							</button>
 						</div>
 					{:else}
 						{#each node.prompt ?? [] as message}
 							<div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-								<div class="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+								<div class="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
 									<span class="text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] capitalize">
 										{message.role}
 									</span>
+									{#if isMultiModalContent(message.content)}
+										<span class="text-[10px] px-1.5 py-0.5 rounded bg-[#7661FF]/10 text-[#7661FF] dark:bg-[#7661FF]/20 dark:text-[#BF71F2]">
+											Multi-modal
+										</span>
+									{/if}
 								</div>
-								<div class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono bg-white dark:bg-gray-900">
-									{message.content}
+								<div class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900">
+									{#if isMultiModalContent(message.content)}
+										<!-- Display multi-modal content parts -->
+										<div class="space-y-2">
+											{#each message.content as part}
+												<div class="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded border border-gray-100 dark:border-gray-700">
+													<span class="flex-shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#7661FF]/10 text-[#7661FF] dark:bg-[#7661FF]/20 dark:text-[#BF71F2]">
+														{getMultiModalPartLabel(part.type)}
+													</span>
+													<span class="font-mono text-sm break-all">
+														{getMultiModalPartValue(part)}
+													</span>
+												</div>
+											{/each}
+										</div>
+									{:else}
+										<div class="whitespace-pre-wrap font-mono">
+											{message.content}
+										</div>
+									{/if}
 								</div>
 							</div>
 						{/each}

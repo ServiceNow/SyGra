@@ -65,11 +65,21 @@ class ModelConfig(BaseModel):
     structured_output: Optional[Dict[str, Any]] = None
 
 
+class MultiModalContentPart(BaseModel):
+    """A single content part in a multi-modal prompt message."""
+    
+    type: str  # text, audio_url, image_url, video_url
+    text: Optional[str] = None
+    audio_url: Optional[str] = None
+    image_url: Optional[str] = None
+    video_url: Optional[str] = None
+
+
 class PromptMessage(BaseModel):
     """A single prompt message with role and content."""
 
     role: str  # system, user, assistant
-    content: str
+    content: Union[str, List[MultiModalContentPart]]  # Simple text or multi-modal content parts
 
 
 class WorkflowNode(BaseModel):
