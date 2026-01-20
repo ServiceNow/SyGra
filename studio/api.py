@@ -56,12 +56,15 @@ from studio.execution_storage import get_storage, ExecutionStorage
 _executions: Dict[str, WorkflowExecution] = {}
 
 
-def _convert_prompts_to_yaml_format(prompts: List[Dict[str, Any]]) -> List[Dict[str, str]]:
+def _convert_prompts_to_yaml_format(prompts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Convert prompts from frontend format to SyGra YAML format.
 
     Frontend format: [{"role": "system", "content": "..."}, {"role": "user", "content": "..."}]
     SyGra YAML format: [{"system": "..."}, {"user": "..."}]
+    
+    Multi-modal frontend format: [{"role": "user", "content": [{"type": "text", "text": "..."}, {"type": "audio_url", "audio_url": "..."}]}]
+    Multi-modal YAML format: [{"user": [{"type": "text", "text": "..."}, {"type": "audio_url", "audio_url": "..."}]}]
     """
     if not prompts:
         return []
@@ -71,10 +74,20 @@ def _convert_prompts_to_yaml_format(prompts: List[Dict[str, Any]]) -> List[Dict[
         if isinstance(msg, dict):
             role = msg.get('role', 'user')
             content = msg.get('content', '')
-            yaml_prompts.append({role: content})
+            # Handle multi-modal content (array of content parts)
+            if isinstance(content, list):
+                # Multi-modal format - preserve as-is
+                yaml_prompts.append({role: content})
+            else:
+                # Simple text format
+                yaml_prompts.append({role: content})
         elif hasattr(msg, 'role') and hasattr(msg, 'content'):
             # Handle PromptMessage objects
-            yaml_prompts.append({msg.role: msg.content})
+            content = msg.content
+            if isinstance(content, list):
+                yaml_prompts.append({msg.role: content})
+            else:
+                yaml_prompts.append({msg.role: content})
     return yaml_prompts
 
 # Scalable execution storage instance (lazy initialized)
@@ -1021,12 +1034,79 @@ def _register_routes(app: FastAPI) -> None:
                     }
 
             elif source_type in ("servicenow", "snow"):
-                # ServiceNow - would need actual connection
-                return {
-                    "records": [],
-                    "total": 0,
-                    "message": "ServiceNow preview requires authentication. Configure SNOW credentials to preview data."
-                }
+                # ServiceNow - use PySNC to fetch actual data
+                table = source.get("table")
+                fields = source.get("fields", [])
+                alias = source.get("alias")
+                
+                if not table:
+                    return {
+                        "records": [],
+                        "total": 0,
+                        "source_type": "servicenow",
+                        "message": "No table specified for ServiceNow source"
+                    }
+                
+                try:
+                    from sygra.core.dataset.servicenow_handler import ServiceNowHandler
+                    from sygra.core.dataset.dataset_config import DataSourceConfig as SygraDataSourceConfig
+                    
+                    # Build source config for ServiceNowHandler
+                    snow_config = SygraDataSourceConfig(
+                        type="servicenow",
+                        table=table,
+                        fields=fields if fields else None,
+                        filters=source.get("filters"),
+                        limit=limit,
+                        order_by=source.get("order_by"),
+                        order_desc=source.get("order_desc", False),
+                    )
+                    
+                    handler = ServiceNowHandler(source_config=snow_config)
+                    raw_records = handler.read()
+                    
+                    # Flatten records (ServiceNow returns value/display_value dicts)
+                    records = []
+                    for record in raw_records[:limit]:
+                        flat_record = {}
+                        for key, value in record.items():
+                            if isinstance(value, dict) and "display_value" in value:
+                                flat_record[key] = value.get("display_value") or value.get("value")
+                            else:
+                                flat_record[key] = value
+                        records.append(flat_record)
+                    
+                    total_count = len(raw_records)
+                    return {
+                        "records": records,
+                        "total": total_count,
+                        "source_type": "servicenow",
+                        "table": table,
+                        "alias": alias,
+                        "message": None
+                    }
+                    
+                except Exception as snow_err:
+                    # Fall back to showing configured fields if connection fails
+                    error_msg = str(snow_err)
+                    if fields:
+                        placeholder_record = {field: f"<{field}>" for field in fields}
+                        return {
+                            "records": [placeholder_record],
+                            "total": "unknown",
+                            "source_type": "servicenow",
+                            "table": table,
+                            "alias": alias,
+                            "message": f"Could not connect to ServiceNow: {error_msg[:100]}. Showing configured fields."
+                        }
+                    else:
+                        return {
+                            "records": [],
+                            "total": 0,
+                            "source_type": "servicenow",
+                            "table": table,
+                            "message": f"ServiceNow connection failed: {error_msg[:150]}"
+                        }
             else:
                 return {
                     "records": [],

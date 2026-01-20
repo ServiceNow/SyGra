@@ -61,25 +61,46 @@ function extractDataColumns(dataConfig?: DataSourceConfig, fetchedColumns?: stri
 		return variables;
 	}
 
-	// Fallback: Extract from data config (for inline data)
+	// Fallback: Extract from data config (for inline data or ServiceNow sources)
 	if (!dataConfig?.source) return [];
 
 	const sources = Array.isArray(dataConfig.source) ? dataConfig.source : [dataConfig.source];
+	const hasMultipleSources = sources.length > 1;
 
 	for (const source of sources) {
+		const alias = source.alias;
+		
 		// Extract from inline data (memory type)
 		if (source.data && Array.isArray(source.data) && source.data.length > 0) {
 			const firstRecord = source.data[0];
 			if (typeof firstRecord === 'object' && firstRecord !== null) {
 				for (const key of Object.keys(firstRecord)) {
-					if (!variables.some(v => v.name === key)) {
+					// Use arrow notation for multiple sources with aliases
+					const varName = (hasMultipleSources && alias) ? `${alias}->${key}` : key;
+					if (!variables.some(v => v.name === varName)) {
 						variables.push({
-							name: key,
+							name: varName,
 							source: 'data',
 							sourceNode: 'DATA',
-							description: `Column from data source${source.alias ? ` (${source.alias})` : ''}`
+							description: `Column from data source${alias ? ` (${alias})` : ''}`
 						});
 					}
+				}
+			}
+		}
+		
+		// Extract from ServiceNow or other sources with explicit fields
+		if (source.fields && Array.isArray(source.fields)) {
+			for (const field of source.fields) {
+				// Use arrow notation for multiple sources with aliases
+				const varName = (hasMultipleSources && alias) ? `${alias}->${field}` : field;
+				if (!variables.some(v => v.name === varName)) {
+					variables.push({
+						name: varName,
+						source: 'data',
+						sourceNode: 'DATA',
+						description: `Field from ${source.type || 'data source'}${alias ? ` (${alias})` : ''}`
+					});
 				}
 			}
 		}
@@ -476,9 +497,10 @@ export function validatePromptVariables(
 
 /**
  * Validate all prompts in a node
+ * Handles both simple string content and multi-modal content (array of parts)
  */
 export function validateNodePrompts(
-	prompts: Array<{ role: string; content: string }> | undefined,
+	prompts: Array<{ role: string; content: string | Array<{ type: string; text?: string; audio_url?: string; image_url?: string; video_url?: string }> }> | undefined,
 	availableVariables: StateVariable[]
 ): PromptValidationResult {
 	if (!prompts || prompts.length === 0) {
@@ -490,10 +512,30 @@ export function validateNodePrompts(
 	const allErrors: PromptValidationError[] = [];
 
 	for (const prompt of prompts) {
-		const result = validatePromptVariables(prompt.content, availableVariables);
-		allReferences.push(...result.references);
-		allInvalidReferences.push(...result.invalidReferences);
-		allErrors.push(...result.errors);
+		if (typeof prompt.content === 'string') {
+			// Simple string content
+			const result = validatePromptVariables(prompt.content, availableVariables);
+			allReferences.push(...result.references);
+			allInvalidReferences.push(...result.invalidReferences);
+			allErrors.push(...result.errors);
+		} else if (Array.isArray(prompt.content)) {
+			// Multi-modal content - validate each part
+			for (const part of prompt.content) {
+				// Extract the text value from the part based on type
+				let textValue: string | undefined;
+				if (part.type === 'text') textValue = part.text;
+				else if (part.type === 'audio_url') textValue = part.audio_url;
+				else if (part.type === 'image_url') textValue = part.image_url;
+				else if (part.type === 'video_url') textValue = part.video_url;
+				
+				if (textValue) {
+					const result = validatePromptVariables(textValue, availableVariables);
+					allReferences.push(...result.references);
+					allInvalidReferences.push(...result.invalidReferences);
+					allErrors.push(...result.errors);
+				}
+			}
+		}
 	}
 
 	return {

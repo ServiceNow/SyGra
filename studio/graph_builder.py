@@ -710,12 +710,21 @@ class SygraGraphBuilder:
         # Return content dimensions (padding applied by caller)
         return (max_x, max_y)
 
-    def _parse_prompts(self, prompt_config: List[Dict[str, str]]) -> List[PromptMessage]:
-        """Parse prompt configuration into PromptMessage objects."""
+    def _parse_prompts(self, prompt_config: List[Dict[str, Any]]) -> List[PromptMessage]:
+        """Parse prompt configuration into PromptMessage objects.
+        
+        Handles both simple text format and multi-modal format:
+        - Simple: [{user: "hello"}]
+        - Multi-modal: [{user: [{type: "text", text: "..."}, {type: "audio_url", audio_url: "..."}]}]
+        """
         messages = []
         for prompt in prompt_config:
             for role, content in prompt.items():
                 if isinstance(content, str):
+                    # Simple text format
+                    messages.append(PromptMessage(role=role, content=content))
+                elif isinstance(content, list):
+                    # Multi-modal format - content is a list of content parts
                     messages.append(PromptMessage(role=role, content=content))
         return messages
 
@@ -923,6 +932,14 @@ class SygraGraphBuilder:
                         if isinstance(content, str):
                             matches = re.findall(pattern, content)
                             variables.update(matches)
+                        elif isinstance(content, list):
+                            # Multi-modal content - extract variables from each part
+                            for part in content:
+                                if isinstance(part, dict):
+                                    for value in part.values():
+                                        if isinstance(value, str):
+                                            matches = re.findall(pattern, value)
+                                            variables.update(matches)
 
         return sorted(list(variables))
 

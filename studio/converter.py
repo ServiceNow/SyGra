@@ -292,7 +292,14 @@ def main(**kwargs) -> Dict[str, Any]:
         prompts = []
         if node.prompt:
             for msg in node.prompt:
-                prompts.append(f'{{"role": "{msg.role}", "content": """{msg.content}"""}}')
+                # Handle both simple string and multi-modal content
+                if isinstance(msg.content, str):
+                    prompts.append(f'{{"role": "{msg.role}", "content": """{msg.content}"""}}')
+                elif isinstance(msg.content, list):
+                    # Multi-modal content - serialize as JSON
+                    import json
+                    content_json = json.dumps(msg.content)
+                    prompts.append(f'{{"role": "{msg.role}", "content": {content_json}}}')
 
         prompt_list = ",\n        ".join(prompts)
 
@@ -342,12 +349,26 @@ def main(**state):
             pattern = r"(?<!\{)\{([^{}]+)\}(?!\})"
 
             for msg in node.prompt:
-                matches = re.findall(pattern, msg.content)
-                for var in matches:
-                    transforms[var] = {
-                        "type": "javascript",
-                        "expr": f"flow_input.{var}",
-                    }
+                # Handle both simple string and multi-modal content
+                if isinstance(msg.content, str):
+                    matches = re.findall(pattern, msg.content)
+                    for var in matches:
+                        transforms[var] = {
+                            "type": "javascript",
+                            "expr": f"flow_input.{var}",
+                        }
+                elif isinstance(msg.content, list):
+                    # Multi-modal content - extract variables from each part
+                    for part in msg.content:
+                        if isinstance(part, dict):
+                            for key, value in part.items():
+                                if isinstance(value, str):
+                                    matches = re.findall(pattern, value)
+                                    for var in matches:
+                                        transforms[var] = {
+                                            "type": "javascript",
+                                            "expr": f"flow_input.{var}",
+                                        }
 
         return transforms
 
