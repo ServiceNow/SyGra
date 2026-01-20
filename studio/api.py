@@ -2003,10 +2003,11 @@ def _register_routes(app: FastAPI) -> None:
     @app.get("/api/workflows/{workflow_id}/node/{node_id}/code/{code_type}")
     async def get_node_code(workflow_id: str, node_id: str, code_type: str):
         """
-        Get the code for a specific node from task_executor.py.
+        Get the code for a specific node from task_executor.py or from the class path specified in YAML.
 
         Uses AST-based detection to find code blocks by checking base class inheritance.
-        This is the single source of truth - no markers or metadata copies.
+        When a class path is specified in the node config (e.g., pre_process or post_process),
+        it extracts the class name and searches for that specific class.
 
         Args:
             workflow_id: The workflow ID
@@ -2014,7 +2015,7 @@ def _register_routes(app: FastAPI) -> None:
             code_type: Type of code ('pre_process', 'post_process', 'lambda', 'branch_condition', 'output_generator', 'data_transform')
 
         Returns:
-            { "code": "...", "found": true/false }
+            { "code": "...", "found": true/false, "class_path": "..." }
         """
         import ast
 
@@ -2026,28 +2027,82 @@ def _register_routes(app: FastAPI) -> None:
 
         workflow = _workflows[workflow_id]
         workflow_dir = Path(workflow.source_path).parent
-        task_executor_path = workflow_dir / "task_executor.py"
 
         valid_types = {'pre_process', 'post_process', 'lambda', 'branch_condition', 'output_generator', 'data_transform'}
         if code_type not in valid_types:
             raise HTTPException(status_code=400, detail=f"Invalid code_type: {code_type}")
 
-        if not task_executor_path.exists():
-            return {"code": "", "found": False, "path": None}
+        # Get the class path from node config if available
+        class_path = None
+        target_class_name = None
+        target_file_path = None
+
+        # Find the node in the workflow to get its config
+        node_config = None
+        for n in workflow.nodes:
+            if n.id == node_id:
+                node_config = n
+                break
+
+        if node_config:
+            # Check for class path in node metadata (original_config from YAML)
+            original_config = node_config.metadata.get("original_config", {}) if node_config.metadata else {}
+            
+            if code_type == 'pre_process':
+                class_path = original_config.get("pre_process") or getattr(node_config, "pre_process", None)
+            elif code_type == 'post_process':
+                class_path = original_config.get("post_process") or getattr(node_config, "post_process", None)
+            elif code_type == 'lambda':
+                class_path = original_config.get("lambda") or original_config.get("function") or getattr(node_config, "function_path", None)
+
+        # If we have a class path, extract the class name and determine the file
+        if class_path:
+            # Extract class name from path (e.g., "tasks.examples.foo.task_executor.MyClass" -> "MyClass")
+            parts = class_path.split(".")
+            target_class_name = parts[-1] if parts else None
+            
+            # Determine the file path from the module path
+            # e.g., "tasks.examples.foo.task_executor.MyClass" -> "tasks/examples/foo/task_executor.py"
+            if len(parts) > 1:
+                module_parts = parts[:-1]  # Everything except the class name
+                relative_path = "/".join(module_parts) + ".py"
+                
+                # Try to find the file relative to the project root
+                # First try: relative to workflow directory's parent (tasks folder level)
+                potential_paths = [
+                    workflow_dir / relative_path,
+                    workflow_dir.parent / relative_path,
+                    workflow_dir.parent.parent / relative_path,
+                    Path.cwd() / relative_path,
+                ]
+                
+                for potential_path in potential_paths:
+                    if potential_path.exists():
+                        target_file_path = potential_path
+                        break
+
+        # Default to task_executor.py in workflow directory
+        if not target_file_path:
+            target_file_path = workflow_dir / "task_executor.py"
+
+        if not target_file_path.exists():
+            return {"code": "", "found": False, "path": None, "class_path": class_path}
 
         try:
-            with open(task_executor_path, 'r') as f:
+            with open(target_file_path, 'r') as f:
                 content = f.read()
         except Exception as e:
-            return {"code": "", "found": False, "error": str(e)}
+            return {"code": "", "found": False, "error": str(e), "class_path": class_path}
 
         # Find the code block using AST
-        code = _get_node_code_from_file(content, node_id, code_type)
+        # If we have a specific class name from the config, search for it directly
+        code = _get_node_code_from_file(content, node_id, code_type, target_class_name)
 
         return {
             "code": code if code else "",
             "found": code is not None,
-            "path": str(task_executor_path.resolve())
+            "path": str(target_file_path.resolve()),
+            "class_path": class_path
         }
 
     @app.put("/api/workflows/{workflow_id}/yaml")
@@ -6196,9 +6251,15 @@ def _remove_code_block_from_file(content: str, node_id: str, code_type: str) -> 
     return result
 
 
-def _get_node_code_from_file(content: str, node_id: str, code_type: str) -> Optional[str]:
+def _get_node_code_from_file(content: str, node_id: str, code_type: str, target_class_name: Optional[str] = None) -> Optional[str]:
     """
     Extract the code for a specific node from file content using AST.
+
+    Args:
+        content: The file content to parse
+        node_id: The node ID (used for fallback matching)
+        code_type: Type of code ('pre_process', 'post_process', etc.)
+        target_class_name: Optional specific class name to search for (from YAML config)
 
     Returns the code string if found, None otherwise.
     """
@@ -6225,7 +6286,7 @@ def _get_node_code_from_file(content: str, node_id: str, code_type: str) -> Opti
         'branch_condition': 'Condition',
     }
 
-    # Normalize node_id for comparison
+    # Normalize node_id for comparison (fallback matching)
     safe_node_id = re.sub(r'[^a-zA-Z0-9_]', '', node_id.replace('-', '_').replace(' ', '_'))
     expected_suffix = SUFFIX_MAP.get(code_type, '')
     expected_name = f"{safe_node_id}{expected_suffix}"
@@ -6255,10 +6316,22 @@ def _get_node_code_from_file(content: str, node_id: str, code_type: str) -> Opti
                     detected_type = BASE_CLASS_TO_TYPE[base_name]
                     break
 
-            # Match if type and node_id match
+            # Match logic:
+            # 1. If target_class_name is provided, match exact class name with correct base class
+            # 2. Otherwise, fall back to node_id-based matching
             if detected_type == code_type:
-                normalized_class_id = re.sub(r'[^a-zA-Z0-9_]', '', class_safe_id.replace('-', '_'))
-                if normalized_class_id == safe_node_id or class_name == expected_name:
+                match_found = False
+                
+                # Priority 1: Match by specific class name from YAML config
+                if target_class_name and class_name == target_class_name:
+                    match_found = True
+                # Priority 2: Fall back to node_id-based matching
+                elif not target_class_name:
+                    normalized_class_id = re.sub(r'[^a-zA-Z0-9_]', '', class_safe_id.replace('-', '_'))
+                    if normalized_class_id == safe_node_id or class_name == expected_name:
+                        match_found = True
+                
+                if match_found:
                     start_line = node.lineno - 1  # 0-indexed
                     end_line = node.end_lineno if hasattr(node, 'end_lineno') else start_line + 1
 
