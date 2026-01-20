@@ -50,9 +50,18 @@ export interface MultiLLMModelConfig {
 	structured_output?: StructuredOutputConfig;
 }
 
+// Multi-modal content part (for audio, image, text, etc.)
+export interface MultiModalContentPart {
+	type: 'text' | 'audio_url' | 'image_url' | 'video_url';
+	text?: string;
+	audio_url?: string;
+	image_url?: string;
+	video_url?: string;
+}
+
 export interface PromptMessage {
 	role: string;
-	content: string;
+	content: string | MultiModalContentPart[];
 }
 
 // Weighted sampler attribute configuration
