@@ -2514,9 +2514,10 @@ def _register_routes(app: FastAPI) -> None:
                         elif 'post_process' in yaml_node:
                             del yaml_node['post_process']
                         if node.function_path:
-                            yaml_node['function_path'] = node.function_path
-                        elif 'function_path' in yaml_node:
-                            del yaml_node['function_path']
+                            # Use 'lambda' key for lambda nodes, not 'function_path'
+                            yaml_node['lambda'] = node.function_path
+                        elif 'lambda' in yaml_node:
+                            del yaml_node['lambda']
                         if "output_keys" in node_data:
                             if node_data["output_keys"]:
                                 yaml_node['output_keys'] = node_data["output_keys"]
@@ -2790,7 +2791,8 @@ def _register_routes(app: FastAPI) -> None:
                         if 'post_process' in node_data:
                             yaml_node['post_process'] = node_data['post_process']
                         if 'function_path' in node_data:
-                            yaml_node['function_path'] = node_data['function_path']
+                            # Use 'lambda' key for lambda nodes, not 'function_path'
+                            yaml_node['lambda'] = node_data['function_path']
                         if 'output_keys' in node_data:
                             yaml_node['output_keys'] = node_data['output_keys']
                         if 'tools' in node_data:
@@ -4192,7 +4194,9 @@ async def _save_workflow_to_disk(app: FastAPI, request: WorkflowCreateRequest, i
     files_created = []
 
     # Generate graph_config.yaml
-    graph_config = _generate_graph_config(request, sanitized_name)
+    # Use full task path (e.g., examples.lambda_test) not just sanitized_name
+    task_name = _get_task_name_from_path(workflow_dir)
+    graph_config = _generate_graph_config(request, task_name)
     config_path = workflow_dir / "graph_config.yaml"
 
     with open(config_path, 'w') as f:
@@ -4202,7 +4206,7 @@ async def _save_workflow_to_disk(app: FastAPI, request: WorkflowCreateRequest, i
     # Generate task_executor.py with code preservation
     # Use the merge function to preserve existing non-stub code while removing
     # code for deleted nodes and adding stubs for new nodes
-    executor_code = _generate_task_executor_with_merge(request, sanitized_name, workflow_dir)
+    executor_code = _generate_task_executor_with_merge(request, task_name, workflow_dir)
     executor_path = workflow_dir / "task_executor.py"
     if executor_code:
         with open(executor_path, 'w') as f:
@@ -4433,12 +4437,12 @@ def _generate_graph_config(request: WorkflowCreateRequest, task_name: str) -> di
 
         elif node.node_type == 'lambda':
             if node.function_path:
-                node_config['function_path'] = node.function_path
+                node_config['lambda'] = node.function_path
             else:
                 # Generate a readable function name from node summary or a simple counter
                 func_name = _generate_readable_name(node, 'lambda', request.nodes, 'function')
                 generated_path = f"tasks.{task_name}.task_executor.{func_name}"
-                node_config['function_path'] = generated_path
+                node_config['lambda'] = generated_path
                 # Store back on node for task_executor generation
                 node.function_path = generated_path
 
@@ -4928,6 +4932,7 @@ class {class_name}(NodePostProcessorWithState):
         if node.node_type == 'lambda' and node.function_path:
             if task_name in node.function_path or 'task_executor' in node.function_path:
                 needs_executor = True
+                imports.add("from sygra.core.graph.functions.lambda_function import LambdaFunction")
                 imports.add("from sygra.core.graph.sygra_state import SygraState")
                 imports.add("from typing import Any")
 
@@ -4945,27 +4950,6 @@ class {class_name}(NodePostProcessorWithState):
                     functions.append(f'''
 # === Lambda Function for {node.id} ===
 {existing_blocks[(node.id, 'lambda')]}
-''')
-                else:
-                    # Generate new stub
-                    node_desc = node.summary if node.summary else f"Lambda node {node.id}"
-                    functions.append(f'''
-# === Lambda Function for {node.id} ===
-def {func_name}(state: SygraState) -> Any:
-    """
-    Lambda function: {node_desc}
-
-    This function is executed as part of the workflow pipeline.
-    Modify the state and return it, or return a value to be stored.
-
-    Args:
-        state: Current workflow state containing all variables
-
-    Returns:
-        Modified state or a value to store in state["{node.id}"]
-    """
-    # TODO: Implement your processing logic here
-    return state
 ''')
 
         # Check for data node transformations
