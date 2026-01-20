@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import importlib
 import json
 import os
@@ -24,14 +26,15 @@ from sygra.logger.logger_config import logger
 from sygra.utils import constants
 
 
-def load_model_config(config_path: Optional[str] = None) -> Any:
+def load_model_config(config_path: Optional[str] = None, include_custom: bool = True) -> Any:
     """
     Load model configurations from both models.yaml and environment variables.
 
     The function:
-    1. Loads base model configurations from models.yaml
-    2. Loads sensitive data (URL and auth token/API key) from environment variables
-    3. Combines them, with environment variables taking precedence for sensitive fields
+    1. Loads base model configurations from models.yaml (builtin SyGra models)
+    2. Loads custom models from studio/config/custom_models.yaml (if exists)
+    3. Loads sensitive data (URL and auth token/API key) from environment variables
+    4. Combines them, with environment variables taking precedence for sensitive fields
 
     Environment variable naming convention:
     - SYGRA_{MODEL_NAME}_URL: URL for the model (can be a single URL or a pipe-separated list of URLs)
@@ -40,8 +43,10 @@ def load_model_config(config_path: Optional[str] = None) -> Any:
     - SYGRA_{MODEL_NAME}_TOKEN: Authentication token or API key for the model
 
     Args:
-        config_path: Optional path to custom config file.
+        config_path: Optional path to additional custom config file.
                      Custom configs override default models.yaml values.
+        include_custom: If True, automatically load custom models from CUSTOM_MODELS_CONFIG_YAML.
+                       Set to False to only load builtin models.
 
     Returns:
         Dict containing combined model configurations
@@ -51,10 +56,19 @@ def load_model_config(config_path: Optional[str] = None) -> Any:
     # Load environment variables from .env file
     load_dotenv(dotenv_path=".env", override=True)
 
-    # Load base configurations from models.yaml
+    # Load base configurations from models.yaml (builtin SyGra models)
     base_configs = load_yaml_file(constants.MODEL_CONFIG_YAML)
 
-    # Load and merge custom config if provided
+    # Automatically load custom models from studio config (if exists)
+    if include_custom and os.path.exists(constants.CUSTOM_MODELS_CONFIG_YAML):
+        try:
+            custom_studio_configs = load_yaml_file(constants.CUSTOM_MODELS_CONFIG_YAML)
+            if custom_studio_configs:
+                base_configs = {**base_configs, **custom_studio_configs}
+        except Exception:
+            pass  # Silently ignore errors loading custom models
+
+    # Load and merge additional custom config if explicitly provided
     if config_path and os.path.exists(config_path):
         custom_configs = load_yaml_file(config_path)
         base_configs = {**base_configs, **custom_configs}
@@ -86,6 +100,112 @@ def load_model_config(config_path: Optional[str] = None) -> Any:
                 config[dest_key] = env_val
 
     return base_configs
+
+
+def load_builtin_models() -> dict[str, Any]:
+    """
+    Load only builtin/core models from SyGra's models.yaml (read-only).
+
+    Returns:
+        Dict containing builtin model configurations.
+    """
+    if not os.path.exists(constants.MODEL_CONFIG_YAML):
+        return {}
+    result = load_yaml_file(constants.MODEL_CONFIG_YAML)
+    return result if isinstance(result, dict) else {}
+
+
+def load_custom_models() -> dict[str, Any]:
+    """
+    Load only custom user-defined models from studio config.
+
+    Returns:
+        Dict containing custom model configurations.
+    """
+    if not os.path.exists(constants.CUSTOM_MODELS_CONFIG_YAML):
+        return {}
+    try:
+        return load_yaml_file(constants.CUSTOM_MODELS_CONFIG_YAML) or {}
+    except Exception:
+        return {}
+
+
+def save_custom_models(config: dict[str, Any]) -> None:
+    """
+    Save custom models configuration to studio config file.
+
+    Args:
+        config: Dictionary of custom model configurations.
+    """
+    config_path = Path(constants.CUSTOM_MODELS_CONFIG_YAML)
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(config_path, "w") as f:
+        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+
+
+def get_builtin_model_names() -> set[str]:
+    """
+    Get the set of builtin model names.
+
+    Returns:
+        Set of model names that are builtin to SyGra.
+    """
+    return set(load_builtin_models().keys())
+
+
+def get_model_env_value(model_name: str, env_suffix: str) -> tuple[str, str]:
+    """
+    Get environment variable value for a model, trying multiple prefix formats.
+
+    Args:
+        model_name: Name of the model.
+        env_suffix: Environment variable suffix (e.g., 'URL', 'TOKEN').
+
+    Returns:
+        Tuple of (value, env_key_used). Value is empty string if not found.
+    """
+    prefixes = [
+        f"SYGRA_{model_name.upper()}",  # SYGRA_GPT-4O (keep hyphens)
+        f"SYGRA_{get_env_name(model_name)}",  # SYGRA_GPT_4O (normalized)
+    ]
+    for prefix in prefixes:
+        env_key = f"{prefix}_{env_suffix}"
+        value = os.environ.get(env_key, "")
+        if value:
+            return value, env_key
+    return "", f"{prefixes[0]}_{env_suffix}"
+
+
+def get_model_credentials(
+    model_name: str,
+    model_config: dict[str, Any],
+    env_vars: list[str] | None = None,
+) -> dict[str, Any]:
+    """
+    Get credentials for a model with metadata about env var configuration.
+
+    Args:
+        model_name: Name of the model.
+        model_config: Model configuration dictionary.
+        env_vars: List of environment variable suffixes to check (default: ['URL', 'TOKEN']).
+
+    Returns:
+        Dict containing credential values and metadata:
+        - {suffix.lower()}: The actual value
+        - {suffix.lower()}_env_key: The environment variable key name
+        - {suffix.lower()}_configured: Boolean indicating if value is set
+    """
+    if env_vars is None:
+        env_vars = ["URL", "TOKEN"]
+
+    creds: dict[str, Any] = {}
+    for env_var in env_vars:
+        value, key = get_model_env_value(model_name, env_var)
+        creds[env_var.lower()] = value
+        creds[f"{env_var.lower()}_env_key"] = key
+        creds[f"{env_var.lower()}_configured"] = bool(value)
+
+    return creds
 
 
 def get_updated_model_config(model_config: dict) -> dict:
