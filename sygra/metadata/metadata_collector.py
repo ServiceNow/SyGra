@@ -389,6 +389,7 @@ class ExecutionContext:
     git_commit_hash: Optional[str] = None
     git_branch: Optional[str] = None
     git_is_dirty: bool = False
+    git_remote_url: Optional[str] = None
 
     # Timing
     start_time: Optional[datetime] = None
@@ -416,6 +417,7 @@ class ExecutionContext:
                 "commit_hash": self.git_commit_hash,
                 "branch": self.git_branch,
                 "is_dirty": self.git_is_dirty,
+                "remote_url": self.git_remote_url,
             },
             "timing": {
                 "start_time": self.start_time.isoformat() if self.start_time else None,
@@ -595,6 +597,17 @@ class MetadataCollector:
                 check=False,
             )
             self.execution_context.git_is_dirty = result_dirty.returncode != 0
+
+            # Get git remote URL (origin)
+            result = subprocess.run(
+                ["git", "config", "--get", "remote.origin.url"],
+                capture_output=True,
+                text=True,
+                timeout=2,
+                check=False,
+            )
+            if result.returncode == 0:
+                self.execution_context.git_remote_url = result.stdout.strip()
 
         except Exception as e:
             logger.debug(f"Could not capture git info: {e}")
