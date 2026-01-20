@@ -54,7 +54,6 @@ function extractDataColumns(dataConfig?: DataSourceConfig, fetchedColumns?: stri
 		? (Array.isArray(dataConfig.source) ? dataConfig.source : [dataConfig.source])
 		: [];
 	const hasMultipleSources = sources.length > 1;
-	const hasAliases = sources.some(s => s.alias);
 
 	// If we have fetched columns (from API) and it's a simple single source scenario, use them directly
 	if (fetchedColumns && fetchedColumns.length > 0 && !hasMultipleSources) {
