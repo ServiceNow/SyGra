@@ -6,7 +6,7 @@
     "d3-dag": "^1.1.0",
     "fast-equals": "^5.2.2",
     "html2canvas": "^1.4.1",
-    "jspdf": "^3.0.4",
+    "jspdf": "^4.0.0",
     "lucide-svelte": "^0.468.0",
     "monaco-editor": "^0.52.2"
   },
