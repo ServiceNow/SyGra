@@ -1,0 +1,55 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: "tasks/examples/self_refinement/input.json"
+    file_format: "json"
+
+graph_config:
+  nodes:
+    self_refine:
+      node_type: subgraph
+      subgraph: sygra.recipes.self_refinement
+      node_config_map:
+        init_self_refine:
+          params:
+            max_iterations: 2
+            score_threshold: 4
+        generate_candidate:
+          prompt:
+            - system: |
+                You are a helpful assistant.
+            - user: |
+                {prompt}
+          model:
+            name: gpt-4o-mini
+            parameters:
+              temperature: 0.7
+        judge_candidate:
+          model:
+            name: gpt-4o-mini
+            parameters:
+              temperature: 0
+        refine_candidate:
+          model:
+            name: gpt-4o-mini
+            parameters:
+              temperature: 0.7
+
+  edges:
+    - from: START
+      to: self_refine
+    - from: self_refine
+      to: END
+
+output_config:
+  output_map:
+    id:
+      from: id
+    prompt:
+      from: prompt
+    candidate:
+      from: candidate
+    self_refine_judge:
+      from: self_refine_judge
+    reflection_trajectory:
+      from: reflection_trajectory
