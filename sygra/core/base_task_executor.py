@@ -414,9 +414,12 @@ class BaseTaskExecutor(ABC):
     def _configure_sink(self, data_config: dict) -> None:
         """Configure the sink settings from data config"""
         sink_config = data_config.get("sink")
-        if sink_config and isinstance(sink_config, dict):
+        if not sink_config:
+            # No sink configured - this is valid (sink is optional)
+            return
+        if isinstance(sink_config, dict):
             self.output_config = OutputConfig.from_dict(sink_config)
-        elif sink_config and isinstance(sink_config, list):
+        elif isinstance(sink_config, list):
             self.output_config = []
             for cfg in sink_config:
                 self.output_config.append(OutputConfig.from_dict(cfg))
@@ -936,7 +939,13 @@ class BaseTaskExecutor(ABC):
         else:
             return state
 
-    def execute(self):
+    def execute(self, execution_callbacks=None):
+        """
+        Execute the task workflow.
+
+        Args:
+            execution_callbacks: Optional ExecutionCallbacks for real-time node tracking.
+        """
         graph = self.init_graph()
         compiled_graph = graph.compile()
         logger.info("Graph compiled successfully")
@@ -1026,6 +1035,7 @@ class BaseTaskExecutor(ABC):
             output_record_generator=self.output_record_generator,
             resumable=self.resumable,
             task_name=self.task_name,
+            execution_callbacks=execution_callbacks,
         )
         dataset_processor.process_and_store_results()
 
