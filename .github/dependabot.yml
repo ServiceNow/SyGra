@@ -35,6 +35,7 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - dependencies
+      - javascript
     commit-message:
       prefix: "deps"
       include: scope
