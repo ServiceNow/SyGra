@@ -440,10 +440,27 @@ class DatasetProcessor:
                 with open(output_file, "r") as f:
                     output_data = json.load(f)
                 for post_processor in post_processors:
-                    metadata = {"output_file": output_file}
-                    processor = utils.get_func_from_str(post_processor)
-                    processor_name = post_processor.split(".")[-1]
-                    processed_output_data = processor().process(output_data, metadata)
+                    processor_path = None
+                    processor_params: dict[str, Any] = {}
+                    if isinstance(post_processor, str):
+                        processor_path = post_processor
+                    elif isinstance(post_processor, dict):
+                        processor_path = post_processor.get("processor")
+                        processor_params = post_processor.get("params", {}) or {}
+                    else:
+                        raise ValueError(
+                            "Invalid graph_post_process entry. Must be a string or dict with 'processor'."
+                        )
+
+                    if not processor_path:
+                        raise ValueError("graph_post_process processor path is missing")
+
+                    metadata = {"output_file": output_file, "params": processor_params}
+                    processor_cls = utils.get_func_from_str(processor_path)
+                    processor_name = processor_path.split(".")[-1]
+                    processed_output_data = processor_cls(**processor_params).process(
+                        output_data, metadata
+                    )
                     new_output_file = output_file[: output_file.rfind("/") + 1] + output_file[
                         output_file.rfind("/") + 1 :
                     ].replace("output", processor_name, 1)

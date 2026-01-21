@@ -1,0 +1,18 @@
+[
+  {
+    "id": "1",
+    "prompt": "Write a 2-sentence summary of why unit tests are useful."
+  },
+  {
+    "id": "2",
+    "prompt": "In two sentences, explain the benefits of unit testing."
+  },
+  {
+    "id": "3",
+    "prompt": "Give a brief description of what unit tests are and why they matter."
+  },
+  {
+    "id": "4",
+    "prompt": "Explain what a database index is."
+  }
+]
