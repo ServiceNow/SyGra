@@ -295,6 +295,11 @@ class SygraGraphBuilder:
         # Extract output_keys for LLM/multi_llm nodes
         output_keys = node_config.get("output_keys")
 
+        # Extract sampler_config for weighted_sampler nodes
+        sampler_config = None
+        if node_type == NodeType.WEIGHTED_SAMPLER and "attributes" in node_config:
+            sampler_config = {"attributes": node_config["attributes"]}
+
         return WorkflowNode(
             id=node_name,
             node_type=node_type,
@@ -311,6 +316,7 @@ class SygraGraphBuilder:
             inner_graph=inner_graph,
             node_config_map=node_config_map,
             function_path=node_config.get("lambda") or node_config.get("function"),
+            sampler_config=sampler_config,
             metadata={
                 "original_config": node_config,
             },

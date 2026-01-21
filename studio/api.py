@@ -41,6 +41,7 @@ from studio.models import (
     ExecutionRequest,
     ExecutionResponse,
     ExecutionStatus,
+    MultiModalContentPart,
     NodeExecutionState,
     WorkflowCreateRequest,
     WorkflowExecution,
@@ -4270,11 +4271,28 @@ def _represent_multiline_str(dumper, data):
     return dumper.represent_scalar('tag:yaml.org,2002:str', data)
 
 
+def _represent_multimodal_content_part(dumper, data):
+    """Represent MultiModalContentPart as a dict, excluding None values."""
+    d = {}
+    if data.type:
+        d['type'] = data.type
+    if data.text is not None:
+        d['text'] = data.text
+    if data.audio_url is not None:
+        d['audio_url'] = data.audio_url
+    if data.image_url is not None:
+        d['image_url'] = data.image_url
+    if data.video_url is not None:
+        d['video_url'] = data.video_url
+    return dumper.represent_dict(d)
+
+
 def _get_yaml_dumper():
     """Get a custom YAML dumper that properly formats multiline strings."""
     class CustomDumper(yaml.SafeDumper):
         pass
     CustomDumper.add_representer(str, _represent_multiline_str)
+    CustomDumper.add_representer(MultiModalContentPart, _represent_multimodal_content_part)
     return CustomDumper
 
 
