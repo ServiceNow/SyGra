@@ -83,6 +83,7 @@ nav:
       - Structured Output: concepts/structured_output/README.md
   - Features:
       - Metadata Tracking: features/metadata_tracking.md
+      - Semantic Deduplication: features/semantic_deduplication.md
       - Self Refinement: features/self_refinement.md
   - Tutorials:
       - Agent Simulation: tutorials/agent_simulation_tutorial.md
