@@ -6,7 +6,7 @@ Measures: Of all predicted positives, how many were actually positive?
 """
 
 from collections import defaultdict
-from typing import Any, Dict, List
+from typing import Any, DefaultDict, Dict, List
 
 from pydantic import BaseModel, Field
 
@@ -82,17 +82,24 @@ class PrecisionMetric(BaseAggregatorMetric):
             logger.warning(f"{self.__class__.__name__}: No results provided")
             return {"average_precision": 0.0, "precision_per_class": {}}
 
-        predicted_count = defaultdict(int)
-        true_positive = defaultdict(int)
+        predicted_count: DefaultDict[str, int] = defaultdict(int)
+        true_positive: DefaultDict[str, int] = defaultdict(int)
 
         for r in results:
             try:
-                label = r.predicted[self.predicted_key]
+                predicted_key = self.predicted_key
+                if predicted_key is None:
+                    logger.warning(f"{self.__class__.__name__}: predicted_key is not configured")
+                    continue
+                label = r.predicted[predicted_key]
             except KeyError:
                 logger.warning(
                     f"{self.__class__.__name__}: Missing predicted_key '{self.predicted_key}' in result"
                 )
                 continue
+
+            if not isinstance(label, str):
+                label = str(label)
 
             predicted_count[label] += 1
             if r.correct:

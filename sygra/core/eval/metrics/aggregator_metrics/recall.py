@@ -6,7 +6,7 @@ Measures: Of all actual positives, how many were predicted correctly?
 """
 
 from collections import defaultdict
-from typing import Any, Dict, List
+from typing import Any, DefaultDict, Dict, List
 
 from pydantic import BaseModel, Field
 
@@ -73,8 +73,8 @@ class RecallMetric(BaseAggregatorMetric):
             logger.warning(f"{self.__class__.__name__}: No results provided")
             return {"recall": 0.0}
 
-        golden_count = defaultdict(int)
-        true_positive = defaultdict(int)
+        golden_count: DefaultDict[str, int] = defaultdict(int)
+        true_positive: DefaultDict[str, int] = defaultdict(int)
 
         for r in results:
             try:
@@ -84,6 +84,9 @@ class RecallMetric(BaseAggregatorMetric):
                     f"{self.__class__.__name__}: Missing golden_key '{self.golden_key}' in result"
                 )
                 continue
+
+            if not isinstance(label, str):
+                label = str(label)
 
             golden_count[label] += 1
             if r.correct:
