@@ -79,7 +79,7 @@ class F1ScoreMetric(BaseAggregatorMetric):
         """
         if not results:
             logger.warning(f"{self.__class__.__name__}: No results provided")
-            return {"f1_score": 0.0}
+            return {"average_f1_score": 0.0, "f1_score_per_class": {}}
 
         f1_score = dict()
         # Reuse existing metric implementations

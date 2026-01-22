@@ -71,7 +71,7 @@ class RecallMetric(BaseAggregatorMetric):
         """
         if not results:
             logger.warning(f"{self.__class__.__name__}: No results provided")
-            return {"recall": 0.0}
+            return {"average_recall": 0.0, "recall_per_class": {}}
 
         golden_count: DefaultDict[str, int] = defaultdict(int)
         true_positive: DefaultDict[str, int] = defaultdict(int)

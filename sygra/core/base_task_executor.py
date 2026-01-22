@@ -508,7 +508,9 @@ class BaseTaskExecutor(ABC):
 
     # merge the primary and secondary dataframe horizontally by randomlly picking one and adding into primary
     # primary : M rows(a columns), secondary: N rows(b columns), merged: M rows(a+b columns)
-    def _shuffle_and_extend(self, primary_df: pd.DataFrame, secondary_df: pd.DataFrame) -> pd.DataFrame:
+    def _shuffle_and_extend(
+        self, primary_df: pd.DataFrame, secondary_df: pd.DataFrame
+    ) -> pd.DataFrame:
         max_len = len(primary_df)
         # Shuffle the secondary dataframe
         shuffled_secondary = secondary_df.sample(frac=1).reset_index(drop=True)
@@ -644,7 +646,9 @@ class BaseTaskExecutor(ABC):
                     elif join_type == constants.JOIN_TYPE_CROSS:
                         primary_df = primary_df.merge(cast(pd.DataFrame, current_df), how="cross")
                     elif join_type == constants.JOIN_TYPE_RANDOM:
-                        primary_df = self._shuffle_and_extend(primary_df, cast(pd.DataFrame, current_df))
+                        primary_df = self._shuffle_and_extend(
+                            primary_df, cast(pd.DataFrame, current_df)
+                        )
                     else:
                         logger.error("Not implemented join_type")
 
