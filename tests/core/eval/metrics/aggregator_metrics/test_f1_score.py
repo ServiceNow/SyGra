@@ -52,7 +52,7 @@ class TestF1ScoreMetric:
         metric = F1ScoreMetric(predicted_key="class", golden_key="class")
         output = metric.calculate([])
 
-        assert output == {"f1_score": 0.0}
+        assert output == {"average_f1_score": 0.0, "f1_score_per_class": {}}
 
     def test_calculate_f1_per_class_and_average(self):
         """Test per-class F1 and macro-average F1"""
