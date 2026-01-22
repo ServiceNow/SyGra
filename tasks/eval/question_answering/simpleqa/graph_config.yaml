@@ -1,0 +1,79 @@
+data_config:
+  source:
+    type: "hf"
+    repo_id: "google/simpleqa-verified"
+    config_name: "simpleqa_verified"
+    split: "eval"
+
+    transformations:
+      - transform: sygra.processors.data_transform.RenameFieldsTransform
+        params:
+          mapping:
+            task_id: original_index
+          overwrite: false
+
+graph_config:
+  nodes:
+    predict_answer:
+      node_type: llm
+      prompt:
+        - system: |
+            You are an assistant tasked with identifying the answer of a problem.
+            You should respond only with the answer of the problem without any extra text.
+        - user: |
+            {problem}
+      output_keys:
+        - predicted_answer
+      post_process: tasks.eval.question_answering.simpleqa.task_executor.GenerateAnswerPostProcessor
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.1
+        structured_output:
+          schema:
+            fields:
+              predicted_answer:
+                type: str
+                description: "Predicted answer of the problem"
+    unit_metrics:
+      node_type: lambda
+      lambda: tasks.eval.utils.UnitMetrics
+      golden_key: "answer"
+      predicted_key: "predicted_answer"
+      unit_metrics_map:
+        - name: "exact_match"
+          params:
+            key: "text"
+      output_keys:
+        - exact_match_result
+  edges:
+    - from: START
+      to: predict_answer
+    - from: predict_answer
+      to: unit_metrics
+    - from: unit_metrics
+      to: END
+
+output_config:
+  output_map:
+    original_index:
+      from: "original_index"
+    problem:
+      from: "problem"
+    answer:
+      from: "answer"
+    predicted_answer:
+      from: "predicted_answer"
+    exact_match_result:
+      from: "exact_match_result"
+
+
+graph_post_process:
+  - processor: tasks.eval.utils.MetricCollatorPostProcessor
+    params:
+      aggregator_metrics_map:
+        - name: "accuracy"
+          params:
+            key: "text"
+          unit_metrics_results:
+            - "exact_match_result"

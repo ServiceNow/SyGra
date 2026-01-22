@@ -4,10 +4,10 @@ Recall Metric
 Recall = TP / (TP + FN)
 Measures: Of all actual positives, how many were predicted correctly?
 """
-
+from collections import defaultdict
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import aggregator_metric
 from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import BaseAggregatorMetric
@@ -20,14 +20,6 @@ class RecallMetricConfig(BaseModel):
     """Configuration for Recall Metric"""
 
     golden_key: str = Field(..., min_length=1, description="Key in golden dict to check")
-    positive_class: Any = Field(..., description="Value representing positive class")
-
-    @field_validator("positive_class")
-    @classmethod
-    def validate_positive_class(cls, v):
-        if v is None:
-            raise ValueError("positive_class is required (cannot be None)")
-        return v
 
 
 @aggregator_metric("recall")
@@ -39,7 +31,6 @@ class RecallMetric(BaseAggregatorMetric):
 
     Required configuration:
         golden_key: Key in golden dict to check (e.g., "event")
-        positive_class: Value representing the positive class (e.g., "click")
     """
 
     def __init__(self, **config):
@@ -55,7 +46,6 @@ class RecallMetric(BaseAggregatorMetric):
 
         # Store validated fields as instance attributes
         self.golden_key = config_obj.golden_key
-        self.positive_class = config_obj.positive_class
 
     def get_metadata(self) -> BaseMetricMetadata:
         """Return metadata for recall metric"""
@@ -82,15 +72,33 @@ class RecallMetric(BaseAggregatorMetric):
             logger.warning(f"{self.__class__.__name__}: No results provided")
             return {"recall": 0.0}
 
-        # Calculate TP and FN
-        tp = sum(
-            1 for r in results if r.golden.get(self.golden_key) == self.positive_class and r.correct
-        )
-        fn = sum(
-            1
-            for r in results
-            if r.golden.get(self.golden_key) == self.positive_class and not r.correct
+        golden_count = defaultdict(int)
+        true_positive = defaultdict(int)
+
+        for r in results:
+            try:
+                label = r.golden[self.golden_key]
+            except KeyError:
+                logger.warning(
+                    f"{self.__class__.__name__}: Missing golden_key '{self.golden_key}' in result"
+                )
+                continue
+
+            golden_count[label] += 1
+            if r.correct:
+                true_positive[label] += 1
+
+        recall_per_class = {
+            label: self._safe_divide(true_positive[label], count)
+            for label, count in golden_count.items()
+        }
+
+        average_recall = self._safe_divide(
+            sum(recall_per_class.values()),
+            len(recall_per_class),
         )
 
-        recall = self._safe_divide(tp, tp + fn)
-        return {"recall": recall}
+        return {
+            "average_recall": average_recall,
+            "recall_per_class": recall_per_class,
+        }

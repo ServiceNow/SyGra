@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 from sygra.core.eval.metrics.unit_metrics.base_unit_metric import BaseUnitMetric
+from sygra.core.eval.metrics.unit_metrics.unit_metric_registry import unit_metric
 from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 from sygra.logger.logger_config import logger
 
@@ -32,6 +33,7 @@ class TypedValueMatchMetricConfig(BaseModel):
     )
 
 
+@unit_metric("typed_value_match")
 class TypedValueMatchMetric(BaseUnitMetric):
     """Validate typed value correctness using exact and fuzzy matching."""
 
@@ -110,7 +112,7 @@ class TypedValueMatchMetric(BaseUnitMetric):
         return re.sub(r"\s+", " ", text.strip().lower())
 
     def _is_typed_value_correct(
-        self, golden: str, predicted: str, threshold: float
+            self, golden: str, predicted: str, threshold: float
     ) -> Dict[str, Any]:
         golden_norm = self._normalize_text(golden)
         predicted_norm = self._normalize_text(predicted)
@@ -123,7 +125,7 @@ class TypedValueMatchMetric(BaseUnitMetric):
         differences: List[Dict[str, Any]] = []
         if not exact:
             for opcode, i1, i2, j1, j2 in SequenceMatcher(
-                None, golden_norm, predicted_norm
+                    None, golden_norm, predicted_norm
             ).get_opcodes():
                 if opcode != "equal":
                     differences.append(
