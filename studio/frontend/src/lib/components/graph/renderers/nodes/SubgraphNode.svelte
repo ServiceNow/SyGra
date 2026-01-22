@@ -161,36 +161,34 @@
 {#if hasInnerGraph}
 	<!-- Expanded subgraph with inner visualization -->
 	<div
-		class="relative rounded-xl shadow-lg border-2 bg-white dark:bg-gray-800 transition-all"
-		class:border-blue-500={data.executionState?.status === 'running'}
-		class:border-green-500={data.executionState?.status === 'completed'}
-		class:border-red-500={data.executionState?.status === 'failed'}
-		class:border-blue-300={!data.executionState}
-		class:dark:border-blue-600={!data.executionState}
+		class="relative rounded-xl shadow-lg border-2 bg-surface transition-all {!data.executionState ? 'border-brand-primary/30' : ''}"
+		class:border-info={data.executionState?.status === 'running'}
+		class:border-status-completed={data.executionState?.status === 'completed'}
+		class:border-error={data.executionState?.status === 'failed'}
 		style="width: {innerBounds().width}px"
 	>
 		<!-- Target handle (left) - positioned outside container -->
 		<Handle
 			type="target"
 			position={Position.Left}
-			class="!w-3 !h-3 !bg-blue-400 !border-2 !border-white dark:!border-gray-800 !-left-1.5"
+			class="!w-3 !h-3 !bg-node-subgraph !border-2 !border-surface !-left-1.5"
 		/>
 
 		<!-- Inner content wrapper to clip backgrounds to rounded corners -->
 		<div class="overflow-hidden rounded-[10px]">
 			<!-- Subgraph header - compact -->
-			<div class="flex items-center gap-2 px-2 py-1.5 bg-blue-500/10 border-b border-blue-200 dark:border-blue-800">
-			<div class="w-6 h-6 rounded flex items-center justify-center text-white bg-blue-500 flex-shrink-0">
+			<div class="flex items-center gap-2 px-2 py-1.5 bg-node-subgraph-bg border-b border-surface-border">
+			<div class="w-6 h-6 rounded flex items-center justify-center text-white bg-node-subgraph flex-shrink-0">
 				<Boxes size={14} />
 			</div>
 			<div class="flex-1 min-w-0">
-				<div class="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate">
+				<div class="text-xs font-semibold text-text-primary truncate">
 					{data.summary || data.id}
 				</div>
-				<div class="text-[10px] text-blue-600 dark:text-blue-400 truncate flex items-center gap-1">
+				<div class="text-[10px] text-node-subgraph truncate flex items-center gap-1">
 					<span>{data.inner_graph?.nodes.length || 0} nodes</span>
 					{#if hasOverrides}
-						<span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300" title="Node configuration overrides">
+						<span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-warning-light text-warning" title="Node configuration overrides">
 							<Wrench size={8} />
 							<span>{overrideCount}</span>
 						</span>
@@ -201,7 +199,7 @@
 			<!-- Expand/Detach button -->
 			<button
 				onclick={handleExpand}
-				class="p-1 rounded bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/50 dark:hover:bg-blue-800/50 text-blue-600 dark:text-blue-400 transition-colors flex-shrink-0"
+				class="p-1 rounded bg-node-subgraph-bg hover:bg-node-subgraph/20 text-node-subgraph transition-colors flex-shrink-0"
 				title="Detach nodes from subgraph"
 			>
 				<Ungroup size={12} />
@@ -209,17 +207,17 @@
 
 			<!-- Status indicator -->
 			{#if data.executionState?.status === 'running'}
-				<Loader2 size={14} class="text-blue-500 animate-spin flex-shrink-0" />
+				<Loader2 size={14} class="text-info animate-spin flex-shrink-0" />
 			{:else if data.executionState?.status === 'completed'}
-				<CheckCircle2 size={14} class="text-green-500 flex-shrink-0" />
+				<CheckCircle2 size={14} class="text-status-completed flex-shrink-0" />
 			{:else if data.executionState?.status === 'failed'}
-				<XCircle size={14} class="text-red-500 flex-shrink-0" />
+				<XCircle size={14} class="text-error flex-shrink-0" />
 			{/if}
 		</div>
 
 		<!-- Inner graph visualization -->
 		<div
-			class="relative bg-gray-50 dark:bg-gray-900/50"
+			class="relative bg-surface-secondary"
 			style="height: {innerBounds().height}px"
 		>
 			<!-- SVG for edges -->
@@ -261,7 +259,7 @@
 				{@const y = (innerNode.position?.y || 0) - bounds.minY + INNER_PADDING}
 
 				<div
-					class="absolute rounded-md shadow-sm border bg-white dark:bg-gray-800 overflow-hidden"
+					class="absolute rounded-md shadow-sm border bg-surface overflow-hidden"
 					style="left: {x}px; top: {y}px; width: {w}px; height: {h}px; border-color: {color}40"
 				>
 					<!-- Inner node header - compact -->
@@ -275,11 +273,11 @@
 						>
 							<Icon size={10} />
 						</div>
-						<span class="font-medium text-gray-700 dark:text-gray-300 truncate text-[11px]">
+						<span class="font-medium text-text-secondary truncate text-[11px]">
 							{innerNode.summary || innerNode.id}
 						</span>
 						{#if innerNode.inner_graph && innerNode.inner_graph.nodes?.length > 0}
-							<span class="text-[9px] text-blue-500 ml-auto">+{innerNode.inner_graph.nodes.length}</span>
+							<span class="text-[9px] text-info ml-auto">+{innerNode.inner_graph.nodes.length}</span>
 						{/if}
 					</div>
 				</div>
@@ -288,7 +286,7 @@
 
 		<!-- Duration display -->
 			{#if data.executionState?.duration_ms}
-				<div class="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500">
+				<div class="px-4 py-2 border-t border-surface-border text-xs text-text-muted">
 					Duration: {data.executionState.duration_ms}ms
 				</div>
 			{/if}
@@ -299,41 +297,40 @@
 		<Handle
 			type="source"
 			position={Position.Right}
-			class="!w-3 !h-3 !bg-blue-400 !border-2 !border-white dark:!border-gray-800"
+			class="!w-3 !h-3 !bg-node-subgraph !border-2 !border-surface"
 		/>
 	</div>
 {:else}
 	<!-- Collapsed subgraph (no inner graph loaded) -->
 	<div
-		class="relative rounded-xl shadow-lg border-2 bg-white dark:bg-gray-800 transition-all min-w-[180px]"
-		class:border-blue-500={data.executionState?.status === 'running'}
-		class:border-green-500={data.executionState?.status === 'completed'}
-		class:border-red-500={data.executionState?.status === 'failed'}
-		class:border-gray-200={!data.executionState}
-		class:dark:border-gray-700={!data.executionState}
+		class="relative rounded-xl shadow-lg border-2 bg-surface transition-all min-w-[180px]"
+		class:border-info={data.executionState?.status === 'running'}
+		class:border-status-completed={data.executionState?.status === 'completed'}
+		class:border-error={data.executionState?.status === 'failed'}
+		class:border-surface-border={!data.executionState}
 	>
 		<!-- Target handle (left) -->
 		<Handle
 			type="target"
 			position={Position.Left}
-			class="!w-3 !h-3 !bg-gray-400 dark:!bg-gray-500 !border-2 !border-white dark:!border-gray-800"
+			class="!w-3 !h-3 !bg-text-muted !border-2 !border-surface"
 		/>
 
 		<!-- Inner content wrapper to clip backgrounds to rounded corners -->
 		<div class="overflow-hidden rounded-[10px]">
 			<!-- Node header -->
-			<div class="flex items-center gap-3 px-4 py-3 bg-blue-500/10">
-				<div class="w-8 h-8 rounded-lg flex items-center justify-center text-white bg-blue-500">
+			<div class="flex items-center gap-3 px-4 py-3 bg-node-subgraph-bg">
+				<div class="w-8 h-8 rounded-lg flex items-center justify-center text-white bg-node-subgraph">
 					<Boxes size={18} />
 				</div>
 				<div class="flex-1 min-w-0">
-					<div class="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
+					<div class="text-sm font-semibold text-text-primary truncate">
 						{data.summary || data.id}
 					</div>
-					<div class="text-xs text-gray-500 dark:text-gray-400 truncate flex items-center gap-1">
+					<div class="text-xs text-text-muted truncate flex items-center gap-1">
 						<span>{data.subgraph_path || 'Subgraph'}</span>
 						{#if hasOverrides}
-							<span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300" title="Node configuration overrides">
+							<span class="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-warning-light text-warning" title="Node configuration overrides">
 								<Wrench size={10} />
 								<span>{overrideCount}</span>
 							</span>
@@ -343,17 +340,17 @@
 
 				<!-- Status indicator -->
 				{#if data.executionState?.status === 'running'}
-					<Loader2 size={18} class="text-blue-500 animate-spin flex-shrink-0" />
+					<Loader2 size={18} class="text-info animate-spin flex-shrink-0" />
 				{:else if data.executionState?.status === 'completed'}
-					<CheckCircle2 size={18} class="text-green-500 flex-shrink-0" />
+					<CheckCircle2 size={18} class="text-status-completed flex-shrink-0" />
 				{:else if data.executionState?.status === 'failed'}
-					<XCircle size={18} class="text-red-500 flex-shrink-0" />
+					<XCircle size={18} class="text-error flex-shrink-0" />
 				{/if}
 			</div>
 
 			<!-- Duration display -->
 			{#if data.executionState?.duration_ms}
-				<div class="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-500">
+				<div class="px-4 py-2 border-t border-surface-border text-xs text-text-muted">
 					Duration: {data.executionState.duration_ms}ms
 				</div>
 			{/if}
@@ -364,7 +361,7 @@
 		<Handle
 			type="source"
 			position={Position.Right}
-			class="!w-3 !h-3 !bg-gray-400 dark:!bg-gray-500 !border-2 !border-white dark:!border-gray-800"
+			class="!w-3 !h-3 !bg-text-muted !border-2 !border-surface"
 		/>
 	</div>
 {/if}

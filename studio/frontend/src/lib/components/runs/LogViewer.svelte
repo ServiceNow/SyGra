@@ -81,7 +81,7 @@
 		const before = text.slice(0, index);
 		const match = text.slice(index, index + query.length);
 		const after = text.slice(index + query.length);
-		return `${before}<mark class="bg-amber-300 dark:bg-amber-600 text-gray-900 dark:text-white px-0.5 rounded">${match}</mark>${after}`;
+		return `${before}<mark class="bg-warning text-brand-primary px-0.5 rounded">${match}</mark>${after}`;
 	}
 
 	// Auto scroll to bottom when new logs arrive
@@ -108,7 +108,7 @@
 					type="text"
 					placeholder="Search logs..."
 					bind:value={searchQuery}
-					class="w-full pl-8 pr-8 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#52B8FF]"
+					class="w-full pl-8 pr-8 py-1.5 text-sm bg-gray-700 border border-gray-600 rounded text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-info"
 				/>
 				{#if searchQuery}
 					<button
@@ -137,14 +137,14 @@
 		<div class="flex items-center gap-1">
 			<button
 				onclick={() => caseSensitive = !caseSensitive}
-				class="px-2 py-1 text-xs rounded transition-colors {caseSensitive ? 'bg-[#7661FF] text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-gray-300'}"
+				class="px-2 py-1 text-xs rounded transition-colors {caseSensitive ? 'bg-info text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-gray-300'}"
 				title="Case sensitive"
 			>
 				Aa
 			</button>
 			<button
 				onclick={() => showLineNumbers = !showLineNumbers}
-				class="px-2 py-1 text-xs rounded transition-colors {showLineNumbers ? 'bg-[#7661FF] text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-gray-300'}"
+				class="px-2 py-1 text-xs rounded transition-colors {showLineNumbers ? 'bg-info text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-gray-300'}"
 				title="Toggle line numbers"
 			>
 				#
@@ -156,7 +156,7 @@
 				title="Copy all"
 			>
 				{#if copied}
-					<Check size={14} class="text-emerald-400" />
+					<Check size={14} class="text-success" />
 				{:else}
 					<Copy size={14} />
 				{/if}
@@ -185,7 +185,7 @@
 				{#each filteredLogs() as log}
 					<div
 						data-line={log.line}
-						class="flex hover:bg-gray-800 rounded px-2 py-0.5 {log.matches && searchQuery ? 'bg-amber-900/30' : ''}"
+						class="flex hover:bg-gray-800 rounded px-2 py-0.5 {log.matches && searchQuery ? 'bg-warning/20' : ''}"
 					>
 						{#if showLineNumbers}
 							<span class="text-gray-600 select-none w-12 flex-shrink-0 text-right pr-4">{log.line}</span>

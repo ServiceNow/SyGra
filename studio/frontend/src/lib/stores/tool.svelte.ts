@@ -231,12 +231,14 @@ function createToolStore() {
 // Export singleton store instance
 export const toolStore = createToolStore();
 
-// Category metadata for UI
+// Category metadata for UI - using brand-consistent colors
+// Primary: Infinite Blue (#032D42), Wasabi Green (#63DF4E)
+// Accent: Bright Blue (#52B8FF), Teal variants for differentiation
 export const TOOL_CATEGORIES: { value: ToolCategory; label: string; icon: string; color: string }[] = [
 	{ value: 'search', label: 'Search', icon: 'search', color: '#52B8FF' },
-	{ value: 'data', label: 'Data', icon: 'database', color: '#7661FF' },
-	{ value: 'api', label: 'API', icon: 'globe', color: '#BF71F2' },
-	{ value: 'utility', label: 'Utility', icon: 'wrench', color: '#0A4D6E' },
+	{ value: 'data', label: 'Data', icon: 'database', color: '#0E7490' },
+	{ value: 'api', label: 'API', icon: 'globe', color: '#0891B2' },
+	{ value: 'utility', label: 'Utility', icon: 'wrench', color: '#64748B' },
 	{ value: 'custom', label: 'Custom', icon: 'puzzle', color: '#63DF4E' }
 ];
 

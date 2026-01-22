@@ -31,11 +31,11 @@
 
 	// Status styling
 	const statusConfig = {
-		pending: { color: 'text-gray-500', bg: 'bg-gray-100 dark:bg-gray-800', icon: Clock },
-		running: { color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30', icon: Loader2 },
-		completed: { color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/30', icon: CheckCircle2 },
-		failed: { color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30', icon: XCircle },
-		cancelled: { color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/30', icon: XCircle },
+		pending: { color: 'text-text-muted', bg: 'bg-surface-secondary', icon: Clock },
+		running: { color: 'text-info', bg: 'bg-info-light', icon: Loader2 },
+		completed: { color: 'text-status-completed', bg: 'bg-success-light', icon: CheckCircle2 },
+		failed: { color: 'text-error', bg: 'bg-error-light', icon: XCircle },
+		cancelled: { color: 'text-warning', bg: 'bg-warning-light', icon: XCircle },
 	};
 
 	let status = $derived(statusConfig[execution.status as keyof typeof statusConfig] || statusConfig.pending);
@@ -281,22 +281,22 @@
 	}
 </script>
 
-<div class="h-full w-full flex flex-col bg-white dark:bg-gray-900">
+<div class="h-full w-full flex flex-col bg-surface">
 	<!-- Header -->
-	<div class="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
+	<div class="flex-shrink-0 border-b border-surface-border px-6 py-4">
 		<div class="flex items-center gap-4 mb-4">
 			<button
 				onclick={goBack}
-				class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+				class="p-2 hover:bg-surface-hover rounded-lg transition-colors"
 				title="Back to runs"
 			>
-				<ArrowLeft size={20} class="text-gray-500" />
+				<ArrowLeft size={20} class="text-text-muted" />
 			</button>
 			<div class="flex-1">
-				<h1 class="text-xl font-bold text-gray-900 dark:text-gray-100">
+				<h1 class="text-xl font-bold text-text-primary">
 					{execution.workflow_name || 'Unknown Workflow'}
 				</h1>
-				<div class="flex items-center gap-3 text-sm text-gray-500">
+				<div class="flex items-center gap-3 text-sm text-text-muted">
 					<span class="font-mono">{execution.id.slice(0, 12)}...</span>
 					<span>·</span>
 					<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium {status.color} {status.bg}">
@@ -307,10 +307,10 @@
 			</div>
 			<button
 				onclick={() => copyToClipboard(execution.id, 'id')}
-				class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+				class="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover rounded-lg"
 			>
 				{#if copiedField === 'id'}
-					<Check size={14} class="text-green-500" />
+					<Check size={14} class="text-status-completed" />
 					Copied
 				{:else}
 					<Copy size={14} />
@@ -330,7 +330,7 @@
 				{@const TabIcon = tab.icon}
 				<button
 					onclick={() => activeTab = tab.id as TabId}
-					class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {activeTab === tab.id ? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}"
+					class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {activeTab === tab.id ? 'bg-info-light text-info' : 'text-text-secondary hover:bg-surface-hover'}"
 				>
 					<TabIcon size={16} />
 					{tab.label}
@@ -346,39 +346,39 @@
 			<div class="space-y-6">
 				<!-- Quick stats -->
 				<div class="grid grid-cols-4 gap-4">
-					<div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-						<div class="flex items-center gap-2 text-gray-500 text-sm mb-1">
+					<div class="p-4 bg-surface-secondary rounded-xl">
+						<div class="flex items-center gap-2 text-text-muted text-sm mb-1">
 							<Calendar size={14} />
 							Started
 						</div>
-						<div class="font-medium text-gray-900 dark:text-gray-100">
+						<div class="font-medium text-text-primary">
 							{formatDate(execution.started_at)}
 						</div>
 					</div>
-					<div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-						<div class="flex items-center gap-2 text-gray-500 text-sm mb-1">
+					<div class="p-4 bg-surface-secondary rounded-xl">
+						<div class="flex items-center gap-2 text-text-muted text-sm mb-1">
 							<Timer size={14} />
 							Duration
 						</div>
-						<div class="font-medium text-gray-900 dark:text-gray-100">
+						<div class="font-medium text-text-primary">
 							{formatDuration(execution.duration_ms)}
 						</div>
 					</div>
-					<div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-						<div class="flex items-center gap-2 text-gray-500 text-sm mb-1">
+					<div class="p-4 bg-surface-secondary rounded-xl">
+						<div class="flex items-center gap-2 text-text-muted text-sm mb-1">
 							<Database size={14} />
 							Output Records
 						</div>
-						<div class="font-medium text-gray-900 dark:text-gray-100">
+						<div class="font-medium text-text-primary">
 							{outputCount()}
 						</div>
 					</div>
-					<div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-						<div class="flex items-center gap-2 text-gray-500 text-sm mb-1">
+					<div class="p-4 bg-surface-secondary rounded-xl">
+						<div class="flex items-center gap-2 text-text-muted text-sm mb-1">
 							<Hash size={14} />
 							Run ID
 						</div>
-						<div class="font-medium text-gray-900 dark:text-gray-100 font-mono text-sm truncate">
+						<div class="font-medium text-text-primary font-mono text-sm truncate">
 							{execution.id}
 						</div>
 					</div>
@@ -386,12 +386,12 @@
 
 				<!-- Output file -->
 				{#if execution.output_file}
-					<div class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-						<div class="flex items-center gap-2 text-gray-500 text-sm mb-2">
+					<div class="p-4 bg-surface-secondary rounded-xl">
+						<div class="flex items-center gap-2 text-text-muted text-sm mb-2">
 							<FileJson size={14} />
 							Output File
 						</div>
-						<div class="font-mono text-sm text-gray-700 dark:text-gray-300 break-all">
+						<div class="font-mono text-sm text-text-secondary break-all">
 							{execution.output_file}
 						</div>
 					</div>
@@ -399,19 +399,19 @@
 
 				<!-- Error -->
 				{#if execution.error}
-					<div class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-						<div class="flex items-center gap-2 text-red-600 dark:text-red-400 font-medium mb-2">
+					<div class="p-4 bg-error-light border border-error/30 rounded-xl">
+						<div class="flex items-center gap-2 text-error font-medium mb-2">
 							<XCircle size={16} />
 							Error
 						</div>
-						<pre class="text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap">{execution.error}</pre>
+						<pre class="text-sm text-error whitespace-pre-wrap">{execution.error}</pre>
 					</div>
 				{/if}
 
 				<!-- Node states -->
 				{#if Object.keys(execution.node_states).length > 0}
 					<div>
-						<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+						<h3 class="text-sm font-semibold text-text-secondary mb-3 flex items-center gap-2">
 							<Layers size={16} />
 							Node Execution States
 						</h3>
@@ -419,13 +419,13 @@
 							{#each Object.entries(execution.node_states) as [nodeId, nodeState]}
 								{@const nodeStatus = statusConfig[nodeState.status as keyof typeof statusConfig] || statusConfig.pending}
 								{@const NodeStatusIcon = nodeStatus.icon}
-								<div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+								<div class="flex items-center gap-3 p-3 bg-surface-secondary rounded-lg">
 									<NodeStatusIcon size={16} class={nodeStatus.color} />
-									<span class="font-medium text-gray-900 dark:text-gray-100">{nodeId}</span>
-									<ArrowRight size={14} class="text-gray-400" />
+									<span class="font-medium text-text-primary">{nodeId}</span>
+									<ArrowRight size={14} class="text-text-muted" />
 									<span class="text-sm {nodeStatus.color}">{nodeState.status}</span>
 									{#if nodeState.duration_ms}
-										<span class="text-xs text-gray-500 ml-auto">{formatDuration(nodeState.duration_ms)}</span>
+										<span class="text-xs text-text-muted ml-auto">{formatDuration(nodeState.duration_ms)}</span>
 									{/if}
 								</div>
 							{/each}
@@ -439,15 +439,15 @@
 			<div class="space-y-4">
 				{#if sampleOutput()}
 					<div class="flex items-center justify-between mb-4">
-						<div class="text-sm text-gray-500">
+						<div class="text-sm text-text-muted">
 							Showing {Array.isArray(sampleOutput()) ? Math.min(5, outputCount()) : 1} of {outputCount()} records
 						</div>
 						<button
 							onclick={() => copyToClipboard(JSON.stringify(execution.output_data, null, 2), 'output')}
-							class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+							class="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover rounded-lg"
 						>
 							{#if copiedField === 'output'}
-								<Check size={14} class="text-green-500" />
+								<Check size={14} class="text-status-completed" />
 								Copied
 							{:else}
 								<Copy size={14} />
@@ -458,19 +458,19 @@
 
 					{#if Array.isArray(sampleOutput())}
 						{#each sampleOutput() as record, i}
-							<details class="group bg-gray-50 dark:bg-gray-800/50 rounded-lg overflow-hidden" open={i === 0}>
-								<summary class="cursor-pointer px-4 py-3 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800">
-									<ChevronDown size={16} class="transition-transform group-open:rotate-180 text-gray-400" />
-									<span class="font-medium text-gray-700 dark:text-gray-300">Record {i + 1}</span>
+							<details class="group bg-surface-secondary rounded-lg overflow-hidden" open={i === 0}>
+								<summary class="cursor-pointer px-4 py-3 flex items-center gap-2 hover:bg-surface-hover">
+									<ChevronDown size={16} class="transition-transform group-open:rotate-180 text-text-muted" />
+									<span class="font-medium text-text-secondary">Record {i + 1}</span>
 								</summary>
-								<pre class="p-4 text-sm text-gray-700 dark:text-gray-300 overflow-auto max-h-64 bg-gray-100 dark:bg-gray-900">{JSON.stringify(record, null, 2)}</pre>
+								<pre class="p-4 text-sm text-text-secondary overflow-auto max-h-64 bg-brand-primary/5">{JSON.stringify(record, null, 2)}</pre>
 							</details>
 						{/each}
 					{:else}
-						<pre class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-sm text-gray-700 dark:text-gray-300 overflow-auto">{JSON.stringify(sampleOutput(), null, 2)}</pre>
+						<pre class="p-4 bg-surface-secondary rounded-lg text-sm text-text-secondary overflow-auto">{JSON.stringify(sampleOutput(), null, 2)}</pre>
 					{/if}
 				{:else}
-					<div class="text-center py-12 text-gray-500">
+					<div class="text-center py-12 text-text-muted">
 						<FileJson size={48} class="mx-auto mb-4 opacity-50" />
 						<p class="text-sm">No output data available</p>
 					</div>
@@ -479,18 +479,18 @@
 
 		{:else if activeTab === 'logs'}
 			<!-- Logs Tab -->
-			<div class="bg-gray-900 rounded-lg overflow-hidden">
+			<div class="bg-brand-primary rounded-lg overflow-hidden">
 				{#if execution.logs.length > 0}
 					<div class="max-h-[600px] overflow-auto p-4 font-mono text-sm">
 						{#each execution.logs as log, i}
-							<div class="text-gray-300 hover:bg-gray-800 px-2 py-0.5 rounded">
+							<div class="text-gray-300 hover:bg-white/5 px-2 py-0.5 rounded">
 								<span class="text-gray-500 select-none mr-4">{i + 1}</span>
 								{log}
 							</div>
 						{/each}
 					</div>
 				{:else}
-					<div class="text-center py-12 text-gray-500">
+					<div class="text-center py-12 text-gray-400">
 						<FileText size={48} class="mx-auto mb-4 opacity-50" />
 						<p class="text-sm">No logs captured</p>
 					</div>
@@ -503,54 +503,54 @@
 				<div class="space-y-6">
 					<!-- Key Metrics Cards -->
 					<div class="grid grid-cols-4 gap-4">
-						<div class="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800">
+						<div class="bg-success-light rounded-xl p-4 border border-status-completed/30">
 							<div class="flex items-center gap-2 mb-2">
-								<DollarSign size={16} class="text-emerald-600 dark:text-emerald-400" />
-								<span class="text-xs font-medium text-emerald-600 dark:text-emerald-400 uppercase">Total Cost</span>
+								<DollarSign size={16} class="text-status-completed" />
+								<span class="text-xs font-medium text-status-completed uppercase">Total Cost</span>
 							</div>
-							<div class="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+							<div class="text-2xl font-bold text-status-completed">
 								{formatCost(metadata.aggregate_statistics.cost.total_cost_usd)}
 							</div>
-							<div class="text-xs text-emerald-600/70 dark:text-emerald-400/70 mt-1">
+							<div class="text-xs text-status-completed/70 mt-1">
 								{formatCost(metadata.aggregate_statistics.cost.average_cost_per_record)}/record
 							</div>
 						</div>
 
-						<div class="bg-gradient-to-br from-[#7661FF]/10 to-[#BF71F2]/10 dark:from-[#7661FF]/20 dark:to-[#BF71F2]/20 rounded-xl p-4 border border-[#7661FF]/30 dark:border-[#7661FF]/40">
+						<div class="bg-info-light rounded-xl p-4 border border-info/30">
 							<div class="flex items-center gap-2 mb-2">
-								<Zap size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
-								<span class="text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] uppercase">Total Tokens</span>
+								<Zap size={16} class="text-info" />
+								<span class="text-xs font-medium text-info uppercase">Total Tokens</span>
 							</div>
-							<div class="text-2xl font-bold text-[#7661FF] dark:text-[#BF71F2]">
+							<div class="text-2xl font-bold text-info">
 								{formatNumber(metadata.aggregate_statistics.tokens.total_tokens)}
 							</div>
-							<div class="text-xs text-[#7661FF]/70 dark:text-[#BF71F2]/70 mt-1">
+							<div class="text-xs text-info/70 mt-1">
 								{formatNumber(metadata.aggregate_statistics.tokens.total_prompt_tokens)} prompt
 							</div>
 						</div>
 
-						<div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+						<div class="bg-brand-primary/10 rounded-xl p-4 border border-brand-primary/30">
 							<div class="flex items-center gap-2 mb-2">
-								<TrendingUp size={16} class="text-blue-600 dark:text-blue-400" />
-								<span class="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase">Success Rate</span>
+								<TrendingUp size={16} class="text-brand-primary dark:text-info" />
+								<span class="text-xs font-medium text-brand-primary dark:text-info uppercase">Success Rate</span>
 							</div>
-							<div class="text-2xl font-bold text-blue-700 dark:text-blue-300">
+							<div class="text-2xl font-bold text-brand-primary dark:text-info">
 								{formatPercent(metadata.aggregate_statistics.records.success_rate)}
 							</div>
-							<div class="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1">
+							<div class="text-xs text-brand-primary/70 dark:text-info/70 mt-1">
 								{metadata.aggregate_statistics.records.total_processed} processed
 							</div>
 						</div>
 
-						<div class="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800">
+						<div class="bg-warning-light rounded-xl p-4 border border-warning/30">
 							<div class="flex items-center gap-2 mb-2">
-								<Server size={16} class="text-amber-600 dark:text-amber-400" />
-								<span class="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase">Requests</span>
+								<Server size={16} class="text-warning" />
+								<span class="text-xs font-medium text-warning uppercase">Requests</span>
 							</div>
-							<div class="text-2xl font-bold text-amber-700 dark:text-amber-300">
+							<div class="text-2xl font-bold text-warning">
 								{metadata.aggregate_statistics.requests.total_requests}
 							</div>
-							<div class="text-xs text-amber-600/70 dark:text-amber-400/70 mt-1">
+							<div class="text-xs text-warning/70 mt-1">
 								{metadata.aggregate_statistics.requests.total_failures} failures
 							</div>
 						</div>
@@ -559,10 +559,10 @@
 					<!-- Interactive Charts Row -->
 					<div class="grid grid-cols-3 gap-4">
 						<!-- Token Distribution -->
-						<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+						<div class="bg-surface rounded-xl border border-surface-border p-4">
 							<div class="flex items-center gap-2 mb-3">
-								<PieChart size={16} class="text-[#7661FF]" />
-								<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Token Distribution</h4>
+								<PieChart size={16} class="text-info" />
+								<h4 class="text-sm font-semibold text-text-secondary">Token Distribution</h4>
 							</div>
 							<div class="h-40">
 								<canvas bind:this={tokenPieCanvas}></canvas>
@@ -570,10 +570,10 @@
 						</div>
 
 						<!-- Model Token Usage -->
-						<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+						<div class="bg-surface rounded-xl border border-surface-border p-4">
 							<div class="flex items-center gap-2 mb-3">
-								<BarChart3 size={16} class="text-blue-500" />
-								<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Model Token Usage</h4>
+								<BarChart3 size={16} class="text-brand-primary dark:text-info" />
+								<h4 class="text-sm font-semibold text-text-secondary">Model Token Usage</h4>
 							</div>
 							<div class="h-40">
 								<canvas bind:this={modelTokensCanvas}></canvas>
@@ -581,14 +581,14 @@
 						</div>
 
 						<!-- Node Latency Heatmap -->
-						<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+						<div class="bg-surface rounded-xl border border-surface-border p-4">
 							<div class="flex items-center gap-2 mb-3">
-								<Gauge size={16} class="text-amber-500" />
-								<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Node Latency</h4>
+								<Gauge size={16} class="text-warning" />
+								<h4 class="text-sm font-semibold text-text-secondary">Node Latency</h4>
 								<span class="ml-auto flex items-center gap-1 text-xs">
-									<span class="w-2 h-2 rounded bg-emerald-500"></span>Fast
-									<span class="w-2 h-2 rounded bg-amber-500 ml-1"></span>Med
-									<span class="w-2 h-2 rounded bg-red-500 ml-1"></span>Slow
+									<span class="w-2 h-2 rounded bg-status-completed"></span>Fast
+									<span class="w-2 h-2 rounded bg-warning ml-1"></span>Med
+									<span class="w-2 h-2 rounded bg-error ml-1"></span>Slow
 								</span>
 							</div>
 							<div class="h-40">
@@ -599,37 +599,37 @@
 
 					<!-- Execution & Dataset -->
 					<div class="grid grid-cols-2 gap-4">
-						<div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
-							<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+						<div class="bg-surface-secondary rounded-xl p-4">
+							<h4 class="text-sm font-semibold text-text-secondary mb-3 flex items-center gap-2">
 								<Activity size={16} />
 								Execution Details
 							</h4>
 							<div class="space-y-2 text-sm">
 								<div class="flex justify-between">
-									<span class="text-gray-500">Task:</span>
-									<span class="text-gray-800 dark:text-gray-200 font-mono text-xs">{metadata.execution.task_name}</span>
+									<span class="text-text-muted">Task:</span>
+									<span class="text-text-primary font-mono text-xs">{metadata.execution.task_name}</span>
 								</div>
 								<div class="flex justify-between">
-									<span class="text-gray-500">Run Name:</span>
-									<span class="text-gray-800 dark:text-gray-200">{metadata.execution.run_name}</span>
+									<span class="text-text-muted">Run Name:</span>
+									<span class="text-text-primary">{metadata.execution.run_name}</span>
 								</div>
 								<div class="flex justify-between">
-									<span class="text-gray-500">Duration:</span>
-									<span class="text-gray-800 dark:text-gray-200">{metadata.execution.timing.duration_seconds.toFixed(2)}s</span>
+									<span class="text-text-muted">Duration:</span>
+									<span class="text-text-primary">{metadata.execution.timing.duration_seconds.toFixed(2)}s</span>
 								</div>
 								{#if metadata.execution.git}
 									<div class="flex justify-between items-start gap-2">
-										<span class="text-gray-500 flex items-center gap-1 flex-shrink-0"><GitBranch size={12} /> Git:</span>
+										<span class="text-text-muted flex items-center gap-1 flex-shrink-0"><GitBranch size={12} /> Git:</span>
 										<div class="flex items-center gap-1.5 flex-wrap justify-end">
-											<span class="text-gray-800 dark:text-gray-200 font-mono text-xs">{metadata.execution.git.branch}</span>
-											<span class="text-gray-400">@</span>
+											<span class="text-text-primary font-mono text-xs">{metadata.execution.git.branch}</span>
+											<span class="text-text-muted">@</span>
 											{@const gitUrl = getGitHubCommitUrl(metadata.execution.git)}
 											{#if gitUrl}
 												<a
 													href={gitUrl}
 													target="_blank"
 													rel="noopener noreferrer"
-													class="font-mono text-xs text-[#032D42] dark:text-[#52B8FF] hover:underline flex items-center gap-1"
+													class="font-mono text-xs text-brand-primary dark:text-info hover:underline flex items-center gap-1"
 													title="View commit on GitHub: {metadata.execution.git.commit_hash}"
 												>
 													{metadata.execution.git.commit_hash.slice(0, 7)}
@@ -638,19 +638,19 @@
 											{:else}
 												<button
 													onclick={() => copyToClipboard(metadata.execution.git.commit_hash, 'git')}
-													class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-[#7661FF] dark:hover:text-[#52B8FF] flex items-center gap-1"
+													class="font-mono text-xs text-text-primary hover:text-info flex items-center gap-1"
 													title="Click to copy full hash: {metadata.execution.git.commit_hash}"
 												>
 													{metadata.execution.git.commit_hash.slice(0, 7)}
 													{#if copiedField === 'git'}
-														<Check size={10} class="text-green-500" />
+														<Check size={10} class="text-status-completed" />
 													{:else}
 														<Copy size={10} class="opacity-50" />
 													{/if}
 												</button>
 											{/if}
 											{#if metadata.execution.git.is_dirty}
-												<span class="text-amber-600 dark:text-amber-400 text-xs">(dirty)</span>
+												<span class="text-warning text-xs">(dirty)</span>
 											{/if}
 										</div>
 									</div>
@@ -658,64 +658,64 @@
 							</div>
 						</div>
 
-						<div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
-							<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+						<div class="bg-surface-secondary rounded-xl p-4">
+							<h4 class="text-sm font-semibold text-text-secondary mb-3 flex items-center gap-2">
 								<Database size={16} />
 								Dataset
 							</h4>
 							<div class="space-y-2 text-sm">
 								<div class="flex justify-between items-center">
-									<span class="text-gray-500">Type:</span>
-									<span class="px-2 py-0.5 text-xs rounded-full font-medium {metadata.dataset.source_type === 'hf' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300' : metadata.dataset.source_type === 'servicenow' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'}">
+									<span class="text-text-muted">Type:</span>
+									<span class="px-2 py-0.5 text-xs rounded-full font-medium {metadata.dataset.source_type === 'hf' ? 'bg-warning-light text-warning' : metadata.dataset.source_type === 'servicenow' ? 'bg-success-light text-status-completed' : 'bg-info-light text-info'}">
 										{metadata.dataset.source_type === 'hf' ? 'HuggingFace' : metadata.dataset.source_type === 'servicenow' ? 'ServiceNow' : 'Local File'}
 									</span>
 								</div>
 								<div class="flex flex-col gap-1">
-									<span class="text-gray-500">Source:</span>
+									<span class="text-text-muted">Source:</span>
 									{@const hfUrl = metadata.dataset.source_type === 'hf' ? getHuggingFaceUrl(metadata.dataset.source_path) : null}
 									{#if hfUrl}
 										<a
 											href={hfUrl}
 											target="_blank"
 											rel="noopener noreferrer"
-											class="text-[#032D42] dark:text-[#52B8FF] hover:underline font-mono text-xs break-all flex items-center gap-1"
+											class="text-brand-primary dark:text-info hover:underline font-mono text-xs break-all flex items-center gap-1"
 										>
 											{metadata.dataset.source_path}
 											<ExternalLink size={10} class="flex-shrink-0" />
 										</a>
 									{:else}
-										<span class="text-gray-800 dark:text-gray-200 font-mono text-xs break-all">
+										<span class="text-text-primary font-mono text-xs break-all">
 											{metadata.dataset.source_path}
 										</span>
 									{/if}
 								</div>
 								<div class="flex justify-between">
-									<span class="text-gray-500">Records Processed:</span>
-									<span class="text-gray-800 dark:text-gray-200">{metadata.dataset.num_records_processed.toLocaleString()}</span>
+									<span class="text-text-muted">Records Processed:</span>
+									<span class="text-text-primary">{metadata.dataset.num_records_processed.toLocaleString()}</span>
 								</div>
 								{#if metadata.dataset.start_index > 0}
 									<div class="flex justify-between">
-										<span class="text-gray-500">Start Index:</span>
-										<span class="text-gray-800 dark:text-gray-200">{metadata.dataset.start_index}</span>
+										<span class="text-text-muted">Start Index:</span>
+										<span class="text-text-primary">{metadata.dataset.start_index}</span>
 									</div>
 								{/if}
 								{#if metadata.dataset.dataset_version}
 									<div class="flex flex-col gap-1">
-										<span class="text-gray-500">Version:</span>
-										<span class="text-gray-800 dark:text-gray-200 font-mono text-xs break-all">{metadata.dataset.dataset_version}</span>
+										<span class="text-text-muted">Version:</span>
+										<span class="text-text-primary font-mono text-xs break-all">{metadata.dataset.dataset_version}</span>
 									</div>
 								{/if}
 								{#if metadata.dataset.dataset_hash}
 									<div class="flex flex-col gap-1">
-										<span class="text-gray-500">Data Hash:</span>
+										<span class="text-text-muted">Data Hash:</span>
 										<button
 											onclick={() => copyToClipboard(metadata.dataset.dataset_hash, 'hash')}
-											class="text-gray-800 dark:text-gray-200 font-mono text-xs break-all text-left hover:text-[#7661FF] dark:hover:text-[#52B8FF] flex items-center gap-1"
+											class="text-text-primary font-mono text-xs break-all text-left hover:text-info flex items-center gap-1"
 											title="Click to copy full hash"
 										>
 											{metadata.dataset.dataset_hash}
 											{#if copiedField === 'hash'}
-												<Check size={10} class="text-green-500 flex-shrink-0" />
+												<Check size={10} class="text-status-completed flex-shrink-0" />
 											{:else}
 												<Copy size={10} class="opacity-50 flex-shrink-0" />
 											{/if}
@@ -728,8 +728,8 @@
 
 					<!-- Models -->
 					{#if Object.keys(metadata.models).length > 0}
-						<div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
-							<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+						<div class="bg-surface-secondary rounded-xl p-4">
+							<h4 class="text-sm font-semibold text-text-secondary mb-3 flex items-center gap-2">
 								<Cpu size={16} />
 								Model Performance
 							</h4>
@@ -738,42 +738,42 @@
 									{@const latencyRange = model.performance.latency_statistics.max - model.performance.latency_statistics.min}
 									{@const p50Pct = latencyRange > 0 ? ((model.performance.latency_statistics.p50 - model.performance.latency_statistics.min) / latencyRange) * 100 : 50}
 									{@const p95Pct = latencyRange > 0 ? ((model.performance.latency_statistics.p95 - model.performance.latency_statistics.min) / latencyRange) * 100 : 95}
-									<div class="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+									<div class="bg-surface rounded-lg p-4 border border-surface-border">
 										<div class="flex items-center justify-between mb-3">
 											<div>
-												<span class="font-medium text-gray-800 dark:text-gray-200">{modelName}</span>
-												<span class="text-xs text-gray-500 ml-2">{model.model_type}</span>
+												<span class="font-medium text-text-primary">{modelName}</span>
+												<span class="text-xs text-text-muted ml-2">{model.model_type}</span>
 											</div>
 											<div class="flex items-center gap-4 text-sm">
-												<span class="text-emerald-600 dark:text-emerald-400 font-medium">{formatCost(model.cost.total_cost_usd)}</span>
-												<span class="text-[#7661FF] dark:text-[#BF71F2]">{formatNumber(model.token_statistics.total_tokens)} tokens</span>
+												<span class="text-status-completed font-medium">{formatCost(model.cost.total_cost_usd)}</span>
+												<span class="text-info">{formatNumber(model.token_statistics.total_tokens)} tokens</span>
 											</div>
 										</div>
 										<div class="grid grid-cols-4 gap-4 text-xs">
 											<div>
-												<div class="text-gray-500 mb-1">Requests</div>
-												<div class="font-medium text-gray-800 dark:text-gray-200">{model.performance.total_requests}</div>
+												<div class="text-text-muted mb-1">Requests</div>
+												<div class="font-medium text-text-primary">{model.performance.total_requests}</div>
 											</div>
 											<div>
-												<div class="text-gray-500 mb-1">Avg Latency</div>
-												<div class="font-medium text-gray-800 dark:text-gray-200">{formatLatency(model.performance.average_latency_seconds)}</div>
+												<div class="text-text-muted mb-1">Avg Latency</div>
+												<div class="font-medium text-text-primary">{formatLatency(model.performance.average_latency_seconds)}</div>
 											</div>
 											<div>
-												<div class="text-gray-500 mb-1">Throughput</div>
-												<div class="font-medium text-gray-800 dark:text-gray-200">{model.performance.tokens_per_second.toFixed(1)} tok/s</div>
+												<div class="text-text-muted mb-1">Throughput</div>
+												<div class="font-medium text-text-primary">{model.performance.tokens_per_second.toFixed(1)} tok/s</div>
 											</div>
 											<div>
-												<div class="text-gray-500 mb-1">P95 Latency</div>
-												<div class="font-medium text-gray-800 dark:text-gray-200">{formatLatency(model.performance.latency_statistics.p95)}</div>
+												<div class="text-text-muted mb-1">P95 Latency</div>
+												<div class="font-medium text-text-primary">{formatLatency(model.performance.latency_statistics.p95)}</div>
 											</div>
 										</div>
 										<!-- Latency bar -->
-										<div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-											<div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+										<div class="mt-3 pt-3 border-t border-surface-border">
+											<div class="h-2 bg-surface-secondary rounded-full overflow-hidden">
 												<div class="h-full flex">
-													<div class="bg-emerald-400" style="width: {p50Pct}%"></div>
-													<div class="bg-amber-400" style="width: {p95Pct - p50Pct}%"></div>
-													<div class="bg-red-400" style="width: {100 - p95Pct}%"></div>
+													<div class="bg-status-completed" style="width: {p50Pct}%"></div>
+													<div class="bg-warning" style="width: {p95Pct - p50Pct}%"></div>
+													<div class="bg-error" style="width: {100 - p95Pct}%"></div>
 												</div>
 											</div>
 										</div>
@@ -785,14 +785,14 @@
 
 					<!-- Nodes -->
 					{#if Object.keys(metadata.nodes).length > 0}
-						<div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
-							<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+						<div class="bg-surface-secondary rounded-xl p-4">
+							<h4 class="text-sm font-semibold text-text-secondary mb-3 flex items-center gap-2">
 								<Box size={16} />
 								Node Stats
 							</h4>
 							<table class="w-full text-sm">
 								<thead>
-									<tr class="text-left text-xs text-gray-500 uppercase border-b border-gray-200 dark:border-gray-700">
+									<tr class="text-left text-xs text-text-muted uppercase border-b border-surface-border">
 										<th class="pb-2 font-medium">Node</th>
 										<th class="pb-2 font-medium">Type</th>
 										<th class="pb-2 font-medium text-right">Executions</th>
@@ -802,16 +802,16 @@
 								</thead>
 								<tbody>
 									{#each Object.entries(metadata.nodes) as [nodeName, node]}
-										<tr class="border-b border-gray-100 dark:border-gray-800">
-											<td class="py-2 font-medium text-gray-800 dark:text-gray-200">{nodeName}</td>
+										<tr class="border-b border-surface-border/50">
+											<td class="py-2 font-medium text-text-primary">{nodeName}</td>
 											<td class="py-2">
-												<span class="text-xs px-2 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]">
+												<span class="text-xs px-2 py-0.5 rounded bg-info-light text-info">
 													{node.node_type}
 												</span>
 											</td>
-											<td class="py-2 text-right text-gray-600 dark:text-gray-400">{node.total_executions}</td>
-											<td class="py-2 text-right text-gray-600 dark:text-gray-400">{formatLatency(node.average_latency_seconds)}</td>
-											<td class="py-2 text-right text-gray-600 dark:text-gray-400">
+											<td class="py-2 text-right text-text-secondary">{node.total_executions}</td>
+											<td class="py-2 text-right text-text-secondary">{formatLatency(node.average_latency_seconds)}</td>
+											<td class="py-2 text-right text-text-secondary">
 												{#if node.token_statistics}
 													{formatNumber(node.token_statistics.total_tokens)}
 												{:else}
@@ -827,15 +827,15 @@
 
 					<!-- Raw JSON -->
 					<details class="group">
-						<summary class="cursor-pointer text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 flex items-center gap-2">
+						<summary class="cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary flex items-center gap-2">
 							<ChevronDown size={16} class="transition-transform group-open:rotate-180" />
 							Raw Metadata JSON
 						</summary>
-						<pre class="mt-2 p-4 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-auto max-h-64">{JSON.stringify(metadata, null, 2)}</pre>
+						<pre class="mt-2 p-4 bg-brand-primary text-gray-100 rounded-lg text-xs overflow-auto max-h-64">{JSON.stringify(metadata, null, 2)}</pre>
 					</details>
 				</div>
 			{:else}
-				<div class="text-center py-12 text-gray-500">
+				<div class="text-center py-12 text-text-muted">
 					<BarChart3 size={48} class="mx-auto mb-4 opacity-50" />
 					<p class="text-sm font-medium">No metadata available</p>
 					<p class="text-xs mt-1">Metadata is collected when runs complete</p>

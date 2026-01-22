@@ -143,19 +143,19 @@
 		onkeydown={handleKeydown}
 		disabled={disabled}
 		class="w-full flex items-center justify-between gap-2 text-left transition-all
-			{compact ? 'px-2 py-1 text-xs rounded-md border-0 bg-transparent' : 'px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800'}
-			{disabled ? 'opacity-50 cursor-not-allowed' : compact ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : 'hover:border-[#52B8FF] dark:hover:border-[#7661FF] focus:ring-2 focus:ring-[#52B8FF] focus:border-[#52B8FF]'}
-			{isOpen && !compact ? 'ring-2 ring-[#52B8FF] border-[#52B8FF]' : ''}"
+			{compact ? 'px-2 py-1 text-xs rounded-md border-0 bg-transparent' : 'px-3 py-2 text-sm border border-surface-border rounded-lg bg-surface'}
+			{disabled ? 'opacity-50 cursor-not-allowed' : compact ? 'hover:bg-surface-hover' : 'hover:border-info focus:ring-2 focus:ring-info focus:border-info'}
+			{isOpen && !compact ? 'ring-2 ring-info border-info' : ''}"
 	>
-		<span class="flex-1 truncate {selectedOption ? (compact ? 'text-[#7661FF] dark:text-[#BF71F2] font-medium' : 'text-gray-800 dark:text-gray-200') : 'text-gray-500 dark:text-gray-400'}">
+		<span class="flex-1 truncate {selectedOption ? (compact ? 'text-info font-medium' : 'text-text-primary') : 'text-text-muted'}">
 			{#if selectedOption}
 				<span class="flex items-center gap-2">
 					{#if selectedOption.icon}
-						<svelte:component this={selectedOption.icon} size={compact ? 12 : 14} class="text-gray-500" />
+						<svelte:component this={selectedOption.icon} size={compact ? 12 : 14} class="text-text-muted" />
 					{/if}
 					<span>{selectedOption.label}</span>
 					{#if selectedOption.subtitle && !compact}
-						<span class="text-xs text-gray-500">({selectedOption.subtitle})</span>
+						<span class="text-xs text-text-muted">({selectedOption.subtitle})</span>
 					{/if}
 				</span>
 			{:else}
@@ -164,7 +164,7 @@
 		</span>
 		<ChevronDown
 			size={compact ? 12 : 16}
-			class="text-gray-400 transition-transform {isOpen ? 'rotate-180' : ''}"
+			class="text-text-muted transition-transform {isOpen ? 'rotate-180' : ''}"
 		/>
 	</button>
 
@@ -172,26 +172,26 @@
 	{#if isOpen}
 		<div
 			bind:this={dropdownRef}
-			class="absolute z-50 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden {compact ? 'min-w-32' : 'w-full'}"
+			class="absolute z-50 mt-1 bg-surface border border-surface-border rounded-lg shadow-lg overflow-hidden {compact ? 'min-w-32' : 'w-full'}"
 			style="max-height: {compact ? '200px' : '300px'};"
 		>
 			<!-- Search Input -->
 			{#if searchable}
-				<div class="p-2 border-b border-gray-200 dark:border-gray-700">
+				<div class="p-2 border-b border-surface-border">
 					<div class="relative">
-						<Search size={14} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+						<Search size={14} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted" />
 						<input
 							bind:this={searchInputRef}
 							bind:value={searchQuery}
 							onkeydown={handleKeydown}
 							type="text"
 							placeholder={searchPlaceholder}
-							class="w-full pl-8 pr-8 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#52B8FF] focus:border-[#52B8FF]"
+							class="w-full pl-8 pr-8 py-1.5 text-sm border border-surface-border rounded-md bg-surface-secondary text-text-primary placeholder-text-muted focus:outline-none focus:ring-1 focus:ring-info focus:border-info"
 						/>
 						{#if searchQuery}
 							<button
 								onclick={() => { searchQuery = ''; searchInputRef?.focus(); }}
-								class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+								class="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
 							>
 								<X size={14} />
 							</button>
@@ -203,7 +203,7 @@
 			<!-- Options List -->
 			<div class="overflow-y-auto" style="max-height: 240px;">
 				{#if filteredOptions.length === 0}
-					<div class="px-3 py-4 text-center text-sm text-gray-500">
+					<div class="px-3 py-4 text-center text-sm text-text-muted">
 						No options found
 					</div>
 				{:else}
@@ -214,24 +214,24 @@
 							onclick={() => selectOption(opt)}
 							onmouseenter={() => highlightedIndex = index}
 							class="w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors
-								{opt.value === value ? 'bg-[#7661FF]/10 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]' : ''}
-								{index === highlightedIndex ? 'bg-gray-100 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}"
+								{opt.value === value ? 'bg-info-light text-info' : ''}
+								{index === highlightedIndex ? 'bg-surface-hover' : 'hover:bg-surface-secondary'}"
 						>
 							{#if opt.icon}
-								<svelte:component this={opt.icon} size={14} class="text-gray-500 flex-shrink-0" />
+								<svelte:component this={opt.icon} size={14} class="text-text-muted flex-shrink-0" />
 							{/if}
 							<div class="flex-1 min-w-0">
-								<div class="truncate text-gray-800 dark:text-gray-200">
+								<div class="truncate text-text-primary">
 									{opt.label}
 								</div>
 								{#if opt.subtitle}
-									<div class="truncate text-xs text-gray-500 dark:text-gray-400">
+									<div class="truncate text-xs text-text-muted">
 										{opt.subtitle}
 									</div>
 								{/if}
 							</div>
 							{#if opt.value === value}
-								<Check size={14} class="text-[#7661FF] dark:text-[#BF71F2] flex-shrink-0" />
+								<Check size={14} class="text-info flex-shrink-0" />
 							{/if}
 						</button>
 					{/each}

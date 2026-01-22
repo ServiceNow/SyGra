@@ -432,7 +432,7 @@
 </script>
 
 <div
-	class="monaco-editor-wrapper relative rounded-lg overflow-hidden border border-gray-300 dark:border-gray-700"
+	class="monaco-editor-wrapper relative rounded-lg overflow-hidden border border-surface-border"
 	onclick={() => editor?.focus()}
 	onmousedown={() => editor?.focus()}
 	role="textbox"
@@ -440,7 +440,7 @@
 >
 	{#if !isInitialized}
 		<div
-			class="flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-500 text-sm"
+			class="flex items-center justify-center bg-surface-secondary text-text-muted text-sm"
 			style="height: {height}"
 		>
 			Loading editor...
@@ -453,7 +453,7 @@
 		style="height: {height}"
 	></div>
 	{#if placeholder && !value && isInitialized}
-		<div class="absolute top-2 left-12 text-gray-400 text-sm pointer-events-none font-mono">
+		<div class="absolute top-2 left-12 text-text-muted text-sm pointer-events-none font-mono">
 			{placeholder}
 		</div>
 	{/if}

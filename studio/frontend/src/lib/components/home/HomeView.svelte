@@ -2,10 +2,9 @@
 	import { workflowStore, executionStore, uiStore, type Execution } from '$lib/stores/workflow.svelte';
 	import { pushState } from '$app/navigation';
 	import {
-		Plus, GitBranch, History, Play, CheckCircle2, XCircle, Clock, Loader2, ArrowRight,
+		Plus, History, CheckCircle2, XCircle, Clock, Loader2, ArrowRight,
 		Zap, TrendingUp, TrendingDown, Activity, Layers, RefreshCw, Sparkles, Search, Timer,
-		DollarSign, BarChart3, Settings, BookOpen, Cpu, Database, ArrowUpRight, Ban,
-		FolderOpen, Library
+		DollarSign, ArrowUpRight, Ban, FolderOpen, Library, Brain, Workflow, Play
 	} from 'lucide-svelte';
 
 	let workflows = $derived(workflowStore.workflows);
@@ -55,22 +54,22 @@
 		};
 	});
 
-	let recentWorkflows = $derived(workflows.slice(0, 6));
-	let recentRuns = $derived(executionHistory.slice(0, 6));
+	let recentWorkflows = $derived(workflows.slice(0, 5));
+	let recentRuns = $derived(executionHistory.slice(0, 5));
 
 	// Filtered items based on search
 	let filteredWorkflows = $derived(() => {
 		if (!searchQuery.trim()) return recentWorkflows;
 		const q = searchQuery.toLowerCase();
-		return workflows.filter(w => w.name.toLowerCase().includes(q)).slice(0, 6);
+		return workflows.filter(w => w.name.toLowerCase().includes(q)).slice(0, 5);
 	});
 
-	const statusConfig: Record<string, { icon: typeof Clock; color: string; bg: string; label: string }> = {
-		pending: { icon: Clock, color: 'text-gray-500', bg: 'bg-gray-100 dark:bg-gray-800', label: 'Pending' },
-		running: { icon: Loader2, color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30', label: 'Running' },
-		completed: { icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-100 dark:bg-emerald-900/30', label: 'Completed' },
-		failed: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30', label: 'Failed' },
-		cancelled: { icon: Ban, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30', label: 'Cancelled' }
+	const statusConfig: Record<string, { icon: typeof Clock; color: string; bg: string; label: string; border: string }> = {
+		pending: { icon: Clock, color: 'text-text-muted', bg: 'bg-surface-tertiary', border: 'border-[var(--border)]', label: 'Pending' },
+		running: { icon: Loader2, color: 'text-info', bg: 'bg-info-light', border: 'border-info-border', label: 'Running' },
+		completed: { icon: CheckCircle2, color: 'text-success', bg: 'bg-success-light', border: 'border-success-border', label: 'Completed' },
+		failed: { icon: XCircle, color: 'text-error', bg: 'bg-error-light', border: 'border-error-border', label: 'Failed' },
+		cancelled: { icon: Ban, color: 'text-warning', bg: 'bg-warning-light', border: 'border-warning-border', label: 'Cancelled' }
 	};
 
 	function navigate(view: string, params?: Record<string, string>) {
@@ -144,171 +143,260 @@
 		if (usd < 0.01) return `<$0.01`;
 		return `$${usd.toFixed(2)}`;
 	}
+</script>
 
-	</script>
+<div class="h-full w-full overflow-auto bg-surface-secondary">
+	<!-- Hero section with gradient mesh background -->
+	<div class="relative overflow-hidden">
+		<!-- Background decoration -->
+		<div class="absolute inset-0 bg-gradient-hero pointer-events-none"></div>
+		<div class="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-brand-accent/10 via-transparent to-transparent rounded-full blur-3xl"></div>
+		<div class="absolute bottom-0 left-1/4 w-64 h-64 bg-gradient-to-tr from-indigo-500/10 via-transparent to-transparent rounded-full blur-3xl"></div>
 
-<div class="h-full w-full overflow-auto bg-gray-50 dark:bg-gray-900">
-	<div class="max-w-7xl mx-auto px-6 py-8">
-		<!-- Header - Clean and professional -->
-		<div class="flex items-center justify-between mb-10">
-			<div class="flex items-center gap-5">
-				<!-- Logo with Green + Purple gradient (ServiceNow brand style) -->
-				<div
-					class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
-					style="background: radial-gradient(ellipse at 20% 10%, rgba(99, 223, 78, 0.4) 0%, transparent 50%), radial-gradient(ellipse at 80% 90%, rgba(191, 113, 242, 0.35) 0%, transparent 50%), #032D42;"
-				>
-					<Sparkles size={28} class="text-[#63DF4E]" />
+		<div class="relative max-w-7xl mx-auto px-6 pt-8 pb-6">
+			<!-- Header -->
+			<div class="flex items-center justify-between mb-8">
+				<div class="flex items-center gap-5">
+					<!-- Animated Logo -->
+					<div class="relative group">
+						<div
+							class="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-105 group-hover:shadow-xl"
+							style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);"
+						>
+							<div class="absolute inset-0 rounded-2xl bg-gradient-to-br from-brand-accent/30 via-transparent to-violet-500/20"></div>
+							<Sparkles size={26} class="text-brand-accent relative z-10 transition-transform duration-300 group-hover:rotate-12" />
+						</div>
+						<div class="absolute inset-0 rounded-2xl bg-brand-accent/25 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+					</div>
+					<div>
+						<h1 class="text-3xl font-bold tracking-tighter">
+							<span class="text-[var(--text-primary)]">SyGra</span>
+							<span class="text-[var(--text-muted)] font-normal ml-1.5">Studio</span>
+						</h1>
+						<p class="text-sm text-[var(--text-secondary)] mt-0.5">
+							Synthetic data generation workflows
+						</p>
+					</div>
 				</div>
-				<div>
-					<h1 class="text-3xl font-bold tracking-tight">
-						<span class="text-[#032D42] dark:text-white">SyGra</span>
-						<span class="text-gray-400 dark:text-gray-500 font-normal ml-1">Studio</span>
-					</h1>
-					<p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-						Synthetic data generation workflows
-					</p>
+				<div class="flex items-center gap-3">
+					<div class="relative">
+						<Search size={16} class="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+						<input
+							type="text"
+							bind:value={searchQuery}
+							placeholder="Search workflows..."
+							class="w-72 pl-10 pr-4 py-2.5 bg-surface border border-[var(--border)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--border-focus)]/30 focus:border-[var(--border-focus)] transition-all duration-200"
+						/>
+					</div>
+					<button
+						onclick={refresh}
+						disabled={loading}
+						class="p-2.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-surface-hover rounded-xl transition-all duration-200 disabled:opacity-50"
+					>
+						<RefreshCw size={18} class={loading ? 'animate-spin' : ''} />
+					</button>
 				</div>
 			</div>
-			<div class="flex items-center gap-3">
-				<div class="relative">
-					<Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-					<input
-						type="text"
-						bind:value={searchQuery}
-						placeholder="Search workflows..."
-						class="w-72 pl-9 pr-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#032D42]/20 focus:border-[#032D42] dark:focus:ring-[#52B8FF]/30 dark:focus:border-[#52B8FF] transition-colors"
-					/>
-				</div>
-				<button onclick={refresh} disabled={loading} class="p-2.5 text-gray-500 hover:text-[#032D42] dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors disabled:opacity-50">
-					<RefreshCw size={18} class={loading ? 'animate-spin' : ''} />
+
+			<!-- Quick Actions -->
+			<div class="grid grid-cols-4 gap-4 mb-8">
+				<!-- Create New -->
+				<button
+					onclick={createNewWorkflow}
+					class="group relative overflow-hidden flex items-center gap-4 p-5 bg-brand-accent rounded-2xl shadow-md hover:shadow-glow-accent transition-all duration-300 hover:-translate-y-1"
+				>
+					<div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+					<div class="w-12 h-12 rounded-xl bg-brand-primary/15 flex items-center justify-center transition-transform duration-200 group-hover:scale-110">
+						<Plus size={24} class="text-brand-primary" strokeWidth={2.5} />
+					</div>
+					<div class="text-left relative z-10">
+						<p class="font-semibold text-brand-primary">New Workflow</p>
+						<p class="text-xs text-brand-primary/70 mt-0.5">Create from scratch</p>
+					</div>
+				</button>
+
+				<!-- Workflows -->
+				<button
+					onclick={goToWorkflows}
+					class="group flex items-center gap-4 p-5 bg-surface-elevated rounded-2xl border border-[var(--border)] shadow-card hover:shadow-card-hover hover:border-[var(--border-focus)] transition-all duration-300 hover:-translate-y-1"
+				>
+					<div class="w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-110 shadow-sm bg-gradient-data">
+						<FolderOpen size={22} class="text-white" />
+					</div>
+					<div class="text-left">
+						<p class="font-semibold text-[var(--text-primary)]">Workflows</p>
+						<p class="text-xs text-[var(--text-muted)] mt-0.5">{stats().workflowCount} available</p>
+					</div>
+				</button>
+
+				<!-- Runs -->
+				<button
+					onclick={goToRuns}
+					class="group flex items-center gap-4 p-5 bg-surface-elevated rounded-2xl border border-[var(--border)] shadow-card hover:shadow-card-hover hover:border-[var(--border-focus)] transition-all duration-300 hover:-translate-y-1"
+				>
+					<div class="w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-110 shadow-sm bg-gradient-brand">
+						<History size={22} class="text-white" />
+					</div>
+					<div class="text-left">
+						<p class="font-semibold text-[var(--text-primary)]">Runs</p>
+						<p class="text-xs text-[var(--text-muted)] mt-0.5">{stats().totalRuns} executions</p>
+					</div>
+				</button>
+
+				<!-- Library -->
+				<button
+					onclick={goToLibrary}
+					class="group flex items-center gap-4 p-5 bg-surface-elevated rounded-2xl border border-[var(--border)] shadow-card hover:shadow-card-hover hover:border-[var(--border-focus)] transition-all duration-300 hover:-translate-y-1"
+				>
+					<div class="w-12 h-12 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-110 shadow-sm bg-gradient-ai">
+						<Library size={22} class="text-white" />
+					</div>
+					<div class="text-left">
+						<p class="font-semibold text-[var(--text-primary)]">Library</p>
+						<p class="text-xs text-[var(--text-muted)] mt-0.5">Browse templates</p>
+					</div>
 				</button>
 			</div>
 		</div>
+	</div>
 
-		<!-- Quick Actions Bar - Clean with brand gradients -->
-		<div class="grid grid-cols-4 gap-5 mb-10">
-			<button onclick={createNewWorkflow} class="group flex items-center gap-4 p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg hover:border-[#63DF4E] dark:hover:border-[#63DF4E] transition-all">
-				<div class="w-12 h-12 rounded-xl bg-[#63DF4E] flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm">
-					<Plus size={24} class="text-white" />
-				</div>
-				<div class="text-left">
-					<p class="font-semibold text-gray-900 dark:text-gray-100">New Workflow</p>
-					<p class="text-xs text-gray-500 mt-0.5">Create from scratch</p>
-				</div>
-			</button>
-			<button onclick={goToWorkflows} class="group flex items-center gap-4 p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg hover:border-[#BF71F2] dark:hover:border-[#BF71F2] transition-all">
-				<div class="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
-					<FolderOpen size={24} class="text-white" />
-				</div>
-				<div class="text-left">
-					<p class="font-semibold text-gray-900 dark:text-gray-100">Workflows</p>
-					<p class="text-xs text-gray-500 mt-0.5">{stats().workflowCount} available</p>
-				</div>
-			</button>
-			<button onclick={goToRuns} class="group flex items-center gap-4 p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg hover:border-[#BF71F2] dark:hover:border-[#BF71F2] transition-all">
-				<div class="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
-					<History size={24} class="text-white" />
-				</div>
-				<div class="text-left">
-					<p class="font-semibold text-gray-900 dark:text-gray-100">Runs</p>
-					<p class="text-xs text-gray-500 mt-0.5">{stats().totalRuns} executions</p>
-				</div>
-			</button>
-			<button onclick={goToLibrary} class="group flex items-center gap-4 p-5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-lg hover:border-[#BF71F2] dark:hover:border-[#BF71F2] transition-all">
-				<div class="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
-					<Library size={24} class="text-white" />
-				</div>
-				<div class="text-left">
-					<p class="font-semibold text-gray-900 dark:text-gray-100">Library</p>
-					<p class="text-xs text-gray-500 mt-0.5">Browse templates</p>
-				</div>
-			</button>
-		</div>
-
+	<!-- Main Content -->
+	<div class="max-w-7xl mx-auto px-6 pb-8">
 		<!-- Stats Grid -->
 		<div class="grid grid-cols-5 gap-4 mb-8">
-			<div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
-				<div class="flex items-center justify-between mb-2">
-					<span class="text-xs font-medium text-gray-500 uppercase">Success Rate</span>
-					{#if stats().successRate >= 80}<TrendingUp size={14} class="text-emerald-500" />{:else}<TrendingDown size={14} class="text-red-500" />{/if}
+			<!-- Success Rate -->
+			<div class="stat-card group">
+				<div class="flex items-center justify-between mb-3">
+					<span class="text-2xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Success Rate</span>
+					<div class="stat-icon {stats().successRate >= 80 ? 'bg-success-light' : 'bg-error-light'}">
+						{#if stats().successRate >= 80}
+							<TrendingUp size={14} class="text-success" />
+						{:else}
+							<TrendingDown size={14} class="text-error" />
+						{/if}
+					</div>
 				</div>
-				<div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats().successRate}%</div>
-				<div class="text-xs text-gray-500 mt-1">{stats().completedRuns}/{stats().totalRuns} runs</div>
+				<div class="text-3xl font-bold text-[var(--text-primary)] tracking-tight">{stats().successRate}<span class="text-lg text-[var(--text-muted)]">%</span></div>
+				<div class="text-xs text-[var(--text-muted)] mt-1">{stats().completedRuns} of {stats().totalRuns} runs</div>
+				<!-- Progress bar -->
+				<div class="mt-3 h-1.5 bg-surface-tertiary rounded-full overflow-hidden">
+					<div
+						class="h-full rounded-full transition-all duration-500 {stats().successRate >= 80 ? 'bg-success' : 'bg-error'}"
+						style="width: {stats().successRate}%"
+					></div>
+				</div>
 			</div>
-			<div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
-				<div class="flex items-center justify-between mb-2">
-					<span class="text-xs font-medium text-gray-500 uppercase">Total Tokens</span>
-					<Zap size={14} class="text-[#7661FF]" />
+
+			<!-- Total Tokens -->
+			<div class="stat-card group">
+				<div class="flex items-center justify-between mb-3">
+					<span class="text-2xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Total Tokens</span>
+					<div class="stat-icon bg-node-llm-bg">
+						<Zap size={14} class="text-node-llm" />
+					</div>
 				</div>
-				<div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatNumber(stats().totalTokens)}</div>
-				<div class="text-xs text-gray-500 mt-1">across all runs</div>
+				<div class="text-3xl font-bold text-[var(--text-primary)] tracking-tight">{formatNumber(stats().totalTokens)}</div>
+				<div class="text-xs text-[var(--text-muted)] mt-1">across all runs</div>
 			</div>
-			<div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
-				<div class="flex items-center justify-between mb-2">
-					<span class="text-xs font-medium text-gray-500 uppercase">Total Cost</span>
-					<DollarSign size={14} class="text-emerald-500" />
+
+			<!-- Total Cost -->
+			<div class="stat-card group">
+				<div class="flex items-center justify-between mb-3">
+					<span class="text-2xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Total Cost</span>
+					<div class="stat-icon bg-success-light">
+						<DollarSign size={14} class="text-success" />
+					</div>
 				</div>
-				<div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatCost(stats().totalCost)}</div>
-				<div class="text-xs text-gray-500 mt-1">API usage</div>
+				<div class="text-3xl font-bold text-[var(--text-primary)] tracking-tight">{formatCost(stats().totalCost)}</div>
+				<div class="text-xs text-[var(--text-muted)] mt-1">API usage</div>
 			</div>
-			<div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
-				<div class="flex items-center justify-between mb-2">
-					<span class="text-xs font-medium text-gray-500 uppercase">Avg Duration</span>
-					<Timer size={14} class="text-amber-500" />
+
+			<!-- Avg Duration -->
+			<div class="stat-card group">
+				<div class="flex items-center justify-between mb-3">
+					<span class="text-2xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Avg Duration</span>
+					<div class="stat-icon bg-warning-light">
+						<Timer size={14} class="text-warning" />
+					</div>
 				</div>
-				<div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{formatDuration(stats().avgDuration)}</div>
-				<div class="text-xs text-gray-500 mt-1">per run</div>
+				<div class="text-3xl font-bold text-[var(--text-primary)] tracking-tight">{formatDuration(stats().avgDuration)}</div>
+				<div class="text-xs text-[var(--text-muted)] mt-1">per run</div>
 			</div>
-			<div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
-				<div class="flex items-center justify-between mb-2">
-					<span class="text-xs font-medium text-gray-500 uppercase">Running</span>
-					<Loader2 size={14} class="text-blue-500 {stats().runningRuns > 0 ? 'animate-spin' : ''}" />
+
+			<!-- Running -->
+			<div class="stat-card group {stats().runningRuns > 0 ? 'ring-2 ring-info-border' : ''}">
+				<div class="flex items-center justify-between mb-3">
+					<span class="text-2xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Running</span>
+					<div class="stat-icon bg-info-light">
+						<Loader2 size={14} class="text-info {stats().runningRuns > 0 ? 'animate-spin' : ''}" />
+					</div>
 				</div>
-				<div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats().runningRuns}</div>
-				<div class="text-xs text-gray-500 mt-1">active now</div>
+				<div class="text-3xl font-bold text-[var(--text-primary)] tracking-tight">{stats().runningRuns}</div>
+				<div class="text-xs text-[var(--text-muted)] mt-1">active now</div>
+				{#if stats().runningRuns > 0}
+					<div class="mt-3 h-1.5 bg-info-light rounded-full overflow-hidden">
+						<div class="h-full bg-info rounded-full animate-pulse w-full"></div>
+					</div>
+				{/if}
 			</div>
 		</div>
 
 		<!-- Main Content Grid -->
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 			<!-- Recent Workflows -->
-			<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-				<div class="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-					<h2 class="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-						<FolderOpen size={18} class="text-[#7661FF]" />
-						{searchQuery ? 'Search Results' : 'Recent Workflows'}
-					</h2>
-					<button onclick={goToWorkflows} class="text-sm text-[#032D42] dark:text-[#52B8FF] hover:text-[#52B8FF] flex items-center gap-1">
+			<div class="content-card">
+				<div class="card-header">
+					<div class="flex items-center gap-2.5">
+						<div class="w-8 h-8 rounded-lg bg-info-light flex items-center justify-center">
+							<FolderOpen size={16} class="text-info" />
+						</div>
+						<h2 class="font-semibold text-[var(--text-primary)]">
+							{searchQuery ? 'Search Results' : 'Recent Workflows'}
+						</h2>
+					</div>
+					<button
+						onclick={goToWorkflows}
+						class="text-sm text-[var(--text-link)] hover:text-[var(--text-primary)] flex items-center gap-1 transition-colors duration-200"
+					>
 						View all <ArrowRight size={14} />
 					</button>
 				</div>
-				<div class="divide-y divide-gray-200 dark:divide-gray-700">
-					{#each filteredWorkflows() as workflow (workflow.id)}
-						<button onclick={() => selectWorkflow(workflow.id)} class="group w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left">
-							<div class="flex items-center gap-3">
-								<div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
-									<FolderOpen size={18} class="text-white" />
+				<div class="card-content divide-y divide-[var(--border)]">
+					{#each filteredWorkflows() as workflow, i (workflow.id)}
+						<button
+							onclick={() => selectWorkflow(workflow.id)}
+							class="group w-full px-5 py-4 flex items-center justify-between hover:bg-surface-hover transition-all duration-200 text-left"
+						>
+							<div class="flex items-center gap-3.5">
+								<div class="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-transform duration-200 group-hover:scale-105 bg-gradient-data">
+									<Workflow size={18} class="text-white" />
 								</div>
 								<div>
-									<p class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-[#032D42] dark:group-hover:text-[#52B8FF] transition-colors">{workflow.name}</p>
-									<div class="flex items-center gap-3 text-xs text-gray-500">
-										<span class="flex items-center gap-1"><Layers size={12} />{workflow.node_count} nodes</span>
+									<p class="font-medium text-[var(--text-primary)] group-hover:text-[var(--text-link)] transition-colors duration-200">{workflow.name}</p>
+									<div class="flex items-center gap-3 text-xs text-[var(--text-muted)] mt-0.5">
+										<span class="flex items-center gap-1"><Layers size={11} />{workflow.node_count} nodes</span>
 										<span>{workflow.edge_count} edges</span>
 									</div>
 								</div>
 							</div>
-							<ArrowUpRight size={16} class="text-gray-400 group-hover:text-[#032D42] dark:group-hover:text-[#52B8FF] transition-colors" />
+							<div class="flex items-center gap-2">
+								<span class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-xs text-[var(--text-muted)]">Open</span>
+								<ArrowUpRight size={16} class="text-[var(--text-muted)] group-hover:text-[var(--text-link)] transition-colors duration-200" />
+							</div>
 						</button>
 					{:else}
-						<div class="px-5 py-12 text-center">
-							<div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
+						<div class="px-5 py-16 text-center">
+							<div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-md bg-gradient-data">
 								<FolderOpen size={28} class="text-white" />
 							</div>
-							<p class="font-medium text-gray-900 dark:text-gray-100 mb-1">{searchQuery ? 'No matching workflows' : 'No workflows yet'}</p>
-							<p class="text-sm text-gray-500 mb-4">{searchQuery ? 'Try a different search term' : 'Create your first workflow to get started'}</p>
+							<p class="font-medium text-[var(--text-primary)] mb-1">{searchQuery ? 'No matching workflows' : 'No workflows yet'}</p>
+							<p class="text-sm text-[var(--text-muted)] mb-5">{searchQuery ? 'Try a different search term' : 'Create your first workflow to get started'}</p>
 							{#if !searchQuery}
-								<button onclick={createNewWorkflow} class="px-4 py-2.5 bg-[#63DF4E] hover:bg-[#4BC93A] text-[#032D42] text-sm font-semibold rounded-lg transition-colors shadow-sm">
-									<Plus size={16} class="inline mr-1" /> Create Workflow
+								<button
+									onclick={createNewWorkflow}
+									class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-accent hover:bg-brand-accent-hover text-brand-primary text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm hover:shadow-glow-accent hover:-translate-y-0.5"
+								>
+									<Plus size={16} /> Create Workflow
 								</button>
 							{/if}
 						</div>
@@ -317,44 +405,56 @@
 			</div>
 
 			<!-- Recent Activity -->
-			<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-				<div class="px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-					<h2 class="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-						<History size={18} class="text-blue-500" />
-						Recent Activity
-					</h2>
-					<button onclick={goToRuns} class="text-sm text-[#032D42] dark:text-[#52B8FF] hover:text-[#52B8FF] flex items-center gap-1">
+			<div class="content-card">
+				<div class="card-header">
+					<div class="flex items-center gap-2.5">
+						<div class="w-8 h-8 rounded-lg bg-success-light flex items-center justify-center">
+							<Activity size={16} class="text-success" />
+						</div>
+						<h2 class="font-semibold text-[var(--text-primary)]">Recent Activity</h2>
+					</div>
+					<button
+						onclick={goToRuns}
+						class="text-sm text-[var(--text-link)] hover:text-[var(--text-primary)] flex items-center gap-1 transition-colors duration-200"
+					>
 						View all <ArrowRight size={14} />
 					</button>
 				</div>
-				<div class="divide-y divide-gray-200 dark:divide-gray-700">
-					{#each recentRuns as run (run.id)}
+				<div class="card-content divide-y divide-[var(--border)]">
+					{#each recentRuns as run, i (run.id)}
 						{@const effectiveStatus = getEffectiveStatusForRun(run)}
 						{@const status = statusConfig[effectiveStatus] || statusConfig.pending}
 						{@const StatusIcon = status.icon}
-						<button onclick={() => selectRun(run)} class="group w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left">
-							<div class="flex items-center gap-3 flex-1 min-w-0">
-								<div class="w-10 h-10 rounded-lg {status.bg} flex items-center justify-center flex-shrink-0">
+						<button
+							onclick={() => selectRun(run)}
+							class="group w-full px-5 py-4 flex items-center justify-between hover:bg-surface-hover transition-all duration-200 text-left"
+						>
+							<div class="flex items-center gap-3.5 flex-1 min-w-0">
+								<div class="w-10 h-10 rounded-xl {status.bg} border {status.border} flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105">
 									<StatusIcon size={18} class="{status.color} {effectiveStatus === 'running' ? 'animate-spin' : ''}" />
 								</div>
 								<div class="flex-1 min-w-0">
-									<p class="font-medium text-gray-900 dark:text-gray-100 truncate">{run.workflow_name || 'Unknown'}</p>
-									<div class="flex items-center gap-3 text-xs text-gray-500">
+									<p class="font-medium text-[var(--text-primary)] truncate group-hover:text-[var(--text-link)] transition-colors duration-200">{run.workflow_name || 'Unknown'}</p>
+									<div class="flex items-center gap-3 text-xs text-[var(--text-muted)] mt-0.5">
 										<span>{formatTime(run.started_at)}</span>
-										{#if run.duration_ms}<span class="flex items-center gap-1"><Timer size={10} />{formatDuration(run.duration_ms)}</span>{/if}
-										{#if run.metadata?.aggregate_statistics?.tokens?.total_tokens}<span class="flex items-center gap-1"><Zap size={10} />{formatNumber(run.metadata.aggregate_statistics.tokens.total_tokens)}</span>{/if}
+										{#if run.duration_ms}
+											<span class="flex items-center gap-1"><Timer size={10} />{formatDuration(run.duration_ms)}</span>
+										{/if}
+										{#if run.metadata?.aggregate_statistics?.tokens?.total_tokens}
+											<span class="flex items-center gap-1"><Zap size={10} />{formatNumber(run.metadata.aggregate_statistics.tokens.total_tokens)}</span>
+										{/if}
 									</div>
 								</div>
 							</div>
-							<span class="text-xs px-2.5 py-1 rounded-full font-medium {status.color} {status.bg}">{status.label}</span>
+							<span class="text-xs px-2.5 py-1.5 rounded-full font-medium {status.color} {status.bg} border {status.border} whitespace-nowrap">{status.label}</span>
 						</button>
 					{:else}
-						<div class="px-5 py-12 text-center">
-							<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-								<Activity size={28} class="text-blue-500" />
+						<div class="px-5 py-16 text-center">
+							<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-success-light border border-success-border flex items-center justify-center">
+								<Activity size={28} class="text-success" />
 							</div>
-							<p class="font-medium text-gray-900 dark:text-gray-100 mb-1">No runs yet</p>
-							<p class="text-sm text-gray-500">Execute a workflow to see activity here</p>
+							<p class="font-medium text-[var(--text-primary)] mb-1">No runs yet</p>
+							<p class="text-sm text-[var(--text-muted)]">Execute a workflow to see activity here</p>
 						</div>
 					{/each}
 				</div>
@@ -363,48 +463,109 @@
 
 		<!-- Getting Started -->
 		{#if workflows.length === 0}
-			<div class="mt-10 bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-200 dark:border-gray-700 shadow-sm">
-				<div class="flex items-center gap-3 mb-4">
-					<div class="w-10 h-10 rounded-xl bg-[#032D42] flex items-center justify-center">
-						<Sparkles size={20} class="text-[#63DF4E]" />
-					</div>
-					<h3 class="text-xl font-bold text-gray-900 dark:text-gray-100">
-						Getting Started
-					</h3>
-				</div>
-				<p class="text-gray-600 dark:text-gray-400 mb-6">
-					Welcome to SyGra Studio! Follow these steps to create your first synthetic data workflow:
-				</p>
-				<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-					<div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-5 border border-gray-100 dark:border-gray-700">
-						<div class="w-9 h-9 rounded-lg bg-[#032D42] flex items-center justify-center mb-4">
-							<span class="text-white font-bold">1</span>
+			<div class="mt-8 bg-surface-elevated rounded-2xl border border-[var(--border)] shadow-card overflow-hidden">
+				<div class="p-8">
+					<div class="flex items-center gap-4 mb-5">
+						<div class="w-12 h-12 rounded-xl flex items-center justify-center shadow-md" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+							<Sparkles size={22} class="text-brand-accent" />
 						</div>
-						<h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Create a Workflow</h4>
-						<p class="text-sm text-gray-500 dark:text-gray-400">
-							Click "Create Workflow" to build your first data generation pipeline.
-						</p>
-					</div>
-					<div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-5 border border-gray-100 dark:border-gray-700">
-						<div class="w-9 h-9 rounded-lg bg-[#032D42] flex items-center justify-center mb-4">
-							<span class="text-white font-bold">2</span>
+						<div>
+							<h3 class="text-xl font-bold text-[var(--text-primary)]">Getting Started</h3>
+							<p class="text-sm text-[var(--text-secondary)]">Create your first synthetic data workflow</p>
 						</div>
-						<h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Add Nodes</h4>
-						<p class="text-sm text-gray-500 dark:text-gray-400">
-							Drag and drop LLM, Lambda, Sampler, and other nodes to build your workflow.
-						</p>
 					</div>
-					<div class="bg-gray-50 dark:bg-gray-900 rounded-xl p-5 border border-gray-100 dark:border-gray-700">
-						<div class="w-9 h-9 rounded-lg bg-[#032D42] flex items-center justify-center mb-4">
-							<span class="text-white font-bold">3</span>
+
+					<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+						<div class="step-card">
+							<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-accent/20 to-brand-accent/10 flex items-center justify-center mb-4">
+								<span class="text-brand-accent font-bold text-lg">1</span>
+							</div>
+							<h4 class="font-semibold text-[var(--text-primary)] mb-2">Create a Workflow</h4>
+							<p class="text-sm text-[var(--text-muted)]">
+								Click "New Workflow" to build your first data generation pipeline.
+							</p>
 						</div>
-						<h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Execute & Monitor</h4>
-						<p class="text-sm text-gray-500 dark:text-gray-400">
-							Run your workflow and monitor execution progress in real-time.
-						</p>
+						<div class="step-card">
+							<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-node-llm/20 to-node-llm/10 flex items-center justify-center mb-4">
+								<span class="text-node-llm font-bold text-lg">2</span>
+							</div>
+							<h4 class="font-semibold text-[var(--text-primary)] mb-2">Add Nodes</h4>
+							<p class="text-sm text-[var(--text-muted)]">
+								Drag and drop LLM, Lambda, Sampler, and other nodes to build your workflow.
+							</p>
+						</div>
+						<div class="step-card">
+							<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-info/20 to-info/10 flex items-center justify-center mb-4">
+								<span class="text-info font-bold text-lg">3</span>
+							</div>
+							<h4 class="font-semibold text-[var(--text-primary)] mb-2">Execute & Monitor</h4>
+							<p class="text-sm text-[var(--text-muted)]">
+								Run your workflow and monitor execution progress in real-time.
+							</p>
+						</div>
 					</div>
 				</div>
 			</div>
 		{/if}
 	</div>
 </div>
+
+<style>
+	.stat-card {
+		background-color: var(--surface-elevated);
+		border: 1px solid var(--border);
+		border-radius: 16px;
+		padding: 1.25rem;
+		transition: all 0.2s ease;
+	}
+
+	.stat-card:hover {
+		border-color: var(--border-hover);
+		box-shadow: var(--shadow-md);
+	}
+
+	.stat-icon {
+		width: 28px;
+		height: 28px;
+		border-radius: 8px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.content-card {
+		background-color: var(--surface-elevated);
+		border: 1px solid var(--border);
+		border-radius: 16px;
+		overflow: hidden;
+		box-shadow: var(--shadow-card);
+	}
+
+	.card-header {
+		padding: 1rem 1.25rem;
+		border-bottom: 1px solid var(--border);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		background-color: var(--surface-secondary);
+	}
+
+	.card-content {
+		max-height: 400px;
+		overflow-y: auto;
+	}
+
+	.step-card {
+		background-color: var(--surface-secondary);
+		border: 1px solid var(--border);
+		border-radius: 16px;
+		padding: 1.5rem;
+		transition: all 0.2s ease;
+	}
+
+	.step-card:hover {
+		border-color: var(--border-hover);
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-md);
+	}
+</style>

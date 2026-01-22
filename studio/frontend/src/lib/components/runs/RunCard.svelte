@@ -20,12 +20,12 @@
 
 	let showMenu = $state(false);
 
-	const statusConfig: Record<string, { icon: typeof Clock; color: string; bg: string; label: string }> = {
-		pending: { icon: Clock, color: 'text-gray-500', bg: 'bg-gray-100 dark:bg-gray-800', label: 'Pending' },
-		running: { icon: Loader2, color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30', label: 'Running' },
-		completed: { icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-100 dark:bg-emerald-900/30', label: 'Completed' },
-		failed: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30', label: 'Failed' },
-		cancelled: { icon: Ban, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30', label: 'Cancelled' }
+	const statusConfig: Record<string, { icon: typeof Clock; color: string; bg: string; border: string; label: string }> = {
+		pending: { icon: Clock, color: 'text-status-pending', bg: 'bg-status-pending/10', border: 'border-status-pending/20', label: 'Pending' },
+		running: { icon: Loader2, color: 'text-status-running', bg: 'bg-status-running/10', border: 'border-status-running/20', label: 'Running' },
+		completed: { icon: CheckCircle2, color: 'text-status-completed', bg: 'bg-status-completed/10', border: 'border-status-completed/20', label: 'Completed' },
+		failed: { icon: XCircle, color: 'text-status-failed', bg: 'bg-status-failed/10', border: 'border-status-failed/20', label: 'Failed' },
+		cancelled: { icon: Ban, color: 'text-status-cancelled', bg: 'bg-status-cancelled/10', border: 'border-status-cancelled/20', label: 'Cancelled' }
 	};
 
 	let status = $derived(statusConfig[run.status] || statusConfig.pending);
@@ -83,117 +83,127 @@
 <svelte:window onclick={() => showMenu = false} />
 
 <div
-	class="group relative bg-white dark:bg-gray-800 border rounded-xl p-4 cursor-pointer transition-all hover:shadow-md {selected ? 'border-[#7661FF] ring-2 ring-[#7661FF]/20' : 'border-gray-200 dark:border-gray-700 hover:border-[#52B8FF] dark:hover:border-[#7661FF]'}"
+	class="group relative bg-surface-primary border rounded-2xl p-5 cursor-pointer transition-all duration-300 hover:shadow-elevation-2 hover:-translate-y-1 {selected ? 'border-brand-accent ring-2 ring-brand-accent/20 shadow-elevation-2' : 'border-surface-border hover:border-brand-accent/50'}"
 	onclick={onSelect}
 	role="button"
 	tabindex="0"
 >
+	<!-- Pinned indicator -->
+	{#if pinned}
+		<div class="absolute -top-2 -right-2 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center shadow-md">
+			<Star size={12} class="text-white fill-current" />
+		</div>
+	{/if}
+
 	<!-- Header -->
-	<div class="flex items-start justify-between mb-3">
+	<div class="flex items-start justify-between mb-4">
 		<div class="flex items-center gap-3">
-			<!-- Status icon -->
-			<div class="w-10 h-10 rounded-lg flex items-center justify-center {status.bg}">
-				<StatusIcon size={20} class="{status.color} {run.status === 'running' ? 'animate-spin' : ''}" />
+			<!-- Status icon with gradient background -->
+			<div class="w-12 h-12 rounded-xl flex items-center justify-center {status.bg} border {status.border}">
+				<StatusIcon size={22} class="{status.color} {run.status === 'running' ? 'animate-spin' : ''}" />
 			</div>
-			<div>
-				<h3 class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-[#7661FF] dark:group-hover:text-[#52B8FF] transition-colors line-clamp-1">
+			<div class="flex-1 min-w-0">
+				<h3 class="font-semibold text-text-primary group-hover:text-brand-accent transition-colors line-clamp-1">
 					{run.workflow_name || 'Unknown Workflow'}
 				</h3>
-				<p class="text-xs text-gray-500 font-mono">{run.id.slice(0, 12)}...</p>
+				<p class="text-xs text-text-muted font-mono">{run.id.slice(0, 12)}...</p>
 			</div>
 		</div>
 
 		<!-- Actions -->
-		<div class="flex items-center gap-1">
-			{#if pinned}
-				<button
-					onclick={(e) => handleAction(e, onPin || (() => {}))}
-					class="p-1.5 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
-					title="Unpin"
-				>
-					<Star size={16} fill="currentColor" />
-				</button>
+		<div class="relative">
+			<button
+				onclick={toggleMenu}
+				class="p-2 text-text-muted hover:text-text-primary hover:bg-surface-secondary rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100"
+			>
+				<MoreVertical size={16} />
+			</button>
+			{#if showMenu}
+				<div class="absolute right-0 top-full mt-1 w-44 bg-surface-primary rounded-xl shadow-elevation-3 border border-surface-border py-1.5 z-50 animate-scale-in origin-top-right">
+					{#if !pinned}
+						<button
+							onclick={(e) => handleAction(e, onPin || (() => {}))}
+							class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors"
+						>
+							<Star size={14} />
+							Pin Run
+						</button>
+					{:else}
+						<button
+							onclick={(e) => handleAction(e, onPin || (() => {}))}
+							class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors"
+						>
+							<StarOff size={14} />
+							Unpin
+						</button>
+					{/if}
+					<button
+						onclick={(e) => handleAction(e, onRerun || (() => {}))}
+						class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors"
+					>
+						<Play size={14} />
+						Re-run
+					</button>
+					<button
+						onclick={(e) => { navigator.clipboard.writeText(run.id); showMenu = false; }}
+						class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors"
+					>
+						<Copy size={14} />
+						Copy ID
+					</button>
+					<div class="h-px bg-surface-border my-1.5 mx-3"></div>
+					<button
+						onclick={(e) => handleAction(e, onDelete || (() => {}))}
+						class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-status-failed hover:bg-status-failed/10 transition-colors"
+					>
+						<Trash2 size={14} />
+						Delete
+					</button>
+				</div>
 			{/if}
-			<div class="relative">
-				<button
-					onclick={toggleMenu}
-					class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-				>
-					<MoreVertical size={16} />
-				</button>
-				{#if showMenu}
-					<div class="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
-						{#if !pinned}
-							<button
-								onclick={(e) => handleAction(e, onPin || (() => {}))}
-								class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-							>
-								<Star size={14} />
-								Pin Run
-							</button>
-						{:else}
-							<button
-								onclick={(e) => handleAction(e, onPin || (() => {}))}
-								class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-							>
-								<StarOff size={14} />
-								Unpin
-							</button>
-						{/if}
-						<button
-							onclick={(e) => handleAction(e, onRerun || (() => {}))}
-							class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-						>
-							<Play size={14} />
-							Re-run
-						</button>
-						<button
-							onclick={(e) => { navigator.clipboard.writeText(run.id); showMenu = false; }}
-							class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-						>
-							<Copy size={14} />
-							Copy ID
-						</button>
-						<div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
-						<button
-							onclick={(e) => handleAction(e, onDelete || (() => {}))}
-							class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-						>
-							<Trash2 size={14} />
-							Delete
-						</button>
-					</div>
-				{/if}
-			</div>
 		</div>
+	</div>
+
+	<!-- Status badge -->
+	<div class="mb-4">
+		<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold {status.bg} {status.color} border {status.border}">
+			<StatusIcon size={12} class={run.status === 'running' ? 'animate-spin' : ''} />
+			{status.label}
+		</span>
 	</div>
 
 	<!-- Timeline bar -->
 	{#if Object.keys(run.node_states).length > 0}
-		<div class="mb-3">
+		<div class="mb-4">
 			<RunTimelineBar nodeStates={run.node_states} totalDuration={run.duration_ms} />
 		</div>
 	{/if}
 
 	<!-- Stats -->
-	<div class="grid grid-cols-3 gap-3 text-sm">
-		<div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-			<Timer size={14} class="text-gray-400" />
-			<span>{formatDuration(run.duration_ms)}</span>
+	<div class="grid grid-cols-3 gap-3">
+		<div class="flex flex-col items-center p-2.5 rounded-xl bg-surface-secondary/50">
+			<Timer size={14} class="text-text-muted mb-1" />
+			<span class="text-sm font-semibold text-text-primary">{formatDuration(run.duration_ms)}</span>
+			<span class="text-[10px] text-text-muted uppercase tracking-wider">Duration</span>
 		</div>
-		<div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-			<Zap size={14} class="text-[#7661FF]" />
-			<span>{formatTokens(run.metadata)}</span>
+		<div class="flex flex-col items-center p-2.5 rounded-xl bg-surface-secondary/50">
+			<Zap size={14} class="text-brand-accent mb-1" />
+			<span class="text-sm font-semibold text-text-primary">{formatTokens(run.metadata)}</span>
+			<span class="text-[10px] text-text-muted uppercase tracking-wider">Tokens</span>
 		</div>
-		<div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-			<DollarSign size={14} class="text-emerald-400" />
-			<span>{formatCost(run.metadata)}</span>
+		<div class="flex flex-col items-center p-2.5 rounded-xl bg-surface-secondary/50">
+			<DollarSign size={14} class="text-status-completed mb-1" />
+			<span class="text-sm font-semibold text-text-primary">{formatCost(run.metadata)}</span>
+			<span class="text-[10px] text-text-muted uppercase tracking-wider">Cost</span>
 		</div>
 	</div>
 
 	<!-- Footer -->
-	<div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-		<span class="text-xs text-gray-500">{formatDate(run.started_at)}</span>
-		<ChevronRight size={16} class="text-gray-400 group-hover:text-[#7661FF] transition-colors" />
+	<div class="flex items-center justify-between mt-4 pt-4 border-t border-surface-border">
+		<span class="text-xs text-text-muted font-medium">{formatDate(run.started_at)}</span>
+		<div class="flex items-center gap-1 text-xs text-text-muted group-hover:text-brand-accent transition-colors">
+			<span>View details</span>
+			<ChevronRight size={14} />
+		</div>
 	</div>
 </div>

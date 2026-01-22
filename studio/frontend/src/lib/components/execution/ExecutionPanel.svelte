@@ -86,10 +86,10 @@
 
 	let statusColor = $derived(() => {
 		switch (execution.status) {
-			case 'running': return 'bg-blue-500';
-			case 'completed': return 'bg-green-500';
-			case 'failed': return 'bg-red-500';
-			case 'cancelled': return 'bg-yellow-500';
+			case 'running': return 'bg-info';
+			case 'completed': return 'bg-success';
+			case 'failed': return 'bg-error';
+			case 'cancelled': return 'bg-warning';
 			default: return 'bg-gray-400';
 		}
 	});
@@ -163,10 +163,10 @@
 		<div class="absolute top-0 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-700 overflow-hidden">
 			<div
 				class="h-full transition-all duration-300 ease-out"
-				class:bg-blue-500={execution.status === 'running'}
-				class:bg-green-500={execution.status === 'completed'}
-				class:bg-red-500={execution.status === 'failed'}
-				class:bg-yellow-500={execution.status === 'cancelled'}
+				class:bg-info={execution.status === 'running'}
+				class:bg-success={execution.status === 'completed'}
+				class:bg-error={execution.status === 'failed'}
+				class:bg-warning={execution.status === 'cancelled'}
 				class:bg-gray-400={execution.status === 'pending'}
 				class:animate-pulse={execution.status === 'running'}
 				style="width: {progressPercent}%"
@@ -183,10 +183,10 @@
 					class="w-2.5 h-2.5 rounded-full"
 					class:animate-pulse={execution.status === 'running'}
 					class:bg-gray-400={execution.status === 'pending'}
-					class:bg-blue-500={execution.status === 'running'}
-					class:bg-green-500={execution.status === 'completed'}
-					class:bg-red-500={execution.status === 'failed'}
-					class:bg-yellow-500={execution.status === 'cancelled'}
+					class:bg-info={execution.status === 'running'}
+					class:bg-success={execution.status === 'completed'}
+					class:bg-error={execution.status === 'failed'}
+					class:bg-warning={execution.status === 'cancelled'}
 				></div>
 				<span class="text-sm font-medium text-gray-700 dark:text-gray-300">
 					{statusMessage()}

@@ -32,23 +32,23 @@
 	const variantStyles = {
 		danger: {
 			icon: Trash2,
-			iconBg: 'bg-red-100 dark:bg-red-900/30',
-			iconColor: 'text-red-600 dark:text-red-400',
-			buttonBg: 'bg-red-600 hover:bg-red-700',
+			iconBg: 'bg-error-light',
+			iconColor: 'text-error',
+			buttonBg: 'bg-error hover:bg-error/90',
 			buttonText: 'text-white'
 		},
 		warning: {
 			icon: AlertTriangle,
-			iconBg: 'bg-amber-100 dark:bg-amber-900/30',
-			iconColor: 'text-amber-600 dark:text-amber-400',
-			buttonBg: 'bg-amber-600 hover:bg-amber-700',
+			iconBg: 'bg-warning-light',
+			iconColor: 'text-warning',
+			buttonBg: 'bg-warning hover:bg-warning/90',
 			buttonText: 'text-white'
 		},
 		info: {
 			icon: Check,
-			iconBg: 'bg-blue-100 dark:bg-blue-900/30',
-			iconColor: 'text-blue-600 dark:text-blue-400',
-			buttonBg: 'bg-blue-600 hover:bg-blue-700',
+			iconBg: 'bg-info-light',
+			iconColor: 'text-info',
+			buttonBg: 'bg-info hover:bg-info/90',
 			buttonText: 'text-white'
 		}
 	};
@@ -64,22 +64,22 @@
 	onclick={() => dispatch('cancel')}
 >
 	<div
-		class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+		class="bg-surface rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
 		onclick={(e) => e.stopPropagation()}
 	>
 		<!-- Header -->
-		<div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+		<div class="flex items-center justify-between px-6 py-4 border-b border-surface-border">
 			<div class="flex items-center gap-3">
 				<div class="p-2 rounded-lg {style.iconBg}">
 					<IconComponent size={20} class={style.iconColor} />
 				</div>
-				<h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+				<h3 class="text-lg font-semibold text-text-primary">
 					{title}
 				</h3>
 			</div>
 			<button
 				onclick={() => dispatch('cancel')}
-				class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+				class="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted transition-colors"
 			>
 				<X size={18} />
 			</button>
@@ -87,16 +87,16 @@
 
 		<!-- Content -->
 		<div class="px-6 py-5">
-			<p class="text-sm text-gray-600 dark:text-gray-400">
+			<p class="text-sm text-text-secondary">
 				{message}
 			</p>
 		</div>
 
 		<!-- Footer -->
-		<div class="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800">
+		<div class="flex items-center justify-end gap-3 px-6 py-4 bg-surface-secondary border-t border-surface-border">
 			<button
 				onclick={() => dispatch('cancel')}
-				class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+				class="px-4 py-2 text-sm font-medium text-text-secondary bg-surface border border-surface-border rounded-lg hover:bg-surface-hover transition-colors"
 			>
 				{cancelText}
 			</button>
