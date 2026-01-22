@@ -68,9 +68,9 @@ class ScrollDirectionMetric(BaseUnitMetric):
                 predicted_dir = predicted_dict.get(self.predicted_direction_key)
 
                 is_valid = (
-                        predicted_dir == golden_dir
-                        and isinstance(predicted_dir, str)
-                        and predicted_dir in valid_directions
+                    predicted_dir == golden_dir
+                    and isinstance(predicted_dir, str)
+                    and predicted_dir in valid_directions
                 )
 
                 results.append(

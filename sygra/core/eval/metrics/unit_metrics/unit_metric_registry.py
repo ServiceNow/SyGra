@@ -55,15 +55,15 @@ class UnitMetricRegistry:
             import sygra.core.eval.metrics.unit_metrics as unit_metrics_pkg
 
             for module_info in pkgutil.iter_modules(
-                    unit_metrics_pkg.__path__, unit_metrics_pkg.__name__ + "."
+                unit_metrics_pkg.__path__, unit_metrics_pkg.__name__ + "."
             ):
                 module_name = module_info.name
                 if module_name.endswith(
-                        (
-                                ".base_unit_metric",
-                                ".unit_metric_registry",
-                                ".unit_metric_result",
-                        )
+                    (
+                        ".base_unit_metric",
+                        ".unit_metric_registry",
+                        ".unit_metric_result",
+                    )
                 ):
                     continue
                 importlib.import_module(module_name)
@@ -101,8 +101,7 @@ class UnitMetricRegistry:
 
         if not issubclass(metric_class, BaseUnitMetric):
             raise ValueError(
-                f"metric_class must inherit from BaseUnitMetric, "
-                f"got {metric_class.__name__}"
+                f"metric_class must inherit from BaseUnitMetric, " f"got {metric_class.__name__}"
             )
 
         # Check for duplicate registration
@@ -140,8 +139,7 @@ class UnitMetricRegistry:
         if name not in cls._metrics:
             available = cls.list_metrics()
             raise KeyError(
-                f"Unit metric '{name}' not found in registry. "
-                f"Available metrics: {available}"
+                f"Unit metric '{name}' not found in registry. " f"Available metrics: {available}"
             )
 
         metric_class = cls._metrics[name]
@@ -202,8 +200,7 @@ class UnitMetricRegistry:
         if name not in cls._metrics:
             available = cls.list_metrics()
             raise KeyError(
-                f"Unit metric '{name}' not found in registry. "
-                f"Available metrics: {available}"
+                f"Unit metric '{name}' not found in registry. " f"Available metrics: {available}"
             )
         return cls._metrics[name]
 

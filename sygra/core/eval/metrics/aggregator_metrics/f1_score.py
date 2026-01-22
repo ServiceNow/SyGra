@@ -89,7 +89,9 @@ class F1ScoreMetric(BaseAggregatorMetric):
         # Calculate F1 as harmonic mean of precision and recall
         average_precision = precision_result.get("average_precision", 0.0)
         average_recall = recall_result.get("average_recall", 0.0)
-        average_f1_score = self._safe_divide(2 * average_precision * average_recall, average_precision + average_recall)
+        average_f1_score = self._safe_divide(
+            2 * average_precision * average_recall, average_precision + average_recall
+        )
 
         precision_classes = set(precision_result.get("precision_per_class", {}).keys())
         recall_classes = set(recall_result.get("recall_per_class", {}).keys())
@@ -100,7 +102,4 @@ class F1ScoreMetric(BaseAggregatorMetric):
             recall = recall_result.get("recall_per_class", {}).get(class_, 0.0)
             f1_score[class_] = self._safe_divide(2 * precision * recall, precision + recall)
 
-        return {
-            "average_f1_score": average_f1_score,
-            "f1_score_per_class": f1_score
-        }
+        return {"average_f1_score": average_f1_score, "f1_score_per_class": f1_score}
