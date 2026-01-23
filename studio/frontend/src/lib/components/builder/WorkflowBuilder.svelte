@@ -878,7 +878,7 @@
 				saveDraft();
 				// Show brief visual feedback
 				const toast = document.createElement('div');
-				toast.className = 'fixed bottom-4 right-4 px-4 py-2 bg-green-600 text-white rounded-lg shadow-lg z-50 animate-fade-in';
+				toast.className = 'fixed bottom-4 right-4 px-4 py-2 bg-success text-white rounded-lg shadow-lg z-50 animate-fade-in';
 				toast.textContent = '✓ Draft saved';
 				document.body.appendChild(toast);
 				setTimeout(() => toast.remove(), 2000);
@@ -1137,28 +1137,28 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+<div class="flex flex-col h-full bg-surface-secondary">
 	<!-- Header -->
-	<div class="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+	<div class="flex items-center justify-between px-4 py-3 bg-surface border-b border-surface-border">
 		<div class="flex items-center gap-4">
 			<div class="flex items-center gap-2">
-				<div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#032D42] to-[#52B8FF] flex items-center justify-center">
+				<div class="w-8 h-8 rounded-lg bg-brand-primary flex items-center justify-center">
 					<GitBranch size={16} class="text-white" />
 				</div>
 				<input
 					type="text"
 					bind:value={workflowName}
 					placeholder="Untitled Workflow"
-					class="text-lg font-semibold bg-transparent border border-gray-300 dark:border-gray-600 focus:outline-none focus:border-[#52B8FF] focus:ring-1 focus:ring-[#52B8FF] rounded-lg px-3 py-1.5 text-gray-900 dark:text-gray-100 min-w-[200px] transition-colors"
+					class="text-lg font-semibold bg-transparent border border-surface-border focus:outline-none focus:border-info focus:ring-1 focus:ring-info rounded-lg px-3 py-1.5 text-text-primary min-w-[200px] transition-colors"
 				/>
 			</div>
 			{#if hasChanges}
-				<span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+				<span class="text-xs px-2 py-0.5 rounded-full bg-warning-light text-warning">
 					Unsaved changes
 				</span>
 			{/if}
 			{#if lastAutoSave}
-				<span class="text-xs text-gray-400 dark:text-gray-500">
+				<span class="text-xs text-text-muted">
 					Draft saved {lastAutoSave.toLocaleTimeString()}
 				</span>
 			{/if}
@@ -1170,12 +1170,12 @@
 				<button
 					onclick={handleNewWorkflow}
 					title="Start a new blank workflow"
-					class="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+					class="flex items-center gap-2 px-3 py-2 text-text-secondary hover:bg-surface-hover rounded-lg transition-colors"
 				>
 					<FilePlus2 size={16} />
 					New
 				</button>
-				<div class="w-px h-6 bg-gray-200 dark:bg-gray-600"></div>
+				<div class="w-px h-6 bg-surface-border"></div>
 			{/if}
 			<!-- Group as Subgraph button - shows when 2+ valid nodes selected -->
 			{#if selectedNodeIds.length >= 2}
@@ -1183,25 +1183,25 @@
 					onclick={() => showGroupModal = true}
 					disabled={!canGroupNodes()}
 					title={canGroupNodes() ? `Group ${selectedNodeIds.length} nodes as subgraph (⌘G)` : 'Cannot group: includes START, END, Data, or Output nodes'}
-					class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-white rounded-lg transition-colors disabled:cursor-not-allowed"
+					class="flex items-center gap-2 px-3 py-2 bg-info hover:bg-info-dark disabled:bg-surface-tertiary text-white rounded-lg transition-colors disabled:cursor-not-allowed"
 				>
 					<Group size={16} />
 					Group ({selectedNodeIds.length})
 				</button>
-				<div class="w-px h-6 bg-gray-200 dark:bg-gray-600"></div>
+				<div class="w-px h-6 bg-surface-border"></div>
 			{/if}
 			<button
 				onclick={handleAutoLayout}
 				title="Auto-arrange nodes using DAG layout"
-				class="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+				class="flex items-center gap-2 px-3 py-2 text-text-secondary hover:bg-surface-hover rounded-lg transition-colors"
 			>
 				<LayoutGrid size={16} />
 				Auto Layout
 			</button>
-			<div class="w-px h-6 bg-gray-200 dark:bg-gray-600"></div>
+			<div class="w-px h-6 bg-surface-border"></div>
 			<button
 				onclick={handleCancel}
-				class="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+				class="flex items-center gap-2 px-3 py-2 text-text-secondary hover:bg-surface-hover rounded-lg transition-colors"
 			>
 				<X size={16} />
 				Cancel
@@ -1209,10 +1209,10 @@
 			<button
 				onclick={() => showSaveModal = true}
 				disabled={isSaving}
-				class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#4BC93A] text-[#032D42] rounded-lg font-semibold transition-colors disabled:opacity-50"
+				class="btn-accent flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-colors disabled:opacity-50"
 			>
 				{#if isSaving}
-					<div class="w-4 h-4 border-2 border-[#032D42] border-t-transparent rounded-full animate-spin"></div>
+					<div class="w-4 h-4 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"></div>
 				{:else}
 					<Save size={16} />
 				{/if}
@@ -1223,21 +1223,21 @@
 
 	<div class="flex flex-1 overflow-hidden">
 		<!-- Node Palette -->
-		<div class="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
+		<div class="w-64 bg-surface border-r border-surface-border overflow-y-auto">
 			<div class="p-4">
 				<!-- Search Box -->
 				<div class="relative mb-4">
-					<Search size={14} class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+					<Search size={14} class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
 					<input
 						type="text"
 						bind:value={paletteSearch}
 						placeholder="Search nodes..."
-						class="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] focus:border-[#52B8FF]"
+						class="w-full pl-9 pr-3 py-2 text-sm border border-surface-border rounded-lg bg-surface-secondary text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-info focus:border-info"
 					/>
 					{#if paletteSearch}
 						<button
 							onclick={() => paletteSearch = ''}
-							class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+							class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-text-muted hover:text-text-secondary"
 						>
 							<X size={12} />
 						</button>
@@ -1249,21 +1249,21 @@
 					{#each NODE_CATEGORIES as category}
 						{@const categoryNodes = groupedNodeTypes()[category.id]}
 						{#if categoryNodes && categoryNodes.length > 0}
-							<div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+							<div class="border border-surface-border rounded-lg overflow-hidden">
 								<!-- Category Header -->
 								<button
 									onclick={() => toggleCategory(category.id)}
-									class="w-full flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+									class="w-full flex items-center justify-between px-3 py-2 bg-surface-secondary hover:bg-surface-hover transition-colors"
 								>
-									<span class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+									<span class="text-xs font-semibold text-text-secondary uppercase tracking-wider">
 										{category.label}
 									</span>
 									<div class="flex items-center gap-2">
-										<span class="text-xs text-gray-400">{categoryNodes.length}</span>
+										<span class="text-xs text-text-muted">{categoryNodes.length}</span>
 										{#if expandedCategories.has(category.id)}
-											<ChevronDown size={14} class="text-gray-400" />
+											<ChevronDown size={14} class="text-text-muted" />
 										{:else}
-											<ChevronRight size={14} class="text-gray-400" />
+											<ChevronRight size={14} class="text-text-muted" />
 										{/if}
 									</div>
 								</button>
@@ -1280,7 +1280,7 @@
 												role="option"
 												aria-selected={draggedNodeType === nodeType.type}
 												tabindex="0"
-												class="flex items-center gap-2.5 p-2 rounded-lg border border-dashed border-gray-200 dark:border-gray-600 hover:border-[#52B8FF] dark:hover:border-[#52B8FF] cursor-grab active:cursor-grabbing transition-colors group {draggedNodeType === nodeType.type ? 'border-[#52B8FF] bg-sky-50 dark:bg-sky-900/20' : ''}"
+												class="flex items-center gap-2.5 p-2 rounded-lg border border-dashed border-surface-border hover:border-info cursor-grab active:cursor-grabbing transition-colors group {draggedNodeType === nodeType.type ? 'border-info bg-info-light' : ''}"
 											>
 												<div
 													class="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
@@ -1289,14 +1289,14 @@
 													<Icon size={16} style="color: {nodeType.color}" />
 												</div>
 												<div class="flex-1 min-w-0">
-													<div class="font-medium text-sm text-gray-900 dark:text-gray-100">
+													<div class="font-medium text-sm text-text-primary">
 														{nodeType.label}
 													</div>
-													<div class="text-xs text-gray-500 dark:text-gray-400 truncate">
+													<div class="text-xs text-text-muted truncate">
 														{nodeType.description}
 													</div>
 												</div>
-												<GripVertical size={12} class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+												<GripVertical size={12} class="text-text-muted opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
 											</div>
 										{/each}
 									</div>
@@ -1308,18 +1308,18 @@
 
 				<!-- No results message -->
 				{#if paletteSearch && filteredNodeTypes().length === 0}
-					<div class="text-center py-8 text-gray-500 dark:text-gray-400">
+					<div class="text-center py-8 text-text-muted">
 						<Search size={24} class="mx-auto mb-2 opacity-50" />
 						<p class="text-sm">No nodes match "{paletteSearch}"</p>
 					</div>
 				{/if}
 
 				<!-- Tips -->
-				<div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-					<h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+				<div class="mt-4 pt-4 border-t border-surface-border">
+					<h3 class="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
 						Tips
 					</h3>
-					<div class="text-xs text-gray-500 dark:text-gray-400 space-y-1.5">
+					<div class="text-xs text-text-muted space-y-1.5">
 						<p>• Connect by dragging handle to handle</p>
 						<p>• <strong>⌘/Ctrl+Click</strong> to multi-select</p>
 						<p>• <strong>Delete/Backspace</strong> to delete selected</p>
@@ -1385,19 +1385,19 @@
 							<!-- Toggle button -->
 							<button
 								onclick={() => showMinimap = !showMinimap}
-								class="flex items-center justify-center w-7 h-7 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+								class="flex items-center justify-center w-7 h-7 bg-surface border border-surface-border rounded shadow-sm hover:bg-surface-hover transition-colors"
 								title={showMinimap ? 'Hide minimap' : 'Show minimap'}
 							>
 								{#if showMinimap}
-									<EyeOff size={14} class="text-gray-500 dark:text-gray-400" />
+									<EyeOff size={14} class="text-text-muted" />
 								{:else}
-									<MapIcon size={14} class="text-gray-500 dark:text-gray-400" />
+									<MapIcon size={14} class="text-text-muted" />
 								{/if}
 							</button>
 
 							<!-- Minimap -->
 							{#if showMinimap}
-								<div class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
+								<div class="rounded-lg overflow-hidden border border-surface-border shadow-sm">
 									<MiniMap
 										width={180}
 										height={120}
@@ -1405,9 +1405,9 @@
 											const nodeType = NODE_TYPES.find(t => t.type === node.type);
 											return nodeType?.color ?? '#6b7280';
 										}}
-										bgColor={isDarkMode ? '#1e293b' : '#ffffff'}
-										maskColor={isDarkMode ? 'rgba(30, 41, 59, 0.6)' : 'rgba(240, 240, 240, 0.6)'}
-										maskStrokeColor={isDarkMode ? '#475569' : '#cbd5e1'}
+										bgColor={isDarkMode ? '#032D42' : '#ffffff'}
+										maskColor={isDarkMode ? 'rgba(3, 45, 66, 0.6)' : 'rgba(240, 240, 240, 0.6)'}
+										maskStrokeColor={isDarkMode ? '#0a4560' : '#cbd5e1'}
 										maskStrokeWidth={1}
 										pannable={true}
 										zoomable={true}
@@ -1422,8 +1422,8 @@
 
 			<!-- Drop indicator overlay -->
 			{#if draggedNodeType}
-				<div class="absolute inset-0 pointer-events-none border-4 border-dashed border-[#52B8FF] dark:border-[#52B8FF] bg-[#52B8FF]/10 dark:bg-[#52B8FF]/15 rounded-lg m-2 flex items-center justify-center">
-					<div class="bg-white dark:bg-gray-800 px-4 py-2 rounded-lg shadow-lg text-sm font-medium text-[#032D42] dark:text-[#52B8FF]">
+				<div class="absolute inset-0 pointer-events-none border-4 border-dashed border-info bg-info-light rounded-lg m-2 flex items-center justify-center">
+					<div class="bg-surface px-4 py-2 rounded-lg shadow-lg text-sm font-medium text-text-primary border border-surface-border">
 						Drop to add {NODE_TYPES.find(t => t.type === draggedNodeType)?.label} node
 					</div>
 				</div>
@@ -1433,7 +1433,7 @@
 			{#if selectedNodeIds.length >= 2 || selectedEdgeIds.length > 0}
 				{@const totalSelected = selectedNodeIds.length + selectedEdgeIds.length}
 				{@const canDelete = selectedNodeIds.filter(id => id !== 'START' && id !== 'END').length > 0 || selectedEdgeIds.length > 0}
-				<div class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gray-800 dark:bg-gray-700 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium flex items-center gap-3 z-10">
+				<div class="absolute top-4 left-1/2 transform -translate-x-1/2 bg-brand-primary text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium flex items-center gap-3 z-10">
 					<div class="flex items-center gap-2">
 						<MousePointerClick size={16} />
 						{#if selectedNodeIds.length > 0 && selectedEdgeIds.length > 0}
@@ -1444,27 +1444,27 @@
 							{selectedEdgeIds.length} edge{selectedEdgeIds.length > 1 ? 's' : ''} selected
 						{/if}
 					</div>
-					<div class="h-4 w-px bg-gray-600"></div>
+					<div class="h-4 w-px bg-white/30"></div>
 					{#if selectedNodeIds.length >= 2 && canGroupNodes()}
 						<button
 							onclick={() => showGroupModal = true}
-							class="flex items-center gap-1 text-blue-300 hover:text-blue-200 transition-colors"
+							class="flex items-center gap-1 text-info hover:text-white transition-colors"
 						>
 							<Group size={14} />
 							<span>⌘G</span>
 						</button>
-						<div class="h-4 w-px bg-gray-600"></div>
+						<div class="h-4 w-px bg-white/30"></div>
 					{/if}
 					{#if canDelete}
 						<button
 							onclick={handleDeleteSelected}
-							class="flex items-center gap-1 text-red-400 hover:text-red-300 transition-colors"
+							class="flex items-center gap-1 text-error hover:text-error-dark transition-colors"
 						>
 							<Trash2 size={14} />
 							<span>Delete</span>
 						</button>
 					{/if}
-					<span class="text-gray-400 text-xs">Esc to clear</span>
+					<span class="text-white/60 text-xs">Esc to clear</span>
 				</div>
 			{/if}
 			</div>
@@ -1529,29 +1529,29 @@
 		aria-modal="true"
 	>
 		<div
-			class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+			class="bg-surface rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-surface-border"
 			onclick={(e) => e.stopPropagation()}
 		>
-			<div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-				<h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+			<div class="px-6 py-4 border-b border-surface-border">
+				<h2 class="text-lg font-semibold text-text-primary">
 					Start New Workflow?
 				</h2>
 			</div>
 			<div class="px-6 py-4">
-				<p class="text-gray-600 dark:text-gray-300">
+				<p class="text-text-secondary">
 					You have unsaved changes. Starting a new workflow will discard your current work.
 				</p>
 			</div>
-			<div class="px-6 py-4 bg-gray-50 dark:bg-gray-900/50 flex justify-end gap-3">
+			<div class="px-6 py-4 bg-surface-secondary flex justify-end gap-3">
 				<button
 					onclick={handleResetCancel}
-					class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+					class="px-4 py-2 text-text-secondary hover:bg-surface-hover rounded-lg transition-colors"
 				>
 					Cancel
 				</button>
 				<button
 					onclick={handleResetConfirm}
-					class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+					class="px-4 py-2 bg-error hover:bg-error-dark text-white rounded-lg transition-colors"
 				>
 					Discard & Start New
 				</button>

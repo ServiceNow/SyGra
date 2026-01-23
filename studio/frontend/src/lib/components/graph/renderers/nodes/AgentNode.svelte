@@ -34,23 +34,23 @@
 	<div class="space-y-1">
 		{#if data.model?.provider}
 			<div class="flex items-center gap-2 text-xs">
-				<Sparkles size={12} class="text-pink-500" />
-				<span class="text-gray-600 dark:text-gray-400">{data.model.provider}</span>
+				<Sparkles size={12} class="text-node-agent" />
+				<span class="text-text-muted">{data.model.provider}</span>
 			</div>
 		{/if}
 		{#if temperature !== undefined}
-			<div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+			<div class="flex items-center gap-1 text-xs text-text-muted">
 				<Thermometer size={10} />
 				<span>{temperature}</span>
 			</div>
 		{/if}
 		{#if toolCount > 0}
-			<div class="flex items-center gap-1.5 text-xs text-pink-600 dark:text-pink-400">
+			<div class="flex items-center gap-1.5 text-xs text-node-agent">
 				<Wrench size={12} />
 				<span>{toolCount} tool{toolCount !== 1 ? 's' : ''}</span>
 			</div>
 		{:else}
-			<div class="text-xs text-gray-400 dark:text-gray-500 italic">
+			<div class="text-xs text-text-muted italic">
 				No tools configured
 			</div>
 		{/if}

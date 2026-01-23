@@ -7,7 +7,8 @@
 	import { modelsStore } from '$lib/stores/models.svelte';
 	import {
 		Home, ChevronLeft, ChevronRight,
-		FolderOpen, History, Plus, Library, Settings, Brain, Sparkles
+		FolderOpen, History, Plus, Library, Settings, Brain, Sparkles,
+		Zap
 	} from 'lucide-svelte';
 
 	interface Props {
@@ -116,178 +117,159 @@
 </script>
 
 <aside
-	class="flex flex-col border-r border-gray-200 dark:border-[#0A4D6E] bg-white dark:bg-[#032D42] transition-all duration-300"
+	class="group/sidebar sidebar flex flex-col flex-shrink-0 bg-surface-elevated border-r border-[var(--border)] transition-[width] duration-300 ease-out relative h-full"
 	class:w-64={!collapsed}
-	class:w-16={collapsed}
+	class:w-[72px]={collapsed}
+	class:sidebar-collapsed={collapsed}
 >
-	<!-- Logo/Brand -->
-	<div class="h-14 flex items-center border-b border-gray-200 dark:border-[#0A4D6E] overflow-hidden px-2">
-		<div class="w-12 h-12 shrink-0 flex items-center justify-center">
-			<!-- Logo with Green + Purple gradient (ServiceNow brand style) -->
-			<div
-				class="w-9 h-9 rounded-xl flex items-center justify-center shadow-md"
-				style="background: radial-gradient(ellipse at 20% 10%, rgba(99, 223, 78, 0.4) 0%, transparent 50%), radial-gradient(ellipse at 80% 90%, rgba(191, 113, 242, 0.35) 0%, transparent 50%), #032D42;"
-			>
-				<Sparkles size={20} class="text-[#63DF4E]" />
+	<!-- Decorative gradient accent -->
+	<div class="absolute inset-y-0 left-0 w-[2px] bg-gradient-to-b from-brand-accent via-brand-secondary to-violet-500 opacity-60"></div>
+
+	<!-- Logo/Brand Header -->
+	<div class="h-16 flex items-center border-b border-[var(--border)] overflow-hidden px-3 relative flex-shrink-0">
+		<div class="flex items-center gap-3 pl-1 whitespace-nowrap">
+			<!-- Logo Mark -->
+			<div class="relative flex-shrink-0">
+				<div
+					class="w-10 h-10 rounded-xl flex items-center justify-center shadow-md transition-transform duration-300 group-hover/sidebar:scale-105"
+					style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);"
+				>
+					<div class="absolute inset-0 rounded-xl bg-gradient-to-br from-brand-accent/30 via-transparent to-violet-500/20"></div>
+					<Sparkles size={20} class="text-brand-accent relative z-10" />
+				</div>
+				<!-- Glow effect -->
+				<div class="absolute inset-0 rounded-xl bg-brand-accent/20 blur-lg opacity-0 group-hover/sidebar:opacity-60 transition-opacity duration-300"></div>
 			</div>
+
+			<!-- Brand text -->
+			{#if !collapsed}
+              <div class="flex flex-col animate-fade-in">
+                <span class="font-display font-bold text-lg tracking-tight text-[var(--text-primary)]">
+                  SyGra
+                </span>
+                <span class="text-2xs font-medium text-[var(--text-muted)] -mt-0.5 tracking-wide uppercase">
+                  Studio
+                </span>
+              </div>
+            {/if}
 		</div>
-		{#if !collapsed}
-			<span class="font-semibold text-lg whitespace-nowrap">
-				<span class="text-[#032D42] dark:text-white tracking-tight">SyGra</span>
-				<span class="text-gray-400 dark:text-gray-500 font-normal text-sm ml-0.5">Studio</span>
-			</span>
-		{/if}
 	</div>
 
 	<!-- Navigation -->
-	<nav class="flex-1 overflow-y-auto overflow-x-hidden p-2">
-		<!-- Create Workflow Button - Primary Action with Wasabi Green accent -->
-		<div class="mb-4 overflow-hidden">
+	<nav class="flex-1 overflow-y-auto overflow-x-hidden py-4 px-3 scrollbar-thin min-h-0">
+		<!-- Create Workflow Button -->
+		<div class="mb-6">
 			<button
 				onclick={createNewWorkflow}
-				class="w-full flex items-center py-2.5 rounded-lg bg-[#63DF4E] hover:bg-[#4BC93A] text-[#032D42] font-semibold transition-all shadow-sm hover:shadow-md"
+				class="group/btn w-full flex items-center gap-3 py-2.5 px-3 rounded-xl bg-brand-accent text-brand-primary font-semibold transition-all duration-200 hover:bg-brand-accent-hover hover:shadow-glow-accent hover:-translate-y-0.5 active:translate-y-0 overflow-hidden"
 			>
-				<div class="w-12 shrink-0 flex items-center justify-center">
-					<Plus size={20} />
+				<div class="w-8 h-8 rounded-lg bg-brand-primary/10 flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover/btn:scale-110">
+					<Plus size={18} strokeWidth={2.5} />
 				</div>
 				{#if !collapsed}
-					<span class="text-sm whitespace-nowrap pr-3">Create Workflow</span>
+					<span class="text-sm whitespace-nowrap">Create Workflow</span>
 				{/if}
 			</button>
 		</div>
 
-		<!-- Home navigation item -->
-		<div class="mb-4">
+		<!-- Navigation Items -->
+		<div class="space-y-1.5">
+			<!-- Home -->
 			<button
 				onclick={goToHome}
-				class="w-full flex items-center py-2 rounded-lg transition-colors"
-				class:bg-[#e8f4f8]={currentView === 'home'}
-				class:dark:bg-[#064565]={currentView === 'home'}
-				class:text-[#032D42]={currentView === 'home'}
-				class:dark:text-[#52B8FF]={currentView === 'home'}
-				class:text-gray-600={currentView !== 'home'}
-				class:dark:text-gray-400={currentView !== 'home'}
-				class:hover:bg-gray-100={currentView !== 'home'}
-				class:dark:hover:bg-[#064565]={currentView !== 'home'}
+				class="nav-item group/item w-full flex items-center gap-3 py-2.5 px-3 rounded-xl transition-all duration-200"
+				class:nav-item-active={currentView === 'home'}
 			>
-				<div class="w-12 shrink-0 flex items-center justify-center">
-					<Home size={20} />
+				<div class="nav-icon w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200">
+					<Home size={18} />
 				</div>
 				{#if !collapsed}
-					<span class="text-sm font-medium">Home</span>
+					<span class="text-sm font-medium whitespace-nowrap">Home</span>
 				{/if}
 			</button>
-		</div>
 
-		<!-- Workflows navigation item -->
-		<div class="mb-4">
+			<!-- Workflows -->
 			<button
 				onclick={goToWorkflows}
-				class="w-full flex items-center py-2 rounded-lg transition-colors"
-				class:bg-[#e8f4f8]={currentView === 'workflows'}
-				class:dark:bg-[#064565]={currentView === 'workflows'}
-				class:text-[#032D42]={currentView === 'workflows'}
-				class:dark:text-[#52B8FF]={currentView === 'workflows'}
-				class:text-gray-600={currentView !== 'workflows'}
-				class:dark:text-gray-400={currentView !== 'workflows'}
-				class:hover:bg-gray-100={currentView !== 'workflows'}
-				class:dark:hover:bg-[#064565]={currentView !== 'workflows'}
+				class="nav-item group/item w-full flex items-center gap-3 py-2.5 px-3 rounded-xl transition-all duration-200"
+				class:nav-item-active={currentView === 'workflows'}
 			>
-				<div class="w-12 shrink-0 flex items-center justify-center">
-					<FolderOpen size={20} />
+				<div class="nav-icon w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200">
+					<FolderOpen size={18} />
 				</div>
 				{#if !collapsed}
-					<span class="text-sm font-medium flex-1 text-left">Workflows</span>
+					<span class="text-sm font-medium flex-1 text-left whitespace-nowrap">Workflows</span>
 					{#if workflows.length > 0}
-						<span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-[#0A4D6E] text-gray-600 dark:text-gray-300 mr-3">
+						<span class="badge-count">
 							{workflows.length}
 						</span>
 					{/if}
 				{/if}
 			</button>
-		</div>
 
-		<!-- Models navigation item -->
-		<div class="mb-4">
+			<!-- Models -->
 			<button
 				onclick={goToModels}
-				class="w-full flex items-center py-2 rounded-lg transition-colors"
-				class:bg-[#e8f4f8]={currentView === 'models'}
-				class:dark:bg-[#064565]={currentView === 'models'}
-				class:text-[#032D42]={currentView === 'models'}
-				class:dark:text-[#52B8FF]={currentView === 'models'}
-				class:text-gray-600={currentView !== 'models'}
-				class:dark:text-gray-400={currentView !== 'models'}
-				class:hover:bg-gray-100={currentView !== 'models'}
-				class:dark:hover:bg-[#064565]={currentView !== 'models'}
+				class="nav-item group/item w-full flex items-center gap-3 py-2.5 px-3 rounded-xl transition-all duration-200"
+				class:nav-item-active={currentView === 'models'}
 			>
-				<div class="w-12 shrink-0 flex items-center justify-center">
-					<Brain size={20} />
+				<div class="nav-icon w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200">
+					<Brain size={18} />
 				</div>
 				{#if !collapsed}
-					<span class="text-sm font-medium flex-1 text-left">Models</span>
+					<span class="text-sm font-medium flex-1 text-left whitespace-nowrap">Models</span>
 					{#if modelsTotalCount > 0}
-						<span class="text-xs px-2 py-0.5 rounded-full mr-3 {modelsOnlineCount > 0 ? 'bg-[#63DF4E]/20 text-[#4BC93A] dark:text-[#63DF4E]' : 'bg-gray-200 dark:bg-[#0A4D6E] text-gray-600 dark:text-gray-300'}">
+						<span class="badge-count {modelsOnlineCount > 0 ? 'badge-count-success' : ''}">
 							{modelsOnlineCount}/{modelsTotalCount}
 						</span>
 					{/if}
 				{/if}
 			</button>
-		</div>
 
-		<!-- Runs navigation item -->
-		<div class="mb-4">
+			<!-- Runs -->
 			<button
 				onclick={goToRuns}
-				class="w-full flex items-center py-2 rounded-lg transition-colors"
-				class:bg-[#e8f4f8]={currentView === 'runs'}
-				class:dark:bg-[#064565]={currentView === 'runs'}
-				class:text-[#032D42]={currentView === 'runs'}
-				class:dark:text-[#52B8FF]={currentView === 'runs'}
-				class:text-gray-600={currentView !== 'runs'}
-				class:dark:text-gray-400={currentView !== 'runs'}
-				class:hover:bg-gray-100={currentView !== 'runs'}
-				class:dark:hover:bg-[#064565]={currentView !== 'runs'}
+				class="nav-item group/item w-full flex items-center gap-3 py-2.5 px-3 rounded-xl transition-all duration-200"
+				class:nav-item-active={currentView === 'runs'}
 			>
-				<div class="w-12 shrink-0 flex items-center justify-center">
-					<History size={20} />
+				<div class="nav-icon w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200 relative">
+					<History size={18} />
+					{#if runningCount > 0 && collapsed}
+						<span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-brand-secondary animate-pulse border-2 border-surface-elevated"></span>
+					{/if}
 				</div>
 				{#if !collapsed}
-					<span class="text-sm font-medium flex-1 text-left">Runs</span>
-					{#if executionHistory.length > 0}
-						<span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-[#0A4D6E] text-gray-600 dark:text-gray-300 {runningCount === 0 ? 'mr-3' : ''}">
-							{executionHistory.length}
-						</span>
-					{/if}
-					{#if runningCount > 0}
-						<span class="w-2 h-2 rounded-full bg-[#52B8FF] animate-pulse ml-1.5 mr-3" title="{runningCount} running"></span>
-					{/if}
+					<span class="text-sm font-medium flex-1 text-left whitespace-nowrap">Runs</span>
+					<div class="flex items-center gap-1.5">
+						{#if executionHistory.length > 0}
+							<span class="badge-count">
+								{executionHistory.length}
+							</span>
+						{/if}
+						{#if runningCount > 0}
+							<span class="flex items-center gap-1 text-2xs font-medium text-brand-secondary bg-info-light px-1.5 py-0.5 rounded-full">
+								<Zap size={10} class="animate-pulse" />
+								{runningCount}
+							</span>
+						{/if}
+					</div>
 				{/if}
 			</button>
-		</div>
 
-		<!-- Library navigation item -->
-		<div class="mb-4">
+			<!-- Library -->
 			<button
 				onclick={goToLibrary}
-				class="w-full flex items-center py-2 rounded-lg transition-colors"
-				class:bg-[#e8f4f8]={currentView === 'library'}
-				class:dark:bg-[#064565]={currentView === 'library'}
-				class:text-[#032D42]={currentView === 'library'}
-				class:dark:text-[#52B8FF]={currentView === 'library'}
-				class:text-gray-600={currentView !== 'library'}
-				class:dark:text-gray-400={currentView !== 'library'}
-				class:hover:bg-gray-100={currentView !== 'library'}
-				class:dark:hover:bg-[#064565]={currentView !== 'library'}
+				class="nav-item group/item w-full flex items-center gap-3 py-2.5 px-3 rounded-xl transition-all duration-200"
+				class:nav-item-active={currentView === 'library'}
 			>
-				<div class="w-12 shrink-0 flex items-center justify-center">
-					<Library size={20} />
+				<div class="nav-icon w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200">
+					<Library size={18} />
 				</div>
 				{#if !collapsed}
-					<span class="text-sm font-medium flex-1 text-left">Library</span>
+					<span class="text-sm font-medium flex-1 text-left whitespace-nowrap">Library</span>
 					{@const totalCount = recipeStore.recipes.length + toolStore.tools.length}
 					{#if totalCount > 0}
-						<span class="text-xs px-2 py-0.5 rounded-full bg-gray-200 dark:bg-[#0A4D6E] text-gray-600 dark:text-gray-300 mr-3">
+						<span class="badge-count">
 							{totalCount}
 						</span>
 					{/if}
@@ -297,35 +279,116 @@
 	</nav>
 
 	<!-- Footer -->
-	<div class="border-t border-gray-200 dark:border-[#0A4D6E] p-2">
+	<div class="border-t border-[var(--border)] p-3 space-y-1.5 flex-shrink-0">
 		<!-- Settings -->
 		<button
 			onclick={onOpenSettings}
-			class="w-full flex items-center py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#064565] transition-colors"
+			class="nav-item group/item w-full flex items-center gap-3 py-2.5 px-3 rounded-xl transition-all duration-200"
 		>
-			<div class="w-12 shrink-0 flex items-center justify-center">
-				<Settings size={20} />
+			<div class="nav-icon w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200">
+				<Settings size={18} />
 			</div>
 			{#if !collapsed}
-				<span class="text-sm font-medium">Settings</span>
+				<span class="text-sm font-medium whitespace-nowrap">Settings</span>
 			{/if}
 		</button>
 
 		<!-- Collapse toggle -->
 		<button
 			onclick={handleCollapse}
-			class="w-full flex items-center py-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#064565] transition-colors"
+			class="nav-item group/item w-full flex items-center gap-3 py-2.5 px-3 rounded-xl transition-all duration-200"
 		>
-			<div class="w-12 shrink-0 flex items-center justify-center">
+			<div class="nav-icon w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-200">
 				{#if collapsed}
-					<ChevronRight size={20} />
+					<ChevronRight size={18} />
 				{:else}
-					<ChevronLeft size={20} />
+					<ChevronLeft size={18} />
 				{/if}
 			</div>
 			{#if !collapsed}
-				<span class="text-sm font-medium">Collapse</span>
+				<span class="text-sm font-medium whitespace-nowrap">Collapse</span>
 			{/if}
 		</button>
 	</div>
 </aside>
+
+<style>
+	/* Sidebar collapsed state adjustments */
+	.sidebar-collapsed nav {
+		padding-left: 0.75rem;
+		padding-right: 0.75rem;
+	}
+
+	.sidebar-collapsed nav button,
+	.sidebar-collapsed .nav-item {
+		justify-content: center;
+		padding-left: 0;
+		padding-right: 0;
+	}
+
+	.sidebar-collapsed nav .mb-6 button {
+		padding: 0.625rem;
+		justify-content: center;
+	}
+
+	/* Footer collapsed state */
+	.sidebar-collapsed > div:last-child {
+		padding-left: 0.75rem;
+		padding-right: 0.75rem;
+	}
+
+	.sidebar-collapsed > div:last-child button {
+		justify-content: center;
+		padding-left: 0;
+		padding-right: 0;
+	}
+
+	/* Navigation item base styles */
+	.nav-item {
+		color: var(--text-secondary);
+		overflow: hidden;
+	}
+
+	.nav-item:hover {
+		background-color: var(--surface-hover);
+		color: var(--text-primary);
+	}
+
+	.nav-item:hover .nav-icon {
+		background-color: var(--surface-tertiary);
+	}
+
+	/* Active navigation item */
+	.nav-item-active {
+		background: linear-gradient(135deg, var(--status-info-bg) 0%, rgba(99, 102, 241, 0.08) 100%);
+		color: var(--text-link);
+		border: 1px solid var(--status-info-border);
+	}
+
+	.nav-item-active .nav-icon {
+		background: linear-gradient(135deg, var(--status-info) 0%, #6366f1 100%);
+		color: white;
+		box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+	}
+
+	.nav-item-active:hover {
+		background: linear-gradient(135deg, var(--status-info-bg) 0%, rgba(99, 102, 241, 0.12) 100%);
+	}
+
+	/* Badge count styles */
+	.badge-count {
+		font-size: 0.6875rem;
+		font-weight: 600;
+		padding: 0.125rem 0.5rem;
+		border-radius: 9999px;
+		background-color: var(--surface-tertiary);
+		color: var(--text-secondary);
+		border: 1px solid var(--border);
+	}
+
+	.badge-count-success {
+		background-color: var(--status-success-bg);
+		color: var(--status-success);
+		border-color: var(--status-success-border);
+	}
+</style>

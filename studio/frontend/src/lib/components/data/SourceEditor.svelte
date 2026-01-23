@@ -172,9 +172,9 @@
 
 	function getColorClasses(color: string, selected: boolean) {
 		const colors: Record<string, { bg: string; border: string; icon: string }> = {
-			amber: { bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-400', icon: 'text-amber-600 dark:text-amber-400' },
-			blue: { bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-400', icon: 'text-blue-600 dark:text-blue-400' },
-			emerald: { bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-400', icon: 'text-emerald-600 dark:text-emerald-400' }
+			amber: { bg: 'bg-warning-light dark:bg-warning-light', border: 'border-warning-border', icon: 'text-warning dark:text-warning' },
+			blue: { bg: 'bg-info-light dark:bg-info-light', border: 'border-info-border', icon: 'text-info dark:text-info' },
+			emerald: { bg: 'bg-success-light dark:bg-success-light', border: 'border-success-border', icon: 'text-success dark:text-success' }
 		};
 		return colors[color] || colors.blue;
 	}
@@ -194,8 +194,8 @@
 			<!-- Header -->
 			<div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700">
 				<div class="flex items-center gap-3">
-					<div class="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-						<Database size={18} class="text-blue-600 dark:text-blue-400" />
+					<div class="p-2 rounded-lg bg-info-light dark:bg-info-light">
+						<Database size={18} class="text-info dark:text-info" />
 					</div>
 					<div>
 						<h2 class="text-base font-semibold text-gray-900 dark:text-gray-100">
@@ -239,7 +239,7 @@
 									{st.label}
 								</span>
 								{#if isSelected}
-									<div class="absolute top-1 right-1 w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center">
+									<div class="absolute top-1 right-1 w-4 h-4 rounded-full bg-success flex items-center justify-center">
 										<Check size={10} class="text-white" strokeWidth={3} />
 									</div>
 								{/if}
