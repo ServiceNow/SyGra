@@ -8,7 +8,6 @@ from datetime import datetime
 from typing import Any, Optional, Union, cast
 
 import datasets  # type: ignore[import-untyped]
-import numpy
 import numpy as np
 import pandas as pd  # type: ignore[import-untyped]
 from langgraph.graph import StateGraph
@@ -303,7 +302,7 @@ class BaseTaskExecutor(ABC):
                 if filter_column and k not in select_columns:
                     continue
                 # convert the value to list if it is numpy array
-                if isinstance(v, numpy.ndarray):
+                if isinstance(v, np.ndarray):
                     v = v.tolist()
                 # store the updated key-value
                 new_record[k] = v
