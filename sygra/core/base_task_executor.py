@@ -282,7 +282,7 @@ class BaseTaskExecutor(ABC):
         graph_builder = LangGraphBuilder(self.graph_config)
         return cast(StateGraph, graph_builder.build())
 
-    def _process_feilds(self, data, select_columns:list=None):
+    def _process_feilds(self, data, select_columns: list = None):
         """
         Iterate through each record and filter fields based on select_columns
         If select_columns is not defined, then return all fields
@@ -297,7 +297,7 @@ class BaseTaskExecutor(ABC):
 
         for record in data:
             new_record = {}
-            for k,v in record.items():
+            for k, v in record.items():
                 # skip the fields not in select_columns, when select list is defined
                 if filter_column and k not in select_columns:
                     continue
@@ -310,7 +310,6 @@ class BaseTaskExecutor(ABC):
             if len(new_record) > 0:
                 final_data.append(new_record)
         return final_data
-
 
     # Initialize and return the dataset for the task
     def init_dataset(
