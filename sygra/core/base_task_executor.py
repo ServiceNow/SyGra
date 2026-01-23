@@ -282,13 +282,14 @@ class BaseTaskExecutor(ABC):
         graph_builder = LangGraphBuilder(self.graph_config)
         return cast(StateGraph, graph_builder.build())
 
-    def _process_feilds(self, data, select_columns: list = []):
+    def _process_feilds(self, data, select_columns: Optional[list] = None):
         """
         Iterate through each record and filter fields based on select_columns
         If select_columns is not defined, then return all fields
         Also perform data transformation for unsupported datatype, which fails to write because of serialization error
         Currently supported non-serialized data type: ndarray
         """
+        select_columns = select_columns or []
         final_data = []
         filter_column = select_columns is not None and len(select_columns) > 0
         # make sure id column is preserved, if filter_column are defined
