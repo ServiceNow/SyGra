@@ -22,17 +22,21 @@ class LangGraphFactory(BackendFactory):
     A factory class to convert Nodes into Runnable objects which LangGraph framework can execute.
     """
 
-    def create_lambda_runnable(self, exec_wrapper):
+    def create_lambda_runnable(self, exec_wrapper,  async_func = True):
         """
         Abstract method to create a Lambda runnable.
 
         Args:
-            exec_wrapper: Async function to execute
+            exec_wrapper: Async/sync function to execute
+            async_func: True if the function is async
 
         Returns:
             Any: backend specific runnable object like Runnable for backend=Langgraph
         """
-        return RunnableLambda(lambda x: x, afunc=exec_wrapper)
+        if async_func:
+            return RunnableLambda(lambda x: x, afunc=exec_wrapper)
+        else:
+            return RunnableLambda(func=exec_wrapper)
 
     def create_llm_runnable(self, exec_wrapper):
         """
