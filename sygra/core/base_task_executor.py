@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Any, Optional, Union, cast
 
 import datasets  # type: ignore[import-untyped]
+import numpy
 import numpy as np
 import pandas as pd  # type: ignore[import-untyped]
 from langgraph.graph import StateGraph
@@ -282,6 +283,36 @@ class BaseTaskExecutor(ABC):
         graph_builder = LangGraphBuilder(self.graph_config)
         return cast(StateGraph, graph_builder.build())
 
+    def _process_feilds(self, data, select_columns:list=None):
+        """
+        Iterate through each record and filter fields based on select_columns
+        If select_columns is not defined, then return all fields
+        Also perform data transformation for unsupported datatype, which fails to write because of serialization error
+        Currently supported non-serialized data type: ndarray
+        """
+        final_data = []
+        filter_column = select_columns is not None and len(select_columns) > 0
+        # make sure id column is preserved, if filter_column are defined
+        if filter_column and "id" not in select_columns:
+            select_columns.append("id")
+
+        for record in data:
+            new_record = {}
+            for k,v in record.items():
+                # skip the fields not in select_columns, when select list is defined
+                if filter_column and k not in select_columns:
+                    continue
+                # convert the value to list if it is numpy array
+                if isinstance(v, numpy.ndarray):
+                    v = v.tolist()
+                # store the updated key-value
+                new_record[k] = v
+            # now add into final dataset
+            if len(new_record) > 0:
+                final_data.append(new_record)
+        return final_data
+
+
     # Initialize and return the dataset for the task
     def init_dataset(
         self,
@@ -293,6 +324,10 @@ class BaseTaskExecutor(ABC):
 
         # Configure and load source data
         data = self._load_source_data(data_config)
+        # get select fields if defined
+        select_fields = data_config.get("source", {}).get("fields", [])
+        # select only required fields
+        data = self._process_feilds(data, select_fields)
 
         # Infer features for IterableDataset if they're missing/unknown
         if isinstance(data, datasets.IterableDataset):
