@@ -198,15 +198,20 @@
 
 <svelte:window onclick={hideContextMenu} />
 
-<div class="h-full flex flex-col">
+<div class="h-full flex flex-col bg-surface-secondary">
 	<!-- Header -->
-	<div class="p-4 border-b border-gray-200 dark:border-gray-700">
-		<div class="flex items-center justify-between mb-3">
-			<div class="flex items-center gap-2">
-				<Library size={20} class="text-[#7661FF]" />
-				<h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Recipe Library</h2>
+	<div class="px-5 py-4 border-b bg-surface-elevated" style="border-color: var(--border);">
+		<div class="flex items-center justify-between mb-4">
+			<div class="flex items-center gap-3">
+				<div class="p-2 rounded-xl bg-gradient-ai">
+					<Library size={18} class="text-white" />
+				</div>
+				<div>
+					<h2 class="text-lg font-semibold" style="color: var(--text-primary);">Recipe Library</h2>
+					<p class="text-xs" style="color: var(--text-muted);">Reusable workflow patterns</p>
+				</div>
 				{#if selectionCount > 0}
-					<span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]">
+					<span class="ml-2 px-2.5 py-1 text-xs font-medium rounded-full bg-info/10 text-info">
 						{selectionCount} selected
 					</span>
 				{/if}
@@ -215,14 +220,16 @@
 				{#if selectionCount > 0}
 					<button
 						onclick={clearSelection}
-						class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
+						class="p-2 rounded-xl hover:bg-surface-hover transition-colors"
+						style="color: var(--text-muted);"
 						title="Clear selection"
 					>
 						<X size={18} />
 					</button>
 					<button
 						onclick={exportSelectedRecipes}
-						class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors text-sm font-medium"
+						class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-secondary hover:bg-surface-hover transition-colors text-sm font-medium"
+						style="color: var(--text-secondary);"
 						title="Export selected"
 					>
 						<Download size={16} />
@@ -230,17 +237,18 @@
 					</button>
 					<button
 						onclick={requestDeleteSelectedRecipes}
-						class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors text-sm font-medium"
+						class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-error/10 hover:bg-error/15 text-error transition-colors text-sm font-medium"
 						title="Delete selected"
 					>
 						<Trash2 size={16} />
 						<span>Delete ({selectionCount})</span>
 					</button>
-					<div class="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
+					<div class="w-px h-6 bg-surface-border"></div>
 				{/if}
 				<button
 					onclick={handleImport}
-					class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
+					class="p-2.5 rounded-xl hover:bg-surface-hover transition-colors"
+					style="color: var(--text-muted);"
 					title="Import recipe"
 				>
 					<Upload size={18} />
@@ -261,40 +269,43 @@
 			{#if recipeStore.filteredRecipes.length > 0}
 				<button
 					onclick={toggleSelectAll}
-					class="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors text-sm"
+					class="flex items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-surface-hover transition-colors text-sm"
+					style="color: var(--text-muted);"
 					title={allSelected() ? 'Deselect all' : 'Select all'}
 				>
 					{#if allSelected()}
-						<CheckSquare size={16} class="text-[#7661FF]" />
+						<CheckSquare size={16} class="text-info" />
 					{:else if someSelected()}
-						<MinusSquare size={16} class="text-[#7661FF]" />
+						<MinusSquare size={16} class="text-info" />
 					{:else}
 						<Square size={16} />
 					{/if}
-					<span class="text-xs">All</span>
+					<span class="text-xs font-medium">All</span>
 				</button>
 			{/if}
 
 			<!-- Search -->
 			<div class="relative flex-1">
-				<Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+				<Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--text-muted);" />
 				<input
 					type="text"
 					placeholder="Search recipes..."
 					bind:value={recipeStore.searchQuery}
-					class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
+					class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-surface-secondary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-info/50 transition-shadow"
+					style="color: var(--text-primary); border: 1px solid var(--border);"
 				/>
 			</div>
 		</div>
 
 		<!-- Category filter -->
-		<div class="mt-3">
+		<div class="mt-4">
 			<button
 				onclick={() => showCategoryFilter = !showCategoryFilter}
-				class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+				class="flex items-center gap-2 text-sm hover:opacity-80 transition-opacity"
+				style="color: var(--text-secondary);"
 			>
 				<Filter size={14} />
-				<span>
+				<span class="font-medium">
 					{recipeStore.selectedCategory === 'all'
 						? 'All Categories'
 						: RECIPE_CATEGORIES.find(c => c.value === recipeStore.selectedCategory)?.label}
@@ -303,25 +314,27 @@
 			</button>
 
 			{#if showCategoryFilter}
-				<div class="mt-2 flex flex-wrap gap-1.5">
+				<div class="mt-3 flex flex-wrap gap-2">
 					<button
 						onclick={() => { recipeStore.selectedCategory = 'all'; showCategoryFilter = false; }}
-						class="px-2 py-1 text-xs rounded-full transition-colors {
+						class="px-3 py-1.5 text-xs font-medium rounded-xl transition-all {
 							recipeStore.selectedCategory === 'all'
-								? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]'
-								: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+								? 'bg-info/15 text-info'
+								: 'bg-surface-secondary hover:bg-surface-hover'
 						}"
+						style={recipeStore.selectedCategory !== 'all' ? 'color: var(--text-secondary);' : ''}
 					>
 						All
 					</button>
 					{#each RECIPE_CATEGORIES as cat}
 						<button
 							onclick={() => { recipeStore.selectedCategory = cat.value; showCategoryFilter = false; }}
-							class="px-2 py-1 text-xs rounded-full transition-colors {
+							class="px-3 py-1.5 text-xs font-medium rounded-xl transition-all {
 								recipeStore.selectedCategory === cat.value
-									? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]'
-									: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
+									? 'bg-info/15 text-info'
+									: 'bg-surface-secondary hover:bg-surface-hover'
 							}"
+							style={recipeStore.selectedCategory !== cat.value ? 'color: var(--text-secondary);' : ''}
 						>
 							{cat.label}
 						</button>
@@ -332,14 +345,14 @@
 	</div>
 
 	<!-- Recipe list -->
-	<div class="flex-1 overflow-y-auto p-3">
+	<div class="flex-1 overflow-y-auto p-4">
 		{#if recipeStore.filteredRecipes.length === 0}
-			<div class="text-center py-12">
-				<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#7661FF]/20 to-[#BF71F2]/20 flex items-center justify-center">
-					<Library size={28} class="text-[#7661FF]" />
+			<div class="text-center py-16">
+				<div class="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-ai flex items-center justify-center shadow-lg">
+					<Library size={32} class="text-white" />
 				</div>
-				<h3 class="text-lg font-medium text-gray-800 dark:text-gray-200 mb-2">No recipes yet</h3>
-				<p class="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+				<h3 class="text-xl font-semibold mb-2" style="color: var(--text-primary);">No recipes yet</h3>
+				<p class="text-sm max-w-sm mx-auto" style="color: var(--text-muted);">
 					{#if recipeStore.searchQuery || recipeStore.selectedCategory !== 'all'}
 						No recipes match your search. Try adjusting your filters.
 					{:else}
@@ -348,85 +361,87 @@
 				</p>
 			</div>
 		{:else}
-			<div class="space-y-2">
+			<div class="space-y-3">
 				{#each recipeStore.filteredRecipes as recipe (recipe.id)}
 					{@const Icon = categoryIcons[recipe.category]}
 					{@const isSelected = selectedRecipeIds.has(recipe.id)}
 					<div
-						class="group relative p-3 rounded-lg border transition-all cursor-pointer {
+						class="group relative p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer hover:-translate-y-0.5 {
 							isSelected
-								? 'border-[#7661FF] dark:border-[#BF71F2] bg-[#7661FF]/10 dark:bg-[#7661FF]/20'
-								: 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-[#52B8FF] dark:hover:border-[#7661FF] hover:shadow-md'
+								? 'border-info bg-info/5 shadow-md'
+								: 'bg-surface-elevated hover:shadow-card-hover'
 						}"
+						style={!isSelected ? 'border-color: var(--border);' : ''}
 						onclick={() => handleAddRecipe(recipe)}
 					>
 						<!-- Category indicator -->
 						<div
-							class="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
+							class="absolute left-0 top-3 bottom-3 w-1 rounded-full"
 							style="background-color: {getCategoryColor(recipe.category)}"
 						></div>
 
-						<div class="flex items-start gap-3 pl-2">
+						<div class="flex items-start gap-3 pl-3">
 							<!-- Checkbox (z-10 to be above overlay) -->
 							<button
 								onclick={(e) => toggleSelectRecipe(recipe.id, e)}
-								class="relative z-10 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex-shrink-0 mt-0.5"
+								class="relative z-10 p-1 rounded-lg hover:bg-surface-hover transition-colors flex-shrink-0"
 							>
 								{#if isSelected}
-									<CheckSquare size={18} class="text-[#7661FF]" />
+									<CheckSquare size={18} class="text-info" />
 								{:else}
-									<Square size={18} class="text-gray-400 group-hover:text-gray-500" />
+									<Square size={18} class="opacity-40 group-hover:opacity-70" style="color: var(--text-muted);" />
 								{/if}
 							</button>
 
 							<!-- Icon -->
 							<div
-								class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-								style="background-color: {getCategoryColor(recipe.category)}20"
+								class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
+								style="background-color: {getCategoryColor(recipe.category)}15"
 							>
-								<Icon size={16} style="color: {getCategoryColor(recipe.category)}" />
+								<Icon size={18} style="color: {getCategoryColor(recipe.category)}" />
 							</div>
 
 							<!-- Content -->
 							<div class="flex-1 min-w-0">
 								<div class="flex items-center justify-between">
-									<h4 class="font-medium text-gray-800 dark:text-gray-200 truncate">
+									<h4 class="font-semibold truncate" style="color: var(--text-primary);">
 										{recipe.name}
 									</h4>
 									<button
 										onclick={(e) => { e.stopPropagation(); showContextMenu(e, recipe); }}
-										class="relative z-10 p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 transition-all"
+										class="relative z-10 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-surface-hover transition-all"
+										style="color: var(--text-muted);"
 									>
 										<MoreVertical size={14} />
 									</button>
 								</div>
 
 								{#if recipe.description}
-									<p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+									<p class="text-xs mt-1 line-clamp-2" style="color: var(--text-muted);">
 										{recipe.description}
 									</p>
 								{/if}
 
-								<div class="flex items-center gap-3 mt-2 text-xs text-gray-400">
-									<span class="flex items-center gap-1">
+								<div class="flex items-center gap-4 mt-2.5 text-xs" style="color: var(--text-muted);">
+									<span class="flex items-center gap-1.5">
 										<Layers size={12} />
 										{recipe.nodeCount} nodes
 									</span>
-									<span class="flex items-center gap-1">
+									<span class="flex items-center gap-1.5">
 										<Clock size={12} />
 										{formatDate(recipe.updatedAt)}
 									</span>
 								</div>
 
 								{#if recipe.tags.length > 0}
-									<div class="flex flex-wrap gap-1 mt-2">
+									<div class="flex flex-wrap gap-1.5 mt-2.5">
 										{#each recipe.tags.slice(0, 3) as tag}
-											<span class="px-1.5 py-0.5 text-[10px] rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+											<span class="px-2 py-0.5 text-[10px] font-medium rounded-lg bg-surface-secondary" style="color: var(--text-muted);">
 												{tag}
 											</span>
 										{/each}
 										{#if recipe.tags.length > 3}
-											<span class="text-[10px] text-gray-400">+{recipe.tags.length - 3}</span>
+											<span class="text-[10px]" style="color: var(--text-muted);">+{recipe.tags.length - 3}</span>
 										{/if}
 									</div>
 								{/if}
@@ -434,19 +449,19 @@
 						</div>
 
 						<!-- Action buttons overlay -->
-						<div class="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 bg-white/90 dark:bg-gray-800/90 rounded-lg transition-opacity">
+						<div class="absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 bg-surface-elevated/95 backdrop-blur-sm rounded-xl transition-all duration-200">
 							<button
 								onclick={(e) => { e.stopPropagation(); previewRecipe = recipe; }}
-								class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium transition-colors"
+								class="flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-primary hover:bg-brand-primary/90 text-white text-sm font-medium transition-colors shadow-md"
 							>
-								<Eye size={14} />
+								<Eye size={15} />
 								Preview
 							</button>
 							<button
 								onclick={(e) => { e.stopPropagation(); handleAddRecipe(recipe); }}
-								class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#63DF4E] hover:bg-[#63DF4E]/90 text-[#032D42] text-sm font-medium transition-colors"
+								class="btn-accent flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors shadow-md"
 							>
-								<Plus size={14} />
+								<Plus size={15} />
 								Add
 							</button>
 						</div>
@@ -457,9 +472,9 @@
 	</div>
 
 	<!-- Stats footer -->
-	<div class="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-		<div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-			<span>{recipeStore.recipes.length} recipes in library</span>
+	<div class="px-5 py-3 border-t bg-surface-elevated" style="border-color: var(--border);">
+		<div class="flex items-center justify-between text-xs" style="color: var(--text-muted);">
+			<span class="font-medium">{recipeStore.recipes.length} recipes in library</span>
 			{#if recipeStore.filteredRecipes.length !== recipeStore.recipes.length}
 				<span>{recipeStore.filteredRecipes.length} shown</span>
 			{/if}
@@ -470,37 +485,40 @@
 <!-- Context menu -->
 {#if contextMenuRecipe}
 	<div
-		class="fixed z-50 min-w-[160px] py-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700"
-		style="left: {contextMenuPosition.x}px; top: {contextMenuPosition.y}px;"
+		class="fixed z-50 min-w-[180px] py-2 bg-surface-elevated rounded-xl shadow-dropdown border animate-scale-in"
+		style="left: {contextMenuPosition.x}px; top: {contextMenuPosition.y}px; border-color: var(--border);"
 		onclick={(e) => e.stopPropagation()}
 	>
 		<button
 			onclick={() => { previewRecipe = contextMenuRecipe; hideContextMenu(); }}
-			class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+			class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors hover:bg-surface-hover"
+			style="color: var(--text-secondary);"
 		>
-			<Eye size={14} />
+			<Eye size={15} />
 			View Graph
 		</button>
 		<button
 			onclick={handleDuplicate}
-			class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+			class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors hover:bg-surface-hover"
+			style="color: var(--text-secondary);"
 		>
-			<Copy size={14} />
+			<Copy size={15} />
 			Duplicate
 		</button>
 		<button
 			onclick={handleExport}
-			class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+			class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors hover:bg-surface-hover"
+			style="color: var(--text-secondary);"
 		>
-			<Download size={14} />
+			<Download size={15} />
 			Export
 		</button>
-		<div class="my-1 border-t border-gray-200 dark:border-gray-700"></div>
+		<div class="my-2 mx-3 border-t" style="border-color: var(--border);"></div>
 		<button
 			onclick={handleDelete}
-			class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+			class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-error transition-colors hover:bg-error/10"
 		>
-			<Trash2 size={14} />
+			<Trash2 size={15} />
 			Delete
 		</button>
 	</div>

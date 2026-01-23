@@ -2096,13 +2096,13 @@ class ${dataClassName}Transform(DataTransform):
 	function addMultiModalPart(index: number, type: 'text' | 'audio_url' | 'image_url' | 'video_url') {
 		const message = editPrompts[index];
 		if (!isMultiModalContent(message.content)) return;
-		
+
 		const newPart: MultiModalContentPart = { type };
 		if (type === 'text') newPart.text = '';
 		else if (type === 'audio_url') newPart.audio_url = '';
 		else if (type === 'image_url') newPart.image_url = '';
 		else if (type === 'video_url') newPart.video_url = '';
-		
+
 		message.content = [...message.content, newPart];
 		editPrompts = [...editPrompts];
 		markChanged();
@@ -2111,7 +2111,7 @@ class ${dataClassName}Transform(DataTransform):
 	function removeMultiModalPart(promptIndex: number, partIndex: number) {
 		const message = editPrompts[promptIndex];
 		if (!isMultiModalContent(message.content)) return;
-		
+
 		message.content = message.content.filter((_, i) => i !== partIndex);
 		editPrompts = [...editPrompts];
 		markChanged();
@@ -2120,13 +2120,13 @@ class ${dataClassName}Transform(DataTransform):
 	function updateMultiModalPart(promptIndex: number, partIndex: number, value: string) {
 		const message = editPrompts[promptIndex];
 		if (!isMultiModalContent(message.content)) return;
-		
+
 		const part = message.content[partIndex];
 		if (part.type === 'text') part.text = value;
 		else if (part.type === 'audio_url') part.audio_url = value;
 		else if (part.type === 'image_url') part.image_url = value;
 		else if (part.type === 'video_url') part.video_url = value;
-		
+
 		editPrompts = [...editPrompts];
 		markChanged();
 	}
@@ -2189,7 +2189,7 @@ class ${dataClassName}Transform(DataTransform):
 </script>
 
 <aside
-	class="fixed right-0 top-0 h-full border-l border-gray-200 dark:border-gray-800 bg-surface overflow-y-auto flex flex-col shadow-xl z-50"
+	class="fixed right-0 top-0 h-full border-l border-surface-border bg-surface overflow-y-auto flex flex-col shadow-xl z-50"
 	style="width: {panelWidth}px;"
 >
 	<!-- Resize handle -->
@@ -2200,7 +2200,7 @@ class ${dataClassName}Transform(DataTransform):
 		aria-orientation="vertical"
 	>
 		<div class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-			<GripVertical size={12} class="text-gray-400" />
+			<GripVertical size={12} class="text-text-muted" />
 		</div>
 	</div>
 	<!-- Header -->
@@ -2250,7 +2250,7 @@ class ${dataClassName}Transform(DataTransform):
 					{#if node.node_type !== 'data' && node.node_type !== 'output'}
 						<!-- Node ID (editable) -->
 						<div>
-							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+							<div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-1">
 								Node ID
 							</div>
 							{#if isEditing}
@@ -2258,12 +2258,12 @@ class ${dataClassName}Transform(DataTransform):
 									type="text"
 									bind:value={editNodeId}
 									oninput={markChanged}
-									class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
+									class="w-full px-3 py-2 text-sm font-mono border border-surface-border rounded-lg bg-surface text-text-primary focus:ring-2 focus:ring-info"
 									placeholder="Enter node ID..."
 								/>
-								<p class="text-xs text-gray-400 mt-1">Use lowercase with underscores (e.g., my_node_id)</p>
+								<p class="text-xs text-text-muted mt-1">Use lowercase with underscores (e.g., my_node_id)</p>
 							{:else}
-								<div class="text-sm text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1.5 rounded">
+								<div class="text-sm text-text-primary font-mono bg-surface-secondary px-2 py-1.5 rounded">
 									{node.id}
 								</div>
 							{/if}
@@ -2271,7 +2271,7 @@ class ${dataClassName}Transform(DataTransform):
 
 						<!-- Node Name (editable) -->
 						<div>
-							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+							<div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-1">
 								Node Name
 							</div>
 							{#if isEditing}
@@ -2279,11 +2279,11 @@ class ${dataClassName}Transform(DataTransform):
 									type="text"
 									bind:value={editSummary}
 									oninput={markChanged}
-									class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
+									class="w-full px-3 py-2 text-sm border border-surface-border rounded-lg bg-surface text-text-primary focus:ring-2 focus:ring-info"
 									placeholder="Enter node name..."
 								/>
 							{:else}
-								<div class="text-sm text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
+								<div class="text-sm text-text-primary bg-surface-secondary px-3 py-2 rounded-lg">
 									{node.summary || node.id}
 								</div>
 							{/if}
@@ -2291,23 +2291,23 @@ class ${dataClassName}Transform(DataTransform):
 
 						<!-- Description (editable) -->
 						<div>
-							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+							<div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-1">
 								Description
 							</div>
 							{#if isEditing}
 								<textarea
 									bind:value={editDescription}
 									oninput={markChanged}
-									class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] resize-none"
+									class="w-full px-3 py-2 text-sm border border-surface-border rounded-lg bg-surface text-text-primary focus:ring-2 focus:ring-info resize-none"
 									rows="3"
 									placeholder="Enter node description..."
 								></textarea>
 							{:else if node.description}
-								<div class="text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
+								<div class="text-sm text-text-secondary bg-surface-secondary px-3 py-2 rounded-lg">
 									{node.description}
 								</div>
 							{:else}
-								<div class="text-sm text-gray-400 italic">
+								<div class="text-sm text-text-muted italic">
 									No description
 								</div>
 							{/if}
@@ -2317,7 +2317,7 @@ class ${dataClassName}Transform(DataTransform):
 					<!-- Model info (for LLM and Agent nodes) -->
 					{#if node.node_type === 'llm' || node.node_type === 'agent'}
 						<div>
-							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+							<div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-1">
 								Model
 							</div>
 							{#if isEditing}
@@ -2329,7 +2329,7 @@ class ${dataClassName}Transform(DataTransform):
 									onchange={markChanged}
 								/>
 							{:else}
-								<div class="text-sm text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg">
+								<div class="text-sm text-text-primary bg-surface-secondary px-3 py-2 rounded-lg">
 									{node.model?.name ?? 'Not set'}
 								</div>
 							{/if}
@@ -2340,13 +2340,13 @@ class ${dataClassName}Transform(DataTransform):
 					{#if ['llm', 'agent', 'lambda', 'branch'].includes(node.node_type)}
 						<div class="space-y-2">
 							<div class="flex items-center justify-between">
-								<div class="text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+								<div class="text-xs font-medium text-text-muted uppercase tracking-wider flex items-center gap-1.5">
 									<Download size={12} />
 									Output Keys
 								</div>
 								<button
 									type="button"
-									class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+									class="text-text-muted hover:text-text-secondary"
 									title={"Output keys define the state variable name(s) where this node's output will be stored. Use {key_name} in downstream prompts to reference these values."}
 								>
 									<Info size={14} />
@@ -2357,13 +2357,13 @@ class ${dataClassName}Transform(DataTransform):
 							<div class="flex flex-wrap gap-1.5 min-h-[28px]">
 								{#if editOutputKeys.length > 0}
 									{#each editOutputKeys as key}
-										<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+										<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-success-light dark:bg-success/20 text-success dark:text-success border border-success-border dark:border-success/40">
 											<code class="font-mono">{key}</code>
 											{#if isEditing}
 												<button
 													type="button"
 													onclick={() => removeOutputKey(key)}
-													class="ml-0.5 hover:text-red-500 transition-colors"
+													class="ml-0.5 hover:text-error transition-colors"
 													title="Remove key"
 												>
 													<X size={12} />
@@ -2372,7 +2372,7 @@ class ${dataClassName}Transform(DataTransform):
 										</span>
 									{/each}
 								{:else}
-									<span class="text-xs text-gray-400 dark:text-gray-500 italic py-1">
+									<span class="text-xs text-text-muted dark:text-text-muted italic py-1">
 										No keys configured (default: "messages")
 									</span>
 								{/if}
@@ -2386,19 +2386,19 @@ class ${dataClassName}Transform(DataTransform):
 										bind:value={newOutputKeyInput}
 										onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addOutputKey(); } }}
 										placeholder="Add output key..."
-										class="flex-1 px-3 py-1.5 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+										class="flex-1 px-3 py-1.5 text-sm font-mono border border-surface-border rounded-lg bg-surface text-text-primary focus:ring-2 focus:ring-success focus:border-success"
 									/>
 									<button
 										type="button"
 										onclick={addOutputKey}
-										class="px-3 py-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors flex items-center gap-1"
+										class="px-3 py-1.5 text-sm font-medium text-success dark:text-success bg-success-light dark:bg-success/20 border border-success-border dark:border-success/40 rounded-lg hover:bg-success/30 dark:hover:bg-success/30 transition-colors flex items-center gap-1"
 									>
 										<Plus size={14} />
 										Add
 									</button>
 								</div>
 								{#if outputKeyError}
-									<p class="text-xs text-red-500 flex items-center gap-1">
+									<p class="text-xs text-error flex items-center gap-1">
 										<AlertCircle size={12} />
 										{outputKeyError}
 									</p>
@@ -2406,8 +2406,8 @@ class ${dataClassName}Transform(DataTransform):
 							{/if}
 
 							<!-- Helper text -->
-							<p class="text-xs text-gray-400 dark:text-gray-500">
-								Use <code class="px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded font-mono text-emerald-600 dark:text-emerald-400">{'{'}key_name{'}'}</code> in downstream prompts to reference output values.
+							<p class="text-xs text-text-muted dark:text-text-muted">
+								Use <code class="px-1 py-0.5 bg-surface-secondary rounded font-mono text-status-completed">{'{'}key_name{'}'}</code> in downstream prompts to reference output values.
 							</p>
 						</div>
 					{/if}
@@ -2415,10 +2415,10 @@ class ${dataClassName}Transform(DataTransform):
 					<!-- Lambda function path -->
 					{#if node.node_type === 'lambda' && node.function_path}
 						<div>
-							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+							<div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-1">
 								Function Path
 							</div>
-							<div class="text-sm text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1.5 rounded break-all">
+							<div class="text-sm text-text-primary font-mono bg-surface-secondary px-2 py-1.5 rounded break-all">
 								{node.function_path}
 							</div>
 						</div>
@@ -2427,10 +2427,10 @@ class ${dataClassName}Transform(DataTransform):
 					<!-- Subgraph path -->
 					{#if node.node_type === 'subgraph' && node.subgraph_path}
 						<div>
-							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+							<div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-1">
 								Subgraph Path
 							</div>
-							<div class="text-sm text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1.5 rounded break-all">
+							<div class="text-sm text-text-primary font-mono bg-surface-secondary px-2 py-1.5 rounded break-all">
 								{node.subgraph_path}
 							</div>
 						</div>
@@ -2480,9 +2480,9 @@ class ${dataClassName}Transform(DataTransform):
 						<div class="space-y-4">
 							{#if isEditing}
 								<!-- Edit Mode: Output Mappings -->
-								<div class="space-y-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+								<div class="space-y-3 p-3 bg-surface-secondary rounded-lg border border-surface-border">
 									<div class="flex items-center justify-between">
-										<div class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+										<div class="flex items-center gap-2 text-xs font-medium text-text-secondary">
 											<MapIcon size={12} />
 											Output Mappings
 										</div>
@@ -2498,30 +2498,30 @@ class ${dataClassName}Transform(DataTransform):
 									{#if editOutputMappings.length > 0}
 										<div class="space-y-2 max-h-64 overflow-y-auto">
 											{#each editOutputMappings as mapping, idx}
-												<div class="p-3 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+												<div class="p-3 bg-surface rounded-lg border border-surface-border">
 													<div class="flex items-center justify-between mb-3">
-														<span class="text-xs font-medium text-gray-600 dark:text-gray-400">Mapping {idx + 1}</span>
+														<span class="text-xs font-medium text-text-secondary">Mapping {idx + 1}</span>
 														<button
 															onclick={() => removeOutputMapping(idx)}
-															class="p-1 text-gray-400 hover:text-red-500 transition-colors rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+															class="p-1 text-text-muted hover:text-error transition-colors rounded hover:bg-surface-hover"
 														>
 															<Trash2 size={14} />
 														</button>
 													</div>
 													<div class="grid grid-cols-2 gap-3 mb-3">
 														<div>
-															<span class="block text-xs text-gray-500 mb-1.5">Output Key *</span>
+															<span class="block text-xs text-text-muted mb-1.5">Output Key *</span>
 															<input
 																type="text"
 																value={mapping.key}
 																oninput={(e) => updateOutputMapping(idx, 'key', e.currentTarget.value)}
 																placeholder="field_name"
 																aria-label="Output key"
-																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-[#52B8FF]"
+																class="w-full px-3 py-2 text-sm border border-surface-border rounded-lg bg-surface text-text-primary font-mono focus:ring-2 focus:ring-info"
 															/>
 														</div>
 														<div>
-															<span class="block text-xs text-gray-500 mb-1.5">From State</span>
+															<span class="block text-xs text-text-muted mb-1.5">From State</span>
 															<StateVariableInput
 																value={mapping.from}
 																variables={availableStateVariables().variables}
@@ -2532,25 +2532,25 @@ class ${dataClassName}Transform(DataTransform):
 													</div>
 													<div class="grid grid-cols-2 gap-3">
 														<div>
-															<span class="block text-xs text-gray-500 mb-1.5">Static Value (JSON)</span>
+															<span class="block text-xs text-text-muted mb-1.5">Static Value (JSON)</span>
 															<input
 																type="text"
 																value={mapping.value}
 																oninput={(e) => updateOutputMapping(idx, 'value', e.currentTarget.value)}
 																placeholder="JSON value"
 																aria-label="Static value"
-																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-[#52B8FF]"
+																class="w-full px-3 py-2 text-sm border border-surface-border rounded-lg bg-surface text-text-primary font-mono focus:ring-2 focus:ring-info"
 															/>
 														</div>
 														<div>
-															<span class="block text-xs text-gray-500 mb-1.5">Transform Function</span>
+															<span class="block text-xs text-text-muted mb-1.5">Transform Function</span>
 															<input
 																type="text"
 																value={mapping.transform}
 																oninput={(e) => updateOutputMapping(idx, 'transform', e.currentTarget.value)}
 																placeholder="transform_func"
 																aria-label="Transform function"
-																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 font-mono focus:ring-2 focus:ring-[#52B8FF]"
+																class="w-full px-3 py-2 text-sm border border-surface-border rounded-lg bg-surface text-text-primary font-mono focus:ring-2 focus:ring-info"
 															/>
 														</div>
 													</div>
@@ -2558,7 +2558,7 @@ class ${dataClassName}Transform(DataTransform):
 											{/each}
 										</div>
 									{:else}
-										<div class="text-sm text-gray-500 italic p-4 bg-white dark:bg-gray-900 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 text-center">
+										<div class="text-sm text-text-muted italic p-4 bg-surface rounded-lg border border-dashed border-surface-border text-center">
 											No output mappings. Click "Add Mapping" to configure output fields.
 										</div>
 									{/if}
@@ -2566,15 +2566,15 @@ class ${dataClassName}Transform(DataTransform):
 							{:else}
 								<!-- Display Mode: Generator -->
 								{#if node.output_config?.generator}
-									<div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+									<div class="p-3 bg-surface-secondary rounded-lg border border-surface-border">
 										<div class="flex items-center gap-2 text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] mb-2">
 											<Code size={12} />
 											Generator Class
 										</div>
-										<div class="text-sm font-mono bg-white dark:bg-gray-900 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 break-all border border-gray-200 dark:border-gray-700">
+										<div class="text-sm font-mono bg-surface px-3 py-2 rounded-lg text-text-secondary break-all border border-surface-border">
 											{node.output_config.generator.split('.').pop()}
 										</div>
-										<div class="text-xs text-gray-400 mt-2 break-all font-mono">
+										<div class="text-xs text-text-muted mt-2 break-all font-mono">
 											{node.output_config.generator}
 										</div>
 									</div>
@@ -2582,30 +2582,30 @@ class ${dataClassName}Transform(DataTransform):
 
 								<!-- Display Mode: Output Map -->
 								{#if outputKeys.length > 0}
-									<div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
-										<div class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 mb-3">
+									<div class="p-3 bg-surface-secondary rounded-lg border border-surface-border">
+										<div class="flex items-center gap-2 text-xs font-medium text-text-secondary mb-3">
 											<MapIcon size={12} />
 											Output Mappings ({outputKeys.length})
 										</div>
 										<div class="space-y-2 max-h-64 overflow-y-auto">
 											{#each outputKeys as key}
 												{@const mapping = outputMap[key]}
-												<div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+												<div class="bg-surface rounded-lg border border-surface-border overflow-hidden">
 													<div class="flex items-center gap-2 p-2 text-sm">
-														<span class="font-mono text-gray-700 dark:text-gray-300 truncate flex-shrink-0" title={key}>
+														<span class="font-mono text-text-secondary truncate flex-shrink-0" title={key}>
 															{key.length > 15 ? key.slice(0, 15) + '...' : key}
 														</span>
-														<ArrowRight size={12} class="text-gray-400 flex-shrink-0" />
+														<ArrowRight size={12} class="text-text-muted flex-shrink-0" />
 														{#if mapping.from}
 															<span class="font-mono text-[#7661FF] dark:text-[#BF71F2] truncate">{mapping.from}</span>
 														{:else if mapping.value !== undefined}
-															<span class="px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs">static</span>
+															<span class="px-2 py-0.5 rounded bg-success-light dark:bg-success/20 text-success dark:text-success text-xs">static</span>
 														{/if}
 														{#if mapping.transform}
 															<button
 																type="button"
 																onclick={() => toggleTransformCode(key, mapping.transform)}
-																class="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs flex-shrink-0 hover:bg-amber-200 dark:hover:bg-amber-800/50 transition-colors"
+																class="flex items-center gap-1 px-2 py-0.5 rounded bg-warning-light dark:bg-warning/20 text-warning text-xs flex-shrink-0 hover:bg-warning/30 dark:hover:bg-warning/40 transition-colors"
 																title="Click to view transform function code"
 															>
 																<Code size={10} />
@@ -2620,11 +2620,11 @@ class ${dataClassName}Transform(DataTransform):
 													</div>
 													<!-- Expandable transform code preview -->
 													{#if mapping.transform && transformCodeExpanded[key]}
-														<div class="border-t border-gray-200 dark:border-gray-700">
+														<div class="border-t border-surface-border">
 															{#if transformCodeLoading[key]}
-																<div class="flex items-center justify-center py-3 bg-gray-50 dark:bg-gray-800">
-																	<Loader2 size={14} class="animate-spin text-gray-400" />
-																	<span class="ml-2 text-xs text-gray-500">Loading...</span>
+																<div class="flex items-center justify-center py-3 bg-surface-secondary">
+																	<Loader2 size={14} class="animate-spin text-text-muted" />
+																	<span class="ml-2 text-xs text-text-muted">Loading...</span>
 																</div>
 															{:else if transformCodeMap[key]}
 																<div class="monaco-editor-wrapper">
@@ -2637,7 +2637,7 @@ class ${dataClassName}Transform(DataTransform):
 																	/>
 																</div>
 															{:else}
-																<div class="text-center py-2 text-gray-400 text-xs bg-gray-50 dark:bg-gray-800">
+																<div class="text-center py-2 text-text-muted text-xs bg-surface-secondary">
 																	Transform function not found
 																</div>
 															{/if}
@@ -2648,7 +2648,7 @@ class ${dataClassName}Transform(DataTransform):
 										</div>
 									</div>
 								{:else}
-									<div class="text-sm text-gray-500 italic p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+									<div class="text-sm text-text-muted italic p-4 bg-surface-secondary rounded-lg border border-surface-border text-center">
 										No output mappings configured.
 									</div>
 								{/if}
@@ -2661,7 +2661,7 @@ class ${dataClassName}Transform(DataTransform):
 						{@const attributes = node.sampler_config?.attributes || {}}
 						{@const attributeNames = Object.keys(attributes)}
 						<div class="space-y-4">
-							<div class="flex items-center gap-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+							<div class="flex items-center gap-2 text-xs font-medium text-text-muted uppercase tracking-wider">
 								<Shuffle size={14} />
 								Sampler Attributes
 							</div>
@@ -2685,37 +2685,37 @@ class ${dataClassName}Transform(DataTransform):
 									{#if editSamplerAttributes.length > 0}
 										<div class="space-y-2 max-h-64 overflow-y-auto">
 											{#each editSamplerAttributes as attr, idx}
-												<div class="p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+												<div class="p-2 bg-surface rounded border border-surface-border">
 													<div class="flex items-center justify-between mb-2">
-														<span class="text-xs text-gray-500">Attribute {idx + 1}</span>
+														<span class="text-xs text-text-muted">Attribute {idx + 1}</span>
 														<button
 															onclick={() => removeSamplerAttribute(idx)}
-															class="p-1 text-gray-400 hover:text-red-500 transition-colors"
+															class="p-1 text-text-muted hover:text-error transition-colors"
 														>
 															<Trash2 size={12} />
 														</button>
 													</div>
 													<div class="grid grid-cols-1 gap-2">
 														<div>
-															<span class="block text-[10px] text-gray-500 mb-0.5">Name</span>
+															<span class="block text-[10px] text-text-muted mb-0.5">Name</span>
 															<input
 																type="text"
 																value={attr.name}
 																oninput={(e) => updateSamplerAttribute(idx, 'name', e.currentTarget.value)}
 																placeholder="num_turns"
 																aria-label="Attribute name"
-																class="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-mono"
+																class="w-full px-2 py-1 text-xs border border-surface-border rounded bg-surface text-text-primary font-mono"
 															/>
 														</div>
 														<div>
-															<span class="block text-[10px] text-gray-500 mb-0.5">Values (comma-separated)</span>
+															<span class="block text-[10px] text-text-muted mb-0.5">Values (comma-separated)</span>
 															<input
 																type="text"
 																value={attr.values}
 																oninput={(e) => updateSamplerAttribute(idx, 'values', e.currentTarget.value)}
 																placeholder="2, 3, 4, 5 or professional, casual, friendly"
 																aria-label="Attribute values"
-																class="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-mono"
+																class="w-full px-2 py-1 text-xs border border-surface-border rounded bg-surface text-text-primary font-mono"
 															/>
 														</div>
 													</div>
@@ -2723,7 +2723,7 @@ class ${dataClassName}Transform(DataTransform):
 											{/each}
 										</div>
 									{:else}
-										<div class="text-xs text-gray-400 italic p-2 bg-white dark:bg-gray-800 rounded">
+										<div class="text-xs text-text-muted italic p-2 bg-surface rounded">
 											No attributes defined. Click "Add" to create sampler attributes.
 										</div>
 									{/if}
@@ -2738,14 +2738,14 @@ class ${dataClassName}Transform(DataTransform):
 										<div class="space-y-2 max-h-48 overflow-y-auto">
 											{#each attributeNames as name}
 												{@const attr = attributes[name]}
-												<div class="p-2 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs">
+												<div class="p-2 bg-surface-secondary rounded-lg text-xs">
 													<div class="flex items-center justify-between mb-1">
-														<span class="font-mono font-medium text-gray-700 dark:text-gray-300">{name}</span>
+														<span class="font-mono font-medium text-text-secondary">{name}</span>
 														<span class="px-1.5 py-0.5 rounded bg-[#BF71F2]/15 dark:bg-[#BF71F2]/20 text-[#BF71F2] dark:text-[#d49af7] text-[10px]">
 															{attr.values?.length ?? 0} values
 														</span>
 													</div>
-													<div class="text-gray-500 truncate" title={attr.values?.join(', ')}>
+													<div class="text-text-muted truncate" title={attr.values?.join(', ')}>
 														{attr.values?.slice(0, 5).join(', ')}{attr.values?.length > 5 ? '...' : ''}
 													</div>
 												</div>
@@ -2753,7 +2753,7 @@ class ${dataClassName}Transform(DataTransform):
 										</div>
 									</div>
 								{:else}
-									<div class="text-xs text-gray-400 italic p-2 bg-gray-50 dark:bg-gray-800 rounded">No attributes configured. Click Edit to add attributes.</div>
+									<div class="text-xs text-text-muted italic p-2 bg-surface-secondary rounded">No attributes configured. Click Edit to add attributes.</div>
 								{/if}
 							{/if}
 						</div>
@@ -2762,36 +2762,36 @@ class ${dataClassName}Transform(DataTransform):
 					<!-- Execution state -->
 					{#if nodeState}
 						<div>
-							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+							<div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">
 								Execution Status
 							</div>
 							<div class="space-y-2">
 								<div class="flex items-center justify-between">
-									<span class="text-sm text-gray-600 dark:text-gray-400">Status</span>
+									<span class="text-sm text-text-secondary">Status</span>
 									<span
 										class="px-2 py-0.5 rounded text-xs font-medium capitalize"
-										class:bg-gray-100={nodeState.status === 'pending'}
-										class:text-gray-700={nodeState.status === 'pending'}
-										class:bg-blue-100={nodeState.status === 'running'}
-										class:text-blue-700={nodeState.status === 'running'}
-										class:bg-green-100={nodeState.status === 'completed'}
-										class:text-green-700={nodeState.status === 'completed'}
-										class:bg-red-100={nodeState.status === 'failed'}
-										class:text-red-700={nodeState.status === 'failed'}
+										class:bg-surface-secondary={nodeState.status === 'pending'}
+										class:text-text-secondary={nodeState.status === 'pending'}
+										class:bg-info-light={nodeState.status === 'running'}
+										class:text-info={nodeState.status === 'running'}
+										class:bg-success-light={nodeState.status === 'completed'}
+										class:text-success={nodeState.status === 'completed'}
+										class:bg-error-light={nodeState.status === 'failed'}
+										class:text-error={nodeState.status === 'failed'}
 									>
 										{nodeState.status}
 									</span>
 								</div>
 								{#if nodeState.duration_ms}
 									<div class="flex items-center justify-between">
-										<span class="text-sm text-gray-600 dark:text-gray-400">Duration</span>
-										<span class="text-sm text-gray-800 dark:text-gray-200">
+										<span class="text-sm text-text-secondary">Duration</span>
+										<span class="text-sm text-text-primary">
 											{nodeState.duration_ms}ms
 										</span>
 									</div>
 								{/if}
 								{#if nodeState.error}
-									<div class="mt-2 p-2 bg-red-50 dark:bg-red-900/20 rounded text-xs text-red-700 dark:text-red-400">
+									<div class="mt-2 p-2 bg-error-light dark:bg-error/20 rounded text-xs text-error dark:text-error">
 										{nodeState.error}
 									</div>
 								{/if}
@@ -2806,7 +2806,7 @@ class ${dataClassName}Transform(DataTransform):
 				<div class="space-y-4">
 					<!-- State Variables Panel - Modern Redesign -->
 					{#if isEditing}
-						<div class="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-gray-800/80 dark:to-gray-900/80 rounded-xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm overflow-hidden">
+						<div class="bg-surface-secondary rounded-xl border border-surface-border shadow-sm overflow-hidden">
 							<!-- Header -->
 							<div class="px-4 py-3 flex items-center justify-between">
 								<div class="flex items-center gap-2.5">
@@ -2814,11 +2814,11 @@ class ${dataClassName}Transform(DataTransform):
 										<Variable size={14} class="text-white" />
 									</div>
 									<div>
-										<h3 class="text-sm font-semibold text-gray-800 dark:text-gray-100">Variables</h3>
-										<p class="text-[10px] text-gray-500 dark:text-gray-400">Type <kbd class="px-1 py-0.5 bg-white dark:bg-gray-700 rounded text-[9px] font-mono shadow-sm border border-gray-200 dark:border-gray-600">{'{'}</kbd> to autocomplete</p>
+										<h3 class="text-sm font-semibold text-text-primary">Variables</h3>
+										<p class="text-[10px] text-text-muted">Type <kbd class="px-1 py-0.5 bg-surface rounded text-[9px] font-mono shadow-sm border border-surface-border">{'{'}</kbd> to autocomplete</p>
 									</div>
 								</div>
-								<span class="text-xs font-medium px-2 py-1 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300">
+								<span class="text-xs font-medium px-2 py-1 rounded-full bg-node-llm-bg dark:bg-node-llm/30 text-node-llm dark:text-node-llm">
 									{availableStateVariables().variables.length}
 								</span>
 							</div>
@@ -2827,12 +2827,12 @@ class ${dataClassName}Transform(DataTransform):
 							{#if availableStateVariables().variables.length > 5}
 								<div class="px-4 pb-2">
 									<div class="relative">
-										<Search size={14} class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+										<Search size={14} class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
 										<input
 											type="text"
 											bind:value={variableFilter}
 											placeholder="Filter variables..."
-											class="w-full pl-9 pr-3 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all placeholder:text-gray-400"
+											class="w-full pl-9 pr-3 py-1.5 text-xs bg-surface border border-surface-border rounded-lg focus:ring-2 focus:ring-node-llm/20 focus:border-node-llm transition-all placeholder:text-text-muted"
 										/>
 									</div>
 								</div>
@@ -2847,8 +2847,8 @@ class ${dataClassName}Transform(DataTransform):
 								{#if vars.bySource.data.length > 0}
 									<div class="space-y-1.5">
 										<div class="flex items-center gap-1.5">
-											<Database size={12} class="text-blue-500" />
-											<span class="text-[11px] font-medium text-gray-600 dark:text-gray-400">Data</span>
+											<Database size={12} class="text-info" />
+											<span class="text-[11px] font-medium text-text-secondary">Data</span>
 										</div>
 										<div class="flex flex-wrap gap-1.5">
 											{#each vars.bySource.data as variable}
@@ -2856,18 +2856,18 @@ class ${dataClassName}Transform(DataTransform):
 													onclick={() => copyVariable(variable)}
 													class="group relative inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono rounded-lg transition-all duration-200
 														{copiedVariable === variable.name
-															? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 ring-2 ring-green-500/30'
-															: 'bg-white dark:bg-gray-800 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 hover:border-blue-400 dark:hover:border-blue-600 hover:shadow-sm hover:shadow-blue-100 dark:hover:shadow-blue-900/20'
+															? 'bg-success-light dark:bg-success/30 text-success dark:text-success ring-2 ring-success/30'
+															: 'bg-surface text-info dark:text-info border border-info-border dark:border-info/30 hover:border-info dark:hover:border-info hover:shadow-sm hover:shadow-info/10 dark:hover:shadow-info/20'
 														}"
 													title={variable.description || `Copy {${variable.name}}`}
 												>
 													{#if copiedVariable === variable.name}
-														<Check size={12} class="text-green-600 dark:text-green-400" />
+														<Check size={12} class="text-success dark:text-success" />
 														<span>Copied!</span>
 													{:else}
-														<span class="text-blue-400 dark:text-blue-500 opacity-60 group-hover:opacity-100">{'{'}</span>
+														<span class="text-info/60 dark:text-info/60 opacity-60 group-hover:opacity-100">{'{'}</span>
 														<span>{variable.name}</span>
-														<span class="text-blue-400 dark:text-blue-500 opacity-60 group-hover:opacity-100">{'}'}</span>
+														<span class="text-info/60 dark:text-info/60 opacity-60 group-hover:opacity-100">{'}'}</span>
 													{/if}
 												</button>
 											{/each}
@@ -2879,8 +2879,8 @@ class ${dataClassName}Transform(DataTransform):
 								{#if vars.bySource.output.length > 0}
 									<div class="space-y-1.5">
 										<div class="flex items-center gap-1.5">
-											<Zap size={12} class="text-emerald-500" />
-											<span class="text-[11px] font-medium text-gray-600 dark:text-gray-400">Outputs</span>
+											<Zap size={12} class="text-success" />
+											<span class="text-[11px] font-medium text-text-secondary">Outputs</span>
 										</div>
 										<div class="flex flex-wrap gap-1.5">
 											{#each vars.bySource.output as variable}
@@ -2888,20 +2888,20 @@ class ${dataClassName}Transform(DataTransform):
 													onclick={() => copyVariable(variable)}
 													class="group relative inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono rounded-lg transition-all duration-200
 														{copiedVariable === variable.name
-															? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 ring-2 ring-green-500/30'
-															: 'bg-white dark:bg-gray-800 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 hover:border-emerald-400 dark:hover:border-emerald-600 hover:shadow-sm hover:shadow-emerald-100 dark:hover:shadow-emerald-900/20'
+															? 'bg-success-light dark:bg-success/30 text-success dark:text-success ring-2 ring-success/30'
+															: 'bg-surface text-success dark:text-success border border-success-border dark:border-success/30 hover:border-success dark:hover:border-success hover:shadow-sm hover:shadow-success/10 dark:hover:shadow-success/20'
 														}"
 													title="{variable.description || `From ${variable.sourceNode}`}"
 												>
 													{#if copiedVariable === variable.name}
-														<Check size={12} class="text-green-600 dark:text-green-400" />
+														<Check size={12} class="text-success dark:text-success" />
 														<span>Copied!</span>
 													{:else}
-														<span class="text-emerald-400 dark:text-emerald-500 opacity-60 group-hover:opacity-100">{'{'}</span>
+														<span class="text-success/60 dark:text-success/60 opacity-60 group-hover:opacity-100">{'{'}</span>
 														<span>{variable.name}</span>
-														<span class="text-emerald-400 dark:text-emerald-500 opacity-60 group-hover:opacity-100">{'}'}</span>
+														<span class="text-success/60 dark:text-success/60 opacity-60 group-hover:opacity-100">{'}'}</span>
 														{#if variable.sourceNode}
-															<span class="ml-0.5 px-1.5 py-0.5 text-[9px] bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded">
+															<span class="ml-0.5 px-1.5 py-0.5 text-[9px] bg-success-light dark:bg-success/20 text-status-completed rounded">
 																{variable.sourceNode}
 															</span>
 														{/if}
@@ -2916,8 +2916,8 @@ class ${dataClassName}Transform(DataTransform):
 								{#if vars.bySource.sampler.length > 0}
 									<div class="space-y-1.5">
 										<div class="flex items-center gap-1.5">
-											<Shuffle size={12} class="text-purple-500" />
-											<span class="text-[11px] font-medium text-gray-600 dark:text-gray-400">Sampler</span>
+											<Shuffle size={12} class="text-node-llm" />
+											<span class="text-[11px] font-medium text-text-secondary">Sampler</span>
 										</div>
 										<div class="flex flex-wrap gap-1.5">
 											{#each vars.bySource.sampler as variable}
@@ -2925,18 +2925,18 @@ class ${dataClassName}Transform(DataTransform):
 													onclick={() => copyVariable(variable)}
 													class="group relative inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono rounded-lg transition-all duration-200
 														{copiedVariable === variable.name
-															? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 ring-2 ring-green-500/30'
-															: 'bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/50 hover:border-purple-400 dark:hover:border-purple-600 hover:shadow-sm hover:shadow-purple-100 dark:hover:shadow-purple-900/20'
+															? 'bg-success-light dark:bg-success/30 text-success dark:text-success ring-2 ring-success/30'
+															: 'bg-surface text-node-llm dark:text-node-llm border border-node-llm/30 dark:border-node-llm/40 hover:border-node-llm dark:hover:border-node-llm hover:shadow-sm hover:shadow-node-llm/10 dark:hover:shadow-node-llm/20'
 														}"
 													title="{variable.description || `Copy {${variable.name}}`}"
 												>
 													{#if copiedVariable === variable.name}
-														<Check size={12} class="text-green-600 dark:text-green-400" />
+														<Check size={12} class="text-success dark:text-success" />
 														<span>Copied!</span>
 													{:else}
-														<span class="text-purple-400 dark:text-purple-500 opacity-60 group-hover:opacity-100">{'{'}</span>
+														<span class="text-node-llm/60 dark:text-node-llm/60 opacity-60 group-hover:opacity-100">{'{'}</span>
 														<span>{variable.name}</span>
-														<span class="text-purple-400 dark:text-purple-500 opacity-60 group-hover:opacity-100">{'}'}</span>
+														<span class="text-node-llm/60 dark:text-node-llm/60 opacity-60 group-hover:opacity-100">{'}'}</span>
 													{/if}
 												</button>
 											{/each}
@@ -2949,7 +2949,7 @@ class ${dataClassName}Transform(DataTransform):
 									<div class="space-y-1.5">
 										<div class="flex items-center gap-1.5">
 											<Settings size={12} class="text-slate-500" />
-											<span class="text-[11px] font-medium text-gray-600 dark:text-gray-400">Framework</span>
+											<span class="text-[11px] font-medium text-text-secondary">Framework</span>
 										</div>
 										<div class="flex flex-wrap gap-1.5">
 											{#each vars.bySource.framework as variable}
@@ -2957,13 +2957,13 @@ class ${dataClassName}Transform(DataTransform):
 													onclick={() => copyVariable(variable)}
 													class="group relative inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono rounded-lg transition-all duration-200
 														{copiedVariable === variable.name
-															? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 ring-2 ring-green-500/30'
-															: 'bg-white dark:bg-gray-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700/50 hover:border-slate-400 dark:hover:border-slate-600 hover:shadow-sm hover:shadow-slate-100 dark:hover:shadow-slate-900/20'
+															? 'bg-success-light dark:bg-success/30 text-success dark:text-success ring-2 ring-success/30'
+															: 'bg-surface text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700/50 hover:border-slate-400 dark:hover:border-slate-600 hover:shadow-sm hover:shadow-slate-100 dark:hover:shadow-slate-900/20'
 														}"
 													title="{variable.description}"
 												>
 													{#if copiedVariable === variable.name}
-														<Check size={12} class="text-green-600 dark:text-green-400" />
+														<Check size={12} class="text-success dark:text-success" />
 														<span>Copied!</span>
 													{:else}
 														<span class="text-slate-400 dark:text-slate-500 opacity-60 group-hover:opacity-100">{'{'}</span>
@@ -2980,17 +2980,17 @@ class ${dataClassName}Transform(DataTransform):
 								{#if vars.variables.length === 0}
 									<div class="py-4 text-center">
 										{#if variableFilter}
-											<p class="text-xs text-gray-500 dark:text-gray-400">
+											<p class="text-xs text-text-muted">
 												No variables matching "<span class="font-medium">{variableFilter}</span>"
 											</p>
 										{:else}
 											<div class="flex flex-col items-center gap-2">
-												<div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-													<Variable size={18} class="text-gray-400" />
+												<div class="w-10 h-10 rounded-full bg-surface-secondary flex items-center justify-center">
+													<Variable size={18} class="text-text-muted" />
 												</div>
 												<div>
-													<p class="text-xs font-medium text-gray-600 dark:text-gray-400">No variables yet</p>
-													<p class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">Add a data source or upstream nodes with output_keys</p>
+													<p class="text-xs font-medium text-text-secondary">No variables yet</p>
+													<p class="text-[10px] text-text-muted dark:text-text-muted mt-0.5">Add a data source or upstream nodes with output_keys</p>
 												</div>
 											</div>
 										{/if}
@@ -3003,17 +3003,17 @@ class ${dataClassName}Transform(DataTransform):
 
 					<!-- Validation Warnings -->
 					{#if promptValidation().errors.length > 0}
-						<div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-xl overflow-hidden">
+						<div class="bg-warning-light dark:bg-warning/20 border border-warning-border dark:border-warning/30 rounded-xl overflow-hidden">
 							<!-- Warning Header -->
 							<div class="px-4 py-3 flex items-start gap-3">
-								<div class="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
-									<AlertTriangle size={16} class="text-amber-600 dark:text-amber-400" />
+								<div class="w-8 h-8 rounded-lg bg-warning-light dark:bg-warning/30 flex items-center justify-center flex-shrink-0">
+									<AlertTriangle size={16} class="text-warning" />
 								</div>
 								<div class="flex-1 min-w-0">
-									<h4 class="text-sm font-semibold text-amber-800 dark:text-amber-200">
+									<h4 class="text-sm font-semibold text-warning dark:text-warning">
 										{promptValidation().errors.length === 1 ? 'Undefined Variable' : `${promptValidation().errors.length} Undefined Variables`}
 									</h4>
-									<p class="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+									<p class="text-xs text-warning dark:text-warning mt-0.5">
 										The following variables are referenced but not available in this node's context:
 									</p>
 								</div>
@@ -3022,11 +3022,11 @@ class ${dataClassName}Transform(DataTransform):
 							<!-- Error List -->
 							<div class="px-4 pb-3 space-y-2">
 								{#each promptValidation().invalidReferences as ref}
-									<div class="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800/50 rounded-lg border border-amber-200 dark:border-amber-800/30">
-										<code class="px-2 py-0.5 text-xs font-mono bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 rounded">
+									<div class="flex items-center gap-2 px-3 py-2 bg-surface/50 rounded-lg border border-warning-border dark:border-warning/20">
+										<code class="px-2 py-0.5 text-xs font-mono bg-warning-light dark:bg-warning/30 text-warning dark:text-warning rounded">
 											{'{' + ref.name + '}'}
 										</code>
-										<span class="text-xs text-amber-700 dark:text-amber-300">
+										<span class="text-xs text-warning dark:text-warning">
 											is not defined
 										</span>
 									</div>
@@ -3034,8 +3034,8 @@ class ${dataClassName}Transform(DataTransform):
 							</div>
 
 							<!-- Help Text -->
-							<div class="px-4 py-2.5 bg-amber-100/50 dark:bg-amber-900/30 border-t border-amber-200 dark:border-amber-800/30">
-								<p class="text-[11px] text-amber-700 dark:text-amber-400">
+							<div class="px-4 py-2.5 bg-warning-light dark:bg-warning/20 border-t border-warning-border dark:border-warning/20">
+								<p class="text-[11px] text-warning dark:text-warning">
 									<strong>How to fix:</strong> Ensure the variable is either a data column, an output_key from an upstream node, or a framework variable. Check that upstream nodes are connected and have the correct output_keys configured.
 								</p>
 							</div>
@@ -3044,8 +3044,8 @@ class ${dataClassName}Transform(DataTransform):
 
 					{#if isEditing}
 						{#each editPrompts as message, index}
-							<div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-								<div class="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+							<div class="border border-surface-border rounded-lg overflow-hidden">
+								<div class="flex items-center justify-between px-3 py-2 bg-surface-secondary border-b border-surface-border">
 									<div class="flex items-center gap-2">
 										<CustomSelect
 											options={roleOptions}
@@ -3056,11 +3056,11 @@ class ${dataClassName}Transform(DataTransform):
 										/>
 										<!-- Multi-modal toggle -->
 										<label class="flex items-center gap-1.5 cursor-pointer ml-2">
-											<span class="text-[10px] text-gray-500 dark:text-gray-400">Multi-modal</span>
+											<span class="text-[10px] text-text-muted">Multi-modal</span>
 											<button
 												type="button"
 												onclick={() => toggleMultiModal(index)}
-												class="relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {isMultiModalContent(message.content) ? 'bg-[#7661FF]' : 'bg-gray-200 dark:bg-gray-700'}"
+												class="relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none {isMultiModalContent(message.content) ? 'bg-[#7661FF]' : 'bg-surface-tertiary'}"
 												role="switch"
 												aria-checked={isMultiModalContent(message.content)}
 											>
@@ -3072,17 +3072,17 @@ class ${dataClassName}Transform(DataTransform):
 									</div>
 									<button
 										onclick={() => removePromptMessage(index)}
-										class="text-gray-400 hover:text-red-500 p-1"
+										class="text-text-muted hover:text-error p-1"
 									>
 										<X size={14} />
 									</button>
 								</div>
-								
+
 								{#if isMultiModalContent(message.content)}
 									<!-- Multi-modal content editing -->
-									<div class="p-3 space-y-2 bg-white dark:bg-gray-900">
+									<div class="p-3 space-y-2 bg-surface">
 										{#each message.content as part, partIndex}
-											<div class="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+											<div class="flex items-start gap-2 p-2 bg-surface-secondary rounded-lg border border-surface-border">
 												<div class="flex-shrink-0 pt-1">
 													<span class="inline-block px-2 py-0.5 text-[10px] font-medium rounded bg-[#7661FF]/10 text-[#7661FF] dark:bg-[#7661FF]/20 dark:text-[#BF71F2]">
 														{getMultiModalPartLabel(part.type)}
@@ -3096,7 +3096,7 @@ class ${dataClassName}Transform(DataTransform):
 															rows={3}
 															placeholder={'Enter text content... Type \'{\' for variable autocomplete'}
 															oninput={(val) => updateMultiModalPart(index, partIndex, val)}
-															class="border border-gray-200 dark:border-gray-700 rounded"
+															class="border border-surface-border rounded"
 														/>
 													{:else}
 														<StateVariableInput
@@ -3109,36 +3109,36 @@ class ${dataClassName}Transform(DataTransform):
 												</div>
 												<button
 													onclick={() => removeMultiModalPart(index, partIndex)}
-													class="flex-shrink-0 p-1 text-gray-400 hover:text-red-500"
+													class="flex-shrink-0 p-1 text-text-muted hover:text-error"
 												>
 													<X size={12} />
 												</button>
 											</div>
 										{/each}
-										
+
 										<!-- Add content part buttons -->
 										<div class="flex flex-wrap gap-1.5 pt-1">
 											<button
 												onclick={() => addMultiModalPart(index, 'text')}
-												class="px-2 py-1 text-[10px] font-medium border border-dashed border-gray-300 dark:border-gray-600 rounded text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
+												class="px-2 py-1 text-[10px] font-medium border border-dashed border-surface-border rounded text-text-muted hover:text-text-secondary hover:border-text-muted transition-colors"
 											>
 												+ Text
 											</button>
 											<button
 												onclick={() => addMultiModalPart(index, 'audio_url')}
-												class="px-2 py-1 text-[10px] font-medium border border-dashed border-gray-300 dark:border-gray-600 rounded text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
+												class="px-2 py-1 text-[10px] font-medium border border-dashed border-surface-border rounded text-text-muted hover:text-text-secondary hover:border-text-muted transition-colors"
 											>
 												+ Audio URL
 											</button>
 											<button
 												onclick={() => addMultiModalPart(index, 'image_url')}
-												class="px-2 py-1 text-[10px] font-medium border border-dashed border-gray-300 dark:border-gray-600 rounded text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
+												class="px-2 py-1 text-[10px] font-medium border border-dashed border-surface-border rounded text-text-muted hover:text-text-secondary hover:border-text-muted transition-colors"
 											>
 												+ Image URL
 											</button>
 											<button
 												onclick={() => addMultiModalPart(index, 'video_url')}
-												class="px-2 py-1 text-[10px] font-medium border border-dashed border-gray-300 dark:border-gray-600 rounded text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
+												class="px-2 py-1 text-[10px] font-medium border border-dashed border-surface-border rounded text-text-muted hover:text-text-secondary hover:border-text-muted transition-colors"
 											>
 												+ Video URL
 											</button>
@@ -3161,27 +3161,27 @@ class ${dataClassName}Transform(DataTransform):
 						<div class="flex gap-2">
 							<button
 								onclick={() => addPromptMessage('system')}
-								class="flex-1 px-3 py-2 text-xs font-medium border border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
+								class="flex-1 px-3 py-2 text-xs font-medium border border-dashed border-surface-border rounded-lg text-text-muted hover:text-text-secondary hover:border-text-muted transition-colors"
 							>
 								+ System
 							</button>
 							<button
 								onclick={() => addPromptMessage('user')}
-								class="flex-1 px-3 py-2 text-xs font-medium border border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
+								class="flex-1 px-3 py-2 text-xs font-medium border border-dashed border-surface-border rounded-lg text-text-muted hover:text-text-secondary hover:border-text-muted transition-colors"
 							>
 								+ User
 							</button>
 							<button
 								onclick={() => addPromptMessage('assistant')}
-								class="flex-1 px-3 py-2 text-xs font-medium border border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors"
+								class="flex-1 px-3 py-2 text-xs font-medium border border-dashed border-surface-border rounded-lg text-text-muted hover:text-text-secondary hover:border-text-muted transition-colors"
 							>
 								+ Assistant
 							</button>
 						</div>
 					{:else}
 						{#each node.prompt ?? [] as message}
-							<div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-								<div class="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+							<div class="border border-surface-border rounded-lg overflow-hidden">
+								<div class="px-3 py-2 bg-surface-secondary border-b border-surface-border flex items-center gap-2">
 									<span class="text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] capitalize">
 										{message.role}
 									</span>
@@ -3191,12 +3191,12 @@ class ${dataClassName}Transform(DataTransform):
 										</span>
 									{/if}
 								</div>
-								<div class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900">
+								<div class="px-3 py-2 text-sm text-text-secondary bg-surface">
 									{#if isMultiModalContent(message.content)}
 										<!-- Display multi-modal content parts -->
 										<div class="space-y-2">
 											{#each message.content as part}
-												<div class="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded border border-gray-100 dark:border-gray-700">
+												<div class="flex items-start gap-2 p-2 bg-surface-secondary rounded border border-surface-border">
 													<span class="flex-shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#7661FF]/10 text-[#7661FF] dark:bg-[#7661FF]/20 dark:text-[#BF71F2]">
 														{getMultiModalPartLabel(part.type)}
 													</span>
@@ -3216,7 +3216,7 @@ class ${dataClassName}Transform(DataTransform):
 						{/each}
 
 						{#if !node.prompt?.length}
-							<div class="text-center py-8 text-gray-500 text-sm">
+							<div class="text-center py-8 text-text-muted text-sm">
 								No prompts defined for this node
 							</div>
 						{/if}
@@ -3224,20 +3224,20 @@ class ${dataClassName}Transform(DataTransform):
 
 					<!-- Multi-Turn Conversations Section (for LLM/Agent nodes) -->
 					{#if node.node_type === 'llm' || node.node_type === 'agent'}
-						<div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+						<div class="border-t border-surface-border pt-4 mt-4">
 							<!-- Header with toggle -->
 							<div class="flex items-center justify-between mb-3">
 								<div class="flex items-center gap-2">
-									<MessageSquare size={14} class="text-gray-400" />
-									<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Multi-Turn Conversations</span>
+									<MessageSquare size={14} class="text-text-muted" />
+									<span class="text-sm font-medium text-text-secondary">Multi-Turn Conversations</span>
 								</div>
 								{#if isEditing}
 									<label class="flex items-center gap-2 cursor-pointer">
-										<span class="text-xs text-gray-500">Enable</span>
+										<span class="text-xs text-text-muted">Enable</span>
 										<button
 											type="button"
 											onclick={() => { editChatHistoryEnabled = !editChatHistoryEnabled; markChanged(); }}
-											class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#52B8FF] focus:ring-offset-2 {editChatHistoryEnabled ? 'bg-[#7661FF]' : 'bg-gray-200 dark:bg-gray-700'}"
+											class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-info focus:ring-offset-2 {editChatHistoryEnabled ? 'bg-[#7661FF]' : 'bg-surface-tertiary'}"
 											role="switch"
 											aria-checked={editChatHistoryEnabled}
 										>
@@ -3247,7 +3247,7 @@ class ${dataClassName}Transform(DataTransform):
 										</button>
 									</label>
 								{:else}
-									<span class="text-xs px-2 py-0.5 rounded-full {node.chat_history ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500'}">
+									<span class="text-xs px-2 py-0.5 rounded-full {node.chat_history ? 'bg-success-light text-status-completed' : 'bg-surface-secondary text-text-muted'}">
 										{node.chat_history ? 'Enabled' : 'Disabled'}
 									</span>
 								{/if}
@@ -3255,15 +3255,15 @@ class ${dataClassName}Transform(DataTransform):
 
 							{#if isEditing && editChatHistoryEnabled}
 								<!-- Description -->
-								<p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
+								<p class="text-xs text-text-muted mb-4">
 									Track conversation history across turns. Inject system messages at specific turns to guide the conversation flow.
 								</p>
 
 								<!-- System Message Injections -->
 								<div class="space-y-3">
 									<div class="flex items-center justify-between">
-										<span class="text-xs font-medium text-gray-600 dark:text-gray-400">Turn-Based System Injections</span>
-										<span class="text-xs text-gray-400 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">
+										<span class="text-xs font-medium text-text-secondary">Turn-Based System Injections</span>
+										<span class="text-xs text-text-muted px-1.5 py-0.5 bg-surface-secondary rounded">
 											{editInjectSystemMessages.length} configured
 										</span>
 									</div>
@@ -3289,12 +3289,12 @@ class ${dataClassName}Transform(DataTransform):
 															value={msg.message}
 															oninput={(e) => updateSystemMessageInjection(msg.id, 'message', e.currentTarget.value)}
 															placeholder="System message content..."
-															class="w-full px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
+															class="w-full px-3 py-1.5 text-sm border border-surface-border rounded-lg bg-surface text-text-primary focus:ring-2 focus:ring-info focus:border-transparent"
 														/>
 													</div>
 													<button
 														onclick={() => removeSystemMessageInjection(msg.id)}
-														class="p-1.5 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+														class="p-1.5 text-text-muted hover:text-error opacity-0 group-hover:opacity-100 transition-all"
 														title="Remove"
 													>
 														<X size={14} />
@@ -3306,13 +3306,13 @@ class ${dataClassName}Transform(DataTransform):
 
 									<!-- Add new injection - inline form -->
 									<div class="flex items-center gap-2">
-										<div class="flex items-center gap-1 px-2 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
-											<span class="text-[10px] text-gray-400 uppercase">Turn</span>
+										<div class="flex items-center gap-1 px-2 py-1.5 bg-surface-secondary rounded-lg border border-dashed border-surface-border">
+											<span class="text-[10px] text-text-muted uppercase">Turn</span>
 											<input
 												type="number"
 												bind:value={newInjectTurn}
 												min="1"
-												class="w-10 px-1 py-0.5 text-xs font-mono text-center border-0 bg-transparent text-gray-700 dark:text-gray-300 focus:ring-0"
+												class="w-10 px-1 py-0.5 text-xs font-mono text-center border-0 bg-transparent text-text-secondary focus:ring-0"
 											/>
 										</div>
 										<div class="flex-1">
@@ -3321,13 +3321,13 @@ class ${dataClassName}Transform(DataTransform):
 												bind:value={newInjectMessage}
 												placeholder="Add a system message to inject at this turn..."
 												onkeydown={(e) => { if (e.key === 'Enter') addSystemMessageInjection(); }}
-												class="w-full px-3 py-1.5 text-sm border border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent focus:bg-white dark:focus:bg-gray-700 focus:border-solid"
+												class="w-full px-3 py-1.5 text-sm border border-dashed border-surface-border rounded-lg bg-surface-secondary text-text-primary focus:ring-2 focus:ring-info focus:border-transparent focus:bg-surface focus:border-solid"
 											/>
 										</div>
 										<button
 											onclick={addSystemMessageInjection}
 											disabled={!newInjectTurn || newInjectTurn < 1 || !newInjectMessage.trim()}
-											class="px-3 py-1.5 text-xs font-medium text-[#7661FF] hover:text-[#5a4dcc] hover:bg-[#7661FF]/10 dark:hover:bg-[#7661FF]/15 disabled:text-gray-300 dark:disabled:text-gray-600 disabled:hover:bg-transparent rounded-lg transition-colors"
+											class="px-3 py-1.5 text-xs font-medium text-[#7661FF] hover:text-[#5a4dcc] hover:bg-[#7661FF]/10 dark:hover:bg-[#7661FF]/15 disabled:text-text-muted disabled:hover:bg-transparent rounded-lg transition-colors"
 										>
 											<Plus size={14} />
 										</button>
@@ -3336,7 +3336,7 @@ class ${dataClassName}Transform(DataTransform):
 
 							{:else if !isEditing && node.chat_history}
 								<!-- View mode -->
-								<p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+								<p class="text-xs text-text-muted mb-3">
 									Conversation history is tracked across turns.
 								</p>
 								{#if node.inject_system_messages && node.inject_system_messages.length > 0}
@@ -3348,16 +3348,16 @@ class ${dataClassName}Transform(DataTransform):
 												<span class="text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] px-2 py-0.5 bg-[#7661FF]/10 dark:bg-[#7661FF]/15 rounded">
 													Turn {turn}
 												</span>
-												<span class="text-sm text-gray-600 dark:text-gray-400">{message}</span>
+												<span class="text-sm text-text-secondary">{message}</span>
 											</div>
 										{/each}
 									</div>
 								{:else}
-									<div class="text-xs text-gray-400 italic">No turn-based injections configured</div>
+									<div class="text-xs text-text-muted italic">No turn-based injections configured</div>
 								{/if}
 
 							{:else if !isEditing}
-								<p class="text-xs text-gray-400">
+								<p class="text-xs text-text-muted">
 									Enable to track conversation history and inject messages at specific turns.
 								</p>
 							{/if}
@@ -3372,11 +3372,11 @@ class ${dataClassName}Transform(DataTransform):
 					<!-- Models Section -->
 					<div>
 						<div class="flex items-center justify-between mb-3">
-							<span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+							<span class="text-xs font-medium text-text-muted uppercase tracking-wider">
 								Parallel Models
 							</span>
 							{#if isEditing}
-								<span class="text-xs text-gray-400 px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">
+								<span class="text-xs text-text-muted px-2 py-0.5 bg-surface-secondary rounded">
 									{editMultiLLMModels.length} model{editMultiLLMModels.length !== 1 ? 's' : ''}
 								</span>
 							{/if}
@@ -3387,24 +3387,24 @@ class ${dataClassName}Transform(DataTransform):
 							{#if editMultiLLMModels.length > 0}
 								<div class="space-y-3 mb-4">
 									{#each editMultiLLMModels as model (model.id)}
-										<div class="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 group hover:border-cyan-300 dark:hover:border-cyan-700 transition-colors">
+										<div class="p-3 bg-surface rounded-lg border border-surface-border group hover:border-info dark:hover:border-info transition-colors">
 											<!-- Model Header -->
 											<div class="flex items-center justify-between mb-3">
 												<div class="flex items-center gap-2">
-													<div class="w-7 h-7 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-														<Bot size={16} class="text-cyan-600 dark:text-cyan-400" />
+													<div class="w-7 h-7 rounded-lg bg-info-light dark:bg-info/20 flex items-center justify-center">
+														<Bot size={16} class="text-info dark:text-info" />
 													</div>
 													<input
 														type="text"
 														value={model.label}
 														oninput={(e) => updateMultiLLMModel(model.id, 'label', e.currentTarget.value)}
 														placeholder="model_label"
-														class="px-2 py-1 text-sm font-semibold border border-transparent hover:border-gray-200 dark:hover:border-gray-600 focus:border-cyan-500 rounded bg-transparent text-gray-800 dark:text-gray-200 w-28"
+														class="px-2 py-1 text-sm font-semibold border border-transparent hover:border-surface-border focus:border-info rounded bg-transparent text-text-primary w-28"
 													/>
 												</div>
 												<button
 													onclick={() => removeMultiLLMModel(model.id)}
-													class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md opacity-0 group-hover:opacity-100 transition-all"
+													class="p-1.5 text-text-muted hover:text-error hover:bg-error-light dark:hover:bg-error/20 rounded-md opacity-0 group-hover:opacity-100 transition-all"
 													title="Remove model"
 												>
 													<X size={14} />
@@ -3413,7 +3413,7 @@ class ${dataClassName}Transform(DataTransform):
 
 											<!-- Model Selection -->
 											<div class="mb-3">
-												<label class="text-[10px] text-gray-500 uppercase tracking-wide block mb-1">Model</label>
+												<label class="text-[10px] text-text-muted uppercase tracking-wide block mb-1">Model</label>
 												<CustomSelect
 													options={modelOptions}
 													value={model.name}
@@ -3426,7 +3426,7 @@ class ${dataClassName}Transform(DataTransform):
 											<!-- Parameters -->
 											<div class="grid grid-cols-2 gap-3">
 												<div>
-													<label class="text-[10px] text-gray-500 uppercase tracking-wide block mb-1">Temperature</label>
+													<label class="text-[10px] text-text-muted uppercase tracking-wide block mb-1">Temperature</label>
 													<input
 														type="number"
 														value={model.temperature}
@@ -3434,18 +3434,18 @@ class ${dataClassName}Transform(DataTransform):
 														min="0"
 														max="2"
 														step="0.1"
-														class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+														class="w-full px-3 py-2 text-sm border border-surface-border rounded-lg bg-surface text-text-primary focus:ring-2 focus:ring-info focus:border-transparent"
 													/>
 												</div>
 												<div>
-													<label class="text-[10px] text-gray-500 uppercase tracking-wide block mb-1">Max Tokens</label>
+													<label class="text-[10px] text-text-muted uppercase tracking-wide block mb-1">Max Tokens</label>
 													<input
 														type="number"
 														value={model.maxTokens ?? ''}
 														oninput={(e) => updateMultiLLMModel(model.id, 'maxTokens', e.currentTarget.value ? parseInt(e.currentTarget.value) : undefined)}
 														min="1"
 														placeholder="—"
-														class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+														class="w-full px-3 py-2 text-sm border border-surface-border rounded-lg bg-surface text-text-primary focus:ring-2 focus:ring-info focus:border-transparent"
 													/>
 												</div>
 											</div>
@@ -3453,27 +3453,27 @@ class ${dataClassName}Transform(DataTransform):
 									{/each}
 								</div>
 							{:else}
-								<div class="text-center py-8 text-gray-400 text-sm border border-dashed border-gray-300 dark:border-gray-700 rounded-lg mb-4">
+								<div class="text-center py-8 text-text-muted text-sm border border-dashed border-surface-border rounded-lg mb-4">
 									<Bot size={24} class="mx-auto mb-2 opacity-50" />
 									No models configured.<br />Add at least two models for parallel execution.
 								</div>
 							{/if}
 
 							<!-- Add new model form -->
-							<div class="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
-								<div class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-3">Add Model</div>
+							<div class="p-3 bg-surface-secondary rounded-lg border border-dashed border-surface-border">
+								<div class="text-xs font-medium text-text-secondary mb-3">Add Model</div>
 								<div class="flex items-end gap-2">
 									<div class="w-28">
-										<label class="text-[10px] text-gray-400 uppercase tracking-wide block mb-1">Label</label>
+										<label class="text-[10px] text-text-muted uppercase tracking-wide block mb-1">Label</label>
 										<input
 											type="text"
 											bind:value={newModelLabel}
 											placeholder="model_1"
-											class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+											class="w-full px-3 py-2 text-sm border border-surface-border rounded-lg bg-surface text-text-primary focus:ring-2 focus:ring-info focus:border-transparent"
 										/>
 									</div>
 									<div class="flex-1">
-										<label class="text-[10px] text-gray-400 uppercase tracking-wide block mb-1">Model</label>
+										<label class="text-[10px] text-text-muted uppercase tracking-wide block mb-1">Model</label>
 										<CustomSelect
 											options={modelOptions}
 											bind:value={newModelName}
@@ -3485,7 +3485,7 @@ class ${dataClassName}Transform(DataTransform):
 									<button
 										onclick={addMultiLLMModel}
 										disabled={!newModelLabel.trim() || !newModelName.trim()}
-										class="px-4 py-2 text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-1.5"
+										class="px-4 py-2 text-sm font-medium text-white bg-info hover:bg-info/90 disabled:bg-surface-tertiary disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-1.5"
 									>
 										<Plus size={16} />
 										Add
@@ -3498,18 +3498,18 @@ class ${dataClassName}Transform(DataTransform):
 							{#if node?.models && Object.keys(node.models).length > 0}
 								<div class="space-y-2">
 									{#each Object.entries(node.models) as [label, config]}
-										<div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
+										<div class="flex items-center justify-between p-3 bg-surface-secondary rounded-lg border border-surface-border">
 											<div class="flex items-center gap-3">
-												<div class="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-													<Bot size={16} class="text-cyan-600 dark:text-cyan-400" />
+												<div class="w-8 h-8 rounded-lg bg-info-light dark:bg-info/20 flex items-center justify-center">
+													<Bot size={16} class="text-info dark:text-info" />
 												</div>
 												<div>
-													<div class="font-medium text-sm text-gray-800 dark:text-gray-200">{label}</div>
-													<div class="text-xs text-gray-500 dark:text-gray-400 font-mono">{config.name}</div>
+													<div class="font-medium text-sm text-text-primary">{label}</div>
+													<div class="text-xs text-text-muted font-mono">{config.name}</div>
 												</div>
 											</div>
 											{#if config.parameters?.temperature !== undefined}
-												<div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+												<div class="flex items-center gap-1 text-xs text-text-muted">
 													<Thermometer size={12} />
 													<span>{config.parameters.temperature}</span>
 												</div>
@@ -3518,7 +3518,7 @@ class ${dataClassName}Transform(DataTransform):
 									{/each}
 								</div>
 							{:else}
-								<div class="text-center py-6 text-gray-400 text-sm">
+								<div class="text-center py-6 text-text-muted text-sm">
 									No models configured
 								</div>
 							{/if}
@@ -3526,8 +3526,8 @@ class ${dataClassName}Transform(DataTransform):
 					</div>
 
 					<!-- Post-processor Section -->
-					<div class="border-t border-gray-200 dark:border-gray-700 pt-4">
-						<div class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+					<div class="border-t border-surface-border pt-4">
+						<div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">
 							Post-Processor (Optional)
 						</div>
 						{#if isEditing}
@@ -3536,29 +3536,29 @@ class ${dataClassName}Transform(DataTransform):
 								bind:value={editMultiLLMPostProcess}
 								oninput={() => markChanged()}
 								placeholder="module.path.CustomPostProcessor"
-								class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+								class="w-full px-3 py-2 text-sm font-mono border border-surface-border rounded-lg bg-surface text-text-primary"
 							/>
-							<p class="mt-1 text-xs text-gray-400">
+							<p class="mt-1 text-xs text-text-muted">
 								Custom function to aggregate responses from all models.
 							</p>
 						{:else}
 							{#if node?.multi_llm_post_process}
-								<div class="px-3 py-2 text-sm font-mono bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300">
+								<div class="px-3 py-2 text-sm font-mono bg-surface-secondary rounded-lg text-text-secondary">
 									{node.multi_llm_post_process}
 								</div>
 							{:else}
-								<div class="text-xs text-gray-400 italic">Using default aggregator</div>
+								<div class="text-xs text-text-muted italic">Using default aggregator</div>
 							{/if}
 						{/if}
 					</div>
 
 					<!-- Help Section -->
-					<div class="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-3">
+					<div class="bg-info-light dark:bg-info/20 border border-info-border dark:border-info/40 rounded-lg p-3">
 						<div class="flex items-start gap-2">
-							<GitCompareArrows size={16} class="text-cyan-600 dark:text-cyan-400 mt-0.5" />
-							<div class="text-xs text-cyan-700 dark:text-cyan-300">
+							<GitCompareArrows size={16} class="text-info dark:text-info mt-0.5" />
+							<div class="text-xs text-info dark:text-info">
 								<strong>Multi-LLM Execution</strong>
-								<p class="mt-1 text-cyan-600 dark:text-cyan-400">
+								<p class="mt-1 text-info dark:text-info">
 									All models execute in parallel with the same prompt. Use for model comparison, A/B testing, or ensemble responses.
 								</p>
 							</div>
@@ -3572,7 +3572,7 @@ class ${dataClassName}Transform(DataTransform):
 				<div class="space-y-4">
 					<!-- Tool Choice -->
 					<div>
-						<span class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+						<span class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-1.5">
 							Tool Choice
 						</span>
 						{#if isEditing}
@@ -3584,7 +3584,7 @@ class ${dataClassName}Transform(DataTransform):
 								onchange={markChanged}
 							/>
 						{:else}
-							<div class="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800 rounded-lg text-gray-700 dark:text-gray-300">
+							<div class="px-3 py-2 text-sm bg-surface-secondary rounded-lg text-text-secondary">
 								{toolChoiceOptions.find(o => o.value === editToolChoice)?.label ?? 'Auto'} — {toolChoiceOptions.find(o => o.value === editToolChoice)?.subtitle ?? ''}
 							</div>
 						{/if}
@@ -3593,7 +3593,7 @@ class ${dataClassName}Transform(DataTransform):
 					<!-- Tools Section -->
 					<div>
 						<div class="flex items-center justify-between mb-3">
-							<span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+							<span class="text-xs font-medium text-text-muted uppercase tracking-wider">
 								Tools
 							</span>
 							{#if isEditing}
@@ -3614,7 +3614,7 @@ class ${dataClassName}Transform(DataTransform):
 									{@const toolName = toolPath.split('.').pop() || toolPath}
 									{@const modulePath = toolPath.split('.').slice(0, -1).join('.')}
 									{@const libraryTool = toolStore.getToolByPath(toolPath)}
-									<div class="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 group hover:border-[#7661FF]/50 dark:hover:border-[#7661FF]/60 transition-colors">
+									<div class="flex items-start gap-3 p-3 bg-surface rounded-lg border border-surface-border group hover:border-[#7661FF]/50 dark:hover:border-[#7661FF]/60 transition-colors">
 										<div class="w-8 h-8 rounded-md bg-[#7661FF]/15 dark:bg-[#7661FF]/20 flex items-center justify-center flex-shrink-0">
 											{#if libraryTool}
 												<Library size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
@@ -3623,15 +3623,15 @@ class ${dataClassName}Transform(DataTransform):
 											{/if}
 										</div>
 										<div class="flex-1 min-w-0">
-											<div class="font-medium text-sm text-gray-800 dark:text-gray-200">
+											<div class="font-medium text-sm text-text-primary">
 												{libraryTool?.name || toolName}
 											</div>
 											{#if libraryTool?.description}
-												<div class="text-xs text-gray-500 dark:text-gray-400 truncate">
+												<div class="text-xs text-text-muted truncate">
 													{libraryTool.description}
 												</div>
 											{:else if modulePath}
-												<div class="text-xs text-gray-500 dark:text-gray-400 font-mono truncate" title={toolPath}>
+												<div class="text-xs text-text-muted font-mono truncate" title={toolPath}>
 													{modulePath}
 												</div>
 											{/if}
@@ -3642,7 +3642,7 @@ class ${dataClassName}Transform(DataTransform):
 													editTools = editTools.filter((_, i) => i !== index);
 													markChanged();
 												}}
-												class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+												class="p-1.5 text-text-muted hover:text-error hover:bg-error-light dark:hover:bg-error/20 rounded-md transition-colors opacity-0 group-hover:opacity-100"
 												title="Remove tool"
 											>
 												<X size={14} />
@@ -3652,11 +3652,11 @@ class ${dataClassName}Transform(DataTransform):
 								{/each}
 							</div>
 						{:else}
-							<div class="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
-								<Wrench size={28} class="mx-auto mb-2 text-gray-300 dark:text-gray-600" />
-								<p class="text-sm text-gray-500 dark:text-gray-400 mb-1">No tools configured</p>
+							<div class="text-center py-8 border-2 border-dashed border-surface-border rounded-lg">
+								<Wrench size={28} class="mx-auto mb-2 text-text-muted" />
+								<p class="text-sm text-text-muted mb-1">No tools configured</p>
 								{#if isEditing}
-									<p class="text-xs text-gray-400 dark:text-gray-500">Click "Add Tool" to select from library or enter path</p>
+									<p class="text-xs text-text-muted dark:text-text-muted">Click "Add Tool" to select from library or enter path</p>
 								{/if}
 							</div>
 						{/if}
@@ -3669,7 +3669,7 @@ class ${dataClassName}Transform(DataTransform):
 				<div class="space-y-4 code-tab-content">
 					<!-- Loading indicator -->
 					{#if isLoadingCode}
-						<div class="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
+						<div class="flex items-center gap-2 text-sm text-info bg-info-light dark:bg-info/20 px-3 py-2 rounded-lg">
 							<svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
 								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
 								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -3680,14 +3680,14 @@ class ${dataClassName}Transform(DataTransform):
 
 					<!-- Error display -->
 					{#if codeLoadError}
-						<div class="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
+						<div class="text-sm text-error bg-error-light dark:bg-error/20 px-3 py-2 rounded-lg">
 							⚠️ {codeLoadError}
 						</div>
 					{/if}
 
 					<!-- Code loaded indicators -->
 					{#if postProcessCodeLoaded || preProcessCodeLoaded || lambdaCodeLoaded}
-						<div class="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded">
+						<div class="text-xs text-success dark:text-success bg-success-light dark:bg-success/20 px-3 py-1.5 rounded">
 							✓ Loaded: {[
 								preProcessCodeLoaded ? 'pre-process' : null,
 								postProcessCodeLoaded ? 'post-process' : null,
@@ -3700,12 +3700,12 @@ class ${dataClassName}Transform(DataTransform):
 					{#if node.node_type === 'data'}
 						<div>
 							<div class="flex items-center justify-between mb-2">
-								<div class="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+								<div class="text-xs font-medium text-warning uppercase tracking-wider">
 									Data Transformation
 								</div>
-								<span class="text-xs text-gray-400">Python class</span>
+								<span class="text-xs text-text-muted">Python class</span>
 							</div>
-							<div class="text-xs text-gray-500 mb-2">
+							<div class="text-xs text-text-muted mb-2">
 								Transform data records during processing. This code will be saved to task_executor.py.
 							</div>
 							<div class="monaco-editor-wrapper">
@@ -3730,14 +3730,14 @@ class ${dataClassName}Transform(DataTransform):
 							<!-- Generator Class Section (non-collapsible) -->
 							<div>
 								<div class="flex items-center justify-between mb-2">
-									<div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+									<div class="text-xs font-medium text-text-muted uppercase tracking-wider">
 										Generator Class
 									</div>
-									<span class="text-xs text-gray-400">Output transformer</span>
+									<span class="text-xs text-text-muted">Output transformer</span>
 								</div>
 								<!-- Monaco Editor - read-only when not editing -->
 								<div class="monaco-editor-wrapper">
-									<div class="text-xs text-gray-500 mb-1">{isEditing ? 'Code Editor:' : 'Code Preview:'}</div>
+									<div class="text-xs text-text-muted mb-1">{isEditing ? 'Code Editor:' : 'Code Preview:'}</div>
 									{#if isEditing}
 										<MonacoEditor
 											bind:this={codeEditorRef}
@@ -3751,9 +3751,9 @@ class ${dataClassName}Transform(DataTransform):
 											on:save={saveChanges}
 										/>
 									{:else if fetchedGeneratorLoading}
-										<div class="flex items-center justify-center py-8 border border-gray-200 dark:border-gray-700 rounded-lg">
-											<Loader2 size={20} class="animate-spin text-gray-400" />
-											<span class="ml-2 text-sm text-gray-500">Loading code...</span>
+										<div class="flex items-center justify-center py-8 border border-surface-border rounded-lg">
+											<Loader2 size={20} class="animate-spin text-text-muted" />
+											<span class="ml-2 text-sm text-text-muted">Loading code...</span>
 										</div>
 									{:else if fetchedGeneratorCode}
 										<MonacoEditor
@@ -3764,7 +3764,7 @@ class ${dataClassName}Transform(DataTransform):
 											readonly={true}
 										/>
 									{:else}
-										<div class="text-center py-6 text-gray-400 text-sm border border-gray-200 dark:border-gray-700 rounded-lg">
+										<div class="text-center py-6 text-text-muted text-sm border border-surface-border rounded-lg">
 											No generator code found. The file may not exist yet.
 										</div>
 									{/if}
@@ -3774,15 +3774,15 @@ class ${dataClassName}Transform(DataTransform):
 							<!-- Transform Functions Section (if any mappings have transforms) -->
 							{#if !isEditing && Object.entries(node.output_config?.output_map || {}).some(([_, m]) => m.transform)}
 								{@const mappingsWithTransform = Object.entries(node.output_config?.output_map || {}).filter(([_, m]) => m.transform)}
-								<div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-									<div class="p-3 bg-gray-50 dark:bg-gray-800/50">
+								<div class="border border-surface-border rounded-lg overflow-hidden">
+									<div class="p-3 bg-surface-secondary">
 										<div class="flex items-center gap-2">
-											<Zap size={14} class="text-amber-500" />
-											<span class="text-sm font-medium text-gray-700 dark:text-gray-300">Transform Functions</span>
-											<span class="text-xs text-gray-500">({mappingsWithTransform.length})</span>
+											<Zap size={14} class="text-warning" />
+											<span class="text-sm font-medium text-text-secondary">Transform Functions</span>
+											<span class="text-xs text-text-muted">({mappingsWithTransform.length})</span>
 										</div>
 									</div>
-									<div class="divide-y divide-gray-200 dark:divide-gray-700">
+									<div class="divide-y divide-surface-border">
 										{#each mappingsWithTransform as [key, mapping]}
 											<div class="p-3">
 												<button
@@ -3791,23 +3791,23 @@ class ${dataClassName}Transform(DataTransform):
 													class="w-full flex items-center justify-between mb-2 text-left"
 												>
 													<div class="flex items-center gap-2">
-														<span class="text-sm font-mono text-gray-700 dark:text-gray-300">{key}</span>
-														<ArrowRight size={12} class="text-gray-400" />
-														<span class="px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-xs font-mono">
+														<span class="text-sm font-mono text-text-secondary">{key}</span>
+														<ArrowRight size={12} class="text-text-muted" />
+														<span class="px-2 py-0.5 rounded bg-warning-light dark:bg-warning/20 text-warning text-xs font-mono">
 															{mapping.transform}()
 														</span>
 													</div>
 													<div class="flex items-center gap-2">
 														{#if transformCodeLoading[key]}
-															<Loader2 size={12} class="animate-spin text-gray-400" />
+															<Loader2 size={12} class="animate-spin text-text-muted" />
 														{/if}
-														<ChevronDown size={14} class="text-gray-400 transition-transform {transformCodeExpanded[key] ? 'rotate-180' : ''}" />
+														<ChevronDown size={14} class="text-text-muted transition-transform {transformCodeExpanded[key] ? 'rotate-180' : ''}" />
 													</div>
 												</button>
 												{#if transformCodeExpanded[key]}
 													{#if transformCodeLoading[key]}
 														<div class="flex items-center justify-center py-4">
-															<Loader2 size={16} class="animate-spin text-gray-400" />
+															<Loader2 size={16} class="animate-spin text-text-muted" />
 														</div>
 													{:else if transformCodeMap[key]}
 														<div class="monaco-editor-wrapper mt-2">
@@ -3820,7 +3820,7 @@ class ${dataClassName}Transform(DataTransform):
 															/>
 														</div>
 													{:else}
-														<div class="text-center py-3 text-gray-400 text-xs">
+														<div class="text-center py-3 text-text-muted text-xs">
 															Transform function code not found
 														</div>
 													{/if}
@@ -3837,33 +3837,33 @@ class ${dataClassName}Transform(DataTransform):
 					{#if node.node_type === 'lambda'}
 						<div>
 							<div class="flex items-center justify-between mb-2">
-								<div class="text-xs font-medium text-orange-600 dark:text-orange-400 uppercase tracking-wider">
+								<div class="text-xs font-medium text-warning dark:text-warning uppercase tracking-wider">
 									Lambda Function
 								</div>
-								<span class="text-xs text-gray-400">Primary function code</span>
+								<span class="text-xs text-text-muted">Primary function code</span>
 							</div>
 							{#if isEditing}
 								<div class="mb-2">
-									<span class="block text-xs text-gray-500 mb-1">Function Path</span>
+									<span class="block text-xs text-text-muted mb-1">Function Path</span>
 									<input
 										type="text"
 										bind:value={editFunctionPath}
 										oninput={markChanged}
 										aria-label="Function path"
-										class="w-full px-3 py-2 text-sm font-mono border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
+										class="w-full px-3 py-2 text-sm font-mono border border-surface-border rounded-lg bg-surface text-text-primary focus:ring-2 focus:ring-info"
 										placeholder="tasks.my_task.task_executor.my_function"
 									/>
 								</div>
 							{:else if node.function_path}
-								<div class="text-sm text-gray-800 dark:text-gray-200 font-mono bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg break-all mb-2">
+								<div class="text-sm text-text-primary font-mono bg-surface-secondary px-3 py-2 rounded-lg break-all mb-2">
 									{node.function_path}
 								</div>
 							{:else}
-								<div class="text-sm text-gray-500 italic mb-2">
+								<div class="text-sm text-text-muted italic mb-2">
 									No function path defined
 								</div>
 							{/if}
-							<div class="text-xs text-gray-500 mb-2">
+							<div class="text-xs text-text-muted mb-2">
 								{isEditing ? 'Edit the lambda function code. This will be saved to task_executor.py.' : 'Lambda function code.'}
 							</div>
 							<div class="monaco-editor-wrapper">
@@ -3886,12 +3886,12 @@ class ${dataClassName}Transform(DataTransform):
 					{#if node.node_type === 'branch'}
 						<div>
 							<div class="flex items-center justify-between mb-2">
-								<div class="text-xs font-medium text-yellow-600 dark:text-yellow-400 uppercase tracking-wider">
+								<div class="text-xs font-medium text-warning dark:text-warning uppercase tracking-wider">
 									Branch Condition
 								</div>
-								<span class="text-xs text-gray-400">Primary condition code</span>
+								<span class="text-xs text-text-muted">Primary condition code</span>
 							</div>
-							<div class="text-xs text-gray-500 mb-2">
+							<div class="text-xs text-text-muted mb-2">
 								{isEditing ? 'Edit the condition logic that determines which path to take.' : 'Condition logic that determines which path to take. This code will be saved to task_executor.py.'}
 							</div>
 							<div class="monaco-editor-wrapper">
@@ -3912,14 +3912,14 @@ class ${dataClassName}Transform(DataTransform):
 					{#if canHaveProcessors && (node.pre_process || isEditing)}
 						<div>
 							<div class="flex items-center justify-between mb-2">
-								<div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+								<div class="text-xs font-medium text-text-muted uppercase tracking-wider">
 									Pre-processor
 								</div>
-								<span class="text-xs text-gray-400">Optional hook</span>
+								<span class="text-xs text-text-muted">Optional hook</span>
 							</div>
 							<!-- Monaco Editor - read-only when not editing -->
 							<div class="mt-2 monaco-editor-wrapper">
-								<div class="text-xs text-gray-500 mb-1">{isEditing ? 'Code Editor:' : 'Code Preview:'}</div>
+								<div class="text-xs text-text-muted mb-1">{isEditing ? 'Code Editor:' : 'Code Preview:'}</div>
 								<MonacoEditor
 									bind:this={codeEditorRef}
 									bind:value={preProcessCode}
@@ -3939,14 +3939,14 @@ class ${dataClassName}Transform(DataTransform):
 					{#if canHaveProcessors && (node.post_process || isEditing)}
 						<div>
 							<div class="flex items-center justify-between mb-2">
-								<div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+								<div class="text-xs font-medium text-text-muted uppercase tracking-wider">
 									Post-processor
 								</div>
-								<span class="text-xs text-gray-400">Optional hook</span>
+								<span class="text-xs text-text-muted">Optional hook</span>
 							</div>
 							<!-- Monaco Editor - read-only when not editing -->
 							<div class="mt-2 monaco-editor-wrapper">
-								<div class="text-xs text-gray-500 mb-1">{isEditing ? 'Code Editor:' : 'Code Preview:'}</div>
+								<div class="text-xs text-text-muted mb-1">{isEditing ? 'Code Editor:' : 'Code Preview:'}</div>
 								<MonacoEditor
 									bind:value={postProcessCode}
 									language="python"
@@ -3961,7 +3961,7 @@ class ${dataClassName}Transform(DataTransform):
 					{/if}
 
 					{#if !canHaveProcessors && !node.pre_process && !node.post_process && node.node_type !== 'lambda' && node.node_type !== 'branch' && node.node_type !== 'data' && node.node_type !== 'output' && !isEditing}
-						<div class="text-center py-8 text-gray-500 text-sm">
+						<div class="text-center py-8 text-text-muted text-sm">
 							No code configuration for this node
 						</div>
 					{/if}
@@ -3979,12 +3979,12 @@ class ${dataClassName}Transform(DataTransform):
 									type="text"
 									bind:value={overrideSearchQuery}
 									placeholder="Search inner nodes..."
-									class="w-full pl-3 pr-8 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
+									class="w-full pl-3 pr-8 py-2 text-sm border border-surface-border rounded-lg bg-surface text-text-primary focus:ring-2 focus:ring-info focus:border-transparent"
 								/>
 								{#if overrideSearchQuery}
 									<button
 										onclick={() => overrideSearchQuery = ''}
-										class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+										class="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-gray-600"
 									>
 										<X size={14} />
 									</button>
@@ -3994,10 +3994,10 @@ class ${dataClassName}Transform(DataTransform):
 					</div>
 
 					<!-- Info banner -->
-					<div class="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+					<div class="p-3 bg-info-light dark:bg-info/20 border border-info-border dark:border-info/40 rounded-lg">
 						<div class="flex items-start gap-2">
-							<Info size={16} class="text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-							<div class="text-xs text-blue-700 dark:text-blue-300">
+							<Info size={16} class="text-info mt-0.5 flex-shrink-0" />
+							<div class="text-xs text-info dark:text-info">
 								<strong>Node Configuration Overrides</strong> allow you to customize inner node settings without modifying the original subgraph. Add overrides for model, placeholders, or processors.
 							</div>
 						</div>
@@ -4013,15 +4013,15 @@ class ${dataClassName}Transform(DataTransform):
 							{@const override = editNodeConfigMap[innerNode.id]}
 
 							<div
-								class="rounded-lg border transition-all {nodeHasOverride ? 'border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-900/10' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'}"
+								class="rounded-lg border transition-all {nodeHasOverride ? 'border-warning-border dark:border-warning/40 bg-warning-light dark:bg-warning/10' : 'border-surface-border bg-surface'}"
 							>
 								<!-- Node header (collapsible) -->
 								<button
 									onclick={() => toggleOverrideNode(innerNode.id)}
-									class="w-full flex items-center gap-3 p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
+									class="w-full flex items-center gap-3 p-3 text-left hover:bg-surface-hover/50 rounded-lg transition-colors"
 								>
 									<!-- Expand/collapse chevron -->
-									<div class="text-gray-400 transition-transform" class:rotate-90={isExpanded}>
+									<div class="text-text-muted transition-transform" class:rotate-90={isExpanded}>
 										<ChevronRight size={16} />
 									</div>
 
@@ -4036,16 +4036,16 @@ class ${dataClassName}Transform(DataTransform):
 									<!-- Node info -->
 									<div class="flex-1 min-w-0">
 										<div class="flex items-center gap-2">
-											<span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+											<span class="text-sm font-medium text-text-primary truncate">
 												{innerNode.summary || innerNode.id}
 											</span>
 											{#if nodeHasOverride}
-												<span class="px-1.5 py-0.5 text-xs bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 rounded font-medium">
+												<span class="px-1.5 py-0.5 text-xs bg-warning-light dark:bg-warning/40 text-warning dark:text-warning rounded font-medium">
 													Overridden
 												</span>
 											{/if}
 										</div>
-										<div class="text-xs text-gray-500 font-mono truncate">
+										<div class="text-xs text-text-muted font-mono truncate">
 											{innerNode.id}
 										</div>
 									</div>
@@ -4066,7 +4066,7 @@ class ${dataClassName}Transform(DataTransform):
 
 								<!-- Expanded override editor -->
 								{#if isExpanded}
-									<div class="px-3 pb-3 pt-1 border-t border-gray-100 dark:border-gray-700/50">
+									<div class="px-3 pb-3 pt-1 border-t border-surface-border/50">
 										{#if nodeHasOverride && override}
 											{#if isEditing}
 												<!-- Edit mode: Override configuration form -->
@@ -4074,7 +4074,7 @@ class ${dataClassName}Transform(DataTransform):
 													<!-- Model Override -->
 													{#if innerNode.node_type === 'llm' || innerNode.node_type === 'agent'}
 														<div class="space-y-2">
-															<label class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+															<label class="flex items-center gap-2 text-xs font-medium text-text-secondary">
 																<Bot size={12} />
 																Model Override
 															</label>
@@ -4083,7 +4083,7 @@ class ${dataClassName}Transform(DataTransform):
 																value={override.model?.name ?? ''}
 																oninput={(e) => updateOverrideField(innerNode.id, 'model', e.currentTarget.value ? { name: e.currentTarget.value } : undefined)}
 																placeholder="e.g., gpt-4o, claude-3-5-sonnet"
-																class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
+																class="w-full px-3 py-2 text-sm border border-surface-border rounded-lg bg-surface text-text-primary focus:ring-2 focus:ring-info font-mono"
 															/>
 														</div>
 													{/if}
@@ -4091,7 +4091,7 @@ class ${dataClassName}Transform(DataTransform):
 													<!-- Prompt Placeholder Map -->
 													<div class="space-y-2">
 														<div class="flex items-center justify-between">
-															<label class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+															<label class="flex items-center gap-2 text-xs font-medium text-text-secondary">
 																<Copy size={12} />
 																Placeholder Mappings
 															</label>
@@ -4118,19 +4118,19 @@ class ${dataClassName}Transform(DataTransform):
 																				}
 																			}}
 																			placeholder="placeholder_name"
-																			class="flex-1 px-2 py-1.5 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+																			class="flex-1 px-2 py-1.5 text-xs font-mono border border-surface-border rounded bg-surface text-text-primary"
 																		/>
-																		<ArrowRight size={14} class="text-gray-400 flex-shrink-0" />
+																		<ArrowRight size={14} class="text-text-muted flex-shrink-0" />
 																		<input
 																			type="text"
 																			value={value}
 																			oninput={(e) => updatePlaceholderMapping(innerNode.id, key, key, e.currentTarget.value)}
 																			placeholder="mapped_value"
-																			class="flex-1 px-2 py-1.5 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+																			class="flex-1 px-2 py-1.5 text-xs font-mono border border-surface-border rounded bg-surface text-text-primary"
 																		/>
 																		<button
 																			onclick={() => removePlaceholderMapping(innerNode.id, key)}
-																			class="p-1 text-gray-400 hover:text-red-500 transition-colors"
+																			class="p-1 text-text-muted hover:text-error transition-colors"
 																		>
 																			<Trash2 size={14} />
 																		</button>
@@ -4138,7 +4138,7 @@ class ${dataClassName}Transform(DataTransform):
 																{/each}
 															</div>
 														{:else}
-															<div class="text-xs text-gray-400 italic py-2">
+															<div class="text-xs text-text-muted italic py-2">
 																No placeholder mappings. Click "Add" to create one.
 															</div>
 														{/if}
@@ -4148,7 +4148,7 @@ class ${dataClassName}Transform(DataTransform):
 													{#if innerNode.node_type !== 'data' && innerNode.node_type !== 'output'}
 														<div class="grid grid-cols-2 gap-3">
 															<div class="space-y-2">
-																<label class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+																<label class="flex items-center gap-2 text-xs font-medium text-text-secondary">
 																	<Code size={12} />
 																	Pre-process
 																</label>
@@ -4157,11 +4157,11 @@ class ${dataClassName}Transform(DataTransform):
 																	value={override.pre_process ?? ''}
 																	oninput={(e) => updateOverrideField(innerNode.id, 'pre_process', e.currentTarget.value || undefined)}
 																	placeholder="path.to.pre_processor"
-																	class="w-full px-2 py-1.5 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+																	class="w-full px-2 py-1.5 text-xs font-mono border border-surface-border rounded bg-surface text-text-primary"
 																/>
 															</div>
 															<div class="space-y-2">
-																<label class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+																<label class="flex items-center gap-2 text-xs font-medium text-text-secondary">
 																	<Code size={12} />
 																	Post-process
 																</label>
@@ -4170,17 +4170,17 @@ class ${dataClassName}Transform(DataTransform):
 																	value={override.post_process ?? ''}
 																	oninput={(e) => updateOverrideField(innerNode.id, 'post_process', e.currentTarget.value || undefined)}
 																	placeholder="path.to.post_processor"
-																	class="w-full px-2 py-1.5 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+																	class="w-full px-2 py-1.5 text-xs font-mono border border-surface-border rounded bg-surface text-text-primary"
 																/>
 															</div>
 														</div>
 													{/if}
 
 													<!-- Remove override button -->
-													<div class="pt-2 border-t border-gray-200 dark:border-gray-700">
+													<div class="pt-2 border-t border-surface-border">
 														<button
 															onclick={() => removeOverrideForNode(innerNode.id)}
-															class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+															class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-error hover:text-error hover:bg-error-light dark:hover:bg-error/20 rounded transition-colors"
 														>
 															<Trash2 size={12} />
 															Remove Override
@@ -4192,25 +4192,25 @@ class ${dataClassName}Transform(DataTransform):
 												<div class="space-y-3 mt-3">
 													{#if override.model}
 														<div class="flex items-start gap-2">
-															<Bot size={14} class="text-gray-400 mt-0.5" />
+															<Bot size={14} class="text-text-muted mt-0.5" />
 															<div>
-																<div class="text-xs text-gray-500">Model</div>
-																<div class="text-sm font-mono text-gray-800 dark:text-gray-200">{override.model.name}</div>
+																<div class="text-xs text-text-muted">Model</div>
+																<div class="text-sm font-mono text-text-primary">{override.model.name}</div>
 															</div>
 														</div>
 													{/if}
 
 													{#if override.prompt_placeholder_map && Object.keys(override.prompt_placeholder_map).length > 0}
 														<div class="flex items-start gap-2">
-															<Copy size={14} class="text-gray-400 mt-0.5" />
+															<Copy size={14} class="text-text-muted mt-0.5" />
 															<div class="flex-1">
-																<div class="text-xs text-gray-500 mb-1">Placeholder Mappings</div>
+																<div class="text-xs text-text-muted mb-1">Placeholder Mappings</div>
 																<div class="space-y-1">
 																	{#each Object.entries(override.prompt_placeholder_map) as [key, value]}
 																		<div class="flex items-center gap-2 text-xs">
-																			<code class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-[#7661FF] dark:text-[#BF71F2]">{key}</code>
-																			<ArrowRight size={12} class="text-gray-400" />
-																			<code class="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">{value}</code>
+																			<code class="px-1.5 py-0.5 bg-surface-secondary rounded text-[#7661FF] dark:text-[#BF71F2]">{key}</code>
+																			<ArrowRight size={12} class="text-text-muted" />
+																			<code class="px-1.5 py-0.5 bg-surface-secondary rounded text-text-secondary">{value}</code>
 																		</div>
 																	{/each}
 																</div>
@@ -4220,26 +4220,26 @@ class ${dataClassName}Transform(DataTransform):
 
 													{#if override.pre_process}
 														<div class="flex items-start gap-2">
-															<Code size={14} class="text-gray-400 mt-0.5" />
+															<Code size={14} class="text-text-muted mt-0.5" />
 															<div>
-																<div class="text-xs text-gray-500">Pre-process</div>
-																<div class="text-xs font-mono text-gray-800 dark:text-gray-200">{override.pre_process}</div>
+																<div class="text-xs text-text-muted">Pre-process</div>
+																<div class="text-xs font-mono text-text-primary">{override.pre_process}</div>
 															</div>
 														</div>
 													{/if}
 
 													{#if override.post_process}
 														<div class="flex items-start gap-2">
-															<Code size={14} class="text-gray-400 mt-0.5" />
+															<Code size={14} class="text-text-muted mt-0.5" />
 															<div>
-																<div class="text-xs text-gray-500">Post-process</div>
-																<div class="text-xs font-mono text-gray-800 dark:text-gray-200">{override.post_process}</div>
+																<div class="text-xs text-text-muted">Post-process</div>
+																<div class="text-xs font-mono text-text-primary">{override.post_process}</div>
 															</div>
 														</div>
 													{/if}
 
 													{#if !override.model && !override.prompt_placeholder_map && !override.pre_process && !override.post_process}
-														<div class="text-xs text-gray-400 italic">
+														<div class="text-xs text-text-muted italic">
 															Override exists but no specific configurations set.
 														</div>
 													{/if}
@@ -4257,10 +4257,10 @@ class ${dataClassName}Transform(DataTransform):
 														Add Configuration Override
 													</button>
 												{:else}
-													<div class="text-xs text-gray-400">
+													<div class="text-xs text-text-muted">
 														No overrides configured for this node.
 														<br />
-														<span class="text-gray-500">Click Edit to add overrides.</span>
+														<span class="text-text-muted">Click Edit to add overrides.</span>
 													</div>
 												{/if}
 											</div>
@@ -4271,7 +4271,7 @@ class ${dataClassName}Transform(DataTransform):
 						{/each}
 
 						{#if filteredInnerNodes().length === 0}
-							<div class="text-center py-8 text-gray-500 text-sm">
+							<div class="text-center py-8 text-text-muted text-sm">
 								{#if overrideSearchQuery}
 									No inner nodes match "{overrideSearchQuery}"
 								{:else}
@@ -4283,8 +4283,8 @@ class ${dataClassName}Transform(DataTransform):
 
 					<!-- Summary footer -->
 					{#if overrideCount > 0}
-						<div class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-							<div class="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
+						<div class="p-3 bg-warning-light dark:bg-warning/20 border border-warning-border dark:border-warning/40 rounded-lg">
+							<div class="flex items-center gap-2 text-xs text-warning dark:text-warning">
 								<Wrench size={14} />
 								<span><strong>{overrideCount}</strong> node{overrideCount !== 1 ? 's' : ''} with configuration overrides</span>
 							</div>
@@ -4297,59 +4297,59 @@ class ${dataClassName}Transform(DataTransform):
 			{#if activeTab === 'settings'}
 				<div class="space-y-4">
 					<!-- Node Configuration Overview -->
-					<div class="p-3 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
-						<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+					<div class="p-3 bg-surface-secondary rounded-lg border border-surface-border">
+						<div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">
 							Configuration Overview
 						</div>
 						<div class="grid grid-cols-2 gap-2 text-xs">
-							<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded">
-								<span class="text-gray-500">Node Type</span>
-								<span class="font-medium text-gray-800 dark:text-gray-200">{node.node_type}</span>
+							<div class="flex justify-between p-2 bg-surface rounded">
+								<span class="text-text-muted">Node Type</span>
+								<span class="font-medium text-text-primary">{node.node_type}</span>
 							</div>
-							<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded">
-								<span class="text-gray-500">Node ID</span>
-								<span class="font-mono text-gray-800 dark:text-gray-200 truncate max-w-[120px]" title={node.id}>{node.id}</span>
+							<div class="flex justify-between p-2 bg-surface rounded">
+								<span class="text-text-muted">Node ID</span>
+								<span class="font-mono text-text-primary truncate max-w-[120px]" title={node.id}>{node.id}</span>
 							</div>
 							{#if node.model?.name}
-								<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded">
-									<span class="text-gray-500">Model</span>
+								<div class="flex justify-between p-2 bg-surface rounded">
+									<span class="text-text-muted">Model</span>
 									<span class="font-medium text-[#7661FF] dark:text-[#BF71F2]">{node.model.name}</span>
 								</div>
 							{/if}
 							{#if node.model?.provider}
-								<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded">
-									<span class="text-gray-500">Provider</span>
-									<span class="text-gray-800 dark:text-gray-200">{node.model.provider}</span>
+								<div class="flex justify-between p-2 bg-surface rounded">
+									<span class="text-text-muted">Provider</span>
+									<span class="text-text-primary">{node.model.provider}</span>
 								</div>
 							{/if}
 							{#if node.tools && node.tools.length > 0}
-								<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded">
-									<span class="text-gray-500">Tools</span>
-									<span class="text-gray-800 dark:text-gray-200">{node.tools.length} configured</span>
+								<div class="flex justify-between p-2 bg-surface rounded">
+									<span class="text-text-muted">Tools</span>
+									<span class="text-text-primary">{node.tools.length} configured</span>
 								</div>
 							{/if}
 							{#if node.tool_choice}
-								<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded">
-									<span class="text-gray-500">Tool Choice</span>
-									<span class="text-gray-800 dark:text-gray-200">{node.tool_choice}</span>
+								<div class="flex justify-between p-2 bg-surface rounded">
+									<span class="text-text-muted">Tool Choice</span>
+									<span class="text-text-primary">{node.tool_choice}</span>
 								</div>
 							{/if}
 							{#if node.pre_process}
-								<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded col-span-2">
-									<span class="text-gray-500">Pre-processor</span>
-									<span class="font-mono text-xs text-gray-800 dark:text-gray-200 truncate max-w-[200px]" title={node.pre_process}>{node.pre_process}</span>
+								<div class="flex justify-between p-2 bg-surface rounded col-span-2">
+									<span class="text-text-muted">Pre-processor</span>
+									<span class="font-mono text-xs text-text-primary truncate max-w-[200px]" title={node.pre_process}>{node.pre_process}</span>
 								</div>
 							{/if}
 							{#if node.post_process}
-								<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded col-span-2">
-									<span class="text-gray-500">Post-processor</span>
-									<span class="font-mono text-xs text-gray-800 dark:text-gray-200 truncate max-w-[200px]" title={node.post_process}>{node.post_process}</span>
+								<div class="flex justify-between p-2 bg-surface rounded col-span-2">
+									<span class="text-text-muted">Post-processor</span>
+									<span class="font-mono text-xs text-text-primary truncate max-w-[200px]" title={node.post_process}>{node.post_process}</span>
 								</div>
 							{/if}
 							{#if node.function_path}
-								<div class="flex justify-between p-2 bg-white dark:bg-gray-900 rounded col-span-2">
-									<span class="text-gray-500">Function Path</span>
-									<span class="font-mono text-xs text-gray-800 dark:text-gray-200 truncate max-w-[200px]" title={node.function_path}>{node.function_path}</span>
+								<div class="flex justify-between p-2 bg-surface rounded col-span-2">
+									<span class="text-text-muted">Function Path</span>
+									<span class="font-mono text-xs text-text-primary truncate max-w-[200px]" title={node.function_path}>{node.function_path}</span>
 								</div>
 							{/if}
 						</div>
@@ -4358,20 +4358,20 @@ class ${dataClassName}Transform(DataTransform):
 					<!-- Execution State (if available) -->
 					{#if nodeState}
 						<div>
-							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+							<div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">
 								Execution State
 							</div>
-							<div class="p-3 rounded-lg border {nodeState.status === 'completed' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : nodeState.status === 'error' ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : nodeState.status === 'running' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'}">
+							<div class="p-3 rounded-lg border {nodeState.status === 'completed' ? 'bg-success-light dark:bg-success/20 border-success-border dark:border-success/40' : nodeState.status === 'error' ? 'bg-error-light dark:bg-error/20 border-error-border dark:border-error/40' : nodeState.status === 'running' ? 'bg-info-light dark:bg-info/20 border-info-border dark:border-info/40' : 'bg-surface-secondary border-surface-border'}">
 								<div class="flex items-center justify-between mb-2">
-									<span class="text-xs font-medium {nodeState.status === 'completed' ? 'text-green-700 dark:text-green-400' : nodeState.status === 'error' ? 'text-red-700 dark:text-red-400' : nodeState.status === 'running' ? 'text-blue-700 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'}">
+									<span class="text-xs font-medium {nodeState.status === 'completed' ? 'text-success dark:text-success' : nodeState.status === 'error' ? 'text-error dark:text-error' : nodeState.status === 'running' ? 'text-info dark:text-info' : 'text-text-secondary'}">
 										{nodeState.status?.toUpperCase() ?? 'UNKNOWN'}
 									</span>
 									{#if nodeState.duration_ms}
-										<span class="text-xs text-gray-500">{nodeState.duration_ms}ms</span>
+										<span class="text-xs text-text-muted">{nodeState.duration_ms}ms</span>
 									{/if}
 								</div>
 								{#if nodeState.error}
-									<div class="text-xs text-red-600 dark:text-red-400 font-mono bg-red-100 dark:bg-red-900/30 p-2 rounded mt-2">
+									<div class="text-xs text-error font-mono bg-error-light dark:bg-error/20 p-2 rounded mt-2">
 										{nodeState.error}
 									</div>
 								{/if}
@@ -4383,7 +4383,7 @@ class ${dataClassName}Transform(DataTransform):
 					{#if node.node_type === 'llm'}
 						<div>
 							<div class="flex items-center justify-between mb-2">
-								<div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+								<div class="text-xs font-medium text-text-muted uppercase tracking-wider">
 									Model Parameters
 								</div>
 								{#if isEditing}
@@ -4400,24 +4400,24 @@ class ${dataClassName}Transform(DataTransform):
 							{#if isEditing}
 								<div class="space-y-2">
 									{#each Object.entries(editModelParameters) as [key, value]}
-										<div class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+										<div class="flex items-center gap-2 p-2 bg-surface-secondary rounded-lg">
 											<input
 												type="text"
 												value={key}
 												onblur={(e) => renameModelParameter(key, e.currentTarget.value)}
-												class="flex-1 px-2 py-1 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+												class="flex-1 px-2 py-1 text-xs font-mono border border-surface-border rounded bg-surface text-text-primary"
 												placeholder="Parameter name"
 											/>
 											<input
 												type="text"
 												value={typeof value === 'object' ? JSON.stringify(value) : String(value)}
 												oninput={(e) => updateModelParameter(key, parseParameterValue(e.currentTarget.value))}
-												class="flex-1 px-2 py-1 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+												class="flex-1 px-2 py-1 text-xs font-mono border border-surface-border rounded bg-surface text-text-primary"
 												placeholder="Value"
 											/>
 											<button
 												onclick={() => removeModelParameter(key)}
-												class="p-1 text-gray-400 hover:text-red-500 transition-colors"
+												class="p-1 text-text-muted hover:text-error transition-colors"
 											>
 												<Trash2 size={14} />
 											</button>
@@ -4425,21 +4425,21 @@ class ${dataClassName}Transform(DataTransform):
 									{/each}
 
 									{#if Object.keys(editModelParameters).length === 0}
-										<div class="text-center py-4 text-gray-400 text-sm border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+										<div class="text-center py-4 text-text-muted text-sm border border-dashed border-surface-border rounded-lg">
 											No parameters. Click "Add" to add one.
 										</div>
 									{/if}
 								</div>
 
 								<!-- Common parameters quick-add -->
-								<div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-									<div class="text-xs text-gray-500 mb-2">Quick add common parameters:</div>
+								<div class="mt-3 pt-3 border-t border-surface-border">
+									<div class="text-xs text-text-muted mb-2">Quick add common parameters:</div>
 									<div class="flex flex-wrap gap-1">
 										{#each ['temperature', 'max_tokens', 'top_p', 'frequency_penalty', 'presence_penalty'] as param}
 											{#if !editModelParameters[param]}
 												<button
 													onclick={() => { editModelParameters[param] = param === 'temperature' ? 0.7 : param === 'max_tokens' ? 1024 : 0; editModelParameters = {...editModelParameters}; markChanged(); }}
-													class="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-600 dark:text-gray-400 transition-colors"
+													class="px-2 py-0.5 text-xs bg-surface-secondary hover:bg-surface-hover rounded text-text-secondary transition-colors"
 												>
 													+ {param}
 												</button>
@@ -4450,16 +4450,16 @@ class ${dataClassName}Transform(DataTransform):
 							{:else}
 								<div class="space-y-2">
 									{#each Object.entries(node.model?.parameters ?? {}) as [key, value]}
-										<div class="flex items-center justify-between text-sm p-2 bg-gray-50 dark:bg-gray-800 rounded">
-											<span class="text-gray-600 dark:text-gray-400 font-medium">{key}</span>
-											<span class="font-mono text-gray-800 dark:text-gray-200">
+										<div class="flex items-center justify-between text-sm p-2 bg-surface-secondary rounded">
+											<span class="text-text-secondary font-medium">{key}</span>
+											<span class="font-mono text-text-primary">
 												{typeof value === 'object' ? JSON.stringify(value) : value}
 											</span>
 										</div>
 									{/each}
 
 									{#if !node.model?.parameters || Object.keys(node.model.parameters).length === 0}
-										<div class="text-center py-4 text-gray-400 text-sm">
+										<div class="text-center py-4 text-text-muted text-sm">
 											No parameters configured
 										</div>
 									{/if}
@@ -4470,9 +4470,9 @@ class ${dataClassName}Transform(DataTransform):
 
 					<!-- Structured Output (for LLM/Agent nodes) -->
 					{#if node.node_type === 'llm' || node.node_type === 'agent'}
-						<div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+						<div class="border-t border-surface-border pt-4 mt-4">
 							<div class="flex items-center justify-between mb-3">
-								<div class="text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+								<div class="text-xs font-medium text-text-muted uppercase tracking-wider flex items-center gap-1.5">
 									<Code size={12} />
 									Structured Output
 								</div>
@@ -4482,12 +4482,12 @@ class ${dataClassName}Transform(DataTransform):
 											type="checkbox"
 											bind:checked={editStructuredOutputEnabled}
 											onchange={() => markChanged()}
-											class="w-4 h-4 text-[#7661FF] border-gray-300 rounded focus:ring-[#52B8FF]"
+											class="w-4 h-4 text-[#7661FF] border-surface-border rounded focus:ring-info"
 										/>
-										<span class="text-xs text-gray-600 dark:text-gray-400">Enable</span>
+										<span class="text-xs text-text-secondary">Enable</span>
 									</label>
 								{:else}
-									<span class="text-xs px-2 py-0.5 rounded {node.model?.structured_output?.enabled ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500'}">
+									<span class="text-xs px-2 py-0.5 rounded {node.model?.structured_output?.enabled ? 'bg-success-light text-status-completed' : 'bg-surface-secondary text-text-muted'}">
 										{node.model?.structured_output?.enabled ? 'Enabled' : 'Disabled'}
 									</span>
 								{/if}
@@ -4496,21 +4496,21 @@ class ${dataClassName}Transform(DataTransform):
 							{#if isEditing && editStructuredOutputEnabled}
 								<!-- Schema Mode Toggle -->
 								<div class="mb-4">
-									<span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-2">
+									<span class="text-xs font-medium text-text-muted uppercase tracking-wider block mb-2">
 										Schema Type
 									</span>
-									<div class="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-1 bg-gray-100 dark:bg-gray-800">
+									<div class="inline-flex rounded-lg border border-surface-border p-1 bg-surface-secondary">
 										<button
 											type="button"
 											onclick={() => { editSchemaMode = 'inline'; markChanged(); }}
-											class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {editSchemaMode === 'inline' ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}"
+											class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {editSchemaMode === 'inline' ? 'bg-surface text-text-primary shadow-sm' : 'text-text-muted hover:text-text-secondary'}"
 										>
 											Inline Schema
 										</button>
 										<button
 											type="button"
 											onclick={() => { editSchemaMode = 'class_path'; markChanged(); }}
-											class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {editSchemaMode === 'class_path' ? 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}"
+											class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors {editSchemaMode === 'class_path' ? 'bg-surface text-text-primary shadow-sm' : 'text-text-muted hover:text-text-secondary'}"
 										>
 											Class Path
 										</button>
@@ -4521,7 +4521,7 @@ class ${dataClassName}Transform(DataTransform):
 									<!-- Inline Schema Fields -->
 									<div class="mb-4">
 										<div class="flex items-center justify-between mb-3">
-											<span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+											<span class="text-xs font-medium text-text-muted uppercase tracking-wider">
 												Output Fields
 											</span>
 											<button
@@ -4534,15 +4534,15 @@ class ${dataClassName}Transform(DataTransform):
 										</div>
 
 										{#if editSchemaFields.length === 0}
-											<div class="text-center py-8 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg">
-												<Code size={28} class="mx-auto mb-2 text-gray-300 dark:text-gray-600" />
-												<p class="text-sm text-gray-500 dark:text-gray-400 mb-1">No fields defined</p>
-												<p class="text-xs text-gray-400 dark:text-gray-500">Click "Add Field" to define output schema</p>
+											<div class="text-center py-8 border-2 border-dashed border-surface-border rounded-lg">
+												<Code size={28} class="mx-auto mb-2 text-text-muted" />
+												<p class="text-sm text-text-muted mb-1">No fields defined</p>
+												<p class="text-xs text-text-muted dark:text-text-muted">Click "Add Field" to define output schema</p>
 											</div>
 										{:else}
 											<div class="space-y-2">
 												{#each editSchemaFields as field (field.id)}
-													<div class="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 group hover:border-[#7661FF]/50 dark:hover:border-[#7661FF]/60 transition-colors">
+													<div class="flex items-start gap-3 p-3 bg-surface rounded-lg border border-surface-border group hover:border-[#7661FF]/50 dark:hover:border-[#7661FF]/60 transition-colors">
 														<!-- Type Icon -->
 														<div class="w-8 h-8 rounded-md bg-[#7661FF]/15 dark:bg-[#7661FF]/20 flex items-center justify-center flex-shrink-0">
 															<Code size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
@@ -4556,7 +4556,7 @@ class ${dataClassName}Transform(DataTransform):
 																	value={field.name}
 																	oninput={(e) => updateSchemaField(field.id, 'name', e.currentTarget.value)}
 																	placeholder="field_name"
-																	class="flex-1 px-2 py-1.5 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
+																	class="flex-1 px-2 py-1.5 text-sm font-mono border border-surface-border rounded-md bg-surface-secondary text-text-primary focus:ring-2 focus:ring-info focus:border-transparent"
 																/>
 																<div class="w-24">
 																	<CustomSelect
@@ -4574,7 +4574,7 @@ class ${dataClassName}Transform(DataTransform):
 																value={field.description}
 																oninput={(e) => updateSchemaField(field.id, 'description', e.currentTarget.value)}
 																placeholder="Field description (optional)"
-																class="w-full px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
+																class="w-full px-2 py-1.5 text-xs border border-surface-border rounded-md bg-surface-secondary text-text-primary focus:ring-2 focus:ring-info focus:border-transparent"
 															/>
 															<!-- Default Value -->
 															<div class="flex items-center gap-2">
@@ -4583,9 +4583,9 @@ class ${dataClassName}Transform(DataTransform):
 																		type="checkbox"
 																		checked={field.hasDefault}
 																		onchange={(e) => updateSchemaField(field.id, 'hasDefault', e.currentTarget.checked)}
-																		class="w-3.5 h-3.5 text-[#7661FF] border-gray-300 rounded focus:ring-[#52B8FF]"
+																		class="w-3.5 h-3.5 text-[#7661FF] border-surface-border rounded focus:ring-info"
 																	/>
-																	<span class="text-xs text-gray-500 dark:text-gray-400">Default value</span>
+																	<span class="text-xs text-text-muted">Default value</span>
 																</label>
 																{#if field.hasDefault}
 																	<input
@@ -4593,7 +4593,7 @@ class ${dataClassName}Transform(DataTransform):
 																		value={field.default}
 																		oninput={(e) => updateSchemaField(field.id, 'default', e.currentTarget.value)}
 																		placeholder="Enter default"
-																		class="flex-1 px-2 py-1 text-xs font-mono border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
+																		class="flex-1 px-2 py-1 text-xs font-mono border border-surface-border rounded-md bg-surface-secondary text-text-primary focus:ring-2 focus:ring-info focus:border-transparent"
 																	/>
 																{/if}
 															</div>
@@ -4601,7 +4601,7 @@ class ${dataClassName}Transform(DataTransform):
 														<!-- Delete Button -->
 														<button
 															onclick={() => removeSchemaField(field.id)}
-															class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+															class="p-1.5 text-text-muted hover:text-error hover:bg-error-light dark:hover:bg-error/20 rounded-md transition-colors opacity-0 group-hover:opacity-100"
 															title="Remove field"
 														>
 															<X size={14} />
@@ -4614,10 +4614,10 @@ class ${dataClassName}Transform(DataTransform):
 								{:else}
 									<!-- Class Path Input -->
 									<div class="mb-4">
-										<span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-2">
+										<span class="text-xs font-medium text-text-muted uppercase tracking-wider block mb-2">
 											Class Path
 										</span>
-										<div class="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+										<div class="flex items-start gap-3 p-3 bg-surface rounded-lg border border-surface-border">
 											<div class="w-8 h-8 rounded-md bg-[#7661FF]/15 dark:bg-[#7661FF]/20 flex items-center justify-center flex-shrink-0">
 												<Code size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
 											</div>
@@ -4627,9 +4627,9 @@ class ${dataClassName}Transform(DataTransform):
 													bind:value={editSchemaClassPath}
 													oninput={() => markChanged()}
 													placeholder="module.path.ClassName"
-													class="w-full px-2 py-1.5 text-sm font-mono border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
+													class="w-full px-2 py-1.5 text-sm font-mono border border-surface-border rounded-md bg-surface-secondary text-text-primary focus:ring-2 focus:ring-info focus:border-transparent"
 												/>
-												<p class="text-xs text-gray-400 dark:text-gray-500">
+												<p class="text-xs text-text-muted dark:text-text-muted">
 													e.g., sygra.core.models.structured_output.schemas_factory.SimpleResponse
 												</p>
 											</div>
@@ -4652,20 +4652,20 @@ class ${dataClassName}Transform(DataTransform):
 										{/if}
 									</button>
 									{#if showSchemaPreview}
-										<pre class="mt-2 p-3 text-xs font-mono bg-gray-900 text-green-400 rounded-lg overflow-auto max-h-48 border border-gray-700">{generateSchemaPreview()}</pre>
+										<pre class="mt-2 p-3 text-xs font-mono bg-brand-primary text-brand-accent rounded-lg overflow-auto max-h-48 border border-surface-border">{generateSchemaPreview()}</pre>
 									{/if}
 								</div>
 
 								<!-- Advanced Options (collapsible) -->
-								<details class="group border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-									<summary class="flex items-center gap-2 cursor-pointer px-3 py-2.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+								<details class="group border border-surface-border rounded-lg overflow-hidden">
+									<summary class="flex items-center gap-2 cursor-pointer px-3 py-2.5 text-xs font-medium text-text-secondary hover:bg-surface-hover transition-colors">
 										<ChevronRight size={14} class="transition-transform group-open:rotate-90" />
 										Advanced Options
 									</summary>
-									<div class="px-3 pb-3 pt-2 space-y-3 bg-gray-50/50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+									<div class="px-3 pb-3 pt-2 space-y-3 bg-surface-secondary/50 border-t border-surface-border">
 										<!-- Fallback Strategy -->
 										<div>
-											<label class="text-xs text-gray-500 dark:text-gray-400 block mb-1.5">Fallback Strategy</label>
+											<label class="text-xs text-text-muted block mb-1.5">Fallback Strategy</label>
 											<CustomSelect
 												options={fallbackStrategyOptions}
 												bind:value={editFallbackStrategy}
@@ -4675,24 +4675,24 @@ class ${dataClassName}Transform(DataTransform):
 										</div>
 										<!-- Retry on Parse Error -->
 										<div class="flex items-center justify-between py-1">
-											<label class="text-xs text-gray-600 dark:text-gray-400">Retry on Parse Error</label>
+											<label class="text-xs text-text-secondary">Retry on Parse Error</label>
 											<input
 												type="checkbox"
 												bind:checked={editRetryOnParseError}
 												onchange={() => markChanged()}
-												class="w-4 h-4 text-[#7661FF] border-gray-300 rounded focus:ring-[#52B8FF]"
+												class="w-4 h-4 text-[#7661FF] border-surface-border rounded focus:ring-info"
 											/>
 										</div>
 										<!-- Max Retries -->
 										<div class="flex items-center justify-between py-1">
-											<label class="text-xs text-gray-600 dark:text-gray-400">Max Parse Retries</label>
+											<label class="text-xs text-text-secondary">Max Parse Retries</label>
 											<input
 												type="number"
 												bind:value={editMaxParseRetries}
 												oninput={() => markChanged()}
 												min="0"
 												max="10"
-												class="w-16 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
+												class="w-16 px-2 py-1 text-xs border border-surface-border rounded-md bg-surface text-text-primary focus:ring-2 focus:ring-info focus:border-transparent"
 											/>
 										</div>
 									</div>
@@ -4701,36 +4701,36 @@ class ${dataClassName}Transform(DataTransform):
 								<!-- View Mode - Show configured schema -->
 								<div class="space-y-3">
 									{#if typeof node.model.structured_output.schema === 'string'}
-										<div class="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+										<div class="flex items-start gap-3 p-3 bg-surface rounded-lg border border-surface-border">
 											<div class="w-8 h-8 rounded-md bg-[#7661FF]/15 dark:bg-[#7661FF]/20 flex items-center justify-center flex-shrink-0">
 												<Code size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
 											</div>
 											<div class="flex-1 min-w-0">
-												<div class="text-xs text-gray-500 dark:text-gray-400 mb-1">Class Path</div>
-												<div class="font-mono text-sm text-gray-800 dark:text-gray-200 break-all">{node.model.structured_output.schema}</div>
+												<div class="text-xs text-text-muted mb-1">Class Path</div>
+												<div class="font-mono text-sm text-text-primary break-all">{node.model.structured_output.schema}</div>
 											</div>
 										</div>
 									{:else if node.model.structured_output.schema?.fields}
 										<div class="space-y-2">
-											<span class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+											<span class="text-xs font-medium text-text-muted uppercase tracking-wider">
 												Output Fields
 											</span>
 											<div class="space-y-2">
 												{#each Object.entries(node.model.structured_output.schema.fields) as [fieldName, fieldDef]}
-													<div class="flex items-start gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+													<div class="flex items-start gap-3 p-3 bg-surface rounded-lg border border-surface-border">
 														<div class="w-8 h-8 rounded-md bg-[#7661FF]/15 dark:bg-[#7661FF]/20 flex items-center justify-center flex-shrink-0">
 															<Code size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
 														</div>
 														<div class="flex-1 min-w-0">
 															<div class="flex items-center gap-2 mb-1">
-																<span class="font-mono text-sm font-medium text-gray-800 dark:text-gray-200">{fieldName}</span>
+																<span class="font-mono text-sm font-medium text-text-primary">{fieldName}</span>
 																<span class="px-1.5 py-0.5 text-xs rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]">{fieldDef.type}</span>
 															</div>
 															{#if fieldDef.description}
-																<div class="text-xs text-gray-500 dark:text-gray-400">{fieldDef.description}</div>
+																<div class="text-xs text-text-muted">{fieldDef.description}</div>
 															{/if}
 															{#if fieldDef.default !== undefined}
-																<div class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+																<div class="text-xs text-text-muted dark:text-text-muted mt-1">
 																	Default: <span class="font-mono">{JSON.stringify(fieldDef.default)}</span>
 																</div>
 															{/if}
@@ -4741,14 +4741,14 @@ class ${dataClassName}Transform(DataTransform):
 										</div>
 									{/if}
 									{#if node.model.structured_output.fallback_strategy}
-										<div class="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg text-xs">
-											<span class="text-gray-500 dark:text-gray-400">Fallback Strategy:</span>
-											<span class="font-medium text-gray-700 dark:text-gray-300 capitalize">{node.model.structured_output.fallback_strategy}</span>
+										<div class="flex items-center gap-2 p-2 bg-surface-secondary rounded-lg text-xs">
+											<span class="text-text-muted">Fallback Strategy:</span>
+											<span class="font-medium text-text-secondary capitalize">{node.model.structured_output.fallback_strategy}</span>
 										</div>
 									{/if}
 								</div>
 							{:else if !isEditing}
-								<div class="text-center py-6 text-gray-400 dark:text-gray-500 text-sm">
+								<div class="text-center py-6 text-text-muted dark:text-text-muted text-sm">
 									Structured output not configured
 								</div>
 							{/if}
@@ -4758,32 +4758,32 @@ class ${dataClassName}Transform(DataTransform):
 					<!-- Data Source Config (for data nodes) -->
 					{#if node.node_type === 'data' && node.data_source}
 						<div>
-							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+							<div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">
 								Data Source Configuration
 							</div>
 							<div class="space-y-2 text-xs">
 								{#if node.data_source.source_type}
-									<div class="flex justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
-										<span class="text-gray-500">Source Type</span>
-										<span class="font-medium text-gray-800 dark:text-gray-200">{node.data_source.source_type}</span>
+									<div class="flex justify-between p-2 bg-surface-secondary rounded">
+										<span class="text-text-muted">Source Type</span>
+										<span class="font-medium text-text-primary">{node.data_source.source_type}</span>
 									</div>
 								{/if}
 								{#if node.data_source.repo_id}
-									<div class="flex justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
-										<span class="text-gray-500">Repository</span>
-										<span class="font-mono text-gray-800 dark:text-gray-200">{node.data_source.repo_id}</span>
+									<div class="flex justify-between p-2 bg-surface-secondary rounded">
+										<span class="text-text-muted">Repository</span>
+										<span class="font-mono text-text-primary">{node.data_source.repo_id}</span>
 									</div>
 								{/if}
 								{#if node.data_source.file_path}
-									<div class="flex justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
-										<span class="text-gray-500">File Path</span>
-										<span class="font-mono text-gray-800 dark:text-gray-200">{node.data_source.file_path}</span>
+									<div class="flex justify-between p-2 bg-surface-secondary rounded">
+										<span class="text-text-muted">File Path</span>
+										<span class="font-mono text-text-primary">{node.data_source.file_path}</span>
 									</div>
 								{/if}
 								{#if node.data_source.split}
-									<div class="flex justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
-										<span class="text-gray-500">Split</span>
-										<span class="text-gray-800 dark:text-gray-200">{node.data_source.split}</span>
+									<div class="flex justify-between p-2 bg-surface-secondary rounded">
+										<span class="text-text-muted">Split</span>
+										<span class="text-text-primary">{node.data_source.split}</span>
 									</div>
 								{/if}
 							</div>
@@ -4793,18 +4793,18 @@ class ${dataClassName}Transform(DataTransform):
 					<!-- Subgraph Config -->
 					{#if node.node_type === 'subgraph' && node.subgraph}
 						<div>
-							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+							<div class="text-xs font-medium text-text-muted uppercase tracking-wider mb-2">
 								Subgraph Configuration
 							</div>
 							<div class="space-y-2 text-xs">
-								<div class="flex justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
-									<span class="text-gray-500">Subgraph Path</span>
-									<span class="font-mono text-gray-800 dark:text-gray-200 truncate max-w-[200px]" title={node.subgraph}>{node.subgraph}</span>
+								<div class="flex justify-between p-2 bg-surface-secondary rounded">
+									<span class="text-text-muted">Subgraph Path</span>
+									<span class="font-mono text-text-primary truncate max-w-[200px]" title={node.subgraph}>{node.subgraph}</span>
 								</div>
 								{#if node.node_config_map && Object.keys(node.node_config_map).length > 0}
-									<div class="flex justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
-										<span class="text-gray-500">Overrides</span>
-										<span class="text-gray-800 dark:text-gray-200">{Object.keys(node.node_config_map).length} nodes</span>
+									<div class="flex justify-between p-2 bg-surface-secondary rounded">
+										<span class="text-text-muted">Overrides</span>
+										<span class="text-text-primary">{Object.keys(node.node_config_map).length} nodes</span>
 									</div>
 								{/if}
 							</div>
@@ -4815,17 +4815,17 @@ class ${dataClassName}Transform(DataTransform):
 					{#if node.metadata && Object.keys(node.metadata).length > 0}
 						<div>
 							<div class="flex items-center justify-between mb-2">
-								<div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+								<div class="text-xs font-medium text-text-muted uppercase tracking-wider">
 									Metadata
 								</div>
-								<span class="text-xs text-gray-400">{Object.keys(node.metadata).length} fields</span>
+								<span class="text-xs text-text-muted">{Object.keys(node.metadata).length} fields</span>
 							</div>
 							<details class="group">
 								<summary class="cursor-pointer text-xs text-[#7661FF] dark:text-[#BF71F2] hover:text-[#5a4dcc] dark:hover:text-[#d49af7]">
 									View full metadata
 								</summary>
-								<div class="mt-2 text-sm font-mono bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-lg overflow-x-auto max-h-64">
-									<pre class="text-gray-800 dark:text-gray-200 text-xs">{JSON.stringify(node.metadata, null, 2)}</pre>
+								<div class="mt-2 text-sm font-mono bg-surface-secondary px-3 py-2 rounded-lg overflow-x-auto max-h-64">
+									<pre class="text-text-primary text-xs">{JSON.stringify(node.metadata, null, 2)}</pre>
 								</div>
 							</details>
 						</div>
@@ -4834,7 +4834,7 @@ class ${dataClassName}Transform(DataTransform):
 					<!-- Full Node Configuration (expandable) -->
 					<div>
 						<div class="flex items-center justify-between mb-2">
-							<div class="text-xs font-medium text-gray-500 uppercase tracking-wider">
+							<div class="text-xs font-medium text-text-muted uppercase tracking-wider">
 								Full Configuration
 							</div>
 						</div>
@@ -4842,8 +4842,8 @@ class ${dataClassName}Transform(DataTransform):
 							<summary class="cursor-pointer text-xs text-[#7661FF] dark:text-[#BF71F2] hover:text-[#5a4dcc] dark:hover:text-[#d49af7]">
 								View raw node configuration (JSON)
 							</summary>
-							<div class="mt-2 text-sm font-mono bg-gray-900 dark:bg-gray-950 px-3 py-2 rounded-lg overflow-x-auto max-h-80">
-								<pre class="text-green-400 text-xs">{JSON.stringify(node, null, 2)}</pre>
+							<div class="mt-2 text-sm font-mono bg-brand-primary px-3 py-2 rounded-lg overflow-x-auto max-h-80">
+								<pre class="text-success text-xs">{JSON.stringify(node, null, 2)}</pre>
 							</div>
 						</details>
 					</div>

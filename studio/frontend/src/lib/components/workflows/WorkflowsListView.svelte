@@ -3,9 +3,9 @@
 	import { pushState } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import {
-		Search, RefreshCw, GitBranch, ChevronDown, ArrowUpDown, Plus,
-		Clock, Layers, ArrowRight, Calendar, X, Play, LayoutList, LayoutGrid,
-		MoreVertical, Edit, Copy, Trash2, ExternalLink, Pencil, FolderOpen
+		Search, RefreshCw, ChevronDown, ArrowUpDown, Plus,
+		Layers, ArrowRight, X, Play, LayoutList, LayoutGrid,
+		MoreVertical, Edit, Copy, Trash2, Pencil, FolderOpen, Workflow
 	} from 'lucide-svelte';
 	import ConfirmationModal from '$lib/components/common/ConfirmationModal.svelte';
 
@@ -106,7 +106,6 @@
 	async function selectWorkflow(id: string) {
 		await workflowStore.loadWorkflow(id);
 		uiStore.setView('workflow');
-		// Update URL
 		const url = new URL(window.location.href);
 		url.searchParams.set('workflow', id);
 		url.searchParams.delete('view');
@@ -116,7 +115,6 @@
 	function createNewWorkflow() {
 		workflowStore.createNewWorkflow();
 		uiStore.setView('builder');
-		// Update URL
 		const url = new URL(window.location.href);
 		url.searchParams.set('view', 'builder');
 		url.searchParams.delete('workflow');
@@ -149,33 +147,25 @@
 		e.stopPropagation();
 		closeMenu();
 
-		// Load the full workflow data
 		const fullWorkflow = await workflowStore.loadWorkflow(workflow.id);
 		if (!fullWorkflow) {
 			console.error('Failed to load workflow for duplication');
 			return;
 		}
 
-		// Create a duplicate with new ID and modified name
 		const newId = `new_${Date.now()}`;
 		const newName = `${workflow.name} (Copy)`;
 
-		// Deep clone the workflow data
 		const duplicatedWorkflow = {
 			...JSON.parse(JSON.stringify(fullWorkflow)),
 			id: newId,
 			name: newName,
-			source_path: '' // Clear source path since it's a new workflow
+			source_path: ''
 		};
 
-		// Update node IDs to avoid conflicts (optional, but cleaner)
-		// Keep START and END as-is, but we could rename others if needed
-
-		// Set as current workflow and open in builder
 		workflowStore.setCurrentWorkflow(duplicatedWorkflow);
 		uiStore.setView('builder');
 
-		// Update URL
 		const url = new URL(window.location.href);
 		url.searchParams.set('view', 'builder');
 		url.searchParams.delete('workflow');
@@ -222,7 +212,6 @@
 		deleteConfirmation = { show: false, workflow: null };
 	}
 
-	// Close menu when clicking outside
 	function handleWindowClick() {
 		if (openMenuId) {
 			closeMenu();
@@ -232,31 +221,36 @@
 
 <svelte:window onclick={handleWindowClick} />
 
-<div class="h-full w-full flex flex-col bg-white dark:bg-gray-900">
+<div class="h-full w-full flex flex-col bg-surface-secondary">
 	<!-- Header -->
-	<div class="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
-		<div class="flex items-center justify-between mb-4">
-			<div>
-				<h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Workflows</h1>
-				<p class="text-sm text-gray-500 dark:text-gray-400">
-					{filteredWorkflows().length} of {workflows.length} workflows
-				</p>
+	<div class="flex-shrink-0 border-b border-[var(--border)] bg-surface-elevated px-6 py-5">
+		<div class="flex items-center justify-between mb-5">
+			<div class="flex items-center gap-4">
+				<div class="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm bg-gradient-data">
+					<FolderOpen size={20} class="text-white" />
+				</div>
+				<div>
+					<h1 class="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Workflows</h1>
+					<p class="text-sm text-[var(--text-muted)]">
+						{filteredWorkflows().length} of {workflows.length} workflows
+					</p>
+				</div>
 			</div>
 			<div class="flex items-center gap-3">
 				<button
 					onclick={refresh}
 					disabled={loading}
-					class="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
+					class="flex items-center gap-2 px-4 py-2.5 border border-[var(--border)] hover:bg-surface-hover hover:border-[var(--border-hover)] rounded-xl transition-all duration-200 disabled:opacity-50 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
 				>
 					<RefreshCw size={16} class={loading ? 'animate-spin' : ''} />
-					Refresh
+					<span class="text-sm font-medium">Refresh</span>
 				</button>
 				<button
 					onclick={createNewWorkflow}
-					class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg transition-colors font-medium"
+					class="flex items-center gap-2 px-4 py-2.5 bg-brand-accent hover:bg-brand-accent-hover text-brand-primary rounded-xl transition-all duration-200 font-semibold shadow-sm hover:shadow-glow-accent hover:-translate-y-0.5"
 				>
-					<Plus size={16} />
-					Create Workflow
+					<Plus size={16} strokeWidth={2.5} />
+					<span class="text-sm">Create Workflow</span>
 				</button>
 			</div>
 		</div>
@@ -264,42 +258,42 @@
 		<!-- View Toggle and Filters Row -->
 		<div class="flex items-center justify-between gap-4">
 			<!-- Filters -->
-		<div class="flex flex-wrap items-center gap-3">
-			<!-- Search -->
-			<div class="relative flex-1 min-w-64 max-w-md">
-				<Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-				<input
-					type="text"
-					placeholder="Search by workflow name or ID..."
-					bind:value={searchQuery}
-					class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] text-sm"
-				/>
+			<div class="flex flex-wrap items-center gap-3">
+				<!-- Search -->
+				<div class="relative flex-1 min-w-64 max-w-md">
+					<Search size={16} class="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+					<input
+						type="text"
+						placeholder="Search by workflow name or ID..."
+						bind:value={searchQuery}
+						class="w-full pl-10 pr-4 py-2.5 border border-[var(--border)] rounded-xl bg-surface text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--border-focus)]/30 focus:border-[var(--border-focus)] text-sm transition-all duration-200"
+					/>
+				</div>
+
+				<!-- Clear filters -->
+				{#if hasActiveFilters}
+					<button
+						onclick={clearFilters}
+						class="flex items-center gap-1.5 px-3 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-surface-hover rounded-xl transition-all duration-200"
+					>
+						<X size={14} />
+						Clear filters
+					</button>
+				{/if}
 			</div>
 
-			<!-- Clear filters -->
-			{#if hasActiveFilters}
-				<button
-					onclick={clearFilters}
-					class="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-				>
-					<X size={14} />
-					Clear filters
-				</button>
-			{/if}
-		</div>
-
 			<!-- View Mode Toggle -->
-			<div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+			<div class="flex items-center bg-surface-tertiary rounded-xl p-1">
 				<button
 					onclick={() => setViewMode('card')}
-					class="p-2 rounded-md transition-colors {viewMode === 'card' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+					class="p-2.5 rounded-lg transition-all duration-200 {viewMode === 'card' ? 'bg-surface-elevated text-info shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}"
 					title="Card view"
 				>
 					<LayoutGrid size={18} />
 				</button>
 				<button
 					onclick={() => setViewMode('list')}
-					class="p-2 rounded-md transition-colors {viewMode === 'list' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+					class="p-2.5 rounded-lg transition-all duration-200 {viewMode === 'list' ? 'bg-surface-elevated text-info shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}"
 					title="List view"
 				>
 					<LayoutList size={18} />
@@ -313,72 +307,72 @@
 		{#if viewMode === 'list'}
 			<!-- List View -->
 			<table class="w-full">
-				<thead class="sticky top-0 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+				<thead class="sticky top-0 bg-surface-secondary border-b border-[var(--border)] z-10">
 					<tr>
-						<th class="text-left px-6 py-3">
+						<th class="text-left px-6 py-4">
 							<button
 								onclick={() => toggleSort('name')}
-								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+								class="flex items-center gap-1 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors duration-200"
 							>
 								Workflow
-								<ArrowUpDown size={14} class={sortField === 'name' ? 'text-[#7661FF]' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'name' ? 'text-info' : ''} />
 							</button>
 						</th>
-						<th class="text-left px-6 py-3">
+						<th class="text-left px-6 py-4">
 							<button
 								onclick={() => toggleSort('node_count')}
-								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+								class="flex items-center gap-1 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors duration-200"
 							>
 								Nodes
-								<ArrowUpDown size={14} class={sortField === 'node_count' ? 'text-[#7661FF]' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'node_count' ? 'text-info' : ''} />
 							</button>
 						</th>
-						<th class="text-left px-6 py-3">
+						<th class="text-left px-6 py-4">
 							<button
 								onclick={() => toggleSort('edge_count')}
-								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+								class="flex items-center gap-1 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider hover:text-[var(--text-primary)] transition-colors duration-200"
 							>
 								Edges
-								<ArrowUpDown size={14} class={sortField === 'edge_count' ? 'text-[#7661FF]' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'edge_count' ? 'text-info' : ''} />
 							</button>
 						</th>
-						<th class="text-right px-6 py-3">
-							<span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+						<th class="text-right px-6 py-4">
+							<span class="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
 								Actions
 							</span>
 						</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-gray-200 dark:divide-gray-800">
-					{#each filteredWorkflows() as workflow (workflow.id)}
+				<tbody class="divide-y divide-[var(--border)]">
+					{#each filteredWorkflows() as workflow, i (workflow.id)}
 						<tr
 							onclick={() => selectWorkflow(workflow.id)}
-							class="cursor-pointer transition-colors {currentWorkflow?.id === workflow.id ? 'bg-[#032D42]/10 dark:bg-[#52B8FF]/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}"
+							class="group cursor-pointer transition-all duration-200 bg-surface-elevated hover:bg-surface-hover {currentWorkflow?.id === workflow.id ? 'ring-2 ring-inset ring-info/50' : ''}"
 						>
 							<td class="px-6 py-4">
-								<div class="flex items-center gap-3">
-									<div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
-										<FolderOpen size={20} class="text-white" />
+								<div class="flex items-center gap-4">
+									<div class="w-11 h-11 rounded-xl flex items-center justify-center shadow-sm transition-transform duration-200 group-hover:scale-105 bg-gradient-data">
+										<Workflow size={20} class="text-white" />
 									</div>
 									<div class="flex flex-col">
-										<span class="font-medium text-gray-900 dark:text-gray-100">
+										<span class="font-semibold text-[var(--text-primary)] group-hover:text-info transition-colors duration-200">
 											{workflow.name}
 										</span>
-										<span class="text-xs text-gray-500 dark:text-gray-500 font-mono">
+										<span class="text-xs text-[var(--text-muted)] font-mono mt-0.5">
 											{workflow.id}
 										</span>
 									</div>
 								</div>
 							</td>
 							<td class="px-6 py-4">
-								<span class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
-									<Layers size={14} class="text-[#032D42] dark:text-[#52B8FF]" />
+								<span class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+									<Layers size={15} class="text-node-llm" />
 									{workflow.node_count} nodes
 								</span>
 							</td>
 							<td class="px-6 py-4">
-								<span class="inline-flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300">
-									<ArrowRight size={14} class="text-blue-500" />
+								<span class="inline-flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+									<ArrowRight size={15} class="text-info" />
 									{workflow.edge_count} edges
 								</span>
 							</td>
@@ -386,7 +380,7 @@
 								<div class="flex items-center justify-end gap-2">
 									<button
 										onclick={(e) => { e.stopPropagation(); selectWorkflow(workflow.id); }}
-										class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-[#032D42] dark:text-[#52B8FF] hover:bg-[#032D42]/10 dark:hover:bg-[#52B8FF]/20 rounded-lg transition-colors"
+										class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-info bg-info-light hover:bg-[rgba(82,184,255,0.2)] rounded-lg transition-all duration-200"
 									>
 										<Play size={14} />
 										Open
@@ -395,38 +389,38 @@
 									<div class="relative">
 										<button
 											onclick={(e) => toggleMenu(e, workflow.id)}
-											class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors"
+											class="p-2 rounded-lg hover:bg-surface-tertiary text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-all duration-200"
 											title="More options"
 										>
 											<MoreVertical size={16} />
 										</button>
 										{#if openMenuId === workflow.id}
-											<div class="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+											<div class="absolute right-0 top-full mt-1 w-48 bg-surface-elevated rounded-xl shadow-dropdown border border-[var(--border)] py-1.5 z-50 animate-scale-in">
 												<button
 													onclick={(e) => handleEditInBuilder(e, workflow.id)}
-													class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+													class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-surface-hover hover:text-[var(--text-primary)] transition-colors duration-150"
 												>
 													<Edit size={14} />
 													Edit in Builder
 												</button>
 												<button
 													onclick={(e) => handleDuplicate(e, workflow)}
-													class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+													class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-surface-hover hover:text-[var(--text-primary)] transition-colors duration-150"
 												>
 													<Copy size={14} />
 													Duplicate
 												</button>
 												<button
 													onclick={(e) => handleRename(e, workflow)}
-													class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+													class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-surface-hover hover:text-[var(--text-primary)] transition-colors duration-150"
 												>
 													<Pencil size={14} />
 													Rename
 												</button>
-												<div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
+												<div class="h-px bg-[var(--border)] my-1.5 mx-2"></div>
 												<button
 													onclick={(e) => handleDelete(e, workflow)}
-													class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+													class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-error hover:bg-error-light transition-colors duration-150"
 												>
 													<Trash2 size={14} />
 													Delete
@@ -439,22 +433,25 @@
 						</tr>
 					{:else}
 						<tr>
-							<td colspan="4" class="px-6 py-12 text-center">
-								<div class="text-gray-500 dark:text-gray-400">
+							<td colspan="4" class="px-6 py-16 text-center">
+								<div class="text-[var(--text-secondary)]">
 									{#if searchQuery}
-										<p class="text-lg font-medium mb-1">No matching workflows</p>
-										<p class="text-sm">Try adjusting your search</p>
-									{:else}
-										<div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
-											<FolderOpen size={32} class="text-white" />
+										<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-surface-tertiary flex items-center justify-center">
+											<Search size={28} class="text-[var(--text-muted)]" />
 										</div>
-										<p class="text-lg font-medium mb-1">No workflows yet</p>
-										<p class="text-sm mb-4">Create your first workflow to get started</p>
+										<p class="text-lg font-medium text-[var(--text-primary)] mb-1">No matching workflows</p>
+										<p class="text-sm text-[var(--text-muted)]">Try adjusting your search</p>
+									{:else}
+										<div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-md bg-gradient-data">
+											<FolderOpen size={28} class="text-white" />
+										</div>
+										<p class="text-lg font-medium text-[var(--text-primary)] mb-1">No workflows yet</p>
+										<p class="text-sm text-[var(--text-muted)] mb-5">Create your first workflow to get started</p>
 										<button
 											onclick={createNewWorkflow}
-											class="inline-flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg transition-colors font-medium"
+											class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-accent hover:bg-brand-accent-hover text-brand-primary rounded-xl transition-all duration-200 font-semibold shadow-sm hover:shadow-glow-accent"
 										>
-											<Plus size={16} />
+											<Plus size={16} strokeWidth={2.5} />
 											Create Workflow
 										</button>
 									{/if}
@@ -468,68 +465,71 @@
 			<!-- Card View -->
 			<div class="p-6">
 				{#if filteredWorkflows().length === 0}
-					<div class="text-center py-12 text-gray-500 dark:text-gray-400">
+					<div class="text-center py-16 text-[var(--text-secondary)]">
 						{#if searchQuery}
-							<p class="text-lg font-medium mb-1">No matching workflows</p>
-							<p class="text-sm">Try adjusting your search</p>
-						{:else}
-							<div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
-								<FolderOpen size={32} class="text-white" />
+							<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-surface-tertiary flex items-center justify-center">
+								<Search size={28} class="text-[var(--text-muted)]" />
 							</div>
-							<p class="text-lg font-medium mb-1">No workflows yet</p>
-							<p class="text-sm mb-4">Create your first workflow to get started</p>
+							<p class="text-lg font-medium text-[var(--text-primary)] mb-1">No matching workflows</p>
+							<p class="text-sm text-[var(--text-muted)]">Try adjusting your search</p>
+						{:else}
+							<div class="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-md bg-gradient-data">
+								<FolderOpen size={28} class="text-white" />
+							</div>
+							<p class="text-lg font-medium text-[var(--text-primary)] mb-1">No workflows yet</p>
+							<p class="text-sm text-[var(--text-muted)] mb-5">Create your first workflow to get started</p>
 							<button
 								onclick={createNewWorkflow}
-								class="inline-flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg transition-colors font-medium"
+								class="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-accent hover:bg-brand-accent-hover text-brand-primary rounded-xl transition-all duration-200 font-semibold shadow-sm hover:shadow-glow-accent"
 							>
-								<Plus size={16} />
+								<Plus size={16} strokeWidth={2.5} />
 								Create Workflow
 							</button>
 						{/if}
 					</div>
 				{:else}
-					<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-						{#each filteredWorkflows() as workflow (workflow.id)}
+					<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+						{#each filteredWorkflows() as workflow, i (workflow.id)}
 							<div
 								onclick={() => selectWorkflow(workflow.id)}
-								class="group relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 cursor-pointer transition-all hover:shadow-lg hover:border-[#7661FF]/50 dark:hover:border-[#52B8FF] {currentWorkflow?.id === workflow.id ? 'ring-2 ring-[#7661FF] border-[#7661FF]' : ''}"
+								class="group relative bg-surface-elevated border border-[var(--border)] rounded-2xl p-5 cursor-pointer transition-all duration-300 hover:shadow-card-hover hover:border-[var(--border-focus)] hover:-translate-y-1 {currentWorkflow?.id === workflow.id ? 'ring-2 ring-info border-info' : ''} {openMenuId === workflow.id ? 'z-10' : ''}"
 							>
 								<!-- Three-dot menu (top-right) -->
-								<div class="absolute top-3 right-3">
+								<div class="absolute top-4 right-4">
 									<button
 										onclick={(e) => toggleMenu(e, workflow.id)}
-										class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors opacity-0 group-hover:opacity-100"
+										class="p-1.5 rounded-lg hover:bg-surface-hover text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-all duration-200 opacity-0 group-hover:opacity-100"
 										title="More options"
 									>
 										<MoreVertical size={16} />
 									</button>
 									{#if openMenuId === workflow.id}
-										<div class="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+										<div class="absolute right-0 top-full mt-1 w-48 bg-surface-elevated rounded-xl shadow-dropdown border border-[var(--border)] py-1.5 z-50 animate-scale-in">
 											<button
 												onclick={(e) => handleEditInBuilder(e, workflow.id)}
-												class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+												class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-surface-hover hover:text-[var(--text-primary)] transition-colors duration-150"
 											>
 												<Edit size={14} />
 												Edit in Builder
 											</button>
 											<button
 												onclick={(e) => handleDuplicate(e, workflow)}
-												class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+												class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-surface-hover hover:text-[var(--text-primary)] transition-colors duration-150"
 											>
 												<Copy size={14} />
 												Duplicate
 											</button>
 											<button
 												onclick={(e) => handleRename(e, workflow)}
-												class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+												class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-surface-hover hover:text-[var(--text-primary)] transition-colors duration-150"
 											>
 												<Pencil size={14} />
 												Rename
 											</button>
-											<div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
+											<div class="h-px bg-[var(--border)] my-1.5 mx-2"></div>
 											<button
 												onclick={(e) => handleDelete(e, workflow)}
-												class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+												class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-error hover:bg-error-light transition-colors duration-150"
 											>
 												<Trash2 size={14} />
 												Delete
@@ -539,28 +539,28 @@
 								</div>
 
 								<!-- Header -->
-								<div class="flex items-start gap-3 mb-4">
-									<div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
-										<FolderOpen size={24} class="text-white" />
+								<div class="flex items-start gap-4 mb-5">
+									<div class="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md transition-transform duration-200 group-hover:scale-105 bg-gradient-data">
+										<Workflow size={22} class="text-white" />
 									</div>
-									<div class="flex-1 min-w-0 pr-6">
-										<h3 class="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-[#032D42] dark:group-hover:text-[#52B8FF] transition-colors">
+									<div class="flex-1 min-w-0 pr-8">
+										<h3 class="font-semibold text-[var(--text-primary)] truncate group-hover:text-info transition-colors duration-200">
 											{workflow.name}
 										</h3>
-										<p class="text-xs text-gray-500 dark:text-gray-500 font-mono truncate mt-0.5">
+										<p class="text-xs text-[var(--text-muted)] font-mono truncate mt-1">
 											{workflow.id}
 										</p>
 									</div>
 								</div>
 
 								<!-- Stats -->
-								<div class="flex items-center gap-4 mb-4">
-									<div class="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
-										<Layers size={14} class="text-[#032D42] dark:text-[#52B8FF]" />
+								<div class="flex items-center gap-5 mb-5">
+									<div class="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+										<Layers size={15} class="text-node-llm" />
 										<span>{workflow.node_count} nodes</span>
 									</div>
-									<div class="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
-										<ArrowRight size={14} class="text-[#52B8FF]" />
+									<div class="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+										<ArrowRight size={15} class="text-info" />
 										<span>{workflow.edge_count} edges</span>
 									</div>
 								</div>
@@ -568,7 +568,7 @@
 								<!-- Action Button -->
 								<button
 									onclick={(e) => { e.stopPropagation(); selectWorkflow(workflow.id); }}
-									class="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-[#032D42] dark:text-[#52B8FF] bg-[#032D42]/10 dark:bg-[#52B8FF]/20 hover:bg-[#032D42]/20 dark:hover:bg-[#52B8FF]/30 rounded-lg transition-colors"
+									class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-info bg-info-light hover:bg-[rgba(82,184,255,0.2)] rounded-xl transition-all duration-200"
 								>
 									<Play size={14} />
 									Open Workflow
@@ -576,7 +576,7 @@
 
 								<!-- Selected indicator -->
 								{#if currentWorkflow?.id === workflow.id}
-									<div class="absolute -top-1 -right-1 w-4 h-4 bg-[#63DF4E] rounded-full border-2 border-white dark:border-gray-800"></div>
+									<div class="absolute -top-1 -right-1 w-4 h-4 bg-brand-accent rounded-full border-2 border-surface-elevated"></div>
 								{/if}
 							</div>
 						{/each}
@@ -606,38 +606,38 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
-		class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+		class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in"
 		onclick={cancelRename}
 		role="presentation"
 	>
 		<div
-			class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4 p-6"
+			class="bg-surface-elevated rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 border border-[var(--border)] animate-scale-in"
 			onclick={(e) => e.stopPropagation()}
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="rename-title"
 		>
-			<h3 id="rename-title" class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+			<h3 id="rename-title" class="text-lg font-semibold text-[var(--text-primary)] mb-4">
 				Rename Workflow
 			</h3>
 			<input
 				type="text"
 				bind:value={renameState.newName}
-				class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] mb-4"
+				class="w-full px-4 py-3 border border-[var(--border)] rounded-xl bg-surface text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--border-focus)]/30 focus:border-[var(--border-focus)] mb-5"
 				placeholder="Enter new name..."
 				onkeydown={(e) => e.key === 'Enter' && confirmRename()}
 			/>
 			<div class="flex justify-end gap-3">
 				<button
 					onclick={cancelRename}
-					class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+					class="px-4 py-2.5 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-surface-hover rounded-xl transition-all duration-200"
 				>
 					Cancel
 				</button>
 				<button
 					onclick={confirmRename}
 					disabled={!renameState.newName.trim()}
-					class="px-4 py-2 text-sm font-medium bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+					class="px-4 py-2.5 text-sm font-medium bg-brand-accent hover:bg-brand-accent-hover text-brand-primary rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 				>
 					Rename
 				</button>

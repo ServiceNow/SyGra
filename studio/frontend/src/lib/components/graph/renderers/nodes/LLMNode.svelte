@@ -34,12 +34,12 @@
 	<div class="space-y-1">
 		{#if data.model}
 			<div class="flex items-center gap-2 text-xs">
-				<Sparkles size={12} class="text-[#7661FF]" />
-				<span class="text-gray-600 dark:text-gray-400">{data.model.provider}</span>
+				<Sparkles size={12} class="text-node-llm" />
+				<span class="text-text-muted">{data.model.provider}</span>
 			</div>
 		{/if}
 		{#if temperature !== undefined || maxTokens !== undefined}
-			<div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+			<div class="flex items-center gap-3 text-xs text-text-muted">
 				{#if temperature !== undefined}
 					<span class="flex items-center gap-1">
 						<Thermometer size={10} />
@@ -52,7 +52,7 @@
 			</div>
 		{/if}
 		{#if toolCount > 0}
-			<div class="flex items-center gap-1.5 text-xs text-[#7661FF] dark:text-[#BF71F2]">
+			<div class="flex items-center gap-1.5 text-xs text-node-llm">
 				<Wrench size={12} />
 				<span>{toolCount} tool{toolCount !== 1 ? 's' : ''}</span>
 			</div>

@@ -196,66 +196,73 @@
 	class="hidden"
 />
 
-<div class="h-full flex flex-col">
+<div class="h-full flex flex-col bg-surface-secondary">
 	<!-- Header -->
-	<div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-		<div>
-			<h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Tools</h2>
-			<p class="text-sm text-gray-500 dark:text-gray-400">Create and manage reusable tools for LLM/Agent nodes</p>
-		</div>
-		<div class="flex items-center gap-2">
-			<button
-				onclick={handleImport}
-				class="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-			>
-				<Upload size={16} class="inline mr-1.5" />
-				Import
-			</button>
-			<button
-				onclick={openCreateModal}
-				class="px-4 py-2 bg-[#63DF4E] hover:bg-[#63DF4E]/90 text-[#032D42] text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
-			>
-				<Plus size={16} />
-				Create Tool
-			</button>
+	<div class="px-6 py-5 border-b bg-surface-elevated" style="border-color: var(--border);">
+		<div class="flex items-center justify-between">
+			<div class="flex items-center gap-3">
+				<div class="p-2 rounded-xl bg-gradient-data">
+					<Wrench size={18} class="text-white" />
+				</div>
+				<div>
+					<h2 class="text-lg font-semibold" style="color: var(--text-primary);">Tools</h2>
+					<p class="text-xs" style="color: var(--text-muted);">Create and manage reusable tools for LLM/Agent nodes</p>
+				</div>
+			</div>
+			<div class="flex items-center gap-2">
+				<button
+					onclick={handleImport}
+					class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl hover:bg-surface-hover transition-colors"
+					style="color: var(--text-secondary);"
+				>
+					<Upload size={16} />
+					Import
+				</button>
+				<button
+					onclick={openCreateModal}
+					class="btn-accent px-4 py-2.5 text-sm font-medium rounded-xl transition-colors flex items-center gap-2 shadow-md"
+				>
+					<Plus size={16} />
+					Create Tool
+				</button>
+			</div>
 		</div>
 	</div>
 
 	<!-- Search & Filters -->
-	<div class="px-6 py-3 border-b border-gray-200 dark:border-gray-800">
+	<div class="px-6 py-4 border-b bg-surface-elevated" style="border-color: var(--border);">
 		<div class="flex items-center gap-4">
 			<div class="relative flex-1 max-w-md">
-				<Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+				<Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2" style="color: var(--text-muted);" />
 				<input
 					type="text"
 					placeholder="Search tools..."
 					bind:value={toolStore.searchQuery}
-					class="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] focus:border-transparent"
+					class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl bg-surface-secondary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-info/50 transition-shadow"
+					style="color: var(--text-primary); border: 1px solid var(--border);"
 				/>
 			</div>
-			<div class="flex items-center gap-1">
+			<div class="flex items-center gap-2 p-1 rounded-xl bg-surface-tertiary">
 				<button
 					onclick={() => toolStore.selectedCategory = 'all'}
-					class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
-					class:bg-[#7661FF]/15={toolStore.selectedCategory === 'all'}
-					class:dark:bg-[#7661FF]/20={toolStore.selectedCategory === 'all'}
-					class:text-[#7661FF]={toolStore.selectedCategory === 'all'}
-					class:dark:text-[#52B8FF]={toolStore.selectedCategory === 'all'}
-					class:text-gray-600={toolStore.selectedCategory !== 'all'}
-					class:hover:bg-gray-100={toolStore.selectedCategory !== 'all'}
+					class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all {
+						toolStore.selectedCategory === 'all'
+							? 'bg-surface-elevated shadow-sm'
+							: 'hover:bg-surface-hover'
+					}"
+					style={toolStore.selectedCategory === 'all' ? 'color: var(--text-primary);' : 'color: var(--text-secondary);'}
 				>
 					All
 				</button>
 				{#each TOOL_CATEGORIES as cat}
 					<button
 						onclick={() => toolStore.selectedCategory = cat.value}
-						class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors"
-						class:bg-[#7661FF]/15={toolStore.selectedCategory === cat.value}
-						class:dark:bg-[#7661FF]/20={toolStore.selectedCategory === cat.value}
-						class:text-[#7661FF]={toolStore.selectedCategory === cat.value}
-						class:dark:text-[#52B8FF]={toolStore.selectedCategory === cat.value}
-						class:text-gray-600={toolStore.selectedCategory !== cat.value}
-						class:hover:bg-gray-100={toolStore.selectedCategory !== cat.value}
+						class="px-3 py-1.5 text-xs font-medium rounded-lg transition-all {
+							toolStore.selectedCategory === cat.value
+								? 'bg-surface-elevated shadow-sm'
+								: 'hover:bg-surface-hover'
+						}"
+						style={toolStore.selectedCategory === cat.value ? 'color: var(--text-primary);' : 'color: var(--text-secondary);'}
 					>
 						{cat.label}
 					</button>
@@ -268,67 +275,69 @@
 	<div class="flex-1 overflow-y-auto p-6">
 		{#if toolStore.filteredTools.length === 0}
 			<div class="flex flex-col items-center justify-center h-full text-center">
-				<div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
-					<Wrench size={28} class="text-white" />
+				<div class="w-20 h-20 rounded-2xl flex items-center justify-center mb-5 bg-gradient-data shadow-lg">
+					<Wrench size={32} class="text-white" />
 				</div>
 				{#if toolStore.tools.length === 0}
-					<h3 class="text-lg font-medium text-gray-600 dark:text-gray-400 mb-2">No tools yet</h3>
-					<p class="text-sm text-gray-500 dark:text-gray-500 mb-4 max-w-md">
+					<h3 class="text-xl font-semibold mb-2" style="color: var(--text-primary);">No tools yet</h3>
+					<p class="text-sm mb-6 max-w-md" style="color: var(--text-muted);">
 						Create your first tool to use in LLM and Agent nodes. Tools are Python functions decorated with @tool.
 					</p>
 					<button
 						onclick={openCreateModal}
-						class="px-4 py-2 bg-[#63DF4E] hover:bg-[#63DF4E]/90 text-[#032D42] text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+						class="btn-accent px-5 py-2.5 text-sm font-medium rounded-xl transition-colors flex items-center gap-2 shadow-md"
 					>
 						<Plus size={16} />
 						Create Your First Tool
 					</button>
 				{:else}
-					<h3 class="text-lg font-medium text-gray-600 dark:text-gray-400 mb-2">No matching tools</h3>
-					<p class="text-sm text-gray-500">Try adjusting your search or filters</p>
+					<h3 class="text-xl font-semibold mb-2" style="color: var(--text-primary);">No matching tools</h3>
+					<p class="text-sm" style="color: var(--text-muted);">Try adjusting your search or filters</p>
 				{/if}
 			</div>
 		{:else}
-			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
 				{#each toolStore.filteredTools as tool (tool.id)}
 					{@const Icon = categoryIcons[tool.category]}
 					<div
-						class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-[#52B8FF] dark:hover:border-[#7661FF] hover:shadow-md transition-all overflow-hidden"
+						class="group bg-surface-elevated rounded-2xl border-2 transition-all duration-200 overflow-hidden hover:-translate-y-1 hover:shadow-card-hover"
+						style="border-color: var(--border);"
 					>
-						<div class="p-4">
-							<div class="flex items-start justify-between mb-3">
+						<div class="p-5">
+							<div class="flex items-start justify-between mb-4">
 								<div
-									class="w-10 h-10 rounded-lg flex items-center justify-center"
-									style="background-color: {getCategoryColor(tool.category)}20"
+									class="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
+									style="background-color: {getCategoryColor(tool.category)}15"
 								>
-									<Icon size={20} style="color: {getCategoryColor(tool.category)}" />
+									<Icon size={22} style="color: {getCategoryColor(tool.category)}" />
 								</div>
 								<button
 									onclick={(e) => showContextMenu(e, tool)}
-									class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity"
+									class="p-2 rounded-xl hover:bg-surface-hover opacity-0 group-hover:opacity-100 transition-all"
+									style="color: var(--text-muted);"
 								>
 									<MoreVertical size={16} />
 								</button>
 							</div>
-							<h3 class="font-medium text-gray-800 dark:text-gray-200 mb-1 truncate">
+							<h3 class="font-semibold mb-1.5 truncate" style="color: var(--text-primary);">
 								{tool.name}
 							</h3>
 							{#if tool.description}
-								<p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 mb-2">
+								<p class="text-sm line-clamp-2 mb-3" style="color: var(--text-muted);">
 									{tool.description}
 								</p>
 							{/if}
-							<div class="text-xs text-gray-400 font-mono truncate" title={tool.import_path}>
+							<div class="text-xs font-mono truncate px-2 py-1 rounded-lg bg-surface-secondary" style="color: var(--text-muted);" title={tool.import_path}>
 								{tool.import_path}
 							</div>
 						</div>
-						<div class="px-4 py-2.5 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between text-xs text-gray-400">
+						<div class="px-5 py-3 bg-surface-secondary border-t flex items-center justify-between text-xs" style="border-color: var(--border); color: var(--text-muted);">
 							<span>{formatDate(tool.updatedAt)}</span>
 							<button
 								onclick={() => openEditModal(tool)}
-								class="text-[#032D42] dark:text-[#52B8FF] hover:underline flex items-center gap-1"
+								class="text-info hover:underline flex items-center gap-1.5 font-medium"
 							>
-								<Edit3 size={12} />
+								<Edit3 size={13} />
 								Edit
 							</button>
 						</div>
@@ -342,37 +351,40 @@
 <!-- Context Menu -->
 {#if contextMenuTool}
 	<div
-		class="fixed bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-50 min-w-[160px]"
-		style="left: {contextMenuPosition.x}px; top: {contextMenuPosition.y}px"
+		class="fixed bg-surface-elevated rounded-xl shadow-dropdown border py-2 z-50 min-w-[180px] animate-scale-in"
+		style="left: {contextMenuPosition.x}px; top: {contextMenuPosition.y}px; border-color: var(--border);"
 		onclick={(e) => e.stopPropagation()}
 	>
 		<button
 			onclick={() => openEditModal(contextMenuTool!)}
-			class="w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+			class="w-full px-4 py-2.5 text-sm text-left hover:bg-surface-hover flex items-center gap-2.5 transition-colors"
+			style="color: var(--text-secondary);"
 		>
-			<Edit3 size={14} />
+			<Edit3 size={15} />
 			Edit
 		</button>
 		<button
 			onclick={handleDuplicate}
-			class="w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+			class="w-full px-4 py-2.5 text-sm text-left hover:bg-surface-hover flex items-center gap-2.5 transition-colors"
+			style="color: var(--text-secondary);"
 		>
-			<Copy size={14} />
+			<Copy size={15} />
 			Duplicate
 		</button>
 		<button
 			onclick={handleExport}
-			class="w-full px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+			class="w-full px-4 py-2.5 text-sm text-left hover:bg-surface-hover flex items-center gap-2.5 transition-colors"
+			style="color: var(--text-secondary);"
 		>
-			<Download size={14} />
+			<Download size={15} />
 			Export
 		</button>
-		<div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+		<div class="border-t my-2 mx-3" style="border-color: var(--border);"></div>
 		<button
 			onclick={handleDelete}
-			class="w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2"
+			class="w-full px-4 py-2.5 text-sm text-left text-error hover:bg-error/10 flex items-center gap-2.5 transition-colors"
 		>
-			<Trash2 size={14} />
+			<Trash2 size={15} />
 			Delete
 		</button>
 	</div>
@@ -380,16 +392,22 @@
 
 <!-- Create/Edit Modal -->
 {#if showCreateModal}
-	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-		<div class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[85vh] flex flex-col">
+	<div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+		<div class="bg-surface-elevated rounded-2xl shadow-2xl w-full max-w-3xl mx-4 max-h-[85vh] flex flex-col animate-scale-in" style="border: 1px solid var(--border);">
 			<!-- Modal Header -->
-			<div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-				<h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-					{editingTool ? 'Edit Tool' : 'Create Tool'}
-				</h3>
+			<div class="flex items-center justify-between px-6 py-5 border-b" style="border-color: var(--border);">
+				<div class="flex items-center gap-3">
+					<div class="p-2 rounded-xl bg-gradient-data">
+						<Code size={18} class="text-white" />
+					</div>
+					<h3 class="text-lg font-semibold" style="color: var(--text-primary);">
+						{editingTool ? 'Edit Tool' : 'Create Tool'}
+					</h3>
+				</div>
 				<button
 					onclick={closeCreateModal}
-					class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500"
+					class="p-2 rounded-xl hover:bg-surface-hover transition-colors"
+					style="color: var(--text-muted);"
 				>
 					<X size={18} />
 				</button>
@@ -397,20 +415,21 @@
 
 			<!-- Modal Body - Form Fields (non-scrolling for dropdown to work) -->
 			<div class="flex-shrink-0 px-6 pt-6 pb-4">
-				<div class="grid grid-cols-2 gap-4 mb-4">
+				<div class="grid grid-cols-2 gap-5 mb-5">
 					<div>
-						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
+						<label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-muted);">
 							Name *
 						</label>
 						<input
 							type="text"
 							bind:value={formName}
 							placeholder="My Search Tool"
-							class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
+							class="w-full px-4 py-2.5 text-sm rounded-xl bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-info/50 transition-shadow"
+							style="color: var(--text-primary); border: 1px solid var(--border);"
 						/>
 					</div>
 					<div class="relative z-10">
-						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
+						<label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-muted);">
 							Category
 						</label>
 						<CustomSelect
@@ -422,27 +441,29 @@
 					</div>
 				</div>
 
-				<div class="grid grid-cols-2 gap-4">
+				<div class="grid grid-cols-2 gap-5">
 					<div>
-						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
+						<label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-muted);">
 							Description
 						</label>
 						<input
 							type="text"
 							bind:value={formDescription}
 							placeholder="A tool that searches for information..."
-							class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
+							class="w-full px-4 py-2.5 text-sm rounded-xl bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-info/50 transition-shadow"
+							style="color: var(--text-primary); border: 1px solid var(--border);"
 						/>
 					</div>
 					<div>
-						<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
+						<label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-muted);">
 							Import Path *
 						</label>
 						<input
 							type="text"
 							bind:value={formImportPath}
 							placeholder="mypackage.tools.search_tool"
-							class="w-full px-3 py-2 text-sm font-mono rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
+							class="w-full px-4 py-2.5 text-sm font-mono rounded-xl bg-surface-secondary focus:outline-none focus:ring-2 focus:ring-info/50 transition-shadow"
+							style="color: var(--text-primary); border: 1px solid var(--border);"
 						/>
 					</div>
 				</div>
@@ -450,32 +471,33 @@
 
 			<!-- Modal Body - Code Editor (scrollable if needed) -->
 			<div class="flex-1 min-h-0 px-6 pb-6">
-				<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
+				<label class="block text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--text-muted);">
 					Code
 				</label>
-				<div class="h-64 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+				<div class="h-64 rounded-xl overflow-hidden" style="border: 1px solid var(--border);">
 					<MonacoEditor
 						bind:value={formCode}
 						language="python"
 					/>
 				</div>
-				<p class="text-xs text-gray-400 mt-1">
-					Define your tool using the <code class="px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">@tool</code> decorator from langchain
+				<p class="text-xs mt-2" style="color: var(--text-muted);">
+					Define your tool using the <code class="px-1.5 py-0.5 bg-surface-secondary rounded-lg font-mono">@tool</code> decorator from langchain
 				</p>
 			</div>
 
 			<!-- Modal Footer -->
-			<div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-800">
+			<div class="flex items-center justify-end gap-3 px-6 py-4 border-t bg-surface-secondary rounded-b-2xl" style="border-color: var(--border);">
 				<button
 					onclick={closeCreateModal}
-					class="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+					class="px-5 py-2.5 text-sm font-medium rounded-xl hover:bg-surface-hover transition-colors"
+					style="color: var(--text-secondary);"
 				>
 					Cancel
 				</button>
 				<button
 					onclick={saveTool}
 					disabled={!formName.trim() || !formImportPath.trim()}
-					class="px-4 py-2 bg-[#63DF4E] hover:bg-[#63DF4E]/90 disabled:bg-gray-300 disabled:dark:bg-gray-700 text-[#032D42] text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+					class="btn-accent px-5 py-2.5 disabled:opacity-50 text-sm font-medium rounded-xl transition-colors flex items-center gap-2 shadow-md"
 				>
 					<Check size={16} />
 					{editingTool ? 'Save Changes' : 'Create Tool'}
@@ -491,7 +513,7 @@
 		title="Delete Tool"
 		message={`Are you sure you want to delete "${toolToDelete.name}"? This cannot be undone.`}
 		confirmText="Delete"
-		confirmClass="bg-red-600 hover:bg-red-700"
+		confirmClass="bg-error hover:bg-error/90"
 		onconfirm={confirmDelete}
 		oncancel={() => { showDeleteConfirm = false; toolToDelete = null; }}
 	/>
