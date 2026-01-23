@@ -134,7 +134,7 @@
 	tabindex="-1"
 >
 	<div
-		class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col"
+		class="bg-surface rounded-xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col"
 		onclick={(e) => e.stopPropagation()}
 		onkeydown={(e) => e.stopPropagation()}
 		role="dialog"
@@ -142,47 +142,47 @@
 		tabindex="-1"
 	>
 		<!-- Header -->
-		<div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+		<div class="flex items-center justify-between px-6 py-4 border-b border-surface-border">
 			<div>
-				<h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+				<h3 class="text-lg font-semibold text-text-primary">
 					{recipe.name}
 				</h3>
 				{#if recipe.description}
-					<p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+					<p class="text-sm text-text-muted mt-0.5">
 						{recipe.description}
 					</p>
 				{/if}
 			</div>
 			<button
 				onclick={() => dispatch('close')}
-				class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 transition-colors"
+				class="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted transition-colors"
 			>
 				<X size={20} />
 			</button>
 		</div>
 
 		<!-- Recipe Info -->
-		<div class="px-6 py-3 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+		<div class="px-6 py-3 border-b border-surface-border bg-surface-secondary">
 			<div class="flex flex-wrap items-center gap-4 text-sm">
-				<div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+				<div class="flex items-center gap-1.5 text-text-secondary">
 					<Layers size={14} />
 					<span>{recipe.nodeCount} nodes</span>
 				</div>
-				<div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+				<div class="flex items-center gap-1.5 text-text-secondary">
 					<Clock size={14} />
 					<span>Updated {formatDate(recipe.updatedAt)}</span>
 				</div>
 				{#if recipe.author}
-					<div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+					<div class="flex items-center gap-1.5 text-text-secondary">
 						<User size={14} />
 						<span>{recipe.author}</span>
 					</div>
 				{/if}
 				{#if recipe.tags.length > 0}
 					<div class="flex items-center gap-1.5">
-						<Tag size={14} class="text-gray-400" />
+						<Tag size={14} class="text-text-muted" />
 						{#each recipe.tags as tag}
-							<span class="px-2 py-0.5 text-xs rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+							<span class="px-2 py-0.5 text-xs rounded-full bg-surface-tertiary text-text-secondary">
 								{tag}
 							</span>
 						{/each}
@@ -192,7 +192,7 @@
 		</div>
 
 		<!-- Graph Preview -->
-		<div class="h-[400px] relative bg-gray-50 dark:bg-gray-900">
+		<div class="h-[400px] relative bg-surface-secondary">
 			<SvelteFlow
 				nodes={flowNodes}
 				edges={flowEdges}
@@ -214,26 +214,26 @@
 			</SvelteFlow>
 
 			<!-- Overlay hint -->
-			<div class="absolute bottom-4 left-4 text-xs text-gray-400 bg-white/80 dark:bg-gray-800/80 px-2 py-1 rounded">
+			<div class="absolute bottom-4 left-4 text-xs text-text-muted bg-surface/80 px-2 py-1 rounded">
 				Scroll to zoom • Drag to pan
 			</div>
 		</div>
 
 		<!-- Footer -->
-		<div class="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 rounded-b-xl">
-			<div class="text-sm text-gray-500 dark:text-gray-400">
+		<div class="flex items-center justify-between px-6 py-4 border-t border-surface-border bg-surface-secondary rounded-b-xl">
+			<div class="text-sm text-text-muted">
 				Node types: {recipe.nodeTypes.join(', ')}
 			</div>
 			<div class="flex items-center gap-3">
 				<button
 					onclick={() => dispatch('close')}
-					class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+					class="px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface-hover rounded-lg transition-colors"
 				>
 					Close
 				</button>
 				<button
 					onclick={handleAddToWorkflow}
-					class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#032D42] bg-[#63DF4E] hover:bg-[#52c840] rounded-lg transition-colors"
+					class="btn-accent flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors"
 				>
 					<Plus size={16} />
 					Add to Workflow

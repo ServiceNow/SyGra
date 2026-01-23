@@ -32,13 +32,13 @@
 	// Copy state
 	let copiedField = $state<string | null>(null);
 
-	// Status styling
+	// Status styling using design tokens
 	const statusConfig = {
-		pending: { color: 'text-gray-500', bg: 'bg-gray-100 dark:bg-gray-800', icon: Clock, label: 'Pending' },
-		running: { color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30', icon: Loader2, label: 'Running' },
-		completed: { color: 'text-emerald-500', bg: 'bg-emerald-100 dark:bg-emerald-900/30', icon: CheckCircle2, label: 'Completed' },
-		failed: { color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30', icon: XCircle, label: 'Failed' },
-		cancelled: { color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30', icon: XCircle, label: 'Cancelled' },
+		pending: { color: 'text-text-muted', bg: 'bg-surface-tertiary', icon: Clock, label: 'Pending' },
+		running: { color: 'text-info', bg: 'bg-info-light', icon: Loader2, label: 'Running' },
+		completed: { color: 'text-success', bg: 'bg-success-light', icon: CheckCircle2, label: 'Completed' },
+		failed: { color: 'text-error', bg: 'bg-error-light', icon: XCircle, label: 'Failed' },
+		cancelled: { color: 'text-warning', bg: 'bg-warning-light', icon: XCircle, label: 'Cancelled' },
 	};
 
 	let status = $derived(statusConfig[execution.status as keyof typeof statusConfig] || statusConfig.pending);
@@ -249,23 +249,23 @@
 	}
 </script>
 
-<div class="h-full w-full flex flex-col bg-white dark:bg-gray-900">
+<div class="h-full w-full flex flex-col bg-surface">
 	<!-- Header -->
-	<div class="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
+	<div class="flex-shrink-0 border-b border-[var(--border)]">
 		<!-- Top bar with back button and actions -->
 		<div class="flex items-center justify-between px-6 py-4">
 			<div class="flex items-center gap-4">
 				<button
 					onclick={goBack}
-					class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+					class="p-2 hover:bg-surface-hover rounded-lg transition-colors"
 					title="Back to runs"
 				>
-					<ArrowLeft size={20} class="text-gray-500" />
+					<ArrowLeft size={20} class="text-text-muted" />
 				</button>
 
 				<div>
 					<div class="flex items-center gap-3">
-						<h1 class="text-xl font-bold text-gray-900 dark:text-gray-100">
+						<h1 class="text-xl font-bold text-text-primary">
 							{execution.workflow_name || 'Unknown Workflow'}
 						</h1>
 						<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium {status.color} {status.bg}">
@@ -273,7 +273,7 @@
 							{status.label}
 						</span>
 					</div>
-					<div class="flex items-center gap-3 text-sm text-gray-500 mt-1">
+					<div class="flex items-center gap-3 text-sm text-text-muted mt-1">
 						<span class="font-mono">{execution.id}</span>
 						<span>•</span>
 						<span>{formatRelativeTime(execution.started_at)}</span>
@@ -284,10 +284,10 @@
 			<div class="flex items-center gap-2">
 				<button
 					onclick={() => copyToClipboard(execution.id, 'id')}
-					class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+					class="flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface-hover rounded-lg transition-colors"
 				>
 					{#if copiedField === 'id'}
-						<Check size={14} class="text-emerald-500" />
+						<Check size={14} class="text-success" />
 						Copied
 					{:else}
 						<Copy size={14} />
@@ -296,7 +296,7 @@
 				</button>
 				<button
 					onclick={downloadOutput}
-					class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+					class="flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface-hover rounded-lg transition-colors"
 					title="Download output"
 				>
 					<Download size={14} />
@@ -305,36 +305,36 @@
 		</div>
 
 		<!-- Quick stats bar -->
-		<div class="flex items-center gap-6 px-6 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700">
+		<div class="flex items-center gap-6 px-6 py-3 bg-surface-secondary border-t border-[var(--border)]">
 			<div class="flex items-center gap-2">
-				<Timer size={16} class="text-gray-400" />
-				<span class="text-sm text-gray-600 dark:text-gray-400">Duration:</span>
-				<span class="text-sm font-medium text-gray-900 dark:text-gray-100">{formatDuration(execution.duration_ms)}</span>
+				<Timer size={16} class="text-text-muted" />
+				<span class="text-sm text-text-secondary">Duration:</span>
+				<span class="text-sm font-medium text-text-primary">{formatDuration(execution.duration_ms)}</span>
 			</div>
 
 			{#if metadata?.aggregate_statistics}
 				<div class="flex items-center gap-2">
-					<Zap size={16} class="text-[#7661FF]" />
-					<span class="text-sm text-gray-600 dark:text-gray-400">Tokens:</span>
-					<span class="text-sm font-medium text-gray-900 dark:text-gray-100">{formatNumber(metadata.aggregate_statistics.tokens.total_tokens)}</span>
+					<Zap size={16} class="text-node-llm" />
+					<span class="text-sm text-text-secondary">Tokens:</span>
+					<span class="text-sm font-medium text-text-primary">{formatNumber(metadata.aggregate_statistics.tokens.total_tokens)}</span>
 				</div>
 
 				<div class="flex items-center gap-2">
-					<DollarSign size={16} class="text-emerald-500" />
-					<span class="text-sm text-gray-600 dark:text-gray-400">Cost:</span>
-					<span class="text-sm font-medium text-gray-900 dark:text-gray-100">{formatCost(metadata.aggregate_statistics.cost.total_cost_usd)}</span>
+					<DollarSign size={16} class="text-success" />
+					<span class="text-sm text-text-secondary">Cost:</span>
+					<span class="text-sm font-medium text-text-primary">{formatCost(metadata.aggregate_statistics.cost.total_cost_usd)}</span>
 				</div>
 
 				<div class="flex items-center gap-2">
-					<Database size={16} class="text-blue-500" />
-					<span class="text-sm text-gray-600 dark:text-gray-400">Records:</span>
-					<span class="text-sm font-medium text-gray-900 dark:text-gray-100">{metadata.aggregate_statistics.records.total_processed}</span>
+					<Database size={16} class="text-info" />
+					<span class="text-sm text-text-secondary">Records:</span>
+					<span class="text-sm font-medium text-text-primary">{metadata.aggregate_statistics.records.total_processed}</span>
 				</div>
 
 				<div class="flex items-center gap-2">
-					<TrendingUp size={16} class={metadata.aggregate_statistics.records.success_rate >= 0.9 ? 'text-emerald-500' : 'text-amber-500'} />
-					<span class="text-sm text-gray-600 dark:text-gray-400">Success:</span>
-					<span class="text-sm font-medium {metadata.aggregate_statistics.records.success_rate >= 0.9 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}">
+					<TrendingUp size={16} class={metadata.aggregate_statistics.records.success_rate >= 0.9 ? 'text-success' : 'text-warning'} />
+					<span class="text-sm text-text-secondary">Success:</span>
+					<span class="text-sm font-medium {metadata.aggregate_statistics.records.success_rate >= 0.9 ? 'text-success' : 'text-warning'}">
 						{formatPercent(metadata.aggregate_statistics.records.success_rate)}
 					</span>
 				</div>
@@ -342,7 +342,7 @@
 		</div>
 
 		<!-- Tabs -->
-		<div class="flex gap-1 px-6 py-2 border-t border-gray-200 dark:border-gray-700">
+		<div class="flex gap-1 px-6 py-2 border-t border-[var(--border)]">
 			{#each [
 				{ id: 'overview', label: 'Overview', icon: Activity },
 				{ id: 'execution', label: 'Execution Flow', icon: GitBranch },
@@ -353,12 +353,12 @@
 				{@const TabIcon = tab.icon}
 				<button
 					onclick={() => activeTab = tab.id as TabId}
-					class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {activeTab === tab.id ? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#52B8FF]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}"
+					class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors {activeTab === tab.id ? 'bg-info-light text-info' : 'text-text-secondary hover:bg-surface-hover'}"
 				>
 					<TabIcon size={16} />
 					{tab.label}
 					{#if tab.count !== undefined && tab.count > 0}
-						<span class="text-xs px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+						<span class="text-xs px-1.5 py-0.5 rounded-full bg-surface-tertiary text-text-secondary">
 							{tab.count}
 						</span>
 					{/if}
@@ -375,54 +375,54 @@
 				<!-- Key Metrics Cards -->
 				{#if metadata?.aggregate_statistics}
 					<div class="grid grid-cols-4 gap-4">
-						<div class="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800">
+						<div class="bg-success-light rounded-xl p-4 border border-success-border">
 							<div class="flex items-center gap-2 mb-2">
-								<DollarSign size={16} class="text-emerald-600 dark:text-emerald-400" />
-								<span class="text-xs font-medium text-emerald-600 dark:text-emerald-400 uppercase">Total Cost</span>
+								<DollarSign size={16} class="text-success" />
+								<span class="text-xs font-medium text-success uppercase">Total Cost</span>
 							</div>
-							<div class="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+							<div class="text-2xl font-bold text-success">
 								{formatCost(metadata.aggregate_statistics.cost.total_cost_usd)}
 							</div>
-							<div class="text-xs text-emerald-600/70 dark:text-emerald-400/70 mt-1">
+							<div class="text-xs text-success/70 mt-1">
 								{formatCost(metadata.aggregate_statistics.cost.average_cost_per_record)}/record
 							</div>
 						</div>
 
-						<div class="bg-gradient-to-br from-[#7661FF]/10 to-[#BF71F2]/10 dark:from-[#7661FF]/20 dark:to-[#BF71F2]/20 rounded-xl p-4 border border-[#7661FF]/30 dark:border-[#7661FF]/40">
+						<div class="bg-node-llm-bg rounded-xl p-4 border border-node-llm/30">
 							<div class="flex items-center gap-2 mb-2">
-								<Zap size={16} class="text-[#7661FF] dark:text-[#BF71F2]" />
-								<span class="text-xs font-medium text-[#7661FF] dark:text-[#BF71F2] uppercase">Tokens</span>
+								<Zap size={16} class="text-node-llm" />
+								<span class="text-xs font-medium text-node-llm uppercase">Tokens</span>
 							</div>
-							<div class="text-2xl font-bold text-[#7661FF] dark:text-[#BF71F2]">
+							<div class="text-2xl font-bold text-node-llm">
 								{formatNumber(metadata.aggregate_statistics.tokens.total_tokens)}
 							</div>
-							<div class="text-xs text-[#7661FF]/70 dark:text-[#BF71F2]/70 mt-1">
+							<div class="text-xs text-node-llm/70 mt-1">
 								{formatNumber(metadata.aggregate_statistics.tokens.total_prompt_tokens)} in / {formatNumber(metadata.aggregate_statistics.tokens.total_completion_tokens)} out
 							</div>
 						</div>
 
-						<div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+						<div class="bg-info-light rounded-xl p-4 border border-info-border">
 							<div class="flex items-center gap-2 mb-2">
-								<Server size={16} class="text-blue-600 dark:text-blue-400" />
-								<span class="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase">Requests</span>
+								<Server size={16} class="text-info" />
+								<span class="text-xs font-medium text-info uppercase">Requests</span>
 							</div>
-							<div class="text-2xl font-bold text-blue-700 dark:text-blue-300">
+							<div class="text-2xl font-bold text-info">
 								{metadata.aggregate_statistics.requests.total_requests}
 							</div>
-							<div class="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1">
+							<div class="text-xs text-info/70 mt-1">
 								{metadata.aggregate_statistics.requests.total_failures} failed
 							</div>
 						</div>
 
-						<div class="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800">
+						<div class="bg-warning-light rounded-xl p-4 border border-warning-border">
 							<div class="flex items-center gap-2 mb-2">
-								<Timer size={16} class="text-amber-600 dark:text-amber-400" />
-								<span class="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase">Duration</span>
+								<Timer size={16} class="text-warning" />
+								<span class="text-xs font-medium text-warning uppercase">Duration</span>
 							</div>
-							<div class="text-2xl font-bold text-amber-700 dark:text-amber-300">
+							<div class="text-2xl font-bold text-warning">
 								{formatDuration(execution.duration_ms)}
 							</div>
-							<div class="text-xs text-amber-600/70 dark:text-amber-400/70 mt-1">
+							<div class="text-xs text-warning/70 mt-1">
 								Started {formatDate(execution.started_at)}
 							</div>
 						</div>
@@ -431,58 +431,58 @@
 
 				<!-- Error -->
 				{#if execution.error}
-					<div class="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-						<div class="flex items-center gap-2 text-red-600 dark:text-red-400 font-medium mb-2">
+					<div class="p-4 bg-error-light border border-error-border rounded-xl">
+						<div class="flex items-center gap-2 text-error font-medium mb-2">
 							<XCircle size={16} />
 							Error
 						</div>
-						<pre class="text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap font-mono bg-red-100 dark:bg-red-900/30 p-3 rounded-lg">{execution.error}</pre>
+						<pre class="text-sm text-error whitespace-pre-wrap font-mono bg-error-light/50 p-3 rounded-lg">{execution.error}</pre>
 					</div>
 				{/if}
 
 				<!-- Run Details Grid -->
 				<div class="grid grid-cols-2 gap-6">
 					<!-- Execution Info -->
-					<div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
-						<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+					<div class="bg-surface-secondary rounded-xl p-4">
+						<h3 class="text-sm font-semibold text-text-secondary mb-4 flex items-center gap-2">
 							<Activity size={16} />
 							Execution Details
 						</h3>
 						<div class="space-y-3 text-sm">
 							<div class="flex justify-between items-start gap-2">
-								<span class="text-gray-500 flex-shrink-0">Run ID</span>
+								<span class="text-text-muted flex-shrink-0">Run ID</span>
 								<button
 									onclick={() => copyToClipboard(execution.id, 'run_id')}
-									class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-[#7661FF] dark:hover:text-[#52B8FF] flex items-center gap-1 text-right break-all"
+									class="font-mono text-xs text-text-primary hover:text-info flex items-center gap-1 text-right break-all"
 									title="Click to copy: {execution.id}"
 								>
 									{execution.id}
 									{#if copiedField === 'run_id'}
-										<Check size={10} class="text-green-500 flex-shrink-0" />
+										<Check size={10} class="text-success flex-shrink-0" />
 									{:else}
 										<Copy size={10} class="opacity-50 flex-shrink-0" />
 									{/if}
 								</button>
 							</div>
 							<div class="flex justify-between items-start gap-2">
-								<span class="text-gray-500 flex-shrink-0">Workflow</span>
-								<span class="text-gray-800 dark:text-gray-200 text-right break-all">{execution.workflow_name || '-'}</span>
+								<span class="text-text-muted flex-shrink-0">Workflow</span>
+								<span class="text-text-primary text-right break-all">{execution.workflow_name || '-'}</span>
 							</div>
 							<div class="flex justify-between">
-								<span class="text-gray-500">Started</span>
-								<span class="text-gray-800 dark:text-gray-200">{formatDate(execution.started_at)}</span>
+								<span class="text-text-muted">Started</span>
+								<span class="text-text-primary">{formatDate(execution.started_at)}</span>
 							</div>
 							{#if execution.output_file}
 								<div class="flex justify-between items-start gap-2">
-									<span class="text-gray-500 flex-shrink-0">Output File</span>
+									<span class="text-text-muted flex-shrink-0">Output File</span>
 									<button
 										onclick={() => copyToClipboard(execution.output_file, 'output_file')}
-										class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-[#7661FF] dark:hover:text-[#52B8FF] flex items-center gap-1 text-right break-all"
+										class="font-mono text-xs text-text-primary hover:text-info flex items-center gap-1 text-right break-all"
 										title="Click to copy full path: {execution.output_file}"
 									>
 										{execution.output_file.split('/').pop()}
 										{#if copiedField === 'output_file'}
-											<Check size={10} class="text-green-500 flex-shrink-0" />
+											<Check size={10} class="text-success flex-shrink-0" />
 										{:else}
 											<Copy size={10} class="opacity-50 flex-shrink-0" />
 										{/if}
@@ -491,12 +491,12 @@
 							{/if}
 							{#if metadata?.execution?.git}
 								<div class="flex justify-between items-start gap-2">
-									<span class="text-gray-500 flex items-center gap-1 flex-shrink-0">
+									<span class="text-text-muted flex items-center gap-1 flex-shrink-0">
 										<GitBranch size={12} /> Git
 									</span>
 									<div class="flex items-center gap-1.5 flex-wrap justify-end">
-										<span class="text-gray-800 dark:text-gray-200 font-mono text-xs">{metadata.execution.git.branch}</span>
-										<span class="text-gray-400">@</span>
+										<span class="text-text-primary font-mono text-xs">{metadata.execution.git.branch}</span>
+										<span class="text-text-muted">@</span>
 										{#if metadata.execution.git.commit_hash}
 											{@const gitUrl = getGitHubCommitUrl(metadata.execution.git)}
 											{#if gitUrl}
@@ -504,7 +504,7 @@
 													href={gitUrl}
 													target="_blank"
 													rel="noopener noreferrer"
-													class="font-mono text-xs text-[#032D42] dark:text-[#52B8FF] hover:underline flex items-center gap-1"
+													class="font-mono text-xs text-text-link hover:underline flex items-center gap-1"
 													title="View commit on GitHub: {metadata.execution.git.commit_hash}"
 												>
 													{metadata.execution.git.commit_hash.slice(0, 7)}
@@ -513,12 +513,12 @@
 											{:else}
 												<button
 													onclick={() => copyToClipboard(metadata.execution.git.commit_hash, 'git')}
-													class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-[#7661FF] dark:hover:text-[#52B8FF] flex items-center gap-1"
+													class="font-mono text-xs text-text-primary hover:text-info flex items-center gap-1"
 													title="Click to copy: {metadata.execution.git.commit_hash}"
 												>
 													{metadata.execution.git.commit_hash.slice(0, 7)}
 													{#if copiedField === 'git'}
-														<Check size={10} class="text-green-500" />
+														<Check size={10} class="text-success" />
 													{:else}
 														<Copy size={10} class="opacity-50" />
 													{/if}
@@ -526,7 +526,7 @@
 											{/if}
 										{/if}
 										{#if metadata.execution.git.is_dirty}
-											<span class="text-amber-600 dark:text-amber-400 text-xs">(dirty)</span>
+											<span class="text-warning text-xs">(dirty)</span>
 										{/if}
 									</div>
 								</div>
@@ -536,20 +536,20 @@
 
 					<!-- Dataset Info -->
 					{#if metadata?.dataset}
-						<div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
-							<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+						<div class="bg-surface-secondary rounded-xl p-4">
+							<h3 class="text-sm font-semibold text-text-secondary mb-4 flex items-center gap-2">
 								<Database size={16} />
 								Dataset
 							</h3>
 							<div class="space-y-3 text-sm">
 								<div class="flex justify-between items-center">
-									<span class="text-gray-500">Type</span>
-									<span class="px-2 py-0.5 text-xs rounded-full font-medium {metadata.dataset.source_type === 'hf' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300' : metadata.dataset.source_type === 'servicenow' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'}">
+									<span class="text-text-muted">Type</span>
+									<span class="px-2 py-0.5 text-xs rounded-full font-medium {metadata.dataset.source_type === 'hf' ? 'bg-warning-light text-warning' : metadata.dataset.source_type === 'servicenow' ? 'bg-success-light text-success' : 'bg-info-light text-info'}">
 										{metadata.dataset.source_type === 'hf' ? 'HuggingFace' : metadata.dataset.source_type === 'servicenow' ? 'ServiceNow' : 'Local'}
 									</span>
 								</div>
 								<div class="flex justify-between items-start gap-2">
-									<span class="text-gray-500 flex-shrink-0">Source</span>
+									<span class="text-text-muted flex-shrink-0">Source</span>
 									{#if metadata.dataset.source_type === 'hf'}
 										{@const hfUrl = getHuggingFaceUrl(metadata.dataset.source_path)}
 										{#if hfUrl}
@@ -557,45 +557,45 @@
 												href={hfUrl}
 												target="_blank"
 												rel="noopener noreferrer"
-												class="font-mono text-xs text-[#032D42] dark:text-[#52B8FF] hover:underline flex items-center gap-1 break-all text-right"
+												class="font-mono text-xs text-text-link hover:underline flex items-center gap-1 break-all text-right"
 											>
 												{metadata.dataset.source_path}
 												<ExternalLink size={10} class="flex-shrink-0" />
 											</a>
 										{:else}
-											<span class="text-gray-800 dark:text-gray-200 font-mono text-xs break-all text-right">
+											<span class="text-text-primary font-mono text-xs break-all text-right">
 												{metadata.dataset.source_path}
 											</span>
 										{/if}
 									{:else}
-										<span class="text-gray-800 dark:text-gray-200 font-mono text-xs break-all text-right">
+										<span class="text-text-primary font-mono text-xs break-all text-right">
 											{metadata.dataset.source_path}
 										</span>
 									{/if}
 								</div>
 								{#if metadata.dataset.dataset_version}
 									<div class="flex justify-between items-start gap-2">
-										<span class="text-gray-500 flex-shrink-0">Version</span>
-										<span class="text-gray-800 dark:text-gray-200 font-mono text-xs break-all text-right">
+										<span class="text-text-muted flex-shrink-0">Version</span>
+										<span class="text-text-primary font-mono text-xs break-all text-right">
 											{metadata.dataset.dataset_version}
 										</span>
 									</div>
 								{/if}
 								<div class="flex justify-between">
-									<span class="text-gray-500">Records</span>
-									<span class="text-gray-800 dark:text-gray-200">{metadata.dataset.num_records_processed}</span>
+									<span class="text-text-muted">Records</span>
+									<span class="text-text-primary">{metadata.dataset.num_records_processed}</span>
 								</div>
 								{#if metadata.dataset.dataset_hash}
 									<div class="flex justify-between items-start gap-2">
-										<span class="text-gray-500 flex-shrink-0">Hash</span>
+										<span class="text-text-muted flex-shrink-0">Hash</span>
 										<button
 											onclick={() => copyToClipboard(metadata.dataset.dataset_hash, 'dataset_hash')}
-											class="font-mono text-xs text-gray-800 dark:text-gray-200 hover:text-[#7661FF] dark:hover:text-[#52B8FF] flex items-center gap-1 break-all text-right"
+											class="font-mono text-xs text-text-primary hover:text-info flex items-center gap-1 break-all text-right"
 											title="Click to copy: {metadata.dataset.dataset_hash}"
 										>
 											{metadata.dataset.dataset_hash}
 											{#if copiedField === 'dataset_hash'}
-												<Check size={10} class="text-green-500 flex-shrink-0" />
+												<Check size={10} class="text-success flex-shrink-0" />
 											{:else}
 												<Copy size={10} class="opacity-50 flex-shrink-0" />
 											{/if}
@@ -609,18 +609,18 @@
 
 				<!-- Models used -->
 				{#if metadata?.models && Object.keys(metadata.models).length > 0}
-					<div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
-						<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+					<div class="bg-surface-secondary rounded-xl p-4">
+						<h3 class="text-sm font-semibold text-text-secondary mb-4 flex items-center gap-2">
 							<Cpu size={16} />
 							Models Used
 						</h3>
 						<div class="flex flex-wrap gap-2">
 							{#each Object.entries(metadata.models) as [name, model]}
-								<div class="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-									<span class="font-medium text-gray-800 dark:text-gray-200">{name}</span>
-									<span class="text-xs text-gray-500">{model.model_type}</span>
-									<span class="text-xs text-[#7661FF] dark:text-[#BF71F2]">{formatNumber(model.token_statistics.total_tokens)} tok</span>
-									<span class="text-xs text-emerald-600 dark:text-emerald-400">{formatCost(model.cost.total_cost_usd)}</span>
+								<div class="flex items-center gap-2 px-3 py-2 bg-surface-elevated rounded-lg border border-[var(--border)]">
+									<span class="font-medium text-text-primary">{name}</span>
+									<span class="text-xs text-text-muted">{model.model_type}</span>
+									<span class="text-xs text-node-llm">{formatNumber(model.token_statistics.total_tokens)} tok</span>
+									<span class="text-xs text-success">{formatCost(model.cost.total_cost_usd)}</span>
 								</div>
 							{/each}
 						</div>
@@ -630,7 +630,7 @@
 
 		{:else if activeTab === 'execution'}
 			<!-- Execution Flow Tab - Graph with Timeline sidebar -->
-			<div class="h-[600px] bg-gray-50 dark:bg-gray-800/50 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+			<div class="h-[600px] bg-surface-secondary rounded-xl overflow-hidden border border-[var(--border)]">
 				<RunExecutionGraph {execution} />
 			</div>
 
@@ -642,10 +642,10 @@
 					<div class="flex items-center justify-end gap-2">
 						<button
 							onclick={() => copyToClipboard(JSON.stringify(execution.output_data, null, 2), 'output')}
-							class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+							class="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover rounded-lg border border-[var(--border)]"
 						>
 							{#if copiedField === 'output'}
-								<Check size={14} class="text-emerald-500" />
+								<Check size={14} class="text-success" />
 								Copied
 							{:else}
 								<Copy size={14} />
@@ -654,7 +654,7 @@
 						</button>
 						<button
 							onclick={downloadOutput}
-							class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+							class="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover rounded-lg border border-[var(--border)]"
 						>
 							<Download size={14} />
 							Download
@@ -671,7 +671,7 @@
 						defaultView="table"
 					/>
 				{:else}
-					<div class="text-center py-12 text-gray-500">
+					<div class="text-center py-12 text-text-muted">
 						<FileJson size={48} class="mx-auto mb-4 opacity-50" />
 						<p class="text-sm font-medium">No output data available</p>
 					</div>
@@ -690,20 +690,20 @@
 				<div class="space-y-6">
 					<!-- Charts Row -->
 					<div class="grid grid-cols-2 gap-4">
-						<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+						<div class="bg-surface-elevated rounded-xl border border-[var(--border)] p-4">
 							<div class="flex items-center gap-2 mb-3">
-								<PieChart size={16} class="text-[#7661FF]" />
-								<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Token Distribution</h4>
+								<PieChart size={16} class="text-node-llm" />
+								<h4 class="text-sm font-semibold text-text-secondary">Token Distribution</h4>
 							</div>
 							<div class="h-48">
 								<canvas bind:this={tokenPieCanvas}></canvas>
 							</div>
 						</div>
 
-						<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+						<div class="bg-surface-elevated rounded-xl border border-[var(--border)] p-4">
 							<div class="flex items-center gap-2 mb-3">
-								<BarChart3 size={16} class="text-blue-500" />
-								<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">Token Usage by Model</h4>
+								<BarChart3 size={16} class="text-info" />
+								<h4 class="text-sm font-semibold text-text-secondary">Token Usage by Model</h4>
 							</div>
 							<div class="h-48">
 								<canvas bind:this={modelTokensCanvas}></canvas>
@@ -713,15 +713,15 @@
 
 					<!-- Model Performance -->
 					{#if Object.keys(metadata.models).length > 0}
-						<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-							<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+						<div class="bg-surface-elevated rounded-xl border border-[var(--border)] p-4">
+							<h4 class="text-sm font-semibold text-text-secondary mb-4 flex items-center gap-2">
 								<Cpu size={16} />
 								Model Performance
 							</h4>
 							<div class="overflow-x-auto">
 								<table class="w-full text-sm">
 									<thead>
-										<tr class="text-left text-xs text-gray-500 uppercase border-b border-gray-200 dark:border-gray-700">
+										<tr class="text-left text-xs text-text-muted uppercase border-b border-[var(--border)]">
 											<th class="pb-2 font-medium">Model</th>
 											<th class="pb-2 font-medium text-right">Requests</th>
 											<th class="pb-2 font-medium text-right">Tokens</th>
@@ -732,13 +732,13 @@
 									</thead>
 									<tbody>
 										{#each Object.entries(metadata.models) as [name, model]}
-											<tr class="border-b border-gray-100 dark:border-gray-800">
-												<td class="py-3 font-medium text-gray-800 dark:text-gray-200">{name}</td>
-												<td class="py-3 text-right text-gray-600 dark:text-gray-400">{model.performance.total_requests}</td>
-												<td class="py-3 text-right text-[#7661FF] dark:text-[#BF71F2]">{formatNumber(model.token_statistics.total_tokens)}</td>
-												<td class="py-3 text-right text-gray-600 dark:text-gray-400">{formatLatency(model.performance.average_latency_seconds)}</td>
-												<td class="py-3 text-right text-blue-600 dark:text-blue-400">{model.performance.tokens_per_second.toFixed(1)} tok/s</td>
-												<td class="py-3 text-right text-emerald-600 dark:text-emerald-400">{formatCost(model.cost.total_cost_usd)}</td>
+											<tr class="border-b border-surface-border">
+												<td class="py-3 font-medium text-text-primary">{name}</td>
+												<td class="py-3 text-right text-text-secondary">{model.performance.total_requests}</td>
+												<td class="py-3 text-right text-node-llm">{formatNumber(model.token_statistics.total_tokens)}</td>
+												<td class="py-3 text-right text-text-secondary">{formatLatency(model.performance.average_latency_seconds)}</td>
+												<td class="py-3 text-right text-info">{model.performance.tokens_per_second.toFixed(1)} tok/s</td>
+												<td class="py-3 text-right text-success">{formatCost(model.cost.total_cost_usd)}</td>
 											</tr>
 										{/each}
 									</tbody>
@@ -749,15 +749,15 @@
 
 					<!-- Node Stats -->
 					{#if Object.keys(metadata.nodes).length > 0}
-						<div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-							<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-2">
+						<div class="bg-surface-elevated rounded-xl border border-[var(--border)] p-4">
+							<h4 class="text-sm font-semibold text-text-secondary mb-4 flex items-center gap-2">
 								<Box size={16} />
 								Node Statistics
 							</h4>
 							<div class="overflow-x-auto">
 								<table class="w-full text-sm">
 									<thead>
-										<tr class="text-left text-xs text-gray-500 uppercase border-b border-gray-200 dark:border-gray-700">
+										<tr class="text-left text-xs text-text-muted uppercase border-b border-[var(--border)]">
 											<th class="pb-2 font-medium">Node</th>
 											<th class="pb-2 font-medium">Type</th>
 											<th class="pb-2 font-medium text-right">Executions</th>
@@ -767,16 +767,16 @@
 									</thead>
 									<tbody>
 										{#each Object.entries(metadata.nodes) as [name, node]}
-											<tr class="border-b border-gray-100 dark:border-gray-800">
-												<td class="py-2 font-medium text-gray-800 dark:text-gray-200">{name}</td>
+											<tr class="border-b border-surface-border">
+												<td class="py-2 font-medium text-text-primary">{name}</td>
 												<td class="py-2">
-													<span class="text-xs px-2 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]">
+													<span class="text-xs px-2 py-0.5 rounded bg-node-llm-bg text-node-llm">
 														{node.node_type}
 													</span>
 												</td>
-												<td class="py-2 text-right text-gray-600 dark:text-gray-400">{node.total_executions}</td>
-												<td class="py-2 text-right text-gray-600 dark:text-gray-400">{formatLatency(node.average_latency_seconds)}</td>
-												<td class="py-2 text-right text-gray-600 dark:text-gray-400">
+												<td class="py-2 text-right text-text-secondary">{node.total_executions}</td>
+												<td class="py-2 text-right text-text-secondary">{formatLatency(node.average_latency_seconds)}</td>
+												<td class="py-2 text-right text-text-secondary">
 													{node.token_statistics ? formatNumber(node.token_statistics.total_tokens) : '-'}
 												</td>
 											</tr>
@@ -789,15 +789,15 @@
 
 					<!-- Raw JSON -->
 					<details class="group">
-						<summary class="cursor-pointer text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 flex items-center gap-2">
+						<summary class="cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary flex items-center gap-2">
 							<ChevronDown size={16} class="transition-transform group-open:rotate-180" />
 							Raw Metadata JSON
 						</summary>
-						<pre class="mt-2 p-4 bg-gray-900 text-gray-100 rounded-lg text-xs overflow-auto max-h-64 font-mono">{JSON.stringify(metadata, null, 2)}</pre>
+						<pre class="mt-2 p-4 bg-brand-primary text-white rounded-lg text-xs overflow-auto max-h-64 font-mono">{JSON.stringify(metadata, null, 2)}</pre>
 					</details>
 				</div>
 			{:else}
-				<div class="text-center py-12 text-gray-500">
+				<div class="text-center py-12 text-text-muted">
 					<BarChart3 size={48} class="mx-auto mb-4 opacity-50" />
 					<p class="text-sm font-medium">No metadata available</p>
 					<p class="text-xs mt-1">Metadata is collected when runs complete</p>

@@ -92,14 +92,14 @@
 		agent: '#ec4899'
 	};
 
-	// Status configuration
+	// Status configuration using design tokens
 	const statusConfig: Record<string, { icon: typeof Clock; color: string; bgColor: string; textColor: string }> = {
-		pending: { icon: Clock, color: 'bg-gray-100 dark:bg-gray-800', bgColor: 'bg-gray-50', textColor: 'text-gray-500' },
-		running: { icon: Loader2, color: 'bg-blue-100 dark:bg-blue-900/30', bgColor: 'bg-blue-50', textColor: 'text-blue-600' },
-		completed: { icon: CheckCircle2, color: 'bg-emerald-100 dark:bg-emerald-900/30', bgColor: 'bg-emerald-50', textColor: 'text-emerald-600' },
-		failed: { icon: XCircle, color: 'bg-red-100 dark:bg-red-900/30', bgColor: 'bg-red-50', textColor: 'text-red-600' },
-		cancelled: { icon: Ban, color: 'bg-orange-100 dark:bg-orange-900/30', bgColor: 'bg-orange-50', textColor: 'text-orange-600' },
-		skipped: { icon: AlertTriangle, color: 'bg-orange-100 dark:bg-orange-900/30', bgColor: 'bg-orange-50', textColor: 'text-orange-500' }
+		pending: { icon: Clock, color: 'bg-surface-tertiary', bgColor: 'bg-surface-secondary', textColor: 'text-text-muted' },
+		running: { icon: Loader2, color: 'bg-info-light', bgColor: 'bg-info-light', textColor: 'text-info' },
+		completed: { icon: CheckCircle2, color: 'bg-success-light', bgColor: 'bg-success-light', textColor: 'text-success' },
+		failed: { icon: XCircle, color: 'bg-error-light', bgColor: 'bg-error-light', textColor: 'text-error' },
+		cancelled: { icon: Ban, color: 'bg-warning-light', bgColor: 'bg-warning-light', textColor: 'text-warning' },
+		skipped: { icon: AlertTriangle, color: 'bg-warning-light', bgColor: 'bg-warning-light', textColor: 'text-warning' }
 	};
 
 	// Create Svelte stores for SvelteFlow
@@ -298,24 +298,24 @@
 
 <div class="flex h-full">
 	<!-- Main graph area -->
-	<div class="flex-1 relative bg-gray-50 dark:bg-gray-900">
+	<div class="flex-1 relative bg-surface-secondary">
 		{#if loading}
 			<div class="flex items-center justify-center h-full">
-				<div class="flex items-center gap-3 text-gray-500">
+				<div class="flex items-center gap-3 text-text-muted">
 					<Loader2 size={24} class="animate-spin" />
 					<span>Loading execution graph...</span>
 				</div>
 			</div>
 		{:else if error}
 			<div class="flex items-center justify-center h-full">
-				<div class="flex flex-col items-center gap-3 text-gray-500">
-					<AlertTriangle size={48} class="text-amber-500" />
+				<div class="flex flex-col items-center gap-3 text-text-muted">
+					<AlertTriangle size={48} class="text-warning" />
 					<span>{error}</span>
 				</div>
 			</div>
 		{:else if !workflow}
 			<div class="flex items-center justify-center h-full">
-				<div class="flex flex-col items-center gap-3 text-gray-500">
+				<div class="flex flex-col items-center gap-3 text-text-muted">
 					<GitBranch size={48} class="opacity-50" />
 					<span>No workflow data available</span>
 				</div>
@@ -345,7 +345,7 @@
 					<button
 						onclick={handleAutoLayout}
 						title="Auto-arrange nodes using DAG layout"
-						class="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 transition-colors text-sm font-medium"
+						class="flex items-center gap-2 px-3 py-2 bg-surface-elevated text-text-secondary hover:bg-surface-hover rounded-lg shadow-md border border-[var(--border)] transition-colors text-sm font-medium"
 					>
 						<LayoutGrid size={16} />
 						Auto Layout
@@ -364,19 +364,19 @@
 						<!-- Toggle button -->
 						<button
 							onclick={() => showMinimap = !showMinimap}
-							class="flex items-center justify-center w-6 h-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+							class="flex items-center justify-center w-6 h-6 bg-surface-elevated border border-[var(--border)] rounded shadow-sm hover:bg-surface-hover transition-colors"
 							title={showMinimap ? 'Hide minimap' : 'Show minimap'}
 						>
 							{#if showMinimap}
-								<EyeOff size={12} class="text-gray-500 dark:text-gray-400" />
+								<EyeOff size={12} class="text-text-muted" />
 							{:else}
-								<MapIcon size={12} class="text-gray-500 dark:text-gray-400" />
+								<MapIcon size={12} class="text-text-muted" />
 							{/if}
 						</button>
 
 						<!-- Minimap -->
 						{#if showMinimap}
-							<div class="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
+							<div class="rounded-lg overflow-hidden border border-[var(--border)] shadow-sm">
 								<MiniMap
 									width={140}
 									height={90}
@@ -396,31 +396,31 @@
 	</div>
 
 	<!-- Timeline sidebar -->
-	<div class="w-72 flex-shrink-0 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col">
+	<div class="w-72 flex-shrink-0 border-l border-[var(--border)] bg-surface-elevated flex flex-col">
 		<!-- Header with stats -->
-		<div class="p-4 border-b border-gray-200 dark:border-gray-700">
-			<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2 mb-3">
-				<Activity size={16} class="text-[#7661FF]" />
+		<div class="p-4 border-b border-[var(--border)]">
+			<h3 class="text-sm font-semibold text-text-secondary flex items-center gap-2 mb-3">
+				<Activity size={16} class="text-node-llm" />
 				Execution Timeline
 			</h3>
 			<div class="flex items-center gap-3 text-xs">
-				<span class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+				<span class="flex items-center gap-1 text-success">
 					<CheckCircle2 size={12} />
 					{stats().completed}
 				</span>
 				{#if stats().failed > 0}
-					<span class="flex items-center gap-1 text-red-600 dark:text-red-400">
+					<span class="flex items-center gap-1 text-error">
 						<XCircle size={12} />
 						{stats().failed}
 					</span>
 				{/if}
 				{#if stats().running > 0}
-					<span class="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+					<span class="flex items-center gap-1 text-info">
 						<Loader2 size={12} class="animate-spin" />
 						{stats().running}
 					</span>
 				{/if}
-				<span class="text-gray-500 ml-auto">
+				<span class="text-text-muted ml-auto">
 					{stats().completed + stats().failed}/{stats().total}
 				</span>
 			</div>
@@ -432,25 +432,25 @@
 				{@const Icon = node.icon}
 				{@const widthPct = Math.min(Math.max((node.duration_ms || 0) / totalDuration() * 100, 8), 100)}
 				<button
-					class="w-full text-left p-2 rounded-lg transition-all {selectedNodeId === node.id ? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 ring-1 ring-[#7661FF]' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}"
+					class="w-full text-left p-2 rounded-lg transition-all {selectedNodeId === node.id ? 'bg-info-light ring-1 ring-info' : 'hover:bg-surface-hover'}"
 					onclick={() => handleNodeClick(node.id)}
 				>
 					<div class="flex items-center gap-2 mb-1">
 						<Icon size={14} class="{node.textColor} {node.status === 'running' ? 'animate-spin' : ''}" />
-						<span class="text-sm font-medium text-gray-800 dark:text-gray-200 truncate flex-1" title={node.id}>
+						<span class="text-sm font-medium text-text-primary truncate flex-1" title={node.id}>
 							{node.id}
 						</span>
 						{#if node.duration_ms}
-							<span class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+							<span class="text-xs text-text-muted flex items-center gap-1">
 								<Timer size={10} />
 								{formatDuration(node.duration_ms)}
 							</span>
 						{/if}
 					</div>
 					<!-- Duration bar -->
-					<div class="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+					<div class="h-1.5 bg-surface-tertiary rounded-full overflow-hidden">
 						<div
-							class="h-full rounded-full transition-all duration-300 {node.status === 'completed' ? 'bg-emerald-500' : node.status === 'failed' || node.status === 'cancelled' ? 'bg-red-500' : node.status === 'running' ? 'bg-blue-500 animate-pulse' : 'bg-gray-300'}"
+							class="h-full rounded-full transition-all duration-300 {node.status === 'completed' ? 'bg-success' : node.status === 'failed' || node.status === 'cancelled' ? 'bg-error' : node.status === 'running' ? 'bg-info animate-pulse' : 'bg-surface-border'}"
 							style="width: {widthPct}%"
 						></div>
 					</div>
@@ -458,7 +458,7 @@
 			{/each}
 
 			{#if timelineNodes().length === 0}
-				<div class="text-center py-8 text-gray-500">
+				<div class="text-center py-8 text-text-muted">
 					<Clock size={32} class="mx-auto mb-2 opacity-50" />
 					<p class="text-sm">No execution data</p>
 				</div>
@@ -467,10 +467,10 @@
 
 		<!-- Footer with total duration -->
 		{#if execution.duration_ms}
-			<div class="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+			<div class="p-3 border-t border-[var(--border)] bg-surface-secondary">
 				<div class="flex items-center justify-between text-sm">
-					<span class="text-gray-600 dark:text-gray-400">Total Duration</span>
-					<span class="font-semibold text-gray-800 dark:text-gray-200">
+					<span class="text-text-secondary">Total Duration</span>
+					<span class="font-semibold text-text-primary">
 						{formatDuration(execution.duration_ms)}
 					</span>
 				</div>

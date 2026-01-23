@@ -34,21 +34,21 @@
 	// Variant styles
 	const variantStyles = {
 		danger: {
-			iconBg: 'bg-red-100 dark:bg-red-900/30',
-			iconColor: 'text-red-600 dark:text-red-400',
-			buttonBg: 'bg-red-600 hover:bg-red-700',
+			iconBg: 'bg-error-light',
+			iconColor: 'text-error',
+			buttonBg: 'bg-error hover:bg-error/90',
 			buttonText: 'text-white'
 		},
 		warning: {
-			iconBg: 'bg-amber-100 dark:bg-amber-900/30',
-			iconColor: 'text-amber-600 dark:text-amber-400',
-			buttonBg: 'bg-amber-600 hover:bg-amber-700',
+			iconBg: 'bg-warning-light',
+			iconColor: 'text-warning',
+			buttonBg: 'bg-warning hover:bg-warning/90',
 			buttonText: 'text-white'
 		},
 		info: {
-			iconBg: 'bg-blue-100 dark:bg-blue-900/30',
-			iconColor: 'text-blue-600 dark:text-blue-400',
-			buttonBg: 'bg-blue-600 hover:bg-blue-700',
+			iconBg: 'bg-info-light',
+			iconColor: 'text-info',
+			buttonBg: 'bg-info hover:bg-info/90',
 			buttonText: 'text-white'
 		}
 	};
@@ -67,7 +67,7 @@
 	role="presentation"
 >
 	<div
-		class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+		class="bg-surface rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
 		onclick={(e) => e.stopPropagation()}
 		role="dialog"
 		aria-modal="true"
@@ -79,26 +79,26 @@
 				<IconComponent size={24} class={styles.iconColor} />
 			</div>
 			<div class="flex-1 min-w-0 pt-1">
-				<h3 id="confirmation-title" class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+				<h3 id="confirmation-title" class="text-lg font-semibold text-text-primary">
 					{title}
 				</h3>
-				<p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+				<p class="mt-2 text-sm text-text-secondary">
 					{message}
 				</p>
 			</div>
 			<button
 				onclick={() => dispatch('cancel')}
-				class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors flex-shrink-0"
+				class="p-1 rounded-lg hover:bg-surface-hover text-text-muted transition-colors flex-shrink-0"
 			>
 				<X size={20} />
 			</button>
 		</div>
 
 		<!-- Footer -->
-		<div class="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 dark:bg-gray-800/50">
+		<div class="flex items-center justify-end gap-3 px-6 py-4 bg-surface-secondary">
 			<button
 				onclick={() => dispatch('cancel')}
-				class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+				class="px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface-hover rounded-lg transition-colors"
 			>
 				{cancelText}
 			</button>
