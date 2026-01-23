@@ -282,7 +282,7 @@ class BaseTaskExecutor(ABC):
         graph_builder = LangGraphBuilder(self.graph_config)
         return cast(StateGraph, graph_builder.build())
 
-    def _process_feilds(self, data, select_columns: list = None):
+    def _process_feilds(self, data, select_columns: list = []):
         """
         Iterate through each record and filter fields based on select_columns
         If select_columns is not defined, then return all fields
