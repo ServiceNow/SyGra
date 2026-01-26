@@ -37,11 +37,53 @@ const FRAMEWORK_VARIABLES: StateVariable[] = [
 ];
 
 /**
+ * Extract fields added by transformations (e.g., AddNewFieldTransform, RenameColumnsTransform)
+ */
+function extractTransformationFields(transformations?: any[]): string[] {
+	if (!transformations || !Array.isArray(transformations)) return [];
+	
+	const fields: string[] = [];
+	
+	for (const transform of transformations) {
+		const params = transform.params || {};
+		
+		// AddNewFieldTransform adds new columns from mapping keys
+		// RenameColumnsTransform renames columns - mapping values are new names
+		if (params.mapping && typeof params.mapping === 'object') {
+			const transformName = transform.transform || '';
+			
+			if (transformName.includes('AddNewField') || transformName.includes('AddColumn')) {
+				// For AddNewFieldTransform, mapping keys are the new column names
+				fields.push(...Object.keys(params.mapping));
+			} else if (transformName.includes('Rename')) {
+				// For RenameColumnsTransform, mapping values are the new column names
+				fields.push(...Object.values(params.mapping).filter((v): v is string => typeof v === 'string'));
+			} else {
+				// Generic case - assume mapping keys are new fields
+				fields.push(...Object.keys(params.mapping));
+			}
+		}
+		
+		// Some transforms use 'columns' or 'new_columns' param
+		if (params.new_columns && Array.isArray(params.new_columns)) {
+			fields.push(...params.new_columns);
+		}
+		if (params.column && typeof params.column === 'string') {
+			fields.push(params.column);
+		}
+	}
+	
+	return fields;
+}
+
+/**
  * Extract column names from data source configuration.
  * Uses fetchedColumns if available (from API), otherwise falls back to inline data.
  * 
  * When aliases are defined in multiple data sources, columns are transformed to
  * {alias}->{column} format to match the actual variable names used in prompts.
+ * 
+ * Also extracts fields added by transformations (e.g., AddNewFieldTransform).
  *
  * @param dataConfig The data source configuration
  * @param fetchedColumns Optional pre-fetched columns from the API (with transformations applied)
@@ -67,6 +109,22 @@ function extractDataColumns(dataConfig?: DataSourceConfig, fetchedColumns?: stri
 				});
 			}
 		}
+		
+		// Also add transformation-added fields for single source
+		if (sources.length > 0 && sources[0].transformations) {
+			const transformFields = extractTransformationFields(sources[0].transformations);
+			for (const fieldName of transformFields) {
+				if (!variables.some(v => v.name === fieldName)) {
+					variables.push({
+						name: fieldName,
+						source: 'data',
+						sourceNode: 'DATA',
+						description: 'Field added by transformation'
+					});
+				}
+			}
+		}
+		
 		return variables;
 	}
 
@@ -111,6 +169,22 @@ function extractDataColumns(dataConfig?: DataSourceConfig, fetchedColumns?: stri
 					sourceNode: 'DATA',
 					description: `Column from data source${alias ? ` (${alias})` : ''}`
 				});
+			}
+		}
+		
+		// Add transformation-added fields for this source
+		if (source.transformations) {
+			const transformFields = extractTransformationFields(source.transformations);
+			for (const fieldName of transformFields) {
+				const varName = (hasMultipleSources && alias) ? `${alias}->${fieldName}` : fieldName;
+				if (!variables.some(v => v.name === varName)) {
+					variables.push({
+						name: varName,
+						source: 'data',
+						sourceNode: 'DATA',
+						description: `Field added by transformation${alias ? ` (${alias})` : ''}`
+					});
+				}
 			}
 		}
 	}
