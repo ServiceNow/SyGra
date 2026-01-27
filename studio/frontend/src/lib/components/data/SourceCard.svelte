@@ -68,7 +68,7 @@
 		dispatch('previewRefresh', e.detail);
 	}
 
-	// Source type configurations
+	// Source type configurations using design tokens
 	const sourceTypeConfig: Record<string, {
 		icon: Component<{ size?: number; class?: string }>;
 		label: string;
@@ -79,39 +79,39 @@
 		hf: {
 			icon: Cloud,
 			label: 'HuggingFace',
-			color: 'amber',
-			bgClass: 'bg-amber-100 dark:bg-amber-900/30',
-			iconClass: 'text-amber-600 dark:text-amber-400'
+			color: 'warning',
+			bgClass: 'bg-warning-light',
+			iconClass: 'text-warning'
 		},
 		servicenow: {
 			icon: Server,
 			label: 'ServiceNow',
-			color: 'emerald',
-			bgClass: 'bg-emerald-100 dark:bg-emerald-900/30',
-			iconClass: 'text-emerald-600 dark:text-emerald-400'
+			color: 'success',
+			bgClass: 'bg-success-light',
+			iconClass: 'text-success'
 		},
 		disk: {
 			icon: HardDrive,
 			label: 'Local File',
-			color: 'blue',
-			bgClass: 'bg-blue-100 dark:bg-blue-900/30',
-			iconClass: 'text-blue-600 dark:text-blue-400'
+			color: 'info',
+			bgClass: 'bg-info-light',
+			iconClass: 'text-info'
 		},
 		memory: {
 			icon: MemoryStick,
 			label: 'In Memory',
-			color: 'indigo',
-			bgClass: 'bg-[#BF71F2]/15 dark:bg-[#BF71F2]/20',
-			iconClass: 'text-[#BF71F2] dark:text-[#BF71F2]'
+			color: 'node-agent',
+			bgClass: 'bg-node-agent-bg',
+			iconClass: 'text-node-agent'
 		}
 	};
 
 	let config = $derived(sourceTypeConfig[source.type || ''] || {
 		icon: Database,
 		label: 'Unknown',
-		color: 'gray',
-		bgClass: 'bg-gray-100 dark:bg-gray-800',
-		iconClass: 'text-gray-500 dark:text-gray-400'
+		color: 'muted',
+		bgClass: 'bg-surface-tertiary',
+		iconClass: 'text-text-muted'
 	});
 
 	let Icon = $derived(config.icon);
@@ -152,10 +152,10 @@
 </script>
 
 <div class="group relative">
-	<div class="bg-white dark:bg-gray-800 rounded-lg border transition-all overflow-hidden
+	<div class="bg-surface-elevated rounded-lg border transition-all overflow-hidden
 		{isPrimary
-			? 'border-amber-300 dark:border-amber-600'
-			: (showPreview ? 'border-blue-300 dark:border-blue-600' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600')}">
+			? 'border-warning'
+			: (showPreview ? 'border-info' : 'border-surface-border hover:border-[var(--border-hover)]')}">
 
 		<!-- Header Row -->
 		<div class="flex items-center gap-2 p-2">
@@ -169,11 +169,11 @@
 				<div class="flex items-center gap-1.5">
 					<!-- Primary badge -->
 					{#if isPrimary}
-						<Crown size={10} class="text-amber-500 flex-shrink-0" />
+						<Crown size={10} class="text-warning flex-shrink-0" />
 					{/if}
 
 					<!-- Alias or type label -->
-					<span class="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
+					<span class="text-xs font-medium text-text-primary truncate">
 						{#if showAlias && source.alias}
 							{source.alias}
 						{:else}
@@ -183,14 +183,14 @@
 
 					<!-- Type badge (only if showing alias) -->
 					{#if showAlias && source.alias}
-						<span class="text-[10px] text-gray-400 dark:text-gray-500">
+						<span class="text-[10px] text-text-muted">
 							{config.label}
 						</span>
 					{/if}
 				</div>
 
 				<!-- Detail line -->
-				<div class="text-[10px] text-gray-500 dark:text-gray-400 font-mono truncate">
+				<div class="text-[10px] text-text-secondary font-mono truncate">
 					{getSourceDetail()}
 				</div>
 			</div>
@@ -199,7 +199,7 @@
 			{#if secondaryBadges.length > 0}
 				<div class="flex items-center gap-1 flex-shrink-0">
 					{#each secondaryBadges.slice(0, 2) as badge}
-						<span class="text-[9px] px-1 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 rounded">
+						<span class="text-[9px] px-1 py-0.5 bg-surface-tertiary text-text-secondary rounded">
 							{badge}
 						</span>
 					{/each}
@@ -220,7 +220,7 @@
 					{#if !isPrimary}
 						<button
 							onclick={() => dispatch('makePrimary')}
-							class="p-1 rounded hover:bg-amber-100 dark:hover:bg-amber-900/30 text-gray-400 hover:text-amber-600 transition-colors"
+							class="p-1 rounded hover:bg-warning-light text-text-muted hover:text-warning transition-colors"
 							title="Make primary"
 						>
 							<Crown size={12} />
@@ -228,7 +228,7 @@
 					{/if}
 					<button
 						onclick={() => dispatch('edit')}
-						class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 transition-colors"
+						class="p-1 rounded hover:bg-surface-hover text-text-muted hover:text-text-secondary transition-colors"
 						title="Edit"
 					>
 						<Edit3 size={12} />
@@ -236,7 +236,7 @@
 					{#if !isPrimary}
 						<button
 							onclick={() => dispatch('remove')}
-							class="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-500 transition-colors"
+							class="p-1 rounded hover:bg-error-light text-text-muted hover:text-error transition-colors"
 							title="Remove"
 						>
 							<Trash2 size={12} />
@@ -251,8 +251,8 @@
 					onclick={handlePreviewToggle}
 					class="flex items-center gap-1.5 px-2 py-1 text-xs rounded-md transition-colors flex-shrink-0
 						{showPreview
-							? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
-							: 'text-gray-500 hover:text-blue-600 bg-gray-100 dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900/20'}"
+							? 'bg-info-light text-info font-medium'
+							: 'text-text-muted hover:text-info bg-surface-tertiary hover:bg-info-light'}"
 					title={showPreview ? 'Hide preview' : 'Show preview'}
 				>
 					<Eye size={14} />

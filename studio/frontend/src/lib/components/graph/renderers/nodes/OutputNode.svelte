@@ -64,12 +64,12 @@
 		<!-- Generator -->
 		{#if generatorName()}
 			<div class="space-y-1">
-				<div class="flex items-center gap-1 text-gray-500 dark:text-gray-400 font-medium">
+				<div class="flex items-center gap-1 text-text-muted font-medium">
 					<Code size={10} />
 					<span>Generator</span>
 				</div>
-				<div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 pl-3">
-					<span class="truncate font-mono text-[10px] bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded">
+				<div class="flex items-center gap-1.5 text-text-muted pl-3">
+					<span class="truncate font-mono text-[10px] bg-surface-secondary px-1 py-0.5 rounded">
 						{generatorName()}
 					</span>
 				</div>
@@ -79,29 +79,29 @@
 		<!-- Output Map -->
 		{#if outputMapKeys().length > 0}
 			<div class="space-y-1" class:pt-1={generatorName()}>
-				<div class="flex items-center gap-1 text-gray-500 dark:text-gray-400 font-medium">
+				<div class="flex items-center gap-1 text-text-muted font-medium">
 					<Map size={10} />
 					<span>Output Map</span>
 				</div>
 				{#each outputMapKeys() as key}
 					{@const mapping = data.output_config?.output_map?.[key]}
-					<div class="flex items-center gap-1 text-gray-600 dark:text-gray-400 pl-3 text-[10px]">
+					<div class="flex items-center gap-1 text-text-muted pl-3 text-[10px]">
 						<span class="truncate max-w-[60px]" title={key}>{key.split('->').pop() || key}</span>
-						<ArrowRight size={8} class="text-gray-400 flex-shrink-0" />
+						<ArrowRight size={8} class="text-text-muted flex-shrink-0" />
 						{#if mapping?.from}
-							<span class="truncate text-blue-600 dark:text-blue-400">{mapping.from}</span>
+							<span class="truncate text-info">{mapping.from}</span>
 						{:else if mapping?.value !== undefined}
-							<span class="truncate text-green-600 dark:text-green-400">static</span>
+							<span class="truncate text-status-completed">static</span>
 						{/if}
 						{#if mapping?.transform}
-							<span class="text-[8px] px-0.5 py-0.5 rounded bg-[#BF71F2]/15 dark:bg-[#BF71F2]/20 text-[#BF71F2] dark:text-[#BF71F2]">
+							<span class="text-[8px] px-0.5 py-0.5 rounded bg-node-agent-bg text-node-agent">
 								fn
 							</span>
 						{/if}
 					</div>
 				{/each}
 				{#if totalMappings() > 4}
-					<div class="text-[10px] text-gray-400 pl-3">
+					<div class="text-[10px] text-text-muted pl-3">
 						+{totalMappings() - 4} more...
 					</div>
 				{/if}
@@ -110,7 +110,7 @@
 
 		<!-- Empty state -->
 		{#if !generatorName() && outputMapKeys().length === 0}
-			<div class="text-gray-500 dark:text-gray-400 italic">
+			<div class="text-text-muted italic">
 				Click to configure output mapping
 			</div>
 		{/if}

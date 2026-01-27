@@ -76,13 +76,13 @@
 		searchQuery !== '' || statusFilter !== 'all' || workflowFilter !== 'all' || dateFilter !== 'all'
 	);
 
-	// Status config - pending=yellow, cancelled=red, completed=green, failed=red, running=blue
+	// Status config using design system tokens
 	const statusConfig: Record<string, { icon: typeof Clock; color: string; bg: string }> = {
-		pending: { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-100 dark:bg-amber-900/30' },
-		running: { icon: Loader2, color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30' },
-		completed: { icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/30' },
-		failed: { icon: XCircle, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30' },
-		cancelled: { icon: Ban, color: 'text-red-400', bg: 'bg-red-50 dark:bg-red-900/20' }
+		pending: { icon: Clock, color: 'text-text-muted', bg: 'bg-surface-tertiary' },
+		running: { icon: Loader2, color: 'text-info', bg: 'bg-info-light' },
+		completed: { icon: CheckCircle2, color: 'text-success', bg: 'bg-success-light' },
+		failed: { icon: XCircle, color: 'text-error', bg: 'bg-error-light' },
+		cancelled: { icon: Ban, color: 'text-warning', bg: 'bg-warning-light' }
 	};
 
 	// Date filter helper
@@ -310,19 +310,19 @@
 	});
 </script>
 
-<div class="h-full w-full flex flex-col bg-white dark:bg-gray-900">
+<div class="h-full w-full flex flex-col bg-surface">
 	<!-- Header -->
-	<div class="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
+	<div class="flex-shrink-0 border-b border-surface-border px-6 py-4">
 		<div class="flex items-center justify-between mb-4">
 			<div>
-				<h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Runs</h1>
-				<p class="text-sm text-gray-500 dark:text-gray-400">
+				<h1 class="text-2xl font-bold text-text-primary">Runs</h1>
+				<p class="text-sm text-text-muted">
 					{filteredRuns().length} of {totalExecutions || executionHistory.length} runs
 					{#if hasMoreExecutions}
-						<span class="text-[#7661FF]"> (more available)</span>
+						<span class="text-info"> (more available)</span>
 					{/if}
 					{#if selectionCount > 0}
-						<span class="ml-2 text-[#7661FF] dark:text-[#BF71F2]">• {selectionCount} selected</span>
+						<span class="ml-2 text-info">• {selectionCount} selected</span>
 					{/if}
 				</p>
 			</div>
@@ -331,14 +331,14 @@
 				<div class="flex items-center gap-0.5">
 					<button
 						onclick={() => viewMode = 'table'}
-						class="p-2 rounded-lg transition-colors {viewMode === 'table' ? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}"
+						class="p-2 rounded-lg transition-colors {viewMode === 'table' ? 'bg-info-light text-info' : 'text-text-muted hover:text-text-secondary hover:bg-surface-hover'}"
 						title="List view"
 					>
 						<Table size={18} />
 					</button>
 					<button
 						onclick={() => viewMode = 'analytics'}
-						class="p-2 rounded-lg transition-colors {viewMode === 'analytics' ? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}"
+						class="p-2 rounded-lg transition-colors {viewMode === 'analytics' ? 'bg-info-light text-info' : 'text-text-muted hover:text-text-secondary hover:bg-surface-hover'}"
 						title="Analytics"
 					>
 						<BarChart3 size={18} />
@@ -346,7 +346,7 @@
 					{#if selectionCount >= 2}
 						<button
 							onclick={() => viewMode = 'compare'}
-							class="p-2 rounded-lg transition-colors {viewMode === 'compare' ? 'bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'}"
+							class="p-2 rounded-lg transition-colors {viewMode === 'compare' ? 'bg-info-light text-info' : 'text-text-muted hover:text-text-secondary hover:bg-surface-hover'}"
 							title="Compare {selectionCount} runs"
 						>
 							<GitCompare size={18} />
@@ -354,29 +354,29 @@
 					{/if}
 				</div>
 
-				<div class="w-px h-6 bg-gray-200 dark:bg-gray-700"></div>
+				<div class="w-px h-6 bg-surface-border"></div>
 
 				{#if selectionCount > 0}
 					<button
 						onclick={clearSelection}
-						class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
+						class="p-2 rounded-lg hover:bg-surface-hover text-text-muted transition-colors"
 						title="Clear selection"
 					>
 						<X size={18} />
 					</button>
 					<button
 						onclick={requestDeleteSelectedRuns}
-						class="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors text-sm font-medium"
+						class="flex items-center gap-2 px-3 py-2 rounded-lg bg-error-light hover:bg-error/10 text-error transition-colors text-sm font-medium"
 						title="Delete selected runs"
 					>
 						<Trash2 size={16} />
 						<span>Delete ({selectionCount})</span>
 					</button>
-					<div class="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
+					<div class="w-px h-6 bg-surface-border"></div>
 				{/if}
 				<button
 					onclick={refresh}
-					class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c33f] text-[#032D42] rounded-lg transition-colors"
+					class="flex items-center gap-2 px-4 py-2 bg-accent hover:bg-accent/90 text-brand-primary rounded-lg transition-colors"
 				>
 					<RefreshCw size={16} />
 					Refresh
@@ -388,12 +388,12 @@
 		<div class="flex flex-wrap items-center gap-3">
 			<!-- Search -->
 			<div class="relative flex-1 min-w-64 max-w-md">
-				<Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+				<Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
 				<input
 					type="text"
 					placeholder="Search by workflow name or run ID..."
 					bind:value={searchQuery}
-					class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] text-sm"
+					class="w-full pl-10 pr-4 py-2 border border-surface-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-info text-sm"
 				/>
 			</div>
 
@@ -429,7 +429,7 @@
 			{#if hasActiveFilters}
 				<button
 					onclick={clearFilters}
-					class="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+					class="flex items-center gap-1.5 px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors"
 				>
 					<X size={14} />
 					Clear filters
@@ -441,33 +441,33 @@
 		{#if hasActiveFilters}
 			<div class="flex flex-wrap items-center gap-2 mt-3">
 				{#if statusFilter !== 'all'}
-					<span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]">
+					<span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-info-light text-info">
 						Status: {statusFilter}
-						<button onclick={() => statusFilter = 'all'} class="hover:text-[#5a4dcc] dark:hover:text-[#d49af7]">
+						<button onclick={() => statusFilter = 'all'} class="hover:opacity-70">
 							<X size={12} />
 						</button>
 					</span>
 				{/if}
 				{#if workflowFilter !== 'all'}
-					<span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+					<span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-info-light text-info">
 						Workflow: {workflowFilter}
-						<button onclick={() => workflowFilter = 'all'} class="hover:text-blue-900 dark:hover:text-blue-100">
+						<button onclick={() => workflowFilter = 'all'} class="hover:opacity-70">
 							<X size={12} />
 						</button>
 					</span>
 				{/if}
 				{#if dateFilter !== 'all'}
-					<span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+					<span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-warning-light text-warning">
 						Date: {dateFilter === 'today' ? 'Today' : dateFilter === 'yesterday' ? 'Since Yesterday' : dateFilter === 'week' ? 'Last 7 Days' : 'Last 30 Days'}
-						<button onclick={() => dateFilter = 'all'} class="hover:text-amber-900 dark:hover:text-amber-100">
+						<button onclick={() => dateFilter = 'all'} class="hover:opacity-70">
 							<X size={12} />
 						</button>
 					</span>
 				{/if}
 				{#if searchQuery}
-					<span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+					<span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-surface-secondary text-text-secondary">
 						Search: "{searchQuery}"
-						<button onclick={() => searchQuery = ''} class="hover:text-gray-900 dark:hover:text-gray-100">
+						<button onclick={() => searchQuery = ''} class="hover:text-text-primary">
 							<X size={12} />
 						</button>
 					</span>
@@ -486,8 +486,8 @@
 		<!-- Run Comparison View -->
 		<div class="flex-1 overflow-auto p-6">
 			<div class="space-y-6">
-				<h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
-					<GitCompare size={20} class="text-[#7661FF]" />
+				<h2 class="text-lg font-semibold text-text-primary flex items-center gap-2">
+					<GitCompare size={20} class="text-info" />
 					Comparing {selectionCount} Runs
 				</h2>
 
@@ -495,87 +495,87 @@
 				<div class="overflow-x-auto">
 					<table class="w-full text-sm">
 						<thead>
-							<tr class="border-b border-gray-200 dark:border-gray-700">
-								<th class="text-left py-3 px-4 font-semibold text-gray-600 dark:text-gray-400">Metric</th>
+							<tr class="border-b border-surface-border">
+								<th class="text-left py-3 px-4 font-semibold text-text-secondary">Metric</th>
 								{#each selectedRunsForComparison() as run}
-									<th class="text-left py-3 px-4 font-medium text-gray-800 dark:text-gray-200">
+									<th class="text-left py-3 px-4 font-medium text-text-primary">
 										{run.workflow_name || run.id.slice(0, 8)}
 									</th>
 								{/each}
 							</tr>
 						</thead>
 						<tbody>
-							<tr class="border-b border-gray-100 dark:border-gray-800">
-								<td class="py-3 px-4 text-gray-600 dark:text-gray-400">Status</td>
+							<tr class="border-b border-surface-border/50">
+								<td class="py-3 px-4 text-text-secondary">Status</td>
 								{#each selectedRunsForComparison() as run}
 									<td class="py-3 px-4">
-										<span class="px-2 py-1 rounded-full text-xs font-medium {run.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : run.status === 'failed' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'}">
+										<span class="px-2 py-1 rounded-full text-xs font-medium {run.status === 'completed' ? 'bg-success-light text-status-completed' : run.status === 'failed' ? 'bg-error-light text-error' : 'bg-surface-secondary text-text-secondary'}">
 											{run.status}
 										</span>
 									</td>
 								{/each}
 							</tr>
-							<tr class="border-b border-gray-100 dark:border-gray-800">
-								<td class="py-3 px-4 text-gray-600 dark:text-gray-400">Duration</td>
+							<tr class="border-b border-surface-border/50">
+								<td class="py-3 px-4 text-text-secondary">Duration</td>
 								{#each selectedRunsForComparison() as run}
-									<td class="py-3 px-4 font-mono text-gray-800 dark:text-gray-200">
+									<td class="py-3 px-4 font-mono text-text-primary">
 										{run.duration_ms ? formatDuration(run.duration_ms) : '-'}
 									</td>
 								{/each}
 							</tr>
-							<tr class="border-b border-gray-100 dark:border-gray-800">
-								<td class="py-3 px-4 text-gray-600 dark:text-gray-400">Total Tokens</td>
+							<tr class="border-b border-surface-border/50">
+								<td class="py-3 px-4 text-text-secondary">Total Tokens</td>
 								{#each selectedRunsForComparison() as run}
-									<td class="py-3 px-4 font-mono text-[#7661FF] dark:text-[#BF71F2]">
+									<td class="py-3 px-4 font-mono text-info">
 										{formatTokens(run.metadata)}
 									</td>
 								{/each}
 							</tr>
-							<tr class="border-b border-gray-100 dark:border-gray-800">
-								<td class="py-3 px-4 text-gray-600 dark:text-gray-400">Cost</td>
+							<tr class="border-b border-surface-border/50">
+								<td class="py-3 px-4 text-text-secondary">Cost</td>
 								{#each selectedRunsForComparison() as run}
-									<td class="py-3 px-4 font-mono text-emerald-600 dark:text-emerald-400">
+									<td class="py-3 px-4 font-mono text-status-completed">
 										{formatCost(run.metadata)}
 									</td>
 								{/each}
 							</tr>
-							<tr class="border-b border-gray-100 dark:border-gray-800">
-								<td class="py-3 px-4 text-gray-600 dark:text-gray-400">Records Processed</td>
+							<tr class="border-b border-surface-border/50">
+								<td class="py-3 px-4 text-text-secondary">Records Processed</td>
 								{#each selectedRunsForComparison() as run}
-									<td class="py-3 px-4 text-gray-800 dark:text-gray-200">
+									<td class="py-3 px-4 text-text-primary">
 										{run.metadata?.aggregate_statistics?.records?.total_processed?.toLocaleString() || '-'}
 									</td>
 								{/each}
 							</tr>
-							<tr class="border-b border-gray-100 dark:border-gray-800">
-								<td class="py-3 px-4 text-gray-600 dark:text-gray-400">Success Rate</td>
+							<tr class="border-b border-surface-border/50">
+								<td class="py-3 px-4 text-text-secondary">Success Rate</td>
 								{#each selectedRunsForComparison() as run}
 									{@const rate = run.metadata?.aggregate_statistics?.records?.success_rate}
 									<td class="py-3 px-4">
 										{#if rate !== undefined}
-											<span class="font-medium {rate >= 0.9 ? 'text-green-600 dark:text-green-400' : rate >= 0.7 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}">
+											<span class="font-medium {rate >= 0.9 ? 'text-status-completed' : rate >= 0.7 ? 'text-warning' : 'text-error'}">
 												{(rate * 100).toFixed(1)}%
 											</span>
 										{:else}
-											<span class="text-gray-400">-</span>
+											<span class="text-text-muted">-</span>
 										{/if}
 									</td>
 								{/each}
 							</tr>
-							<tr class="border-b border-gray-100 dark:border-gray-800">
-								<td class="py-3 px-4 text-gray-600 dark:text-gray-400">Models Used</td>
+							<tr class="border-b border-surface-border/50">
+								<td class="py-3 px-4 text-text-secondary">Models Used</td>
 								{#each selectedRunsForComparison() as run}
 									<td class="py-3 px-4">
 										{#if run.metadata?.models}
 											<div class="flex flex-wrap gap-1">
 												{#each Object.keys(run.metadata.models) as model}
-													<span class="text-xs px-2 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]">
+													<span class="text-xs px-2 py-0.5 rounded bg-info-light text-info">
 														{model}
 													</span>
 												{/each}
 											</div>
 										{:else}
-											<span class="text-gray-400">-</span>
+											<span class="text-text-muted">-</span>
 										{/if}
 									</td>
 								{/each}
@@ -586,32 +586,32 @@
 
 				<!-- Per-Model Comparison if metadata available -->
 				{#if comparisonModels().length > 0}
-					<div class="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
-						<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Model Performance Comparison</h3>
+					<div class="bg-surface-secondary rounded-xl p-4">
+						<h3 class="text-sm font-semibold text-text-secondary mb-4">Model Performance Comparison</h3>
 						<table class="w-full text-sm">
 							<thead>
-								<tr class="border-b border-gray-200 dark:border-gray-700">
-									<th class="text-left py-2 px-3 text-xs text-gray-500 uppercase">Model</th>
+								<tr class="border-b border-surface-border">
+									<th class="text-left py-2 px-3 text-xs text-text-muted uppercase">Model</th>
 									{#each selectedRunsForComparison() as run}
-										<th class="text-left py-2 px-3 text-xs text-gray-500 uppercase">{run.workflow_name?.slice(0, 12) || run.id.slice(0, 8)}</th>
+										<th class="text-left py-2 px-3 text-xs text-text-muted uppercase">{run.workflow_name?.slice(0, 12) || run.id.slice(0, 8)}</th>
 									{/each}
 								</tr>
 							</thead>
 							<tbody>
 								{#each comparisonModels() as modelName}
-									<tr class="border-b border-gray-100 dark:border-gray-800">
-										<td class="py-2 px-3 font-medium text-gray-700 dark:text-gray-300">{modelName}</td>
+									<tr class="border-b border-surface-border/50">
+										<td class="py-2 px-3 font-medium text-text-secondary">{modelName}</td>
 										{#each selectedRunsForComparison() as run}
 											{@const model = run.metadata?.models?.[modelName]}
 											<td class="py-2 px-3">
 												{#if model}
 													<div class="space-y-1 text-xs">
-														<div class="text-[#7661FF] dark:text-[#BF71F2]">{model.token_statistics?.total_tokens?.toLocaleString() || 0} tokens</div>
-														<div class="text-amber-600 dark:text-amber-400">{(model.performance?.average_latency_seconds * 1000).toFixed(0)}ms avg</div>
-														<div class="text-emerald-600 dark:text-emerald-400">${model.cost?.total_cost_usd?.toFixed(4) || '0'}</div>
+														<div class="text-info">{model.token_statistics?.total_tokens?.toLocaleString() || 0} tokens</div>
+														<div class="text-warning">{(model.performance?.average_latency_seconds * 1000).toFixed(0)}ms avg</div>
+														<div class="text-status-completed">${model.cost?.total_cost_usd?.toFixed(4) || '0'}</div>
 													</div>
 												{:else}
-													<span class="text-gray-400">-</span>
+													<span class="text-text-muted">-</span>
 												{/if}
 											</td>
 										{/each}
@@ -627,18 +627,18 @@
 		<!-- Table View -->
 		<div class="flex-1 overflow-auto">
 			<table class="w-full">
-			<thead class="sticky top-0 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+			<thead class="sticky top-0 bg-surface-secondary border-b border-surface-border">
 				<tr>
 					<th class="text-left px-4 py-3 w-12">
 						<button
 							onclick={toggleSelectAll}
-							class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors"
+							class="p-1 rounded hover:bg-surface-hover text-text-muted transition-colors"
 							title={allSelected() ? 'Deselect all' : 'Select all'}
 						>
 							{#if allSelected()}
-								<CheckSquare size={18} class="text-[#7661FF]" />
+								<CheckSquare size={18} class="text-info" />
 							{:else if someSelected()}
-								<MinusSquare size={18} class="text-[#7661FF]" />
+								<MinusSquare size={18} class="text-info" />
 							{:else}
 								<Square size={18} />
 							{/if}
@@ -647,84 +647,84 @@
 					<th class="text-left px-4 py-3">
 						<button
 							onclick={() => toggleSort('workflow_name')}
-							class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+							class="flex items-center gap-1 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-secondary"
 						>
 							Workflow
-							<ArrowUpDown size={14} class={sortField === 'workflow_name' ? 'text-[#7661FF]' : ''} />
+							<ArrowUpDown size={14} class={sortField === 'workflow_name' ? 'text-info' : ''} />
 						</button>
 					</th>
 					<th class="text-left px-6 py-3">
 						<button
 							onclick={() => toggleSort('status')}
-							class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+							class="flex items-center gap-1 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-secondary"
 						>
 							Status
-							<ArrowUpDown size={14} class={sortField === 'status' ? 'text-[#7661FF]' : ''} />
+							<ArrowUpDown size={14} class={sortField === 'status' ? 'text-info' : ''} />
 						</button>
 					</th>
 					<th class="text-left px-6 py-3">
 						<button
 							onclick={() => toggleSort('started_at')}
-							class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+							class="flex items-center gap-1 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-secondary"
 						>
 							Started
-							<ArrowUpDown size={14} class={sortField === 'started_at' ? 'text-[#7661FF]' : ''} />
+							<ArrowUpDown size={14} class={sortField === 'started_at' ? 'text-info' : ''} />
 						</button>
 					</th>
 					<th class="text-left px-6 py-3">
 						<button
 							onclick={() => toggleSort('duration_ms')}
-							class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+							class="flex items-center gap-1 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-secondary"
 						>
 							Duration
-							<ArrowUpDown size={14} class={sortField === 'duration_ms' ? 'text-[#7661FF]' : ''} />
+							<ArrowUpDown size={14} class={sortField === 'duration_ms' ? 'text-info' : ''} />
 						</button>
 					</th>
 					<th class="text-left px-6 py-3 min-w-[120px]">
-						<span class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+						<span class="flex items-center gap-1 text-xs font-semibold text-text-muted uppercase tracking-wider">
 							<Activity size={12} />
 							Timeline
 						</span>
 					</th>
 					<th class="text-left px-6 py-3">
-						<span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+						<span class="text-xs font-semibold text-text-muted uppercase tracking-wider">
 							Tokens
 						</span>
 					</th>
 					<th class="text-left px-6 py-3">
-						<span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+						<span class="text-xs font-semibold text-text-muted uppercase tracking-wider">
 							Cost
 						</span>
 					</th>
 				</tr>
 			</thead>
-			<tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+			<tbody class="divide-y divide-surface-border">
 				{#each filteredRuns() as run (run.id)}
 					{@const status = statusConfig[run.status] || statusConfig.pending}
 					{@const StatusIcon = status.icon}
 					{@const isSelected = selectedRunIds.has(run.id)}
 					<tr
 						onclick={() => selectRun(run)}
-						class="cursor-pointer transition-colors {isSelected ? 'bg-[#7661FF]/10 dark:bg-[#7661FF]/15' : selectedRunId === run.id ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}"
+						class="cursor-pointer transition-colors {isSelected ? 'bg-info-light' : selectedRunId === run.id ? 'bg-info-light/50' : 'hover:bg-surface-hover'}"
 					>
 						<td class="px-4 py-4">
 							<button
 								onclick={(e) => toggleSelectRun(run.id, e)}
-								class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+								class="p-1 rounded hover:bg-surface-hover transition-colors"
 							>
 								{#if isSelected}
-									<CheckSquare size={18} class="text-[#7661FF]" />
+									<CheckSquare size={18} class="text-info" />
 								{:else}
-									<Square size={18} class="text-gray-400" />
+									<Square size={18} class="text-text-muted" />
 								{/if}
 							</button>
 						</td>
 						<td class="px-4 py-4">
 							<div class="flex flex-col">
-								<span class="font-medium text-gray-900 dark:text-gray-100">
+								<span class="font-medium text-text-primary">
 									{run.workflow_name || 'Unknown Workflow'}
 								</span>
-								<span class="text-xs text-gray-500 dark:text-gray-500 font-mono">
+								<span class="text-xs text-text-muted font-mono">
 									{run.id.slice(0, 8)}...
 								</span>
 							</div>
@@ -737,17 +737,17 @@
 						</td>
 						<td class="px-6 py-4">
 							<div class="flex flex-col">
-								<span class="text-sm text-gray-900 dark:text-gray-100">
+								<span class="text-sm text-text-primary">
 									{formatDate(run.started_at)}
 								</span>
-								<span class="text-xs text-gray-500 dark:text-gray-500">
+								<span class="text-xs text-text-muted">
 									{formatTime(run.started_at)}
 								</span>
 							</div>
 						</td>
 						<td class="px-6 py-4">
-							<span class="text-sm text-gray-900 dark:text-gray-100 flex items-center gap-1">
-								<Timer size={14} class="text-gray-400" />
+							<span class="text-sm text-text-primary flex items-center gap-1">
+								<Timer size={14} class="text-text-muted" />
 								{formatDuration(run.duration_ms)}
 							</span>
 						</td>
@@ -760,18 +760,18 @@
 									/>
 								</div>
 							{:else}
-								<span class="text-xs text-gray-400">-</span>
+								<span class="text-xs text-text-muted">-</span>
 							{/if}
 						</td>
 						<td class="px-6 py-4">
-							<span class="text-sm text-gray-900 dark:text-gray-100 flex items-center gap-1">
-								<Zap size={14} class="text-[#BF71F2]" />
+							<span class="text-sm text-text-primary flex items-center gap-1">
+								<Zap size={14} class="text-info" />
 								{formatTokens(run.metadata)}
 							</span>
 						</td>
 						<td class="px-6 py-4">
-							<span class="text-sm text-gray-900 dark:text-gray-100 flex items-center gap-1">
-								<DollarSign size={14} class="text-emerald-400" />
+							<span class="text-sm text-text-primary flex items-center gap-1">
+								<DollarSign size={14} class="text-status-completed" />
 								{formatCost(run.metadata)}
 							</span>
 						</td>
@@ -779,7 +779,7 @@
 				{:else}
 					<tr>
 						<td colspan="8" class="px-6 py-12 text-center">
-							<div class="text-gray-500 dark:text-gray-400">
+							<div class="text-text-muted">
 								{#if searchQuery || statusFilter !== 'all'}
 									<p class="text-lg font-medium mb-1">No matching runs</p>
 									<p class="text-sm">Try adjusting your filters</p>
@@ -796,11 +796,11 @@
 
 		<!-- Load More Button -->
 		{#if hasMoreExecutions}
-			<div class="flex justify-center py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+			<div class="flex justify-center py-4 border-t border-surface-border bg-surface-secondary">
 				<button
 					onclick={loadMore}
 					disabled={isLoadingMore}
-					class="flex items-center gap-2 px-6 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+					class="flex items-center gap-2 px-6 py-2 bg-surface border border-surface-border rounded-lg text-sm font-medium text-text-secondary hover:bg-surface-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
 				>
 					{#if isLoadingMore}
 						<Loader2 size={16} class="animate-spin" />
