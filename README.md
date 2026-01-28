@@ -147,6 +147,19 @@ LLM-based nodes require a model configured in `models.yaml` and runtime paramete
 
 As of now, LLM inference is supported for TGI, vLLM, OpenAI, Azure, Azure OpenAI, Ollama and Triton compatible servers. Model deployment is external and configured in `models.yaml`.
 
+## SyGra as a Platform
+
+SyGra can be used as a reusable platform to build different categories of tasks on top of the same graph execution engine, node types, processors, and metric infrastructure.
+
+### Eval
+
+Evaluation tasks live under `tasks/eval` and provide a standard pattern for:
+
+- Computing **unit metrics** per record during graph execution
+- Computing **aggregator metrics** after the run via graph post-processing
+
+See: [`tasks/eval/README.md`](tasks/eval/README.md)
+
 <!-- ![SygraComponents](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/sygra_usecase2framework.png) -->
 
 

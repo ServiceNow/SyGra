@@ -26,7 +26,7 @@ graph_config:
         - predicted_answer
       post_process: tasks.eval.question_answering.simpleqa.task_executor.GenerateAnswerPostProcessor
       model:
-        name: gpt-4o-mini
+        name: eval_model
         parameters:
           temperature: 0.1
         structured_output:
