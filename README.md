@@ -158,7 +158,7 @@ Evaluation tasks live under `tasks/eval` and provide a standard pattern for:
 - Computing **unit metrics** per record during graph execution
 - Computing **aggregator metrics** after the run via graph post-processing
 
-See: [`tasks/eval/README.md`](tasks/eval/README.md)
+See: [`tasks/eval/README.md`](https://github.com/ServiceNow/SyGra/blob/main/tasks/eval/README.md)
 
 <!-- ![SygraComponents](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/sygra_usecase2framework.png) -->
 
