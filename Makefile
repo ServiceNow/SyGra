@@ -22,17 +22,12 @@ setup: ## Install core dependencies
 .PHONY: setup-all
 setup-all: ## Install core and extra dependencies
 	@echo "Installing SyGra Core and extra dependencies"
-	$(UV) sync --extra ui
-
-.PHONY: setup-ui
-setup-ui: ## Install development dependencies
-	@echo "Installing SyGra UI dependencies"
-	$(UV) sync --extra ui
+	$(UV) sync
 
 .PHONY: setup-dev
 setup-dev: ## Install development dependencies
 	@echo "Installing SyGra Core, Extra and Development dependencies"
-	$(UV) sync --extra dev --extra ui
+	$(UV) sync --extra dev
 
 ########################################################################################################################
 # SYGRA STUDIO

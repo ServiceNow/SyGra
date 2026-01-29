@@ -504,42 +504,51 @@
 
 <svelte:window onclick={closeRowMenu} />
 
-<div class="h-full w-full flex flex-col bg-white dark:bg-gray-900">
+<div class="h-full w-full flex flex-col bg-surface-primary">
 	<!-- Header -->
-	<div class="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
-		<div class="flex items-center justify-between mb-4">
+	<div class="flex-shrink-0 border-b border-surface-border px-6 py-5">
+		<div class="flex items-center justify-between mb-5">
 			<div class="flex items-center gap-4">
+				<!-- Animated Icon -->
+				<div class="relative">
+					<div class="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-accent/20 to-emerald-500/10 flex items-center justify-center group-hover:scale-105 transition-transform">
+						<Activity size={24} class="text-brand-accent" />
+					</div>
+					{#if executionHistory.some(r => r.status === 'running')}
+						<div class="absolute -top-1 -right-1 w-3 h-3 bg-status-running rounded-full animate-pulse"></div>
+					{/if}
+				</div>
 				<div>
-					<h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Runs</h1>
-					<p class="text-sm text-gray-500 dark:text-gray-400">
+					<h1 class="text-2xl font-display font-bold text-text-primary">Runs</h1>
+					<p class="text-sm text-text-muted">
 						{filteredRuns().length} of {executionHistory.length} runs
 						{#if selectionCount > 0}
-							<span class="ml-2 text-[#7661FF] dark:text-[#52B8FF]">• {selectionCount} selected</span>
+							<span class="ml-2 text-brand-accent font-medium">• {selectionCount} selected</span>
 						{/if}
 					</p>
 				</div>
 			</div>
 
-			<div class="flex items-center gap-2">
+			<div class="flex items-center gap-3">
 				<!-- View Mode Toggle -->
-				<div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+				<div class="flex items-center bg-surface-secondary rounded-xl p-1 shadow-sm">
 					<button
 						onclick={() => setViewMode('table')}
-						class="p-2 rounded-md transition-colors {viewMode === 'table' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+						class="p-2.5 rounded-lg transition-all duration-200 {viewMode === 'table' ? 'bg-surface-primary text-brand-accent shadow-md' : 'text-text-muted hover:text-text-primary hover:bg-surface-tertiary'}"
 						title="Table view"
 					>
 						<Table size={16} />
 					</button>
 					<button
 						onclick={() => setViewMode('cards')}
-						class="p-2 rounded-md transition-colors {viewMode === 'cards' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+						class="p-2.5 rounded-lg transition-all duration-200 {viewMode === 'cards' ? 'bg-surface-primary text-brand-accent shadow-md' : 'text-text-muted hover:text-text-primary hover:bg-surface-tertiary'}"
 						title="Card view"
 					>
 						<LayoutGrid size={16} />
 					</button>
 					<button
 						onclick={() => setViewMode('analytics')}
-						class="p-2 rounded-md transition-colors {viewMode === 'analytics' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+						class="p-2.5 rounded-lg transition-all duration-200 {viewMode === 'analytics' ? 'bg-surface-primary text-brand-accent shadow-md' : 'text-text-muted hover:text-text-primary hover:bg-surface-tertiary'}"
 						title="Analytics"
 					>
 						<BarChart3 size={16} />
@@ -547,7 +556,7 @@
 					{#if selectionCount >= 2}
 						<button
 							onclick={() => setViewMode('compare')}
-							class="p-2 rounded-md transition-colors {viewMode === 'compare' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#52B8FF] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+							class="p-2.5 rounded-lg transition-all duration-200 {viewMode === 'compare' ? 'bg-surface-primary text-brand-accent shadow-md' : 'text-text-muted hover:text-text-primary hover:bg-surface-tertiary'}"
 							title="Compare {selectionCount} runs"
 						>
 							<GitCompare size={16} />
@@ -555,35 +564,35 @@
 					{/if}
 				</div>
 
-				<div class="w-px h-8 bg-gray-200 dark:bg-gray-700"></div>
+				<div class="w-px h-8 bg-surface-border"></div>
 
 				{#if selectionCount > 0}
 					<button
 						onclick={clearSelection}
-						class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
+						class="p-2.5 rounded-xl hover:bg-surface-secondary text-text-muted transition-all duration-200"
 						title="Clear selection"
 					>
 						<X size={18} />
 					</button>
 					<button
 						onclick={exportRuns}
-						class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors text-sm"
+						class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl hover:bg-surface-secondary text-text-secondary transition-all duration-200 text-sm font-medium"
 						title="Export selected runs"
 					>
 						<Download size={16} />
 					</button>
 					<button
 						onclick={requestDeleteSelectedRuns}
-						class="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors text-sm font-medium"
+						class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-status-failed/10 hover:bg-status-failed/20 text-status-failed transition-all duration-200 text-sm font-semibold"
 					>
 						<Trash2 size={16} />
 						Delete ({selectionCount})
 					</button>
-					<div class="w-px h-8 bg-gray-200 dark:bg-gray-700"></div>
+					<div class="w-px h-8 bg-surface-border"></div>
 				{:else}
 					<button
 						onclick={exportRuns}
-						class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
+						class="p-2.5 rounded-xl hover:bg-surface-secondary text-text-muted transition-all duration-200"
 						title="Export filtered runs"
 					>
 						<Download size={18} />
@@ -592,7 +601,7 @@
 
 				<button
 					onclick={refresh}
-					class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg transition-colors font-medium"
+					class="flex items-center gap-2 px-5 py-2.5 bg-brand-accent hover:bg-brand-accent/90 text-white rounded-xl transition-all duration-200 font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5"
 				>
 					<RefreshCw size={16} />
 					Refresh
@@ -611,12 +620,12 @@
 		<div class="flex flex-wrap items-center gap-3">
 			<!-- Search -->
 			<div class="relative flex-1 min-w-64 max-w-md">
-				<Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+				<Search size={16} class="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" />
 				<input
 					type="text"
 					placeholder="Search by workflow name or run ID..."
 					bind:value={searchQuery}
-					class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] text-sm"
+					class="w-full pl-10 pr-4 py-2.5 border border-surface-border rounded-xl bg-surface-primary text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-brand-accent/30 focus:border-brand-accent text-sm transition-all duration-200"
 				/>
 			</div>
 
@@ -649,7 +658,7 @@
 			<!-- Pinned filter toggle -->
 			<button
 				onclick={() => showPinnedOnly = !showPinnedOnly}
-				class="flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors text-sm {showPinnedOnly ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}"
+				class="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border transition-all duration-200 text-sm font-medium {showPinnedOnly ? 'border-amber-400 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 shadow-sm' : 'border-surface-border text-text-secondary hover:bg-surface-secondary hover:border-surface-border'}"
 				title="Show pinned only"
 			>
 				<Star size={14} class={showPinnedOnly ? 'fill-current' : ''} />
@@ -660,7 +669,7 @@
 			{#if hasActiveFilters}
 				<button
 					onclick={clearFilters}
-					class="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+					class="flex items-center gap-1.5 px-3.5 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-secondary rounded-xl transition-all duration-200 font-medium"
 				>
 					<X size={14} />
 					Clear ({activeFilterCount()})
@@ -670,43 +679,43 @@
 
 		<!-- Active filter tags -->
 		{#if hasActiveFilters}
-			<div class="flex flex-wrap items-center gap-2 mt-3">
+			<div class="flex flex-wrap items-center gap-2 mt-4">
 				{#if statusFilter !== 'all'}
-					<span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]">
+					<span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-brand-accent/10 text-brand-accent border border-brand-accent/20">
 						Status: {statusFilter}
-						<button onclick={() => statusFilter = 'all'} class="hover:text-[#7661FF] dark:hover:text-[#BF71F2]">
+						<button onclick={() => statusFilter = 'all'} class="hover:text-brand-accent/70 transition-colors">
 							<X size={12} />
 						</button>
 					</span>
 				{/if}
 				{#if workflowFilter !== 'all'}
-					<span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+					<span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
 						Workflow: {workflowFilter}
-						<button onclick={() => workflowFilter = 'all'} class="hover:text-blue-900 dark:hover:text-blue-100">
+						<button onclick={() => workflowFilter = 'all'} class="hover:text-blue-800 dark:hover:text-blue-200 transition-colors">
 							<X size={12} />
 						</button>
 					</span>
 				{/if}
 				{#if dateFilter !== 'all'}
-					<span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+					<span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
 						{dateOptions.find(d => d.value === dateFilter)?.label}
-						<button onclick={() => dateFilter = 'all'} class="hover:text-amber-900 dark:hover:text-amber-100">
+						<button onclick={() => dateFilter = 'all'} class="hover:text-amber-800 dark:hover:text-amber-200 transition-colors">
 							<X size={12} />
 						</button>
 					</span>
 				{/if}
 				{#if showPinnedOnly}
-					<span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+					<span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
 						Pinned Only
-						<button onclick={() => showPinnedOnly = false} class="hover:text-amber-900 dark:hover:text-amber-100">
+						<button onclick={() => showPinnedOnly = false} class="hover:text-amber-800 dark:hover:text-amber-200 transition-colors">
 							<X size={12} />
 						</button>
 					</span>
 				{/if}
 				{#if searchQuery}
-					<span class="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+					<span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-surface-tertiary text-text-secondary border border-surface-border">
 						Search: "{searchQuery}"
-						<button onclick={() => searchQuery = ''} class="hover:text-gray-900 dark:hover:text-gray-100">
+						<button onclick={() => searchQuery = ''} class="hover:text-text-primary transition-colors">
 							<X size={12} />
 						</button>
 					</span>
@@ -730,32 +739,42 @@
 		<!-- Card View -->
 		<div class="flex-1 overflow-auto p-6">
 			{#if filteredRuns().length === 0}
-				<div class="text-center py-16">
-					<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#7661FF]/20 to-[#BF71F2]/20 flex items-center justify-center">
-						<Activity size={32} class="text-[#7661FF]" />
+				<div class="text-center py-20">
+					<div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-brand-accent/20 to-emerald-500/10 flex items-center justify-center shadow-lg">
+						<Activity size={36} class="text-brand-accent" />
 					</div>
-					<p class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-1">
+					<p class="text-xl font-display font-semibold text-text-primary mb-2">
 						{hasActiveFilters ? 'No matching runs' : 'No runs yet'}
 					</p>
-					<p class="text-sm text-gray-500">
-						{hasActiveFilters ? 'Try adjusting your filters' : 'Execute a workflow to see runs here'}
+					<p class="text-sm text-text-muted max-w-sm mx-auto">
+						{hasActiveFilters ? 'Try adjusting your filters to find what you\'re looking for' : 'Execute a workflow to see your runs appear here'}
 					</p>
+					{#if hasActiveFilters}
+						<button
+							onclick={clearFilters}
+							class="mt-6 px-5 py-2.5 bg-brand-accent hover:bg-brand-accent/90 text-white rounded-xl transition-all duration-200 font-semibold shadow-md hover:shadow-lg"
+						>
+							Clear Filters
+						</button>
+					{/if}
 				</div>
 			{:else}
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-					{#each filteredRuns() as run (run.id)}
-						<RunCard
-							{run}
-							selected={selectedRunIds.has(run.id)}
-							pinned={pinnedRunIds.has(run.id)}
-							onSelect={() => selectRun(run)}
-							onPin={() => togglePinRun(run.id)}
-							onRerun={() => rerunWorkflow(run)}
-							onDelete={() => {
-								selectedRunIds = new Set([run.id]);
-								requestDeleteSelectedRuns();
-							}}
-						/>
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+					{#each filteredRuns() as run, i (run.id)}
+						<div class="animate-slide-up" style="animation-delay: {Math.min(i * 50, 300)}ms">
+							<RunCard
+								{run}
+								selected={selectedRunIds.has(run.id)}
+								pinned={pinnedRunIds.has(run.id)}
+								onSelect={() => selectRun(run)}
+								onPin={() => togglePinRun(run.id)}
+								onRerun={() => rerunWorkflow(run)}
+								onDelete={() => {
+									selectedRunIds = new Set([run.id]);
+									requestDeleteSelectedRuns();
+								}}
+							/>
+						</div>
 					{/each}
 				</div>
 			{/if}
@@ -764,89 +783,89 @@
 		<!-- Table View -->
 		<div class="flex-1 overflow-auto">
 			<table class="w-full">
-				<thead class="sticky top-0 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-10">
+				<thead class="sticky top-0 bg-surface-secondary/95 backdrop-blur-sm border-b border-surface-border z-10">
 					<tr>
-						<th class="text-left px-4 py-3 w-12">
+						<th class="text-left px-4 py-4 w-12">
 							<button
 								onclick={toggleSelectAll}
-								class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors"
+								class="p-1.5 rounded-lg hover:bg-surface-tertiary text-text-muted transition-all duration-200"
 								title={allSelected() ? 'Deselect all' : 'Select all'}
 							>
 								{#if allSelected()}
-									<CheckSquare size={18} class="text-[#7661FF]" />
+									<CheckSquare size={18} class="text-brand-accent" />
 								{:else if someSelected()}
-									<MinusSquare size={18} class="text-[#7661FF]" />
+									<MinusSquare size={18} class="text-brand-accent" />
 								{:else}
 									<Square size={18} />
 								{/if}
 							</button>
 						</th>
-						<th class="text-left px-4 py-3 w-10">
-							<Star size={14} class="text-gray-400" />
+						<th class="text-left px-4 py-4 w-10">
+							<Star size={14} class="text-text-muted" />
 						</th>
-						<th class="text-left px-4 py-3">
+						<th class="text-left px-4 py-4">
 							<button
 								onclick={() => toggleSort('workflow_name')}
-								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+								class="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-primary transition-colors"
 							>
 								Workflow
-								<ArrowUpDown size={14} class={sortField === 'workflow_name' ? 'text-[#7661FF]' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'workflow_name' ? 'text-brand-accent' : ''} />
 							</button>
 						</th>
-						<th class="text-left px-4 py-3">
+						<th class="text-left px-4 py-4">
 							<button
 								onclick={() => toggleSort('status')}
-								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+								class="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-primary transition-colors"
 							>
 								Status
-								<ArrowUpDown size={14} class={sortField === 'status' ? 'text-[#7661FF]' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'status' ? 'text-brand-accent' : ''} />
 							</button>
 						</th>
-						<th class="text-left px-4 py-3 w-48">
-							<span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+						<th class="text-left px-4 py-4 w-48">
+							<span class="text-xs font-semibold text-text-muted uppercase tracking-wider">
 								Timeline
 							</span>
 						</th>
-						<th class="text-left px-4 py-3">
+						<th class="text-left px-4 py-4">
 							<button
 								onclick={() => toggleSort('started_at')}
-								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+								class="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-primary transition-colors"
 							>
 								Started
-								<ArrowUpDown size={14} class={sortField === 'started_at' ? 'text-[#7661FF]' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'started_at' ? 'text-brand-accent' : ''} />
 							</button>
 						</th>
-						<th class="text-left px-4 py-3">
+						<th class="text-left px-4 py-4">
 							<button
 								onclick={() => toggleSort('duration_ms')}
-								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+								class="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-primary transition-colors"
 							>
 								Duration
-								<ArrowUpDown size={14} class={sortField === 'duration_ms' ? 'text-[#7661FF]' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'duration_ms' ? 'text-brand-accent' : ''} />
 							</button>
 						</th>
-						<th class="text-left px-4 py-3">
+						<th class="text-left px-4 py-4">
 							<button
 								onclick={() => toggleSort('tokens')}
-								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+								class="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-primary transition-colors"
 							>
 								Tokens
-								<ArrowUpDown size={14} class={sortField === 'tokens' ? 'text-[#7661FF]' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'tokens' ? 'text-brand-accent' : ''} />
 							</button>
 						</th>
-						<th class="text-left px-4 py-3">
+						<th class="text-left px-4 py-4">
 							<button
 								onclick={() => toggleSort('cost')}
-								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+								class="flex items-center gap-1.5 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-primary transition-colors"
 							>
 								Cost
-								<ArrowUpDown size={14} class={sortField === 'cost' ? 'text-[#7661FF]' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'cost' ? 'text-brand-accent' : ''} />
 							</button>
 						</th>
 						<th class="w-12"></th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+				<tbody class="divide-y divide-surface-border/50">
 					{#each filteredRuns() as run (run.id)}
 						{@const effectiveStatus = getEffectiveStatus(run)}
 						{@const status = statusConfig[effectiveStatus] || statusConfig.pending}
@@ -856,95 +875,101 @@
 						{@const isExpanded = expandedRowIds.has(run.id)}
 						<tr
 							onclick={() => selectRun(run)}
-							class="group cursor-pointer transition-colors {isSelected ? 'bg-[#7661FF]/10 dark:bg-[#7661FF]/20' : selectedRunId === run.id ? 'bg-[#52B8FF]/10 dark:bg-[#52B8FF]/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}"
+							class="group cursor-pointer transition-all duration-200 {isSelected ? 'bg-brand-accent/10' : selectedRunId === run.id ? 'bg-brand-accent/5 border-l-2 border-l-brand-accent' : 'hover:bg-surface-secondary'}"
 						>
-							<td class="px-4 py-3">
+							<td class="px-4 py-4">
 								<button
 									onclick={(e) => toggleSelectRun(run.id, e)}
-									class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+									class="p-1.5 rounded-lg hover:bg-surface-tertiary transition-all duration-200"
 								>
 									{#if isSelected}
-										<CheckSquare size={18} class="text-[#7661FF]" />
+										<CheckSquare size={18} class="text-brand-accent" />
 									{:else}
-										<Square size={18} class="text-gray-400" />
+										<Square size={18} class="text-text-muted" />
 									{/if}
 								</button>
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-4 py-4">
 								<button
 									onclick={(e) => { e.stopPropagation(); togglePinRun(run.id); }}
-									class="p-1 rounded transition-colors {isPinned ? 'text-amber-500' : 'text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 hover:text-amber-500'}"
+									class="p-1.5 rounded-lg transition-all duration-200 {isPinned ? 'text-amber-500' : 'text-text-muted/30 opacity-0 group-hover:opacity-100 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20'}"
 									title={isPinned ? 'Unpin' : 'Pin'}
 								>
 									<Star size={14} class={isPinned ? 'fill-current' : ''} />
 								</button>
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-4 py-4">
 								<div class="flex flex-col">
-									<span class="font-medium text-gray-900 dark:text-gray-100 group-hover:text-[#7661FF] dark:group-hover:text-[#52B8FF] transition-colors">
+									<span class="font-semibold text-text-primary group-hover:text-brand-accent transition-colors">
 										{run.workflow_name || 'Unknown Workflow'}
 									</span>
-									<span class="text-xs text-gray-500 dark:text-gray-500 font-mono">
+									<span class="text-xs text-text-muted font-mono">
 										{run.id.slice(0, 12)}...
 									</span>
 								</div>
 							</td>
-							<td class="px-4 py-3">
-								<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium {status.color} {status.bg}">
+							<td class="px-4 py-4">
+								<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border
+									{effectiveStatus === 'completed' ? 'bg-status-completed/10 text-status-completed border-status-completed/20' : ''}
+									{effectiveStatus === 'running' ? 'bg-status-running/10 text-status-running border-status-running/20' : ''}
+									{effectiveStatus === 'failed' ? 'bg-status-failed/10 text-status-failed border-status-failed/20' : ''}
+									{effectiveStatus === 'cancelled' ? 'bg-status-cancelled/10 text-status-cancelled border-status-cancelled/20' : ''}
+									{effectiveStatus === 'pending' ? 'bg-status-pending/10 text-status-pending border-status-pending/20' : ''}
+								">
 									<StatusIcon size={12} class={effectiveStatus === 'running' ? 'animate-spin' : ''} />
 									{effectiveStatus}
 								</span>
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-4 py-4">
 								{#if Object.keys(run.node_states).length > 0}
 									<RunTimelineBar nodeStates={run.node_states} totalDuration={run.duration_ms} />
 								{:else}
-									<span class="text-gray-400 text-xs">-</span>
+									<span class="text-text-muted text-xs">-</span>
 								{/if}
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-4 py-4">
 								<div class="flex flex-col">
-									<span class="text-sm text-gray-900 dark:text-gray-100">
+									<span class="text-sm font-medium text-text-primary">
 										{formatRelativeTime(run.started_at)}
 									</span>
-									<span class="text-xs text-gray-500">
+									<span class="text-xs text-text-muted">
 										{formatTime(run.started_at)}
 									</span>
 								</div>
 							</td>
-							<td class="px-4 py-3">
-								<span class="text-sm text-gray-900 dark:text-gray-100 flex items-center gap-1">
-									<Timer size={14} class="text-gray-400" />
+							<td class="px-4 py-4">
+								<span class="text-sm text-text-primary flex items-center gap-1.5">
+									<Timer size={14} class="text-text-muted" />
 									{formatDuration(run.duration_ms)}
 								</span>
 							</td>
-							<td class="px-4 py-3">
-								<span class="text-sm text-gray-900 dark:text-gray-100 flex items-center gap-1">
-									<Zap size={14} class="text-[#7661FF]" />
+							<td class="px-4 py-4">
+								<span class="text-sm text-text-primary flex items-center gap-1.5">
+									<Zap size={14} class="text-brand-accent" />
 									{formatTokens(run.metadata)}
 								</span>
 							</td>
-							<td class="px-4 py-3">
-								<span class="text-sm text-gray-900 dark:text-gray-100 flex items-center gap-1">
-									<DollarSign size={14} class="text-emerald-400" />
+							<td class="px-4 py-4">
+								<span class="text-sm text-text-primary flex items-center gap-1.5">
+									<DollarSign size={14} class="text-status-completed" />
 									{formatCost(run.metadata)}
 								</span>
 							</td>
-							<td class="px-4 py-3">
+							<td class="px-4 py-4">
 								<div class="relative flex items-center gap-1">
 									<button
 										onclick={(e) => toggleRowMenu(run.id, e)}
-										class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+										class="p-2 text-text-muted hover:text-text-primary hover:bg-surface-tertiary rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100"
 										title="Actions"
 									>
 										<MoreHorizontal size={16} />
 									</button>
 									{#if activeMenuRunId === run.id}
-										<div class="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+										<div class="absolute right-0 top-full mt-1 w-48 bg-surface-primary rounded-xl shadow-elevation-3 border border-surface-border py-1.5 z-50 animate-scale-in origin-top-right">
 											{#if !isPinned}
 												<button
 													onclick={(e) => { e.stopPropagation(); togglePinRun(run.id); closeRowMenu(); }}
-													class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+													class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors"
 												>
 													<Star size={14} />
 													Pin Run
@@ -952,7 +977,7 @@
 											{:else}
 												<button
 													onclick={(e) => { e.stopPropagation(); togglePinRun(run.id); closeRowMenu(); }}
-													class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+													class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors"
 												>
 													<StarOff size={14} />
 													Unpin
@@ -960,54 +985,54 @@
 											{/if}
 											<button
 												onclick={(e) => { e.stopPropagation(); rerunWorkflow(run); }}
-												class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+												class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors"
 											>
 												<Play size={14} />
 												Re-run
 											</button>
 											<button
 												onclick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(run.id); closeRowMenu(); }}
-												class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+												class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-secondary transition-colors"
 											>
 												<Copy size={14} />
 												Copy ID
 											</button>
-											<div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
+											<div class="h-px bg-surface-border my-1.5 mx-3"></div>
 											<button
 												onclick={(e) => { e.stopPropagation(); deleteSingleRun(run.id); }}
-												class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+												class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-status-failed hover:bg-status-failed/10 transition-colors"
 											>
 												<Trash2 size={14} />
 												Delete
 											</button>
 										</div>
 									{/if}
-									<ChevronRight size={16} class="text-gray-400 group-hover:text-[#7661FF] transition-colors" />
+									<ChevronRight size={16} class="text-text-muted group-hover:text-brand-accent transition-colors" />
 								</div>
 							</td>
 						</tr>
 					{:else}
 						<tr>
-							<td colspan="10" class="px-6 py-16 text-center">
-								<div class="text-gray-500 dark:text-gray-400">
+							<td colspan="10" class="px-6 py-20 text-center">
+								<div>
 									{#if hasActiveFilters}
-										<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center">
-											<Search size={32} class="text-gray-400" />
+										<div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-surface-tertiary to-surface-secondary flex items-center justify-center shadow-lg">
+											<Search size={36} class="text-text-muted" />
 										</div>
-										<p class="text-lg font-medium mb-1">No matching runs</p>
-										<p class="text-sm mb-4">Try adjusting your filters</p>
+										<p class="text-xl font-display font-semibold text-text-primary mb-2">No matching runs</p>
+										<p class="text-sm text-text-muted mb-6 max-w-sm mx-auto">Try adjusting your filters to find what you're looking for</p>
 										<button
 											onclick={clearFilters}
-											class="px-4 py-2 bg-[#63DF4E] hover:bg-[#52c840] text-[#032D42] rounded-lg text-sm transition-colors font-medium"
+											class="px-5 py-2.5 bg-brand-accent hover:bg-brand-accent/90 text-white rounded-xl text-sm transition-all duration-200 font-semibold shadow-md hover:shadow-lg"
 										>
 											Clear Filters
 										</button>
 									{:else}
-										<div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[#7661FF]/20 to-[#BF71F2]/20 flex items-center justify-center">
-											<Activity size={32} class="text-[#7661FF]" />
+										<div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-brand-accent/20 to-emerald-500/10 flex items-center justify-center shadow-lg">
+											<Activity size={36} class="text-brand-accent" />
 										</div>
-										<p class="text-lg font-medium mb-1">No runs yet</p>
-										<p class="text-sm">Execute a workflow to see runs here</p>
+										<p class="text-xl font-display font-semibold text-text-primary mb-2">No runs yet</p>
+										<p class="text-sm text-text-muted max-w-sm mx-auto">Execute a workflow to see your runs appear here</p>
 									{/if}
 								</div>
 							</td>

@@ -259,12 +259,14 @@ function createRecipeStore() {
 // Export singleton store instance
 export const recipeStore = createRecipeStore();
 
-// Category metadata for UI
+// Category metadata for UI - using brand-consistent colors
+// Primary: Infinite Blue (#032D42), Wasabi Green (#63DF4E)
+// Accent: Bright Blue (#52B8FF), Teal variants for differentiation
 export const RECIPE_CATEGORIES: { value: RecipeCategory; label: string; icon: string; color: string }[] = [
-	{ value: 'llm', label: 'LLM Patterns', icon: 'brain', color: '#7661FF' },
+	{ value: 'llm', label: 'LLM Patterns', icon: 'brain', color: '#0E7490' },
 	{ value: 'data', label: 'Data Processing', icon: 'database', color: '#52B8FF' },
-	{ value: 'transform', label: 'Transformations', icon: 'shuffle', color: '#BF71F2' },
+	{ value: 'transform', label: 'Transformations', icon: 'shuffle', color: '#0891B2' },
 	{ value: 'agent', label: 'Agents', icon: 'bot', color: '#63DF4E' },
-	{ value: 'utility', label: 'Utilities', icon: 'wrench', color: '#0A4D6E' },
-	{ value: 'custom', label: 'Custom', icon: 'puzzle', color: '#7661FF' }
+	{ value: 'utility', label: 'Utilities', icon: 'wrench', color: '#64748B' },
+	{ value: 'custom', label: 'Custom', icon: 'puzzle', color: '#0369A1' }
 ];

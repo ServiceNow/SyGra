@@ -109,12 +109,31 @@ workflow.run(num_records=1)
 
 ---
 
+## SyGra Studio
+
+**SyGra Studio** is a visual workflow builder that replaces manual YAML editing with an interactive drag-and-drop interface:
+
+- **Visual Graph Builder** — Drag-and-drop nodes, connect them visually, configure with forms
+- **Real-time Execution** — Watch your workflow run with live node status and streaming logs
+- **Rich Analytics** — Track usage, tokens, latency, and success rates across runs
+- **Multi-LLM Support** — Azure OpenAI, OpenAI, Ollama, vLLM, Mistral, and more
+
+```bash
+# One command to start
+make studio
+# Then open http://localhost:8000
+```
+
+> **[Read the full Studio documentation →](https://servicenow.github.io/SyGra/getting_started/create_task_ui/)**
+
+---
+
 ## Task Components
 
 SyGra supports extendability and ease of implementation—most tasks are defined as graph configuration YAML files. Each task consists of two major components: a graph configuration and Python code to define conditions and processors.
 YAML contains various parts:
 
-- **Data configuration** : Configure file or huggingface or ServiceNow instance as source and sink for the task. 
+- **Data configuration** : Configure file or huggingface or ServiceNow instance as source and sink for the task.
 - **Data transformation** : Configuration to transform the data into the format it can be used in the graph.
 - **Node configuration** : Configure nodes and corresponding properties, preprocessor and post processor.
 - **Edge configuration** : Connect the nodes configured above with or without conditions.

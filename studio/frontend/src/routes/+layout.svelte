@@ -96,12 +96,12 @@
 	}
 </script>
 
-<div class="h-screen flex overflow-hidden">
+<div class="h-screen flex overflow-hidden bg-surface">
 	<!-- Sidebar -->
 	<Sidebar onOpenSettings={openSettings} />
 
-	<!-- Main content -->
-	<main class="flex-1 flex flex-col overflow-hidden">
+	<!-- Main content - uses min-w-0 to prevent flex item from overflowing -->
+	<main class="flex-1 flex flex-col overflow-hidden min-w-0">
 		{@render children()}
 	</main>
 </div>

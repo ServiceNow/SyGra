@@ -26,10 +26,10 @@
 	// Status styling
 	const statusConfig = {
 		pending: { color: 'text-gray-500', bg: 'bg-gray-100 dark:bg-gray-800', icon: Clock },
-		running: { color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30', icon: Loader2 },
-		completed: { color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/30', icon: CheckCircle2 },
-		failed: { color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30', icon: XCircle },
-		cancelled: { color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/30', icon: XCircle }
+		running: { color: 'text-info', bg: 'bg-info-light dark:bg-info/20', icon: Loader2 },
+		completed: { color: 'text-success', bg: 'bg-success-light dark:bg-success/20', icon: CheckCircle2 },
+		failed: { color: 'text-error', bg: 'bg-error-light dark:bg-error/20', icon: XCircle },
+		cancelled: { color: 'text-warning', bg: 'bg-warning-light dark:bg-warning/20', icon: XCircle }
 	};
 
 	let statusInfo = $derived(statusConfig[execution.status] || statusConfig.pending);
@@ -188,7 +188,7 @@
 											class="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
 										>
 											{#if copiedField === 'id'}
-												<Check size={12} class="text-green-500" />
+												<Check size={12} class="text-success" />
 											{:else}
 												<Copy size={12} class="text-gray-400" />
 											{/if}
@@ -271,9 +271,9 @@
 						</div>
 
 						{#if execution.error}
-							<div class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-								<div class="text-sm font-medium text-red-700 dark:text-red-400 mb-1">Error</div>
-								<div class="text-sm text-red-600 dark:text-red-300 font-mono">
+							<div class="mt-4 p-4 bg-error-light dark:bg-error/20 rounded-lg border border-error-border dark:border-error/40">
+								<div class="text-sm font-medium text-error dark:text-error mb-1">Error</div>
+								<div class="text-sm text-error dark:text-error font-mono">
 									{execution.error}
 								</div>
 							</div>
@@ -294,7 +294,7 @@
 								class="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-lg transition-colors"
 							>
 								{#if copiedField === 'output'}
-									<Check size={14} class="text-green-500" />
+									<Check size={14} class="text-success" />
 									Copied!
 								{:else}
 									<Copy size={14} />
@@ -381,15 +381,15 @@
 						<!-- Key Metrics Cards -->
 						<div class="grid grid-cols-4 gap-4">
 							<!-- Cost Card -->
-							<div class="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 rounded-xl p-4 border border-emerald-200 dark:border-emerald-800">
+							<div class="bg-gradient-to-br from-success-light to-success-light dark:from-success/20 dark:to-success/30 rounded-xl p-4 border border-success-border dark:border-success/40">
 								<div class="flex items-center gap-2 mb-2">
-									<DollarSign size={16} class="text-emerald-600 dark:text-emerald-400" />
-									<span class="text-xs font-medium text-emerald-600 dark:text-emerald-400 uppercase">Total Cost</span>
+									<DollarSign size={16} class="text-success dark:text-success" />
+									<span class="text-xs font-medium text-success dark:text-success uppercase">Total Cost</span>
 								</div>
-								<div class="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+								<div class="text-2xl font-bold text-success dark:text-success">
 									{formatCost(metadata.aggregate_statistics.cost.total_cost_usd)}
 								</div>
-								<div class="text-xs text-emerald-600/70 dark:text-emerald-400/70 mt-1">
+								<div class="text-xs text-success/70 dark:text-success/70 mt-1">
 									{formatCost(metadata.aggregate_statistics.cost.average_cost_per_record)}/record
 								</div>
 							</div>
@@ -409,29 +409,29 @@
 							</div>
 
 							<!-- Success Rate Card -->
-							<div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+							<div class="bg-gradient-to-br from-info-light to-info-light dark:from-info/20 dark:to-info/30 rounded-xl p-4 border border-info-border dark:border-info/40">
 								<div class="flex items-center gap-2 mb-2">
-									<TrendingUp size={16} class="text-blue-600 dark:text-blue-400" />
-									<span class="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase">Success Rate</span>
+									<TrendingUp size={16} class="text-info dark:text-info" />
+									<span class="text-xs font-medium text-info dark:text-info uppercase">Success Rate</span>
 								</div>
-								<div class="text-2xl font-bold text-blue-700 dark:text-blue-300">
+								<div class="text-2xl font-bold text-info dark:text-info">
 									{formatPercent(metadata.aggregate_statistics.records.success_rate)}
 								</div>
-								<div class="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1">
+								<div class="text-xs text-info/70 dark:text-info/70 mt-1">
 									{metadata.aggregate_statistics.records.total_processed} processed · {metadata.aggregate_statistics.records.total_failed} failed
 								</div>
 							</div>
 
 							<!-- Requests Card -->
-							<div class="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-xl p-4 border border-amber-200 dark:border-amber-800">
+							<div class="bg-gradient-to-br from-warning-light to-warning-light dark:from-warning/20 dark:to-warning/30 rounded-xl p-4 border border-warning-border dark:border-warning/40">
 								<div class="flex items-center gap-2 mb-2">
-									<Server size={16} class="text-amber-600 dark:text-amber-400" />
-									<span class="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase">API Requests</span>
+									<Server size={16} class="text-warning dark:text-warning" />
+									<span class="text-xs font-medium text-warning dark:text-warning uppercase">API Requests</span>
 								</div>
-								<div class="text-2xl font-bold text-amber-700 dark:text-amber-300">
+								<div class="text-2xl font-bold text-warning dark:text-warning">
 									{metadata.aggregate_statistics.requests.total_requests}
 								</div>
-								<div class="text-xs text-amber-600/70 dark:text-amber-400/70 mt-1">
+								<div class="text-xs text-warning/70 dark:text-warning/70 mt-1">
 									{metadata.aggregate_statistics.requests.total_retries} retries · {metadata.aggregate_statistics.requests.total_failures} failures
 								</div>
 							</div>
@@ -468,7 +468,7 @@
 											<span class="text-gray-800 dark:text-gray-200 font-mono text-xs">
 												{metadata.execution.git.branch} @ {metadata.execution.git.commit_hash.slice(0, 7)}
 												{#if metadata.execution.git.is_dirty}
-													<span class="text-amber-500 ml-1">*</span>
+													<span class="text-warning ml-1">*</span>
 												{/if}
 											</span>
 										</div>
@@ -530,7 +530,7 @@
 													<span class="text-xs text-gray-500 ml-2">{model.model_type}</span>
 												</div>
 												<div class="flex items-center gap-4 text-sm">
-													<span class="text-emerald-600 dark:text-emerald-400 font-medium">{formatCost(model.cost.total_cost_usd)}</span>
+													<span class="text-success dark:text-success font-medium">{formatCost(model.cost.total_cost_usd)}</span>
 													<span class="text-[#7661FF] dark:text-[#52B8FF]">{formatNumber(model.token_statistics.total_tokens)} tokens</span>
 												</div>
 											</div>
@@ -564,15 +564,15 @@
 												</div>
 												<div class="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
 													<div class="h-full flex">
-														<div class="bg-emerald-400" style="width: {p50Pct}%"></div>
-														<div class="bg-amber-400" style="width: {p95Pct - p50Pct}%"></div>
-														<div class="bg-red-400" style="width: {100 - p95Pct}%"></div>
+														<div class="bg-success" style="width: {p50Pct}%"></div>
+														<div class="bg-warning" style="width: {p95Pct - p50Pct}%"></div>
+														<div class="bg-error" style="width: {100 - p95Pct}%"></div>
 													</div>
 												</div>
 												<div class="flex justify-between text-xs text-gray-500 mt-1">
-													<span class="flex items-center gap-1"><span class="w-2 h-2 bg-emerald-400 rounded"></span> ≤p50</span>
-													<span class="flex items-center gap-1"><span class="w-2 h-2 bg-amber-400 rounded"></span> p50-p95</span>
-													<span class="flex items-center gap-1"><span class="w-2 h-2 bg-red-400 rounded"></span> >p95</span>
+													<span class="flex items-center gap-1"><span class="w-2 h-2 bg-success rounded"></span> ≤p50</span>
+													<span class="flex items-center gap-1"><span class="w-2 h-2 bg-warning rounded"></span> p50-p95</span>
+													<span class="flex items-center gap-1"><span class="w-2 h-2 bg-error rounded"></span> >p95</span>
 												</div>
 											</div>
 										</div>

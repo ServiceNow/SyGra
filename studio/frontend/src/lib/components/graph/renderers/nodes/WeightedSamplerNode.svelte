@@ -45,22 +45,22 @@
 		<!-- Attributes Preview -->
 		{#if attributeNames().length > 0}
 			<div class="space-y-1">
-				<div class="flex items-center gap-1 text-gray-500 dark:text-gray-400 font-medium">
+				<div class="flex items-center gap-1 text-text-muted font-medium">
 					<ListTree size={10} />
 					<span>Attributes</span>
 				</div>
 				{#each attributeNames() as attrName}
 					{@const attr = data.sampler_config?.attributes[attrName]}
-					<div class="flex items-center gap-1 text-gray-600 dark:text-gray-400 pl-3 text-[10px]">
+					<div class="flex items-center gap-1 text-text-muted pl-3 text-[10px]">
 						<span class="truncate max-w-[80px] font-medium" title={attrName}>{attrName}</span>
-						<span class="text-gray-400">:</span>
-						<span class="truncate text-blue-600 dark:text-blue-400">
+						<span class="text-text-muted">:</span>
+						<span class="truncate text-info">
 							{attr?.values?.length ?? 0} values
 						</span>
 					</div>
 				{/each}
 				{#if totalAttributes() > 4}
-					<div class="text-[10px] text-gray-400 pl-3">
+					<div class="text-[10px] text-text-muted pl-3">
 						+{totalAttributes() - 4} more...
 					</div>
 				{/if}
@@ -69,7 +69,7 @@
 
 		<!-- Empty state -->
 		{#if attributeNames().length === 0}
-			<div class="text-gray-500 dark:text-gray-400 italic">
+			<div class="text-text-muted italic">
 				Click to configure sampler attributes
 			</div>
 		{/if}

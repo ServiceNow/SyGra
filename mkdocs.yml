@@ -55,7 +55,7 @@ nav:
       - Graph Config Guide: getting_started/graph_config_guide.md
       - Adding Edges: getting_started/adding_edges.md
       - Create a Synthetic Datagen Pipeline: getting_started/create_new_pipeline.md
-      - Create a task with UI: getting_started/create_task_ui.md
+      - SyGra Studio: getting_started/create_task_ui.md
   - Concepts:
       - Data Handler:
           - Overview: concepts/data_handler/README.md
