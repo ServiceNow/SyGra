@@ -275,9 +275,17 @@
 	}
 
 	// Fetch data columns when workflow is available (only on workflow change, not node save)
+	// Check both workflow-level data_config AND Data node's data_config
 	$effect(() => {
 		const workflow = workflowStore.currentWorkflow;
-		if (workflow && workflow.data_config && workflow.id !== lastFetchedWorkflowId) {
+		if (!workflow || workflow.id === lastFetchedWorkflowId) return;
+
+		// Check if workflow has data_config OR if there's a Data node with data_config
+		const hasWorkflowDataConfig = !!workflow.data_config;
+		const dataNode = workflow.nodes.find(n => n.node_type === 'data');
+		const hasDataNodeConfig = dataNode?.data_config?.source;
+
+		if (hasWorkflowDataConfig || hasDataNodeConfig) {
 			lastFetchedWorkflowId = workflow.id;
 			// Fetch columns in the background
 			workflowStore.fetchDataColumns();
@@ -379,7 +387,17 @@
 
 			const resultData = new Map(sourcePreviewData);
 			if (response.ok) {
-				resultData.set(sourceIndex, await response.json());
+				const previewResult = await response.json();
+				resultData.set(sourceIndex, previewResult);
+
+				// Extract columns from preview data and update the workflow store cache
+				// This makes data columns available for LLM node variables even for new workflows
+				if (previewResult.records && previewResult.records.length > 0) {
+					const columns = Object.keys(previewResult.records[0]);
+					if (columns.length > 0) {
+						workflowStore.updateDataColumnsFromPreview(columns);
+					}
+				}
 			} else {
 				const errorText = await response.text();
 				resultData.set(sourceIndex, { records: [], total: 0, message: `Error: ${errorText.substring(0, 100)}` });
