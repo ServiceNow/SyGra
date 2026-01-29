@@ -21,3 +21,23 @@ class LambdaFunction(ABC):
             SygraState: the updated state object
         """
         pass
+
+
+class AsyncLambdaFunction(ABC):
+    """
+    This is a function class represent Async Lambda Function class.
+    Implement async apply() method for lambda function to be called by graph node.
+    """
+
+    @staticmethod
+    @abstractmethod
+    async def apply(lambda_node_dict: dict, state: SygraState):
+        """
+        Implement this method to apply lambda function
+        Args:
+            lambda_node_dict: configuration dictionary
+            state: current state of the graph
+        Returns:
+            SygraState: the updated state object
+        """
+        pass
