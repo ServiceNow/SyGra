@@ -22,6 +22,7 @@ class LambdaFunction(ABC):
         """
         pass
 
+
 class AsyncLambdaFunction(ABC):
     """
     This is a function class represent Async Lambda Function class.

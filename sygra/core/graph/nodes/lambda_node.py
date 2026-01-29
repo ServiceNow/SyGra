@@ -77,7 +77,9 @@ class LambdaNode(BaseNode):
         """
         func_type = self.node_config.get("function_type", "async")
         if func_type == "sync":
-            return utils.backend_factory.create_lambda_runnable(self._sync_exec_wrapper, async_func=False)
+            return utils.backend_factory.create_lambda_runnable(
+                self._sync_exec_wrapper, async_func=False
+            )
         else:
             # default to async function as old behavior(default async_func is True)
             return utils.backend_factory.create_lambda_runnable(self._async_exec_wrapper)
