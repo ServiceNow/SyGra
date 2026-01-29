@@ -48,64 +48,86 @@ At the end, generated data is collected in the graph state for a specific record
 
 ---
 
-# Installation
+# Quick Start
 
-Pick how you want to use **SyGra**:
+## Using the Framework
 
-<div align="center">
-
-<a href="https://servicenow.github.io/SyGra/installation/">
-  <img src="https://img.shields.io/badge/Use%20as-Framework-4F46E5?style=for-the-badge" alt="Install as Framework">
-</a>
-&nbsp;&nbsp;
-<a href="https://servicenow.github.io/SyGra/library/sygra_library/">
-  <img src="https://img.shields.io/badge/Use%20as-Library-10B981?style=for-the-badge" alt="Install as Library">
-</a>
-
-</div>
-
-### Which one should I choose?
-- **Framework** → Run end-to-end pipelines from YAML graphs + CLI tooling and project scaffolding.
-  (Start here: **[`Installation`](https://servicenow.github.io/SyGra/installation/)**)
-
-- **Library** → Import SyGra in your own Python app/notebook; call APIs directly.
-  (Start here: **[`SyGra Library`](https://servicenow.github.io/SyGra/library/sygra_library/)**)
-
-![Note](https://img.shields.io/badge/Note-important-yellow)  
-> Before running the commands below, make sure to add your model configuration in `config/models.yaml` and set environment variables for credentials and chat templates as described in the [Model Configuration](https://servicenow.github.io/SyGra/getting_started/model_configuration/) docs.
-
-<details>
-  <summary><strong>TL;DR – Framework Setup</strong></summary>
-
-See full steps in <a href="https://servicenow.github.io/SyGra/installation/">Installation</a>.
+Clone the repo and run a built-in example in **2 commands**:
 
 ```bash
-git clone git@github.com:ServiceNow/SyGra.git
+# 1. Clone and enter the repo
+git clone https://github.com/ServiceNow/SyGra.git && cd SyGra
 
-cd SyGra
-uv run python main.py --task examples.glaive_code_assistant --num_records=1
+# 2. Set your model credentials
+export SYGRA_GPT_4O_MINI_URL="https://api.openai.com/v1"
+export SYGRA_GPT_4O_MINI_TOKEN="sk-..."
+
+# 3. Run an example task
+uv run python main.py -t examples.glaive_code_assistant -n 2
 ```
-</details>
 
-<details>
-  <summary><strong>TL;DR – Library Setup</strong></summary>
+**Expected Output:**
+```
+Processing records: 100%|████████████████| 2/2
+Output written to: output/glaive_code_assistant.jsonl
+```
 
-See full steps in <a href="https://servicenow.github.io/SyGra/library/sygra_library/">Sygra Library</a>.
+Check `output/glaive_code_assistant.jsonl` — you'll see generated code solutions with self-critique refinement.
+
+### What Just Happened?
+
+The task `tasks/examples/glaive_code_assistant` loads coding problems from HuggingFace and runs a **self-critique loop**:
+
+**Key concepts:**
+- **Data source** pulls from HuggingFace datasets
+- **Conditional edges** create loops (critique → regenerate until correct)
+- **`{question}`** and **`{answer}`** come from the dataset
+
+Browse all examples here: [`tasks/examples/`](https://github.com/ServiceNow/SyGra/tree/main/tasks/examples)
+
+---
+
+## Using the Library
+
+Install SyGra as a Python package for use in scripts or notebooks:
 
 ```bash
-pip install sygra  
+pip install sygra
 ```
+
+Then build pipelines programmatically:
 
 ```python
 import sygra
 
-workflow = sygra.Workflow("tasks/examples/glaive_code_assistant")
-workflow.run(num_records=1)
-```
-</details>
+workflow = sygra.Workflow("my_workflow")
+results = (
+    workflow
+    .source([
+        {"topic": "space exploration"},
+        {"topic": "artificial intelligence"},
+    ])
+    .llm(
+        model="gpt-4o-mini",
+        prompt="Write a short story about {topic}",
+        output="story"
+    )
+    .sink("output/stories.json")
+    .run()
+)
 
-### Quick Start
-> To get started with SyGra, please refer to some **[Example Tasks](https://github.com/ServiceNow/SyGra/tree/main/tasks/examples)** or **[SyGra Documentation](https://servicenow.github.io/SyGra/)**
+print(results)
+```
+
+**Expected Output:**
+```
+[
+  {"topic": "space exploration", "story": "In the year 2157, Captain Maya Chen..."},
+  {"topic": "artificial intelligence", "story": "The neural network awakened..."}
+]
+```
+
+Check `output/stories.json` for the full generated content.
 
 ---
 
