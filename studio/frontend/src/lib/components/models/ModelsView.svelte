@@ -679,17 +679,17 @@
 
 	function getStatusColor(status: string): string {
 		switch (status) {
-			case 'online': return 'text-green-500';
-			case 'error': return 'text-red-500';
-			default: return 'text-gray-400';
+			case 'online': return 'text-success';
+			case 'error': return 'text-error';
+			default: return 'text-text-muted';
 		}
 	}
 
 	function getStatusBg(status: string): string {
 		switch (status) {
-			case 'online': return 'bg-green-100 dark:bg-green-900/30';
-			case 'error': return 'bg-red-100 dark:bg-red-900/30';
-			default: return 'bg-gray-100 dark:bg-gray-800';
+			case 'online': return 'bg-success-light';
+			case 'error': return 'bg-error-light';
+			default: return 'bg-surface-secondary';
 		}
 	}
 
@@ -749,51 +749,51 @@
 
 <svelte:window onclick={handleWindowClick} />
 
-<div class="h-full w-full flex flex-col bg-white dark:bg-gray-900">
+<div class="h-full w-full flex flex-col bg-surface">
 	<!-- Header -->
-	<div class="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
+	<div class="flex-shrink-0 border-b border-surface-border px-6 py-4">
 		<div class="flex items-center justify-between mb-4">
 			<div>
-				<h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Models</h1>
-				<p class="text-sm text-gray-500 dark:text-gray-400">
+				<h1 class="text-2xl font-bold text-text-primary">Models</h1>
+				<p class="text-sm text-text-muted">
 					{filteredModels.length} of {models.length} models
 					{#if onlineCount > 0}
-						<span class="ml-2 text-[#4BC93A] dark:text-[#63DF4E]">• {onlineCount} online</span>
+						<span class="ml-2 text-status-completed">• {onlineCount} online</span>
 					{/if}
 					{#if needsConfigCount > 0}
-						<span class="ml-2 text-[#52B8FF]">• {needsConfigCount} need config</span>
+						<span class="ml-2 text-info">• {needsConfigCount} need config</span>
 					{/if}
 					{#if modelsStore.lastRefresh}
-						<span class="ml-2 text-gray-400">|</span>
-						<span class="ml-2 text-gray-400">refreshed {formatLastRefresh(modelsStore.lastRefresh, timeTick)}</span>
+						<span class="ml-2 text-text-muted">|</span>
+						<span class="ml-2 text-text-muted">refreshed {formatLastRefresh(modelsStore.lastRefresh, timeTick)}</span>
 					{/if}
 				</p>
 			</div>
 			<div class="flex items-center gap-2">
 				<!-- View Mode Toggle -->
-				<div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+				<div class="flex items-center bg-surface-secondary rounded-lg p-1">
 					<button
 						onclick={() => setViewMode('card')}
-						class="p-2 rounded-md transition-colors {viewMode === 'card' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#BF71F2] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+						class="p-2 rounded-md transition-colors {viewMode === 'card' ? 'bg-surface text-node-llm shadow-sm' : 'text-text-muted hover:text-text-primary'}"
 						title="Card view"
 					>
 						<LayoutGrid size={18} />
 					</button>
 					<button
 						onclick={() => setViewMode('list')}
-						class="p-2 rounded-md transition-colors {viewMode === 'list' ? 'bg-white dark:bg-gray-700 text-[#7661FF] dark:text-[#BF71F2] shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}"
+						class="p-2 rounded-md transition-colors {viewMode === 'list' ? 'bg-surface text-node-llm shadow-sm' : 'text-text-muted hover:text-text-primary'}"
 						title="List view"
 					>
 						<LayoutList size={18} />
 					</button>
 				</div>
 
-				<div class="w-px h-6 bg-gray-200 dark:bg-gray-700"></div>
+				<div class="w-px h-6 bg-surface-border"></div>
 
 				{#if pingingAll}
 					<button
 						onclick={cancelPingAll}
-						class="flex items-center gap-2 px-3 py-2 border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg transition-colors text-sm"
+						class="flex items-center gap-2 px-3 py-2 border border-error bg-error-light hover:bg-error/20 text-error rounded-lg transition-colors text-sm"
 					>
 						<X size={16} />
 						Cancel
@@ -802,14 +802,14 @@
 				<button
 					onclick={() => pingAllModels()}
 					disabled={pingingAll}
-					class="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors text-sm disabled:opacity-50"
+					class="flex items-center gap-2 px-3 py-2 border border-surface-border hover:bg-surface-hover rounded-lg transition-colors text-sm disabled:opacity-50 text-text-secondary"
 				>
 					<RefreshCw size={16} class={pingingAll ? 'animate-spin' : ''} />
 					{pingingAll ? 'Refreshing...' : 'Refresh'}
 				</button>
 				<button
 					onclick={() => openEditor()}
-					class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c33f] text-[#032D42] rounded-lg transition-colors text-sm"
+					class="btn-accent flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm"
 				>
 					<Plus size={16} />
 					Add Model
@@ -821,12 +821,12 @@
 		<div class="flex flex-wrap items-center gap-3">
 			<!-- Search -->
 			<div class="relative flex-1 min-w-64 max-w-md">
-				<Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+				<Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
 				<input
 					type="text"
 					placeholder="Search models..."
 					bind:value={searchQuery}
-					class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#52B8FF] text-sm"
+					class="w-full pl-10 pr-4 py-2 border border-surface-border rounded-lg bg-surface text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-info text-sm"
 				/>
 			</div>
 
@@ -852,7 +852,7 @@
 			{#if hasActiveFilters}
 				<button
 					onclick={clearFilters}
-					class="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+					class="flex items-center gap-1.5 px-3 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors"
 				>
 					<X size={14} />
 					Clear filters
@@ -865,102 +865,102 @@
 	<div class="flex-1 overflow-auto">
 		{#if loading}
 			<div class="flex items-center justify-center h-full p-6">
-				<RefreshCw size={24} class="animate-spin text-[#7661FF]" />
+				<RefreshCw size={24} class="animate-spin text-node-llm" />
 			</div>
 		{:else if filteredModels.length === 0}
 			<div class="flex flex-col items-center justify-center h-full text-center p-6">
-				<Brain size={48} class="text-gray-300 dark:text-gray-600 mb-4" />
+				<Brain size={48} class="text-text-muted/50 mb-4" />
 				{#if models.length === 0}
-					<h3 class="text-lg font-medium text-gray-600 dark:text-gray-400 mb-2">No models configured</h3>
-					<p class="text-sm text-gray-500 mb-4 max-w-md">
+					<h3 class="text-lg font-medium text-text-secondary mb-2">No models configured</h3>
+					<p class="text-sm text-text-muted mb-4 max-w-md">
 						Add LLM models to use in your workflows. Configure API endpoints, credentials, and parameters.
 					</p>
 					<button
 						onclick={() => openEditor()}
-						class="flex items-center gap-2 px-4 py-2 bg-[#63DF4E] hover:bg-[#52c33f] text-[#032D42] rounded-lg text-sm"
+						class="btn-accent flex items-center gap-2 px-4 py-2 rounded-lg text-sm"
 					>
 						<Plus size={16} />
 						Add Your First Model
 					</button>
 				{:else}
-					<h3 class="text-lg font-medium text-gray-600 dark:text-gray-400 mb-2">No matching models</h3>
-					<p class="text-sm text-gray-500">Try adjusting your search or filters</p>
+					<h3 class="text-lg font-medium text-text-secondary mb-2">No matching models</h3>
+					<p class="text-sm text-text-muted">Try adjusting your search or filters</p>
 				{/if}
 			</div>
 		{:else if viewMode === 'list'}
 			<!-- List View -->
 			<table class="w-full">
-				<thead class="sticky top-0 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+				<thead class="sticky top-0 bg-surface-secondary border-b border-surface-border">
 					<tr>
 						<th class="text-left px-6 py-3">
 							<button
 								onclick={() => toggleSort('name')}
-								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+								class="flex items-center gap-1 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-primary"
 							>
 								Model
-								<ArrowUpDown size={14} class={sortField === 'name' ? 'text-[#7661FF]' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'name' ? 'text-node-llm' : ''} />
 							</button>
 						</th>
 						<th class="text-left px-6 py-3">
 							<button
 								onclick={() => toggleSort('model_type')}
-								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+								class="flex items-center gap-1 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-primary"
 							>
 								Type
-								<ArrowUpDown size={14} class={sortField === 'model_type' ? 'text-[#7661FF]' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'model_type' ? 'text-node-llm' : ''} />
 							</button>
 						</th>
 						<th class="text-left px-6 py-3">
 							<button
 								onclick={() => toggleSort('status')}
-								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+								class="flex items-center gap-1 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-primary"
 							>
 								Status
-								<ArrowUpDown size={14} class={sortField === 'status' ? 'text-[#7661FF]' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'status' ? 'text-node-llm' : ''} />
 							</button>
 						</th>
 						<th class="text-left px-6 py-3">
 							<button
 								onclick={() => toggleSort('latency')}
-								class="flex items-center gap-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hover:text-gray-700 dark:hover:text-gray-200"
+								class="flex items-center gap-1 text-xs font-semibold text-text-muted uppercase tracking-wider hover:text-text-primary"
 							>
 								Latency
-								<ArrowUpDown size={14} class={sortField === 'latency' ? 'text-[#7661FF]' : ''} />
+								<ArrowUpDown size={14} class={sortField === 'latency' ? 'text-node-llm' : ''} />
 							</button>
 						</th>
-						<th class="text-right px-6 py-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+						<th class="text-right px-6 py-3 text-xs font-semibold text-text-muted uppercase tracking-wider">Actions</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+				<tbody class="divide-y divide-surface-border">
 					{#each filteredModels as model (model.name)}
 						{@const Icon = getModelIcon(model.model_type)}
-						<tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+						<tr class="hover:bg-surface-hover transition-colors">
 							<td class="px-6 py-4">
 								<div class="flex items-center gap-3">
-									<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#7661FF]/20 to-[#BF71F2]/20 flex items-center justify-center">
-										<Icon size={20} class="text-[#7661FF] dark:text-[#BF71F2]" />
+									<div class="w-10 h-10 rounded-lg bg-node-llm-bg flex items-center justify-center">
+										<Icon size={20} class="text-node-llm" />
 									</div>
 									<div>
 										<div class="flex items-center gap-2">
-											<span class="font-medium text-gray-900 dark:text-gray-100">{model.name}</span>
+											<span class="font-medium text-text-primary">{model.name}</span>
 											{#if model.is_builtin}
-												<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] font-medium" title="SyGra builtin model (read-only)">
+												<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-node-llm-bg text-node-llm font-medium" title="SyGra builtin model (read-only)">
 													<Shield size={10} />
 													SyGra
 												</span>
 											{/if}
 										</div>
-										<div class="text-xs text-gray-500 font-mono">{model.model}</div>
+										<div class="text-xs text-text-muted font-mono">{model.model}</div>
 									</div>
 								</div>
 							</td>
 							<td class="px-6 py-4">
-								<span class="text-sm text-gray-600 dark:text-gray-400">{model.model_type_label}</span>
+								<span class="text-sm text-text-secondary">{model.model_type_label}</span>
 							</td>
 							<td class="px-6 py-4">
 								{#if pingingModels.has(model.name)}
 									<!-- Checking status -->
-									<span class="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] animate-pulse">
+									<span class="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full bg-node-llm-bg text-node-llm animate-pulse">
 										<Loader2 size={12} class="animate-spin" />
 										Checking...
 									</span>
@@ -968,41 +968,41 @@
 									<!-- Just checked - show result briefly -->
 									{@const result = recentlyChecked.get(model.name)}
 									{#if result === 'success'}
-										<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-[#63DF4E]/20 text-[#4BC93A] dark:text-[#63DF4E] ring-2 ring-[#63DF4E]/50">
+										<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-success-light text-status-completed ring-2 ring-success-border">
 											<CheckCircle2 size={12} />
 											Online
 										</span>
 									{:else}
-										<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 ring-2 ring-red-300 dark:ring-red-600 ring-opacity-50">
+										<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-error-light text-error ring-2 ring-error-border">
 											<XCircle size={12} />
 											{model.status}
 										</span>
 									{/if}
 								{:else if !model.credentials_configured}
-									<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-[#52B8FF]/20 text-[#52B8FF]">
+									<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-info-light text-info">
 										<AlertTriangle size={12} />
 										Needs Config
 									</span>
 								{:else if model.status === 'online'}
-									<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-[#63DF4E]/20 text-[#4BC93A] dark:text-[#63DF4E]">
+									<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-success-light text-status-completed">
 										<CheckCircle2 size={12} />
 										Online
 									</span>
 								{:else if model.status === 'offline' || model.status === 'error'}
-									<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+									<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-error-light text-error">
 										<XCircle size={12} />
 										{model.status}
 									</span>
 								{:else}
-									<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+									<span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-surface-secondary text-text-muted">
 										<HelpCircle size={12} />
 										Unknown
 									</span>
 								{/if}
 							</td>
-							<td class="px-6 py-4 text-sm text-gray-500">
+							<td class="px-6 py-4 text-sm text-text-muted">
 								{#if pingingModels.has(model.name)}
-									<span class="text-[#7661FF] animate-pulse">...</span>
+									<span class="text-node-llm animate-pulse">...</span>
 								{:else}
 									{model.latency_ms ? formatLatency(model.latency_ms) : '-'}
 								{/if}
@@ -1012,7 +1012,7 @@
 									<!-- Three-dot menu -->
 									<button
 										onclick={(e) => toggleMenu(e, model.name)}
-										class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors"
+										class="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted transition-colors"
 										title="More options"
 									>
 										<MoreVertical size={16} />
@@ -1030,8 +1030,8 @@
 				{#if onlineModels.length > 0}
 					<div>
 						<div class="flex items-center gap-2 mb-3">
-							<CheckCircle2 size={18} class="text-[#63DF4E]" />
-							<h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Online ({onlineModels.length})</h2>
+							<CheckCircle2 size={18} class="text-status-completed" />
+							<h2 class="text-sm font-semibold text-text-secondary uppercase tracking-wider">Online ({onlineModels.length})</h2>
 						</div>
 						<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
 							{#each onlineModels as model (model.name)}
@@ -1039,33 +1039,33 @@
 								{@const isChecking = pingingModels.has(model.name)}
 								{@const wasJustChecked = recentlyChecked.has(model.name)}
 								<div
-									class="bg-white dark:bg-gray-800 rounded-xl border p-4 hover:shadow-md transition-all relative {isChecking ? 'border-[#7661FF]/50 dark:border-[#7661FF]/60' : wasJustChecked ? 'border-[#63DF4E] ring-2 ring-[#63DF4E]/30' : 'border-[#63DF4E]/30 dark:border-[#63DF4E]/20'}"
+									class="bg-surface rounded-xl border p-4 hover:shadow-elevation-2 transition-all relative {isChecking ? 'border-node-llm/50' : wasJustChecked ? 'border-status-completed ring-2 ring-success-border' : 'border-success-border'}"
 									ondblclick={() => openDetails(model)}
 								>
 									{#if isChecking}
 										<div class="absolute top-2 right-2">
-											<Loader2 size={14} class="animate-spin text-[#7661FF]" />
+											<Loader2 size={14} class="animate-spin text-node-llm" />
 										</div>
 									{/if}
 									<div class="flex items-start gap-3">
-										<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: radial-gradient(ellipse at 70% 20%, rgba(99, 223, 78, 0.4) 0%, transparent 60%), #032D42;">
-											<Icon size={20} class="text-[#63DF4E]" />
+										<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-brand-primary">
+											<Icon size={20} class="text-brand-accent" />
 										</div>
 										<div class="flex-1 min-w-0">
 											<div class="flex items-center gap-2">
-												<h3 class="font-semibold text-gray-900 dark:text-gray-100 truncate">{model.name}</h3>
+												<h3 class="font-semibold text-text-primary truncate">{model.name}</h3>
 												{#if model.is_builtin}
-													<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] font-medium flex-shrink-0" title="SyGra builtin model">
+													<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-node-llm-bg text-node-llm font-medium flex-shrink-0" title="SyGra builtin model">
 														<Shield size={9} />
 														SyGra
 													</span>
 												{/if}
 											</div>
-											<p class="text-xs text-gray-500 font-mono truncate">{model.model}</p>
-											<div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
-												<span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700">{model.model_type_label}</span>
+											<p class="text-xs text-text-muted font-mono truncate">{model.model}</p>
+											<div class="flex items-center gap-3 mt-2 text-xs text-text-muted">
+												<span class="px-1.5 py-0.5 rounded bg-surface-secondary">{model.model_type_label}</span>
 												{#if isChecking}
-													<span class="flex items-center gap-1 text-[#7661FF] animate-pulse">checking...</span>
+													<span class="flex items-center gap-1 text-node-llm animate-pulse">checking...</span>
 												{:else if model.latency_ms}
 													<span class="flex items-center gap-1"><Zap size={10} />{formatLatency(model.latency_ms)}</span>
 												{/if}
@@ -1074,7 +1074,7 @@
 										<!-- Three-dot menu -->
 										<button
 											onclick={(e) => toggleMenu(e, model.name)}
-											class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors {isChecking ? 'opacity-0' : ''}"
+											class="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted hover:text-text-primary transition-colors {isChecking ? 'opacity-0' : ''}"
 											title="More options"
 										>
 											<MoreVertical size={16} />
@@ -1090,8 +1090,8 @@
 				{#if configuredModels.length > 0}
 					<div>
 						<div class="flex items-center gap-2 mb-3">
-							<Server size={18} class="text-[#7661FF]" />
-							<h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Configured ({configuredModels.length})</h2>
+							<Server size={18} class="text-node-llm" />
+							<h2 class="text-sm font-semibold text-text-secondary uppercase tracking-wider">Configured ({configuredModels.length})</h2>
 						</div>
 						<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
 							{#each configuredModels as model (model.name)}
@@ -1100,49 +1100,49 @@
 								{@const wasJustChecked = recentlyChecked.has(model.name)}
 								{@const checkResult = recentlyChecked.get(model.name)}
 								<div
-									class="bg-white dark:bg-gray-800 rounded-xl border p-4 hover:shadow-md transition-all relative {isChecking ? 'border-[#7661FF]/50 dark:border-[#7661FF]/60' : wasJustChecked ? (checkResult === 'success' ? 'border-[#63DF4E] ring-2 ring-[#63DF4E]/30' : 'border-red-400 dark:border-red-600 ring-2 ring-red-200 dark:ring-red-800') : 'border-gray-200 dark:border-gray-700'}"
+									class="bg-surface rounded-xl border p-4 hover:shadow-elevation-2 transition-all relative {isChecking ? 'border-node-llm/50' : wasJustChecked ? (checkResult === 'success' ? 'border-status-completed ring-2 ring-success-border' : 'border-error ring-2 ring-error-border') : 'border-surface-border'}"
 									ondblclick={() => openDetails(model)}
 								>
 									{#if isChecking}
 										<div class="absolute top-2 right-2">
-											<Loader2 size={14} class="animate-spin text-[#7661FF]" />
+											<Loader2 size={14} class="animate-spin text-node-llm" />
 										</div>
 									{/if}
 									<div class="flex items-start gap-3">
-										<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background: radial-gradient(ellipse at 70% 20%, rgba(191, 113, 242, 0.6) 0%, transparent 60%), #7661FF;">
+										<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-node-llm">
 											<Icon size={20} class="text-white" />
 										</div>
 										<div class="flex-1 min-w-0">
 											<div class="flex items-center gap-2">
-												<h3 class="font-semibold text-gray-900 dark:text-gray-100 truncate">{model.name}</h3>
+												<h3 class="font-semibold text-text-primary truncate">{model.name}</h3>
 												{#if model.is_builtin}
-													<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] font-medium flex-shrink-0" title="SyGra builtin model">
+													<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-node-llm-bg text-node-llm font-medium flex-shrink-0" title="SyGra builtin model">
 														<Shield size={9} />
 														SyGra
 													</span>
 												{/if}
 												{#if isChecking}
-													<span class="flex-shrink-0 w-2 h-2 rounded-full bg-[#7661FF] animate-pulse"></span>
+													<span class="flex-shrink-0 w-2 h-2 rounded-full bg-node-llm animate-pulse"></span>
 												{:else if model.status === 'offline' || model.status === 'error'}
-													<span class="flex-shrink-0 w-2 h-2 rounded-full bg-red-500"></span>
+													<span class="flex-shrink-0 w-2 h-2 rounded-full bg-error"></span>
 												{:else}
-													<span class="flex-shrink-0 w-2 h-2 rounded-full bg-gray-400"></span>
+													<span class="flex-shrink-0 w-2 h-2 rounded-full bg-text-muted"></span>
 												{/if}
 											</div>
-											<p class="text-xs text-gray-500 font-mono truncate">{model.model}</p>
-											<div class="flex items-center gap-3 mt-2 text-xs text-gray-500">
-												<span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700">{model.model_type_label}</span>
+											<p class="text-xs text-text-muted font-mono truncate">{model.model}</p>
+											<div class="flex items-center gap-3 mt-2 text-xs text-text-muted">
+												<span class="px-1.5 py-0.5 rounded bg-surface-secondary">{model.model_type_label}</span>
 												{#if isChecking}
-													<span class="flex items-center gap-1 text-[#7661FF] animate-pulse">checking...</span>
+													<span class="flex items-center gap-1 text-node-llm animate-pulse">checking...</span>
 												{:else if model.error}
-													<span class="text-red-500 truncate" title={model.error}>{model.error}</span>
+													<span class="text-error truncate" title={model.error}>{model.error}</span>
 												{/if}
 											</div>
 										</div>
 										<!-- Three-dot menu -->
 										<button
 											onclick={(e) => toggleMenu(e, model.name)}
-											class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors {isChecking ? 'opacity-0' : ''}"
+											class="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted hover:text-text-primary transition-colors {isChecking ? 'opacity-0' : ''}"
 											title="More options"
 										>
 											<MoreVertical size={16} />
@@ -1158,48 +1158,48 @@
 				{#if needsConfigModels.length > 0}
 					<div>
 						<div class="flex items-center gap-2 mb-3">
-							<AlertTriangle size={18} class="text-[#52B8FF]" />
-							<h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Needs Configuration ({needsConfigModels.length})</h2>
+							<AlertTriangle size={18} class="text-info" />
+							<h2 class="text-sm font-semibold text-text-secondary uppercase tracking-wider">Needs Configuration ({needsConfigModels.length})</h2>
 						</div>
 						<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
 							{#each needsConfigModels as model (model.name)}
 								{@const Icon = getModelIcon(model.model_type)}
 								{@const isChecking = pingingModels.has(model.name)}
 								<div
-									class="bg-white dark:bg-gray-800 rounded-xl border border-dashed p-4 hover:shadow-md transition-all relative {isChecking ? 'border-[#7661FF]/50 dark:border-[#7661FF]/60' : 'border-[#52B8FF]/40 dark:border-[#52B8FF]/30'}"
+									class="bg-surface rounded-xl border border-dashed p-4 hover:shadow-elevation-2 transition-all relative {isChecking ? 'border-node-llm/50' : 'border-info-border'}"
 									ondblclick={() => openDetails(model)}
 								>
 									{#if isChecking}
 										<div class="absolute top-2 right-2">
-											<Loader2 size={14} class="animate-spin text-[#7661FF]" />
+											<Loader2 size={14} class="animate-spin text-node-llm" />
 										</div>
 									{/if}
 									<div class="flex items-start gap-3">
-										<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#52B8FF]/20 dark:bg-[#52B8FF]/15">
-											<Icon size={20} class="text-[#52B8FF]" />
+										<div class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-info-light">
+											<Icon size={20} class="text-info" />
 										</div>
 										<div class="flex-1 min-w-0">
 											<div class="flex items-center gap-2">
-												<h3 class="font-semibold text-gray-900 dark:text-gray-100 truncate">{model.name}</h3>
+												<h3 class="font-semibold text-text-primary truncate">{model.name}</h3>
 												{#if model.is_builtin}
-													<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] font-medium flex-shrink-0" title="SyGra builtin model">
+													<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-node-llm-bg text-node-llm font-medium flex-shrink-0" title="SyGra builtin model">
 														<Shield size={9} />
 														SyGra
 													</span>
 												{/if}
 											</div>
-											<p class="text-xs text-gray-500 font-mono truncate">{model.model}</p>
+											<p class="text-xs text-text-muted font-mono truncate">{model.model}</p>
 											<div class="flex items-center gap-2 mt-2">
-												<span class="text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">{model.model_type_label}</span>
+												<span class="text-xs px-1.5 py-0.5 rounded bg-surface-secondary text-text-secondary">{model.model_type_label}</span>
 												{#if isChecking}
-													<span class="flex items-center gap-1 text-xs text-[#7661FF] animate-pulse">checking...</span>
+													<span class="flex items-center gap-1 text-xs text-node-llm animate-pulse">checking...</span>
 												{/if}
 											</div>
 										</div>
 										<!-- Three-dot menu -->
 										<button
 											onclick={(e) => toggleMenu(e, model.name)}
-											class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors {isChecking ? 'opacity-0' : ''}"
+											class="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted hover:text-text-primary transition-colors {isChecking ? 'opacity-0' : ''}"
 											title="More options"
 										>
 											<MoreVertical size={16} />
@@ -1224,14 +1224,14 @@
 		{@const isBuiltin = model.is_builtin}
 		{@const modelRef = model}
 		<div
-			class="fixed w-52 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-[100] max-h-[calc(100vh-16px)] overflow-y-auto"
+			class="fixed w-52 bg-surface-elevated rounded-lg shadow-dropdown border border-surface-border py-1 z-[100] max-h-[calc(100vh-16px)] overflow-y-auto"
 			style="left: {menuPosition.x}px; {menuPosition.top !== undefined ? `top: ${menuPosition.top}px` : `bottom: ${menuPosition.bottom}px`}"
 			onclick={(e) => e.stopPropagation()}
 		>
 			<!-- View Details -->
 			<button
 				onclick={(e) => { e.stopPropagation(); const m = modelRef; closeMenu(); openDetails(m); }}
-				class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+				class="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
 			>
 				<Eye size={14} />
 				View Details
@@ -1241,7 +1241,7 @@
 			<button
 				onclick={(e) => { e.stopPropagation(); const name = modelName; closeMenu(); pingModel(name); }}
 				disabled={pingingModels.has(modelName) || pingingAll}
-				class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+				class="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors disabled:opacity-50"
 			>
 				{#if pingingModels.has(modelName)}
 					<Loader2 size={14} class="animate-spin" />
@@ -1252,12 +1252,12 @@
 				{/if}
 			</button>
 
-			<div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
+			<div class="h-px bg-surface-border my-1"></div>
 
 			<!-- Copy Model Name -->
 			<button
 				onclick={(e) => { e.stopPropagation(); const name = modelName; closeMenu(); copyToClipboard(name); }}
-				class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+				class="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
 			>
 				<Copy size={14} />
 				Copy Name
@@ -1266,25 +1266,25 @@
 			<!-- Copy Model ID -->
 			<button
 				onclick={(e) => { e.stopPropagation(); const id = modelId; closeMenu(); copyToClipboard(id); }}
-				class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+				class="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
 			>
 				<Copy size={14} />
 				Copy Model ID
 			</button>
 
-			<div class="h-px bg-gray-200 dark:bg-gray-700 my-1"></div>
+			<div class="h-px bg-surface-border my-1"></div>
 
 			<!-- Edit -->
 			{#if !isBuiltin}
 				<button
 					onclick={(e) => { e.stopPropagation(); const m = modelRef; closeMenu(); openEditor(m); }}
-					class="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+					class="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface-hover hover:text-text-primary transition-colors"
 				>
 					<Edit3 size={14} />
 					Edit Configuration
 				</button>
 			{:else}
-				<div class="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 dark:text-gray-500 cursor-not-allowed">
+				<div class="flex items-center gap-2 px-3 py-2 text-sm text-text-muted cursor-not-allowed">
 					<Lock size={14} />
 					Edit (Read-only)
 				</div>
@@ -1294,7 +1294,7 @@
 			{#if !isBuiltin}
 				<button
 					onclick={(e) => { e.stopPropagation(); const name = modelName; closeMenu(); requestDelete(name); }}
-					class="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+					class="w-full flex items-center gap-2 px-3 py-2 text-sm text-error hover:bg-error-light transition-colors"
 				>
 					<Trash2 size={14} />
 					Delete Model
@@ -1307,19 +1307,19 @@
 <!-- Model Editor Modal -->
 {#if showEditor}
 	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-		<div class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col">
-			<div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-				<h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+		<div class="bg-surface rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col">
+			<div class="flex items-center justify-between px-6 py-4 border-b border-surface-border">
+				<h3 class="text-lg font-semibold text-text-primary">
 					{editingModel ? 'Edit Model' : 'Add New Model'}
 				</h3>
-				<button onclick={closeEditor} class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500">
+				<button onclick={closeEditor} class="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted">
 					<X size={18} />
 				</button>
 			</div>
 
 			<div class="flex-1 overflow-y-auto p-6">
 				{#if formError}
-					<div class="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">
+					<div class="mb-4 p-3 bg-error-light border border-error-border rounded-lg text-error text-sm">
 						{formError}
 					</div>
 				{/if}
@@ -1328,17 +1328,17 @@
 					<!-- Name & Type -->
 					<div class="grid grid-cols-2 gap-4">
 						<div>
-							<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Model Name *</label>
+							<label class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-1.5">Model Name *</label>
 							<input
 								type="text"
 								bind:value={formName}
 								placeholder="my-gpt4o"
 								disabled={!!editingModel}
-								class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] disabled:opacity-50"
+								class="w-full px-3 py-2 text-sm rounded-lg border border-surface-border bg-surface text-text-primary focus:ring-2 focus:ring-info disabled:opacity-50"
 							/>
 						</div>
 						<div>
-							<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Type *</label>
+							<label class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-1.5">Type *</label>
 							<CustomSelect
 								options={modelTypeFormOptions}
 								bind:value={formModelType}
@@ -1353,21 +1353,21 @@
 					<!-- Model & API Version -->
 					<div class="grid grid-cols-2 gap-4">
 						<div>
-							<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Model ID</label>
+							<label class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-1.5">Model ID</label>
 							<input
 								type="text"
 								bind:value={formModel}
 								placeholder="gpt-4o"
-								class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
+								class="w-full px-3 py-2 text-sm rounded-lg border border-surface-border bg-surface text-text-primary focus:ring-2 focus:ring-info"
 							/>
 						</div>
 						<div>
-							<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">API Version</label>
+							<label class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-1.5">API Version</label>
 							<input
 								type="text"
 								bind:value={formApiVersion}
 								placeholder="2024-08-01-preview"
-								class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
+								class="w-full px-3 py-2 text-sm rounded-lg border border-surface-border bg-surface text-text-primary focus:ring-2 focus:ring-info"
 							/>
 						</div>
 					</div>
@@ -1375,17 +1375,17 @@
 					<!-- Credentials Section -->
 					{#if Object.keys(formCredentials).length > 0}
 						<div>
-							<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Credentials</label>
-							<p class="text-xs text-gray-400 mb-3">Leave empty to keep existing values. Values are stored in environment variables.</p>
+							<label class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-2">Credentials</label>
+							<p class="text-xs text-text-muted mb-3">Leave empty to keep existing values. Values are stored in environment variables.</p>
 							<div class="grid grid-cols-2 gap-3">
 								{#each Object.keys(formCredentials) as envVar}
 									<div>
-										<label class="block text-xs text-gray-500 mb-1">{envVar}</label>
+										<label class="block text-xs text-text-muted mb-1">{envVar}</label>
 										<input
 											type={envVar.toLowerCase().includes('token') || envVar.toLowerCase().includes('secret') || envVar.toLowerCase().includes('key') ? 'password' : 'text'}
 											bind:value={formCredentials[envVar]}
 											placeholder={`SYGRA_${formName.toUpperCase().replace(/[-.]/g, '_')}_${envVar}`}
-											class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
+											class="w-full px-3 py-2 text-sm rounded-lg border border-surface-border bg-surface text-text-primary focus:ring-2 focus:ring-info font-mono"
 										/>
 									</div>
 								{/each}
@@ -1396,11 +1396,11 @@
 					<!-- Parameters Section -->
 					<div>
 						<div class="flex items-center justify-between mb-2">
-							<label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Parameters</label>
+							<label class="text-xs font-medium text-text-muted uppercase tracking-wider">Parameters</label>
 							<button
 								type="button"
 								onclick={addParameter}
-								class="text-xs text-[#7661FF] hover:text-[#5a4dcc] dark:text-[#BF71F2] flex items-center gap-1"
+								class="text-xs text-node-llm hover:text-node-agent flex items-center gap-1"
 							>
 								<Plus size={12} />
 								Add Parameter
@@ -1413,18 +1413,18 @@
 										type="text"
 										bind:value={param.key}
 										placeholder="key (e.g., max_tokens)"
-										class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
+										class="flex-1 px-3 py-2 text-sm rounded-lg border border-surface-border bg-surface text-text-primary focus:ring-2 focus:ring-info font-mono"
 									/>
 									<input
 										type="text"
 										bind:value={param.value}
 										placeholder="value (e.g., 1000)"
-										class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
+										class="flex-1 px-3 py-2 text-sm rounded-lg border border-surface-border bg-surface text-text-primary focus:ring-2 focus:ring-info font-mono"
 									/>
 									<button
 										type="button"
 										onclick={() => removeParameter(index)}
-										class="p-2 text-gray-400 hover:text-red-500 transition-colors"
+										class="p-2 text-text-muted hover:text-error transition-colors"
 										title="Remove parameter"
 									>
 										<X size={16} />
@@ -1432,14 +1432,14 @@
 								</div>
 							{/each}
 						</div>
-						<p class="text-xs text-gray-400 mt-2">For arrays use JSON: ["value1", "value2"]. For nested objects use JSON syntax.</p>
+						<p class="text-xs text-text-muted mt-2">For arrays use JSON: ["value1", "value2"]. For nested objects use JSON syntax.</p>
 					</div>
 
 					<!-- Advanced Options Toggle -->
 					<button
 						type="button"
 						onclick={() => showAdvancedOptions = !showAdvancedOptions}
-						class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-[#7661FF] dark:hover:text-[#BF71F2]"
+						class="flex items-center gap-2 text-sm text-text-secondary hover:text-node-llm"
 					>
 						{#if showAdvancedOptions}
 							<ChevronDown size={16} />
@@ -1451,25 +1451,25 @@
 
 					{#if showAdvancedOptions}
 						<!-- Additional Properties -->
-						<div class="space-y-4 pl-4 border-l-2 border-gray-200 dark:border-gray-700">
+						<div class="space-y-4 pl-4 border-l-2 border-surface-border">
 							<!-- HF Chat Template & Model Serving Name -->
 							<div class="grid grid-cols-2 gap-4">
 								<div>
-									<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">HF Chat Template Model ID</label>
+									<label class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-1.5">HF Chat Template Model ID</label>
 									<input
 										type="text"
 										bind:value={formHfChatTemplateModelId}
 										placeholder="Qwen/Qwen3-32B"
-										class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
+										class="w-full px-3 py-2 text-sm rounded-lg border border-surface-border bg-surface text-text-primary focus:ring-2 focus:ring-info font-mono"
 									/>
 								</div>
 								<div>
-									<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Model Serving Name</label>
+									<label class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-1.5">Model Serving Name</label>
 									<input
 										type="text"
 										bind:value={formModelServingName}
 										placeholder="my_model_server"
-										class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
+										class="w-full px-3 py-2 text-sm rounded-lg border border-surface-border bg-surface text-text-primary focus:ring-2 focus:ring-info font-mono"
 									/>
 								</div>
 							</div>
@@ -1477,50 +1477,50 @@
 							<!-- Input/Output Types -->
 							<div class="grid grid-cols-2 gap-4">
 								<div>
-									<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Input Type</label>
+									<label class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-1.5">Input Type</label>
 									<input
 										type="text"
 										bind:value={formInputType}
 										placeholder="audio, image, etc."
-										class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
+										class="w-full px-3 py-2 text-sm rounded-lg border border-surface-border bg-surface text-text-primary focus:ring-2 focus:ring-info"
 									/>
 								</div>
 								<div>
-									<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Output Type</label>
+									<label class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-1.5">Output Type</label>
 									<input
 										type="text"
 										bind:value={formOutputType}
 										placeholder="audio, image, etc."
-										class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF]"
+										class="w-full px-3 py-2 text-sm rounded-lg border border-surface-border bg-surface text-text-primary focus:ring-2 focus:ring-info"
 									/>
 								</div>
 							</div>
 
 							<!-- Post Process -->
 							<div>
-								<label class="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Post Process Function</label>
+								<label class="block text-xs font-medium text-text-muted uppercase tracking-wider mb-1.5">Post Process Function</label>
 								<input
 									type="text"
 									bind:value={formPostProcess}
 									placeholder="sygra.core.models.model_postprocessor.RemoveThinkData"
-									class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
+									class="w-full px-3 py-2 text-sm rounded-lg border border-surface-border bg-surface text-text-primary focus:ring-2 focus:ring-info font-mono"
 								/>
 							</div>
 
 							<!-- Custom Properties -->
 							<div>
 								<div class="flex items-center justify-between mb-2">
-									<label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Custom Properties</label>
+									<label class="text-xs font-medium text-text-muted uppercase tracking-wider">Custom Properties</label>
 									<button
 										type="button"
 										onclick={addCustomProperty}
-										class="text-xs text-[#7661FF] hover:text-[#5a4dcc] dark:text-[#BF71F2] flex items-center gap-1"
+										class="text-xs text-node-llm hover:text-node-agent flex items-center gap-1"
 									>
 										<Plus size={12} />
 										Add Property
 									</button>
 								</div>
-								<p class="text-xs text-gray-400 mb-2">Add any additional properties (e.g., image_capabilities). Use JSON for nested objects.</p>
+								<p class="text-xs text-text-muted mb-2">Add any additional properties (e.g., image_capabilities). Use JSON for nested objects.</p>
 								<div class="space-y-2">
 									{#each formCustomProperties as prop, index}
 										<div class="flex items-start gap-2">
@@ -1528,18 +1528,18 @@
 												type="text"
 												bind:value={prop.key}
 												placeholder="property_name"
-												class="w-1/3 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono"
+												class="w-1/3 px-3 py-2 text-sm rounded-lg border border-surface-border bg-surface text-text-primary focus:ring-2 focus:ring-info font-mono"
 											/>
 											<textarea
 												bind:value={prop.value}
 												placeholder="JSON object or simple value"
 												rows="2"
-												class="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-[#52B8FF] font-mono resize-y"
+												class="flex-1 px-3 py-2 text-sm rounded-lg border border-surface-border bg-surface text-text-primary focus:ring-2 focus:ring-info font-mono resize-y"
 											></textarea>
 											<button
 												type="button"
 												onclick={() => removeCustomProperty(index)}
-												class="p-2 text-gray-400 hover:text-red-500 transition-colors"
+												class="p-2 text-text-muted hover:text-error transition-colors"
 												title="Remove property"
 											>
 												<X size={16} />
@@ -1553,13 +1553,13 @@
 				</div>
 			</div>
 
-			<div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-800">
-				<button onclick={closeEditor} class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+			<div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-surface-border">
+				<button onclick={closeEditor} class="px-4 py-2 text-sm text-text-secondary hover:bg-surface-hover rounded-lg">
 					Cancel
 				</button>
 				<button
 					onclick={saveModel}
-					class="px-4 py-2 bg-[#63DF4E] hover:bg-[#52c33f] text-[#032D42] text-sm font-medium rounded-lg"
+					class="btn-accent px-4 py-2 text-sm font-medium rounded-lg"
 				>
 					{editingModel ? 'Save Changes' : 'Add Model'}
 				</button>
@@ -1585,29 +1585,29 @@
 	{@const Icon = getModelIcon(detailsModel.model_type)}
 	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onclick={closeDetails}>
 		<div
-			class="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col"
+			class="bg-surface rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[85vh] flex flex-col"
 			onclick={(e) => e.stopPropagation()}
 		>
 			<!-- Header -->
-			<div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+			<div class="flex items-center justify-between px-6 py-4 border-b border-surface-border">
 				<div class="flex items-center gap-3">
-					<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-[#7661FF]/20 to-[#BF71F2]/20 flex items-center justify-center">
-						<Icon size={20} class="text-[#7661FF] dark:text-[#BF71F2]" />
+					<div class="w-10 h-10 rounded-lg bg-node-llm-bg flex items-center justify-center">
+						<Icon size={20} class="text-node-llm" />
 					</div>
 					<div>
 						<div class="flex items-center gap-2">
-							<h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">{detailsModel.name}</h3>
+							<h3 class="text-lg font-semibold text-text-primary">{detailsModel.name}</h3>
 							{#if detailsModel.is_builtin}
-								<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2] font-medium">
+								<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-node-llm-bg text-node-llm font-medium">
 									<Shield size={10} />
 									SyGra
 								</span>
 							{/if}
 						</div>
-						<p class="text-xs text-gray-500 font-mono">{detailsModel.model}</p>
+						<p class="text-xs text-text-muted font-mono">{detailsModel.model}</p>
 					</div>
 				</div>
-				<button onclick={closeDetails} class="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500">
+				<button onclick={closeDetails} class="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted">
 					<X size={18} />
 				</button>
 			</div>
@@ -1615,31 +1615,31 @@
 			<!-- Content -->
 			<div class="flex-1 overflow-y-auto p-6 space-y-6">
 				<!-- Status Section -->
-				<div class="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+				<div class="flex items-center justify-between p-4 rounded-lg bg-surface-secondary">
 					<div class="flex items-center gap-4">
 						<!-- Status Badge -->
 						{#if pingingModels.has(detailsModel.name)}
-							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-[#7661FF]/15 dark:bg-[#7661FF]/20 text-[#7661FF] dark:text-[#BF71F2]">
+							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-node-llm-bg text-node-llm">
 								<Loader2 size={14} class="animate-spin" />
 								Checking...
 							</span>
 						{:else if !detailsModel.credentials_configured}
-							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-warning-light text-warning">
 								<AlertTriangle size={14} />
 								Needs Configuration
 							</span>
 						{:else if detailsModel.status === 'online'}
-							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-success-light text-status-completed">
 								<CheckCircle2 size={14} />
 								Online
 							</span>
 						{:else if detailsModel.status === 'offline' || detailsModel.status === 'error'}
-							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-error-light text-error">
 								<XCircle size={14} />
 								{detailsModel.status.charAt(0).toUpperCase() + detailsModel.status.slice(1)}
 							</span>
 						{:else}
-							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+							<span class="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full bg-surface-tertiary text-text-muted">
 								<HelpCircle size={14} />
 								Unknown
 							</span>
@@ -1647,15 +1647,15 @@
 
 						<!-- Latency -->
 						{#if detailsModel.latency_ms}
-							<span class="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
-								<Zap size={14} class="text-amber-500" />
+							<span class="flex items-center gap-1.5 text-sm text-text-secondary">
+								<Zap size={14} class="text-warning" />
 								{formatLatency(detailsModel.latency_ms)}
 							</span>
 						{/if}
 
 						<!-- Last Checked -->
 						{#if detailsModel.last_checked}
-							<span class="flex items-center gap-1.5 text-sm text-gray-500">
+							<span class="flex items-center gap-1.5 text-sm text-text-muted">
 								<Clock size={14} />
 								{formatTime(detailsModel.last_checked)}
 							</span>
@@ -1665,7 +1665,7 @@
 					<button
 						onclick={() => pingModel(detailsModel.name)}
 						disabled={pingingModels.has(detailsModel.name) || pingingAll}
-						class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+						class="flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg border border-surface-border hover:bg-surface-hover disabled:opacity-50 transition-colors text-text-secondary"
 					>
 						{#if pingingModels.has(detailsModel.name)}
 							<Loader2 size={14} class="animate-spin" />
@@ -1678,12 +1678,12 @@
 
 				<!-- Error Message -->
 				{#if detailsModel.error}
-					<div class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+					<div class="p-3 rounded-lg bg-error-light border border-error-border">
 						<div class="flex items-start gap-2">
-							<AlertTriangle size={16} class="text-red-500 flex-shrink-0 mt-0.5" />
+							<AlertTriangle size={16} class="text-error flex-shrink-0 mt-0.5" />
 							<div>
-								<p class="text-sm font-medium text-red-800 dark:text-red-300">Error Details</p>
-								<p class="text-sm text-red-600 dark:text-red-400 mt-1">{detailsModel.error}</p>
+								<p class="text-sm font-medium text-error">Error Details</p>
+								<p class="text-sm text-error/80 mt-1">{detailsModel.error}</p>
 							</div>
 						</div>
 					</div>
@@ -1691,34 +1691,34 @@
 
 				<!-- Model Information -->
 				<div>
-					<h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Model Information</h4>
+					<h4 class="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Model Information</h4>
 					<div class="grid grid-cols-2 gap-4">
-						<div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-							<p class="text-xs text-gray-500 mb-1">Type</p>
-							<p class="text-sm font-medium text-gray-900 dark:text-gray-100">{detailsModel.model_type_label}</p>
+						<div class="p-3 rounded-lg bg-surface-secondary">
+							<p class="text-xs text-text-muted mb-1">Type</p>
+							<p class="text-sm font-medium text-text-primary">{detailsModel.model_type_label}</p>
 						</div>
-						<div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-							<p class="text-xs text-gray-500 mb-1">Model ID</p>
+						<div class="p-3 rounded-lg bg-surface-secondary">
+							<p class="text-xs text-text-muted mb-1">Model ID</p>
 							<div class="flex items-center gap-2">
-								<p class="text-sm font-mono text-gray-900 dark:text-gray-100 truncate">{detailsModel.model}</p>
+								<p class="text-sm font-mono text-text-primary truncate">{detailsModel.model}</p>
 								<button
 									onclick={() => copyToClipboard(detailsModel.model)}
-									class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+									class="p-1 hover:bg-surface-hover rounded transition-colors"
 									title="Copy model ID"
 								>
-									<Copy size={12} class="text-gray-400" />
+									<Copy size={12} class="text-text-muted" />
 								</button>
 							</div>
 						</div>
 						{#if detailsModel.api_version}
-							<div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-								<p class="text-xs text-gray-500 mb-1">API Version</p>
-								<p class="text-sm font-mono text-gray-900 dark:text-gray-100">{detailsModel.api_version}</p>
+							<div class="p-3 rounded-lg bg-surface-secondary">
+								<p class="text-xs text-text-muted mb-1">API Version</p>
+								<p class="text-sm font-mono text-text-primary">{detailsModel.api_version}</p>
 							</div>
 						{/if}
-						<div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-							<p class="text-xs text-gray-500 mb-1">Credentials</p>
-							<p class="text-sm font-medium {detailsModel.credentials_configured ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}">
+						<div class="p-3 rounded-lg bg-surface-secondary">
+							<p class="text-xs text-text-muted mb-1">Credentials</p>
+							<p class="text-sm font-medium {detailsModel.credentials_configured ? 'text-status-completed' : 'text-warning'}">
 								{detailsModel.credentials_configured ? 'Configured' : 'Not Configured'}
 							</p>
 						</div>
@@ -1728,14 +1728,14 @@
 				<!-- Parameters -->
 				{#if Object.keys(detailsModel.parameters || {}).length > 0}
 					<div>
-						<h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Parameters</h4>
-						<div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+						<h4 class="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Parameters</h4>
+						<div class="rounded-lg border border-surface-border overflow-hidden">
 							<table class="w-full text-sm">
-								<tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+								<tbody class="divide-y divide-surface-border">
 									{#each Object.entries(detailsModel.parameters) as [key, value]}
-										<tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-											<td class="px-4 py-2.5 font-mono text-gray-600 dark:text-gray-400 w-1/3">{key}</td>
-											<td class="px-4 py-2.5 font-mono text-gray-900 dark:text-gray-100">
+										<tr class="hover:bg-surface-hover">
+											<td class="px-4 py-2.5 font-mono text-text-secondary w-1/3">{key}</td>
+											<td class="px-4 py-2.5 font-mono text-text-primary">
 												{typeof value === 'object' ? JSON.stringify(value) : String(value)}
 											</td>
 										</tr>
@@ -1748,7 +1748,7 @@
 
 				<!-- Status Code -->
 				{#if detailsModel.status_code}
-					<div class="flex items-center gap-2 text-sm text-gray-500">
+					<div class="flex items-center gap-2 text-sm text-text-muted">
 						<Info size={14} />
 						<span>HTTP Status Code: <span class="font-mono">{detailsModel.status_code}</span></span>
 					</div>
@@ -1756,19 +1756,19 @@
 			</div>
 
 			<!-- Footer -->
-			<div class="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-800">
+			<div class="flex items-center justify-between px-6 py-4 border-t border-surface-border">
 				<div class="flex items-center gap-2">
 					{#if !detailsModel.is_builtin}
 						<button
 							onclick={() => { closeDetails(); openEditor(detailsModel); }}
-							class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+							class="flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface-hover rounded-lg transition-colors"
 						>
 							<Edit3 size={14} />
 							Edit
 						</button>
 						<button
 							onclick={() => { closeDetails(); requestDelete(detailsModel.name); }}
-							class="flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+							class="flex items-center gap-2 px-3 py-2 text-sm text-error hover:bg-error-light rounded-lg transition-colors"
 						>
 							<Trash2 size={14} />
 							Delete
@@ -1777,7 +1777,7 @@
 				</div>
 				<button
 					onclick={closeDetails}
-					class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+					class="px-4 py-2 text-sm font-medium text-text-secondary hover:bg-surface-hover rounded-lg transition-colors"
 				>
 					Close
 				</button>

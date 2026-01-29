@@ -126,17 +126,17 @@
 		<!-- Sources -->
 		{#if sources().length > 0}
 			<div class="space-y-1">
-				<div class="flex items-center gap-1 text-gray-500 dark:text-gray-400 font-medium">
+				<div class="flex items-center gap-1 text-text-muted font-medium">
 					<ArrowDown size={10} />
 					<span>Sources</span>
 				</div>
 				{#each sources() as src}
 					{@const Icon = getSourceIcon(src)}
-					<div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 pl-3">
+					<div class="flex items-center gap-1.5 text-text-muted pl-3">
 						<Icon size={12} />
 						<span class="truncate">{getSourceLabel(src)}</span>
 						{#if src.join_type && src.join_type !== 'primary'}
-							<span class="text-[10px] px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500">
+							<span class="text-[10px] px-1 py-0.5 rounded bg-surface-secondary text-text-muted">
 								{src.join_type}
 							</span>
 						{/if}
@@ -147,18 +147,18 @@
 
 		<!-- Sinks -->
 		{#if sinks().length > 0}
-			<div class="space-y-1 pt-1 border-t border-gray-100 dark:border-gray-700">
-				<div class="flex items-center gap-1 text-gray-500 dark:text-gray-400 font-medium">
+			<div class="space-y-1 pt-1 border-t border-surface-border">
+				<div class="flex items-center gap-1 text-text-muted font-medium">
 					<ArrowUp size={10} />
 					<span>Sinks</span>
 				</div>
 				{#each sinks() as sink}
 					{@const SinkIcon = getSinkIcon(sink)}
-					<div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 pl-3">
+					<div class="flex items-center gap-1.5 text-text-muted pl-3">
 						<SinkIcon size={12} />
 						<span class="truncate">{getSinkLabel(sink)}</span>
 						{#if sink.operation}
-							<span class="text-[10px] px-1 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
+							<span class="text-[10px] px-1 py-0.5 rounded bg-success-light text-status-completed">
 								{sink.operation}
 							</span>
 						{/if}
@@ -169,7 +169,7 @@
 
 		<!-- Empty state -->
 		{#if sources().length === 0 && sinks().length === 0}
-			<div class="text-gray-500 dark:text-gray-400 italic">
+			<div class="text-text-muted italic">
 				Click to configure data source & sink
 			</div>
 		{/if}
