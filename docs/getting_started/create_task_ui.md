@@ -3,6 +3,7 @@
 **Visual workflow builder and execution platform for SyGra synthetic data pipelines**
 
 ---
+![SyGraStudio](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/videos/studio_create_new_flow.gif)
 
 ## Why This Exists
 
