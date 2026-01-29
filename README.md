@@ -133,8 +133,11 @@ Check `output/stories.json` for the full generated content.
 
 ## SyGra Studio
 
-**SyGra Studio** is a visual workflow builder that replaces manual YAML editing with an interactive drag-and-drop interface:
+**SyGra Studio** is a visual workflow builder that replaces manual YAML editing with an interactive drag-and-drop interface. It also allows you to execute a task, monitor during execution and view the result along with metadata like latency, token usage etc.
 
+![SyGraStudio](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/videos/studio_create_new_flow.gif)
+
+**Studio Features:**
 - **Visual Graph Builder** — Drag-and-drop nodes, connect them visually, configure with forms
 - **Real-time Execution** — Watch your workflow run with live node status and streaming logs
 - **Rich Analytics** — Track usage, tokens, latency, and success rates across runs
