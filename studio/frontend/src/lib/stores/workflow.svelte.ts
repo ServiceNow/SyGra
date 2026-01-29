@@ -880,10 +880,21 @@ function createWorkflowStore() {
 
 			const workflowId = currentWorkflow.id;
 
+			// Helper to get data config from either workflow level or Data node
+			const getDataConfig = () => {
+				// First check workflow-level data_config
+				if (currentWorkflow.data_config?.source) {
+					return currentWorkflow.data_config;
+				}
+				// Fall back to Data node's data_config
+				const dataNode = currentWorkflow.nodes.find(n => n.node_type === 'data');
+				return dataNode?.data_config;
+			};
+
 			// Skip for new unsaved workflows
 			if (workflowId.startsWith('new_')) {
 				// For new workflows, try to extract from inline data if available
-				const dataConfig = currentWorkflow.data_config;
+				const dataConfig = getDataConfig();
 				if (dataConfig?.source) {
 					const sources = Array.isArray(dataConfig.source) ? dataConfig.source : [dataConfig.source];
 					const columns: string[] = [];
@@ -896,8 +907,9 @@ function createWorkflowStore() {
 						}
 					}
 					if (columns.length > 0) {
-						dataColumnsCache[workflowId] = [...new Set(columns)];
-						return dataColumnsCache[workflowId];
+						const uniqueColumns = [...new Set(columns)];
+						dataColumnsCache = { ...dataColumnsCache, [workflowId]: uniqueColumns };
+						return uniqueColumns;
 					}
 				}
 				return [];
@@ -914,7 +926,7 @@ function createWorkflowStore() {
 				let columns = data.columns || [];
 
 				// Apply transformations to column names
-				const dataConfig = currentWorkflow.data_config;
+				const dataConfig = getDataConfig();
 				if (dataConfig?.source) {
 					const sources = Array.isArray(dataConfig.source) ? dataConfig.source : [dataConfig.source];
 					for (const source of sources) {
@@ -924,8 +936,8 @@ function createWorkflowStore() {
 					}
 				}
 
-				// Cache the result
-				dataColumnsCache[workflowId] = columns;
+				// Cache the result with spread to ensure reactivity
+				dataColumnsCache = { ...dataColumnsCache, [workflowId]: columns };
 				return columns;
 			} catch (e) {
 				console.error('[fetchDataColumns] Error:', e);
@@ -937,11 +949,26 @@ function createWorkflowStore() {
 		 * Clear cached data columns for a workflow (call when data config changes)
 		 */
 		clearDataColumnsCache(workflowId?: string) {
-			if (workflowId) {
-				delete dataColumnsCache[workflowId];
-			} else if (currentWorkflow) {
-				delete dataColumnsCache[currentWorkflow.id];
+			const idToClear = workflowId || currentWorkflow?.id;
+			if (idToClear) {
+				const { [idToClear]: _, ...rest } = dataColumnsCache;
+				dataColumnsCache = rest;
 			}
+		},
+
+		/**
+		 * Update data columns cache from preview data.
+		 * Called when source preview is loaded (especially for new workflows).
+		 */
+		updateDataColumnsFromPreview(columns: string[]) {
+			if (!currentWorkflow) return;
+			const workflowId = currentWorkflow.id;
+
+			// Get existing columns and merge (in case of multiple sources)
+			const existingColumns = dataColumnsCache[workflowId] || [];
+			const mergedColumns = [...new Set([...existingColumns, ...columns])];
+			// Use spread to ensure Svelte 5 reactivity is triggered
+			dataColumnsCache = { ...dataColumnsCache, [workflowId]: mergedColumns };
 		},
 
 		async updateNode(nodeId: string, nodeData: Partial<WorkflowNode> & { newId?: string }) {
