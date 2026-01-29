@@ -1,3 +1,4 @@
+import asyncio
 import time
 from inspect import isclass
 from typing import Any
@@ -23,6 +24,11 @@ class LambdaNode(BaseNode):
         self.func_to_execute = utils.get_func_from_str(self.node_config["lambda"])
         if isclass(self.func_to_execute):
             self.func_to_execute = self.func_to_execute.apply
+        # deduce if the function type is sync or async
+        if asyncio.iscoroutinefunction(self.func_to_execute):
+            self.func_type = "async"
+        else:
+            self.func_type = "sync"
 
     async def _async_exec_wrapper(self, state: dict[str, Any]) -> dict[str, Any]:
         """
@@ -75,14 +81,15 @@ class LambdaNode(BaseNode):
         Returns:
              Any: platform specific runnable object like Runnable in LangGraph.
         """
-        func_type = self.node_config.get("function_type", "async")
-        if func_type == "sync":
+        if self.func_type == "sync":
             return utils.backend_factory.create_lambda_runnable(
                 self._sync_exec_wrapper, async_func=False
             )
-        else:
+        elif self.func_type == "async":
             # default to async function as old behavior(default async_func is True)
             return utils.backend_factory.create_lambda_runnable(self._async_exec_wrapper)
+        else:
+            raise Exception("Invalid function type")
 
     def validate_node(self):
         """

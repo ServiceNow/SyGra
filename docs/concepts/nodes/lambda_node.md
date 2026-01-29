@@ -7,7 +7,6 @@ SyGra supports custom logic in your workflow using the **lambda** node. Lambda n
 ```yaml
 lambda_function_node:
   node_type: lambda
-  function_type: sync
   lambda: path.to.module.function_name or path.to.module.LambdaFunctionImplementationClass
   output_keys: 
     - return_key1
@@ -19,9 +18,6 @@ lambda_function_node:
 - **`node_type`**:  
   Set to `lambda` to indicate this node type.
 
-- **`function_type`**:  
-  Set to `sync` or `async` to indicate the type of function to execute. Default is `async`.
-
 - **`lambda`**:  
   Fully qualified path to the function or class to execute.  
   - Can be a direct function (e.g., `tasks.my_task.task_executor.lambda_function`)
@@ -32,6 +28,9 @@ lambda_function_node:
 
 - **`node_state`**:  
   Optional. Node-specific state key.
+
+- **`node_name`**:  
+  Optional. Node name used in the studio UI.
 
 ### Example Lambda Implementation
 
@@ -62,7 +61,6 @@ def lambda_function(lambda_node_dict: dict, state: SygraState):
 - All keys you want accessible in the next node should be listed in `output_keys`.
 - Use lambda nodes for any custom task, especially when built-in nodes do not cover your use case.
 - If you have async programming in your lambda function, use `AsyncLambdaFunction` instead of `LambdaFunction`. In this case, the `apply` function is async in nature, and you can call async function with `await` keyword.
-When you define lambda function, you need to provide `function_type` as `sync` or `async`(default).
 
 ----
 ### Example workflow with sync and async lambda function:
@@ -80,12 +78,10 @@ graph_config:
     lambda_1:
       node_type: lambda
       lambda: tasks.examples.lambda_test.task_executor.Lambda1Function
-      function_type: sync
       node_name: Sync Node
     lambda_2:
       node_type: lambda
       lambda: tasks.examples.lambda_test.task_executor.Lambda2Function
-      function_type: async
       node_name: Async Node
   edges:
   - from: START
