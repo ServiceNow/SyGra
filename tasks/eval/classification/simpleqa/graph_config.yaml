@@ -1,0 +1,105 @@
+data_config:
+  source:
+    type: "hf"
+    repo_id: "google/simpleqa-verified"
+    config_name: "simpleqa_verified"
+    split: "eval"
+
+    transformations:
+      - transform: sygra.processors.data_transform.RenameFieldsTransform
+        params:
+          mapping:
+            task_id: original_index
+          overwrite: false
+
+graph_config:
+  nodes:
+    generate_taxonomy:
+      node_type: llm
+      prompt:
+        - system: |
+            You are an assistant tasked with identifying the topic of a problem.
+            You should respond only with the topic out of the below list:
+              Politics
+              Art
+              TV shows
+              History
+              Music
+              Other
+              Geography
+              Sports
+              Science and technology
+              Video games
+
+        - user: |
+            {problem}
+      output_keys:
+        - predicted_topic
+      post_process: tasks.eval.classification.simpleqa.task_executor.GenerateTopicPostProcessor
+      model:
+        name: eval_model
+        parameters:
+          temperature: 0.1
+        structured_output:
+          schema:
+            fields:
+              predicted_topic:
+                type: str
+                description: "Predicted topic of the problem"
+    unit_metrics:
+      node_type: lambda
+      lambda: tasks.eval.utils.UnitMetrics
+      golden_key: "topic"
+      predicted_key: "predicted_topic"
+      unit_metrics_map:
+        - name: "exact_match"
+          params:
+            key: "text"
+      output_keys:
+        - exact_match_result
+  edges:
+    - from: START
+      to: generate_taxonomy
+    - from: generate_taxonomy
+      to: unit_metrics
+    - from: unit_metrics
+      to: END
+
+output_config:
+  output_map:
+    original_index:
+      from: "original_index"
+    problem:
+      from: "problem"
+    topic:
+      from: "topic"
+    predicted_topic:
+      from: "predicted_topic"
+    exact_match_result:
+      from: "exact_match_result"
+
+graph_post_process:
+  - processor: tasks.eval.utils.MetricCollatorPostProcessor
+    params:
+      aggregator_metrics_map:
+        - name: "accuracy"
+          params:
+            key: "text"
+          unit_metrics_results:
+            - "exact_match_result"
+        - name: "precision"
+          params:
+            predicted_key: "text"
+          unit_metrics_results:
+            - "exact_match_result"
+        - name: "recall"
+          params:
+            golden_key: "text"
+          unit_metrics_results:
+            - "exact_match_result"
+        - name: "f1_score"
+          params:
+            predicted_key: "text"
+            golden_key: "text"
+          unit_metrics_results:
+            - "exact_match_result"
