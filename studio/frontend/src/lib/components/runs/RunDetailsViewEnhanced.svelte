@@ -276,7 +276,22 @@
 		}
 	}
 
-	type PostProcessorArtifactGroupPaths = { report_file: string | null; final_file: string | null };
+	function formatPostProcessorKey(key: string): string {
+		return key
+			.split('_')
+			.filter(Boolean)
+			.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+			.join(' ');
+	}
+
+	function formatPostProcessorArtifactLabel(label: string): string {
+		return label
+			.replace(/_file$/i, '')
+			.split('_')
+			.filter(Boolean)
+			.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+			.join(' ');
+	}
 	type PostProcessorArtifactsIndex = {
 		files?: string[];
 		[key: string]: unknown;
@@ -295,19 +310,15 @@
 
 	let postProcessorArtifactsLoading = $state(false);
 	let postProcessorArtifactsLoaded = $state(false);
-	type PostProcessorGroup = {
-		key: string;
-		reportPath: string | null;
-		finalPath: string | null;
-		reportData: unknown | null;
-		finalData: unknown | null;
-	};
+	type PostProcessorGroupArtifact = { label: string; path: string; data: unknown };
+	type PostProcessorGroup = { key: string; artifacts: PostProcessorGroupArtifact[] };
 	let postProcessorGroups = $state<PostProcessorGroup[]>([]);
 	let semanticDedupGroup = $derived(() => postProcessorGroups.find((g) => g.key === 'semantic_dedup') ?? null);
 	let semanticDedupAvailable = $derived(() => {
 		const g = semanticDedupGroup();
-		return !!g && (!!g.reportData || !!g.finalData);
+		return !!g && g.artifacts.length > 0;
 	});
+	let postProcessorGroupsAvailable = $derived(() => postProcessorGroups.some((g) => g.artifacts.length > 0));
 
 	type PostProcessorArtifact = { path: string; data: unknown };
 	let postProcessorArtifacts = $state<PostProcessorArtifact[]>([]);
@@ -340,32 +351,26 @@
 			const groupEntries = entries.filter(([k, v]) => {
 				if (k === 'files') return false;
 				if (!v || typeof v !== 'object') return false;
-				return 'report_file' in (v as any) || 'final_file' in (v as any);
+				return Object.values(v as Record<string, unknown>).some((val) => typeof val === 'string' && val);
 			});
 
 			postProcessorGroups = await Promise.all(
 				groupEntries.map(async ([key, v]) => {
-					const group = v as PostProcessorArtifactGroupPaths;
-					const reportPath = group?.report_file ?? null;
-					const finalPath = group?.final_file ?? null;
-					const [reportData, finalData] = await Promise.all([
-						reportPath ? fetchJsonFromPath(reportPath) : Promise.resolve(null),
-						finalPath ? fetchJsonFromPath(finalPath) : Promise.resolve(null),
-					]);
-					return {
-						key,
-						reportPath,
-						finalPath,
-						reportData,
-						finalData,
-					} satisfies PostProcessorGroup;
+					const obj = v as Record<string, unknown>;
+					const pathEntries = Object.entries(obj).filter(([, value]) => typeof value === 'string' && value);
+					const artifacts = await Promise.all(
+						pathEntries.map(async ([label, path]) => {
+							const data = await fetchJsonFromPath(path as string);
+							return data === null ? null : ({ label, path: path as string, data } satisfies PostProcessorGroupArtifact);
+						})
+					);
+					return { key, artifacts: artifacts.filter((x): x is PostProcessorGroupArtifact => x !== null) };
 				})
 			);
 
 			const groupPaths = new Set<string>();
 			for (const g of postProcessorGroups) {
-				if (g.reportPath) groupPaths.add(g.reportPath);
-				if (g.finalPath) groupPaths.add(g.finalPath);
+				for (const a of g.artifacts) groupPaths.add(a.path);
 			}
 
 			const filteredPaths = files.filter((p) => p && !groupPaths.has(p));
@@ -823,27 +828,21 @@
 						</summary>
 
 						<div class="mt-4 space-y-6">
-							{#if semanticDedupGroup()?.reportData}
+							{#each semanticDedupGroup()!.artifacts as artifact (artifact.path)}
 								<div class="space-y-3">
 									<div class="flex items-center justify-between gap-4">
 										<div class="min-w-0">
-											{#if semanticDedupGroup()?.reportPath}
-												<button
-													onclick={() => copyToClipboard(semanticDedupGroup()!.reportPath!, 'semantic_dedup_report_path')}
-													class="font-mono text-xs text-text-primary hover:text-info flex items-center gap-1 break-all text-left"
-													title="Click to copy full path: {semanticDedupGroup()!.reportPath!}"
-												>
-													{getBasename(semanticDedupGroup()!.reportPath!)}
-													{#if copiedField === 'semantic_dedup_report_path'}
-														<Check size={10} class="text-success flex-shrink-0" />
-													{:else}
-														<Copy size={10} class="opacity-50 flex-shrink-0" />
-													{/if}
-												</button>
-											{/if}
+											<button
+												onclick={() => copyToClipboard(artifact.path, `semantic_dedup_artifact_path:${artifact.path}`)}
+												class="font-mono text-xs text-text-primary hover:text-info flex items-center gap-1 break-all text-left"
+												title="Click to copy full path: {artifact.path}"
+											>
+												{formatPostProcessorArtifactLabel(artifact.label)}
+												<span class="opacity-70">({getBasename(artifact.path)})</span>
+											</button>
 										</div>
 										<button
-											onclick={() => downloadJsonData(semanticDedupGroup()!.reportData, semanticDedupGroup()?.reportPath ? getBasename(semanticDedupGroup()!.reportPath!) : `run-${execution.id.slice(0, 8)}-semantic-dedup-report.json`)}
+											onclick={() => downloadJsonData(artifact.data, getBasename(artifact.path) || `run-${execution.id.slice(0, 8)}-semantic-dedup.json`)}
 											class="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover rounded-lg border border-[var(--border)] flex-shrink-0"
 										>
 											<Download size={14} />
@@ -851,42 +850,65 @@
 										</button>
 									</div>
 
-									{#if typeof semanticDedupGroup()!.reportData === 'object' && semanticDedupGroup()!.reportData !== null && 'duplicates' in semanticDedupGroup()!.reportData && Array.isArray((semanticDedupGroup()!.reportData as any).duplicates)}
+									{#if typeof artifact.data === 'object' && artifact.data !== null && artifact.label === 'report_file' && 'duplicates' in (artifact.data as any) && Array.isArray((artifact.data as any).duplicates)}
 										<DataTableViewer
-											data={(semanticDedupGroup()!.reportData as any).duplicates}
+											data={(artifact.data as any).duplicates}
 											title="Semantic Dedup Report (Duplicates)"
-											total={(semanticDedupGroup()!.reportData as any).duplicates.length}
+											total={(artifact.data as any).duplicates.length}
 											maxRecords={20}
 											showViewToggle={true}
 											defaultView="table"
 										/>
+									{:else if Array.isArray(artifact.data)}
+										<DataTableViewer
+											data={artifact.data}
+											title={formatPostProcessorArtifactLabel(artifact.label)}
+											total={artifact.data.length}
+											maxRecords={20}
+											showViewToggle={true}
+											defaultView="table"
+										/>
+									{:else if typeof artifact.data === 'object' && artifact.data !== null}
+										<DataTableViewer
+											data={[artifact.data]}
+											title={formatPostProcessorArtifactLabel(artifact.label)}
+											total={1}
+											maxRecords={20}
+											showViewToggle={true}
+											defaultView="json"
+										/>
 									{:else}
-										<pre class="p-4 bg-brand-primary text-white rounded-lg text-xs overflow-auto max-h-64 font-mono">{JSON.stringify(semanticDedupGroup()!.reportData, null, 2)}</pre>
+										<pre class="p-4 bg-brand-primary text-white rounded-lg text-xs overflow-auto max-h-64 font-mono">{JSON.stringify(artifact.data, null, 2)}</pre>
 									{/if}
 								</div>
-							{/if}
+							{/each}
+						</div>
+					</details>
+				{/if}
 
-							{#if semanticDedupGroup()?.finalData}
+				{#each postProcessorGroups.filter((g) => g.key !== 'semantic_dedup' && g.artifacts.length > 0) as group (group.key)}
+					<details class="group bg-surface-secondary rounded-xl border border-[var(--border)] p-4">
+						<summary class="cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary flex items-center gap-2">
+							<ChevronDown size={16} class="transition-transform group-open:rotate-180" />
+							{formatPostProcessorKey(group.key)}
+						</summary>
+
+						<div class="mt-4 space-y-6">
+							{#each group.artifacts as artifact (artifact.path)}
 								<div class="space-y-3">
 									<div class="flex items-center justify-between gap-4">
 										<div class="min-w-0">
-											{#if semanticDedupGroup()?.finalPath}
-												<button
-													onclick={() => copyToClipboard(semanticDedupGroup()!.finalPath!, 'semantic_dedup_final_path')}
-													class="font-mono text-xs text-text-primary hover:text-info flex items-center gap-1 break-all text-left"
-													title="Click to copy full path: {semanticDedupGroup()!.finalPath!}"
-												>
-													{getBasename(semanticDedupGroup()!.finalPath!)}
-													{#if copiedField === 'semantic_dedup_final_path'}
-														<Check size={10} class="text-success flex-shrink-0" />
-													{:else}
-														<Copy size={10} class="opacity-50 flex-shrink-0" />
-													{/if}
-												</button>
-											{/if}
+											<button
+												onclick={() => copyToClipboard(artifact.path, `post_processor_group_artifact_path:${artifact.path}`)}
+												class="font-mono text-xs text-text-primary hover:text-info flex items-center gap-1 break-all text-left"
+												title="Click to copy full path: {artifact.path}"
+											>
+												{formatPostProcessorArtifactLabel(artifact.label)}
+												<span class="opacity-70">({getBasename(artifact.path)})</span>
+											</button>
 										</div>
 										<button
-											onclick={() => downloadJsonData(semanticDedupGroup()!.finalData, semanticDedupGroup()?.finalPath ? getBasename(semanticDedupGroup()!.finalPath!) : `run-${execution.id.slice(0, 8)}-semantic-dedup.json`)}
+											onclick={() => downloadJsonData(artifact.data, getBasename(artifact.path) || `run-${execution.id.slice(0, 8)}-artifact.json`)}
 											class="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover rounded-lg border border-[var(--border)] flex-shrink-0"
 										>
 											<Download size={14} />
@@ -894,19 +916,32 @@
 										</button>
 									</div>
 
-									<DataTableViewer
-										data={Array.isArray(semanticDedupGroup()!.finalData) ? (semanticDedupGroup()!.finalData as any) : [semanticDedupGroup()!.finalData]}
-										title="Semantic Dedup Final Output"
-										total={Array.isArray(semanticDedupGroup()!.finalData) ? (semanticDedupGroup()!.finalData as any).length : 1}
-										maxRecords={20}
-										showViewToggle={true}
-										defaultView="table"
-									/>
+									{#if Array.isArray(artifact.data)}
+										<DataTableViewer
+											data={artifact.data}
+											title={formatPostProcessorArtifactLabel(artifact.label)}
+											total={artifact.data.length}
+											maxRecords={20}
+											showViewToggle={true}
+											defaultView="table"
+										/>
+									{:else if typeof artifact.data === 'object' && artifact.data !== null}
+										<DataTableViewer
+											data={[artifact.data]}
+											title={formatPostProcessorArtifactLabel(artifact.label)}
+											total={1}
+											maxRecords={20}
+											showViewToggle={true}
+											defaultView="json"
+										/>
+									{:else}
+										<pre class="p-4 bg-brand-primary text-white rounded-lg text-xs overflow-auto max-h-64 font-mono">{JSON.stringify(artifact.data, null, 2)}</pre>
+									{/if}
 								</div>
-							{/if}
+							{/each}
 						</div>
 					</details>
-				{/if}
+				{/each}
 
 				{#if postProcessorArtifactsLoading}
 					<div class="text-center py-6 text-text-muted">
@@ -976,7 +1011,7 @@
 					</details>
 				{/if}
 
-				{#if !execution.output_data && !postProcessorArtifactsLoading && !semanticDedupAvailable() && !postProcessorArtifactsAvailable()}
+				{#if !execution.output_data && !postProcessorArtifactsLoading && !postProcessorGroupsAvailable() && !postProcessorArtifactsAvailable()}
 					<div class="text-center py-12 text-text-muted">
 						<FileJson size={48} class="mx-auto mb-4 opacity-50" />
 						<p class="text-sm font-medium">No output data available</p>

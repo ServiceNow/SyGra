@@ -1527,7 +1527,7 @@ def _register_routes(app: FastAPI) -> None:
             "files": [_as_return_path(p) for p in files],
             "semantic_dedup": {
                 "report_file": _as_return_path(semantic_dedup_report) if semantic_dedup_report else None,
-                "final_file": _as_return_path(semantic_dedup_final) if semantic_dedup_final else None,
+                "final_output_data_file": _as_return_path(semantic_dedup_final) if semantic_dedup_final else None,
             },
         }
 
