@@ -247,6 +247,149 @@
 		a.click();
 		URL.revokeObjectURL(url);
 	}
+
+	function getBasename(path: string): string {
+		const parts = path.split('/');
+		return parts[parts.length - 1] || path;
+	}
+
+	async function downloadJsonData(data: unknown, filename: string) {
+		const json = JSON.stringify(data, null, 2);
+		const blob = new Blob([json], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = filename;
+		a.click();
+		URL.revokeObjectURL(url);
+	}
+
+	async function fetchJsonFromPath(path: string): Promise<unknown | null> {
+		try {
+			const url = `/api/media/file?path=${encodeURIComponent(path)}&workflow_id=${encodeURIComponent(execution.workflow_id)}`;
+			const resp = await fetch(url);
+			if (!resp.ok) return null;
+			const text = await resp.text();
+			return JSON.parse(text);
+		} catch {
+			return null;
+		}
+	}
+
+	type PostProcessorArtifactGroupPaths = { report_file: string | null; final_file: string | null };
+	type PostProcessorArtifactsIndex = {
+		files?: string[];
+		[key: string]: unknown;
+	};
+
+	async function fetchPostProcessorArtifactsIndex(): Promise<PostProcessorArtifactsIndex | null> {
+		try {
+			const resp = await fetch(`/api/executions/${encodeURIComponent(execution.id)}/artifacts/post-processors`);
+			if (!resp.ok) return null;
+			const payload = await resp.json();
+			return payload;
+		} catch {
+			return null;
+		}
+	}
+
+	let postProcessorArtifactsLoading = $state(false);
+	let postProcessorArtifactsLoaded = $state(false);
+	type PostProcessorGroup = {
+		key: string;
+		reportPath: string | null;
+		finalPath: string | null;
+		reportData: unknown | null;
+		finalData: unknown | null;
+	};
+	let postProcessorGroups = $state<PostProcessorGroup[]>([]);
+	let semanticDedupGroup = $derived(() => postProcessorGroups.find((g) => g.key === 'semantic_dedup') ?? null);
+	let semanticDedupAvailable = $derived(() => {
+		const g = semanticDedupGroup();
+		return !!g && (!!g.reportData || !!g.finalData);
+	});
+
+	type PostProcessorArtifact = { path: string; data: unknown };
+	let postProcessorArtifacts = $state<PostProcessorArtifact[]>([]);
+	let postProcessorArtifactsAvailable = $derived(() => postProcessorArtifacts.length > 0);
+
+	let lastSemanticDedupProbeKey = $state<string | null>(null);
+	let semanticDedupProbeKey = $derived(() => {
+		const runName = metadata?.execution?.run_name ?? '';
+		const outFile = execution.output_file ?? '';
+		return `${execution.id}:${runName}:${outFile}`;
+	});
+
+	$effect(() => {
+		if (semanticDedupProbeKey() !== lastSemanticDedupProbeKey) {
+			lastSemanticDedupProbeKey = semanticDedupProbeKey();
+			postProcessorArtifactsLoading = false;
+			postProcessorArtifactsLoaded = false;
+			postProcessorGroups = [];
+			postProcessorArtifacts = [];
+		}
+	});
+
+	async function loadPostProcessorArtifacts() {
+		if (postProcessorArtifactsLoading || postProcessorArtifactsLoaded) return;
+		postProcessorArtifactsLoading = true;
+		try {
+			const idx = await fetchPostProcessorArtifactsIndex();
+			const files = Array.isArray(idx?.files) ? (idx?.files as string[]) : [];
+			const entries = idx ? Object.entries(idx) : [];
+			const groupEntries = entries.filter(([k, v]) => {
+				if (k === 'files') return false;
+				if (!v || typeof v !== 'object') return false;
+				return 'report_file' in (v as any) || 'final_file' in (v as any);
+			});
+
+			postProcessorGroups = await Promise.all(
+				groupEntries.map(async ([key, v]) => {
+					const group = v as PostProcessorArtifactGroupPaths;
+					const reportPath = group?.report_file ?? null;
+					const finalPath = group?.final_file ?? null;
+					const [reportData, finalData] = await Promise.all([
+						reportPath ? fetchJsonFromPath(reportPath) : Promise.resolve(null),
+						finalPath ? fetchJsonFromPath(finalPath) : Promise.resolve(null),
+					]);
+					return {
+						key,
+						reportPath,
+						finalPath,
+						reportData,
+						finalData,
+					} satisfies PostProcessorGroup;
+				})
+			);
+
+			const groupPaths = new Set<string>();
+			for (const g of postProcessorGroups) {
+				if (g.reportPath) groupPaths.add(g.reportPath);
+				if (g.finalPath) groupPaths.add(g.finalPath);
+			}
+
+			const filteredPaths = files.filter((p) => p && !groupPaths.has(p));
+			const uniquePaths = Array.from(new Set(filteredPaths));
+
+			const results = await Promise.all(
+				uniquePaths.map(async (path) => {
+					const data = await fetchJsonFromPath(path);
+					return data === null ? null : ({ path, data } satisfies PostProcessorArtifact);
+				})
+			);
+
+			postProcessorArtifacts = results.filter((x): x is PostProcessorArtifact => x !== null);
+			postProcessorArtifactsLoaded = true;
+		} finally {
+			postProcessorArtifactsLoading = false;
+		}
+	}
+
+	$effect(() => {
+		if (activeTab === 'output') {
+			loadPostProcessorArtifacts();
+		}
+	});
 </script>
 
 <div class="h-full w-full flex flex-col bg-surface">
@@ -670,7 +813,170 @@
 						showViewToggle={true}
 						defaultView="table"
 					/>
-				{:else}
+				{/if}
+
+				{#if semanticDedupAvailable()}
+					<details class="group bg-surface-secondary rounded-xl border border-[var(--border)] p-4">
+						<summary class="cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary flex items-center gap-2">
+							<ChevronDown size={16} class="transition-transform group-open:rotate-180" />
+							Semantic Deduplication
+						</summary>
+
+						<div class="mt-4 space-y-6">
+							{#if semanticDedupGroup()?.reportData}
+								<div class="space-y-3">
+									<div class="flex items-center justify-between gap-4">
+										<div class="min-w-0">
+											{#if semanticDedupGroup()?.reportPath}
+												<button
+													onclick={() => copyToClipboard(semanticDedupGroup()!.reportPath!, 'semantic_dedup_report_path')}
+													class="font-mono text-xs text-text-primary hover:text-info flex items-center gap-1 break-all text-left"
+													title="Click to copy full path: {semanticDedupGroup()!.reportPath!}"
+												>
+													{getBasename(semanticDedupGroup()!.reportPath!)}
+													{#if copiedField === 'semantic_dedup_report_path'}
+														<Check size={10} class="text-success flex-shrink-0" />
+													{:else}
+														<Copy size={10} class="opacity-50 flex-shrink-0" />
+													{/if}
+												</button>
+											{/if}
+										</div>
+										<button
+											onclick={() => downloadJsonData(semanticDedupGroup()!.reportData, semanticDedupGroup()?.reportPath ? getBasename(semanticDedupGroup()!.reportPath!) : `run-${execution.id.slice(0, 8)}-semantic-dedup-report.json`)}
+											class="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover rounded-lg border border-[var(--border)] flex-shrink-0"
+										>
+											<Download size={14} />
+											Download
+										</button>
+									</div>
+
+									{#if typeof semanticDedupGroup()!.reportData === 'object' && semanticDedupGroup()!.reportData !== null && 'duplicates' in semanticDedupGroup()!.reportData && Array.isArray((semanticDedupGroup()!.reportData as any).duplicates)}
+										<DataTableViewer
+											data={(semanticDedupGroup()!.reportData as any).duplicates}
+											title="Semantic Dedup Report (Duplicates)"
+											total={(semanticDedupGroup()!.reportData as any).duplicates.length}
+											maxRecords={20}
+											showViewToggle={true}
+											defaultView="table"
+										/>
+									{:else}
+										<pre class="p-4 bg-brand-primary text-white rounded-lg text-xs overflow-auto max-h-64 font-mono">{JSON.stringify(semanticDedupGroup()!.reportData, null, 2)}</pre>
+									{/if}
+								</div>
+							{/if}
+
+							{#if semanticDedupGroup()?.finalData}
+								<div class="space-y-3">
+									<div class="flex items-center justify-between gap-4">
+										<div class="min-w-0">
+											{#if semanticDedupGroup()?.finalPath}
+												<button
+													onclick={() => copyToClipboard(semanticDedupGroup()!.finalPath!, 'semantic_dedup_final_path')}
+													class="font-mono text-xs text-text-primary hover:text-info flex items-center gap-1 break-all text-left"
+													title="Click to copy full path: {semanticDedupGroup()!.finalPath!}"
+												>
+													{getBasename(semanticDedupGroup()!.finalPath!)}
+													{#if copiedField === 'semantic_dedup_final_path'}
+														<Check size={10} class="text-success flex-shrink-0" />
+													{:else}
+														<Copy size={10} class="opacity-50 flex-shrink-0" />
+													{/if}
+												</button>
+											{/if}
+										</div>
+										<button
+											onclick={() => downloadJsonData(semanticDedupGroup()!.finalData, semanticDedupGroup()?.finalPath ? getBasename(semanticDedupGroup()!.finalPath!) : `run-${execution.id.slice(0, 8)}-semantic-dedup.json`)}
+											class="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover rounded-lg border border-[var(--border)] flex-shrink-0"
+										>
+											<Download size={14} />
+											Download
+										</button>
+									</div>
+
+									<DataTableViewer
+										data={Array.isArray(semanticDedupGroup()!.finalData) ? (semanticDedupGroup()!.finalData as any) : [semanticDedupGroup()!.finalData]}
+										title="Semantic Dedup Final Output"
+										total={Array.isArray(semanticDedupGroup()!.finalData) ? (semanticDedupGroup()!.finalData as any).length : 1}
+										maxRecords={20}
+										showViewToggle={true}
+										defaultView="table"
+									/>
+								</div>
+							{/if}
+						</div>
+					</details>
+				{/if}
+
+				{#if postProcessorArtifactsLoading}
+					<div class="text-center py-6 text-text-muted">
+						<Loader2 size={20} class="mx-auto mb-2 animate-spin" />
+						<p class="text-sm font-medium">Loading post-processor artifacts...</p>
+					</div>
+				{/if}
+
+				{#if postProcessorArtifactsAvailable()}
+					<details class="group bg-surface-secondary rounded-xl border border-[var(--border)] p-4">
+						<summary class="cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary flex items-center gap-2">
+							<ChevronDown size={16} class="transition-transform group-open:rotate-180" />
+							Post-processor Artifacts
+						</summary>
+
+						<div class="mt-4 space-y-6">
+							{#each postProcessorArtifacts as artifact (artifact.path)}
+								<div class="space-y-3">
+									<div class="flex items-center justify-between gap-4">
+										<div class="min-w-0">
+											<button
+												onclick={() => copyToClipboard(artifact.path, `post_processor_artifact_path:${artifact.path}`)}
+												class="font-mono text-xs text-text-primary hover:text-info flex items-center gap-1 break-all text-left"
+												title="Click to copy full path: {artifact.path}"
+											>
+												{getBasename(artifact.path)}
+												{#if copiedField === `post_processor_artifact_path:${artifact.path}`}
+													<Check size={10} class="text-success flex-shrink-0" />
+												{:else}
+													<Copy size={10} class="opacity-50 flex-shrink-0" />
+												{/if}
+											</button>
+										</div>
+										<button
+											onclick={() => downloadJsonData(artifact.data, getBasename(artifact.path) || `run-${execution.id.slice(0, 8)}-artifact.json`)}
+											class="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover rounded-lg border border-[var(--border)] flex-shrink-0"
+										>
+											<Download size={14} />
+											Download
+										</button>
+									</div>
+
+									{#if Array.isArray(artifact.data)}
+										<DataTableViewer
+											data={artifact.data}
+											title={getBasename(artifact.path)}
+											total={artifact.data.length}
+											maxRecords={20}
+											showViewToggle={true}
+											defaultView="table"
+										/>
+									{:else if typeof artifact.data === 'object' && artifact.data !== null}
+										<DataTableViewer
+											data={[artifact.data]}
+											title={getBasename(artifact.path)}
+											total={1}
+											maxRecords={20}
+											showViewToggle={true}
+											defaultView="json"
+										/>
+									{:else}
+										<pre class="p-4 bg-brand-primary text-white rounded-lg text-xs overflow-auto max-h-64 font-mono">{JSON.stringify(artifact.data, null, 2)}</pre>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</details>
+				{/if}
+
+				{#if !execution.output_data && !postProcessorArtifactsLoading && !semanticDedupAvailable() && !postProcessorArtifactsAvailable()}
 					<div class="text-center py-12 text-text-muted">
 						<FileJson size={48} class="mx-auto mb-4 opacity-50" />
 						<p class="text-sm font-medium">No output data available</p>
