@@ -308,7 +308,9 @@ class BaseTaskExecutor(ABC):
                 # store the updated key-value
                 new_record[k] = v
             # now add into final dataset
-            if len(new_record) > 0:
+            # Allow empty records through when no field filtering is applied
+            # (empty records are valid for tasks with no data source that use samplers)
+            if len(new_record) > 0 or not filter_column:
                 final_data.append(new_record)
         return final_data
 

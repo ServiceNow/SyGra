@@ -11,12 +11,13 @@ class BackendFactory(ABC):
     """
 
     @abstractmethod
-    def create_lambda_runnable(self, exec_wrapper):
+    def create_lambda_runnable(self, exec_wrapper, async_func=True):
         """
         Abstract method to create a Lambda runnable.
 
         Args:
             exec_wrapper: Async function to execute
+            async_func: True if the function is async
 
         Returns:
             Any: backend specific runnable object like Runnable for backend=Langgraph

@@ -279,6 +279,39 @@ def test_assign_ids_flat_list():
     assert all("id" in r for r in result)
 
 
+def test_process_feilds_empty_records():
+    """Regression test: Empty records should not be filtered out when no select_columns.
+
+    This is critical for tasks with no data source that rely on samplers to populate fields.
+    """
+    executor = DummyExecutor()
+    # Simulate empty records generated when no data source is configured
+    data = [{}, {}, {}]
+    result = executor._process_feilds(data, select_columns=None)
+    assert len(result) == 3, "Empty records should pass through when no field filtering"
+    assert result == [{}, {}, {}]
+
+
+def test_process_feilds_with_select_columns():
+    """Tests that field filtering works correctly with non-empty records."""
+    executor = DummyExecutor()
+    data = [{"a": 1, "b": 2, "id": "x"}, {"a": 3, "b": 4, "id": "y"}]
+    result = executor._process_feilds(data, select_columns=["a"])
+    # Should keep only 'a' and 'id' (id is always preserved)
+    assert len(result) == 2
+    assert all("a" in r and "id" in r and "b" not in r for r in result)
+
+
+def test_process_feilds_empty_records_with_select_columns():
+    """Empty records with select_columns should be filtered (no matching fields)."""
+    executor = DummyExecutor()
+    data = [{}, {"a": 1}]
+    result = executor._process_feilds(data, select_columns=["a"])
+    # Empty record has no 'a' field, so new_record stays empty and is filtered
+    assert len(result) == 1
+    assert result[0]["a"] == 1
+
+
 def test_process_static_variables():
     """Tests static variable resolution and mapping inside output configuration."""
 
