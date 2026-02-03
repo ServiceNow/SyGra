@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from sygra.core.eval.metrics.base_metric_metadata import BaseMetricMetadata
 from sygra.core.eval.metrics.unit_metrics.base_unit_metric import BaseUnitMetric
+from sygra.core.eval.metrics.unit_metrics.unit_metric_registry import unit_metric
 from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 from sygra.logger.logger_config import logger
 
@@ -24,6 +25,7 @@ class ScrollDirectionMetricConfig(BaseModel):
     )
 
 
+@unit_metric("scroll_direction")
 class ScrollDirectionMetric(BaseUnitMetric):
     """Validate scroll direction correctness."""
 

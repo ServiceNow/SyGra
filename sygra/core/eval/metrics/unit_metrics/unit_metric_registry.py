@@ -1,6 +1,6 @@
 """
-Aggregator Metric Registry
-Singleton registry for discovering and instantiating aggregator metrics.
+Unit Metric Registry
+Singleton registry for discovering and instantiating unit metrics.
 Provides centralized service locator for all metrics (built-in and custom).
 """
 
@@ -15,35 +15,35 @@ from sygra.logger.logger_config import logger
 
 # This prevents circular imports while still providing type safety.
 if TYPE_CHECKING:
-    from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import (
-        BaseAggregatorMetric,
+    from sygra.core.eval.metrics.unit_metrics.base_unit_metric import (
+        BaseUnitMetric,
     )
 
 
-class AggregatorMetricRegistry:
+class UnitMetricRegistry:
     """
     This registry maintains a mapping of metric names to metric classes,
     allowing runtime discovery without hard coding.
     Features:
-    1. Auto-registration using @register_aggregator_metric decorator
+    1. Auto-registration using @register_unit_metric decorator
     2. Runtime metric discovery(and use case being read from graph_config)
     3. Factory method for metric instantiation
     4. List available metrics
     5. Check metric existence
     Usage:
         # Register a metric (add decorator)
-        AggregatorMetricRegistry.register("precision", PrecisionMetric)
+        UnitMetricRegistry.register("precision", PrecisionMetric)
         # Get metric instance
-        metric = AggregatorMetricRegistry.get_metric("precision")
+        metric = UnitMetricRegistry.get_metric("precision")
         # List all available metrics
-        all_metrics = AggregatorMetricRegistry.list_metrics()
+        all_metrics = UnitMetricRegistry.list_metrics()
         # Check if metric exists, for example
-        if AggregatorMetricRegistry.has_metric("f1"):
-            metric = AggregatorMetricRegistry.get_metric("f1")
+        if UnitMetricRegistry.has_metric("f1"):
+            metric = UnitMetricRegistry.get_metric("f1")
     """
 
     # Class-level storage (create singleton to have central control)
-    _metrics: Dict[str, Type[BaseAggregatorMetric]] = {}
+    _metrics: Dict[str, Type[BaseUnitMetric]] = {}
     _discovered: bool = False
 
     @classmethod
@@ -52,16 +52,17 @@ class AggregatorMetricRegistry:
             return
 
         try:
-            import sygra.core.eval.metrics.aggregator_metrics as aggregator_metrics_pkg
+            import sygra.core.eval.metrics.unit_metrics as unit_metrics_pkg
 
             for module_info in pkgutil.iter_modules(
-                aggregator_metrics_pkg.__path__, aggregator_metrics_pkg.__name__ + "."
+                unit_metrics_pkg.__path__, unit_metrics_pkg.__name__ + "."
             ):
                 module_name = module_info.name
                 if module_name.endswith(
                     (
-                        ".base_aggregator_metric",
-                        ".aggregator_metric_registry",
+                        ".base_unit_metric",
+                        ".unit_metric_registry",
+                        ".unit_metric_result",
                     )
                 ):
                     continue
@@ -69,22 +70,22 @@ class AggregatorMetricRegistry:
 
             cls._discovered = True
         except Exception as e:
-            logger.error(f"Failed to auto-discover aggregator metrics: {e}")
+            logger.error(f"Failed to auto-discover unit metrics: {e}")
             cls._discovered = True
 
     @classmethod
-    def register(cls, name: str, metric_class: Type[BaseAggregatorMetric]) -> None:
+    def register(cls, name: str, metric_class: Type[BaseUnitMetric]) -> None:
         """
-        Register an aggregator metric class.
-        This method is typically called automatically by the @register_aggregator_metric
+        Register a unit metric class.
+        This method is typically called automatically by the @register_unit_metric
         decorator, but can also be called manually if needed.
         Args:
             name: Unique identifier for the metric (e.g., "precision", "f1")
-            metric_class: Class that implements BaseAggregatorMetric
+            metric_class: Class that implements BaseUnitMetric
         Raises:
             ValueError: If name is empty or metric_class is invalid
         Example:
-            AggregatorMetricRegistry.register("precision", PrecisionMetric)
+            UnitMetricRegistry.register("precision", PrecisionMetric)
         """
         # Validation
         if not name or not isinstance(name, str):
@@ -94,29 +95,28 @@ class AggregatorMetricRegistry:
             raise ValueError(f"metric_class must be a class, got {type(metric_class)}")
 
         # Import at runtime (inside function) instead of at module level to avoid circular dependency
-        from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import (
-            BaseAggregatorMetric,
+        from sygra.core.eval.metrics.unit_metrics.base_unit_metric import (
+            BaseUnitMetric,
         )
 
-        if not issubclass(metric_class, BaseAggregatorMetric):
+        if not issubclass(metric_class, BaseUnitMetric):
             raise ValueError(
-                f"metric_class must inherit from BaseAggregatorMetric, "
-                f"got {metric_class.__name__}"
+                f"metric_class must inherit from BaseUnitMetric, " f"got {metric_class.__name__}"
             )
 
         # Check for duplicate registration
         if name in cls._metrics:
             logger.warning(
-                f"Aggregator metric '{name}' is already registered. "
+                f"Unit metric '{name}' is already registered. "
                 f"Overwriting {cls._metrics[name].__name__} with {metric_class.__name__}"
             )
 
         # Register
         cls._metrics[name] = metric_class
-        logger.debug(f"Registered aggregator metric: '{name}' -> {metric_class.__name__}")
+        logger.debug(f"Registered unit metric: '{name}' -> {metric_class.__name__}")
 
     @classmethod
-    def get_metric(cls, name: str, **kwargs) -> BaseAggregatorMetric:
+    def get_metric(cls, name: str, **kwargs) -> BaseUnitMetric:
         """
         Get an instance of a registered metric.
         This is a factory method that creates and returns a metric instance
@@ -130,17 +130,16 @@ class AggregatorMetricRegistry:
             KeyError: If metric name is not registered
         Example:
             # Get metric with default parameters
-            precision = AggregatorMetricRegistry.get_metric("precision")
+            precision = UnitMetricRegistry.get_metric("precision")
             # Get metric with custom parameters
-            topk = AggregatorMetricRegistry.get_metric("top_k_accuracy", k=5)
+            topk = UnitMetricRegistry.get_metric("top_k_accuracy", k=5)
         """
         cls._ensure_discovered()
 
         if name not in cls._metrics:
             available = cls.list_metrics()
             raise KeyError(
-                f"Aggregator metric '{name}' not found in registry. "
-                f"Available metrics: {available}"
+                f"Unit metric '{name}' not found in registry. " f"Available metrics: {available}"
             )
 
         metric_class = cls._metrics[name]
@@ -148,7 +147,7 @@ class AggregatorMetricRegistry:
         try:
             # Instantiate metric with optional kwargs
             metric_instance = metric_class(**kwargs)
-            logger.debug(f"Instantiated aggregator metric: '{name}'")
+            logger.debug(f"Instantiated unit metric: '{name}'")
             return metric_instance
         except Exception as e:
             logger.error(
@@ -163,7 +162,7 @@ class AggregatorMetricRegistry:
         Returns:
          List of metric names
         Example:
-            AggregatorMetricRegistry.list_metrics()
+            UnitMetricRegistry.list_metrics()
             ['accuracy', 'confusion_matrix', 'f1', 'precision', 'recall']
         """
         cls._ensure_discovered()
@@ -178,14 +177,14 @@ class AggregatorMetricRegistry:
         Returns:
             True if metric is registered, False otherwise
         Example:
-            if AggregatorMetricRegistry.has_metric("f1"):
-                metric = AggregatorMetricRegistry.get_metric("f1")
+            if UnitMetricRegistry.has_metric("f1"):
+                metric = UnitMetricRegistry.get_metric("f1")
         """
         cls._ensure_discovered()
         return name in cls._metrics
 
     @classmethod
-    def get_metric_class(cls, name: str) -> Type[BaseAggregatorMetric]:
+    def get_metric_class(cls, name: str) -> Type[BaseUnitMetric]:
         """
         Get the class (not instance) of a registered metric.
         Adding this for now for inspection purposes on which metric is being used.
@@ -201,8 +200,7 @@ class AggregatorMetricRegistry:
         if name not in cls._metrics:
             available = cls.list_metrics()
             raise KeyError(
-                f"Aggregator metric '{name}' not found in registry. "
-                f"Available metrics: {available}"
+                f"Unit metric '{name}' not found in registry. " f"Available metrics: {available}"
             )
         return cls._metrics[name]
 
@@ -215,11 +213,11 @@ class AggregatorMetricRegistry:
         Returns:
             True if metric was unregistered, False if it wasn't registered
         Example:
-            AggregatorMetricRegistry.unregister("old_metric")
+            UnitMetricRegistry.unregister("old_metric")
         """
         if name in cls._metrics:
             del cls._metrics[name]
-            logger.debug(f"Unregistered aggregator metric: '{name}'")
+            logger.debug(f"Unregistered unit metric: '{name}'")
             return True
         return False
 
@@ -230,7 +228,7 @@ class AggregatorMetricRegistry:
         Adding this because it is standard practice to have an evict option to test registry in unit testing.
         """
         cls._metrics.clear()
-        logger.warning("Cleared all registered aggregator metrics")
+        logger.warning("Cleared all registered unit metrics")
 
     @classmethod
     def get_metrics_info(cls) -> Dict[str, Dict[str, str]]:
@@ -240,15 +238,15 @@ class AggregatorMetricRegistry:
         Returns:
             dict: {metric_name: {"class": class_name, "module": module_name}}
         Example:
-            AggregatorMetricRegistry.get_metrics_info()
+            UnitMetricRegistry.get_metrics_info()
             {
                 'precision': {
                     'class': 'PrecisionMetric',
-                    'module': 'core.aggregator_metrics.precision'
+                    'module': 'core.unit_metrics.precision'
                 },
                 'recall': {
                     'class': 'RecallMetric',
-                    'module': 'core.aggregator_metrics.recall'
+                    'module': 'core.unit_metrics.recall'
                 }
             }
         """
@@ -259,13 +257,13 @@ class AggregatorMetricRegistry:
 
 
 # Decorator for metric registration
-def aggregator_metric(name: str):
+def unit_metric(name: str):
     """
-    Decorator to auto-register aggregator metrics with the registry.
+    Decorator to auto-register unit metrics with the registry.
 
     Usage:
-        @aggregator_metric("precision")
-        class PrecisionMetric(BaseAggregatorMetric):
+        @unit_metric("precision")
+        class PrecisionMetric(BaseUnitMetric):
             def calculate(self, results):
                 # Implementation
                 pass
@@ -280,21 +278,21 @@ def aggregator_metric(name: str):
     def decorator(cls):
         # Import at runtime when decorator is applied (not at module load time)
         # Metrics use this decorator, so they import this registry file.
-        # If we imported BaseAggregatorMetric at the top, we'd have:
+        # If we imported BaseUnitMetric at the top, we'd have:
         # metric.py -> registry.py -> base.py (circular dependency)
         # By importing here, the import happens when the class is decorated,
         # after all modules have loaded.
-        from sygra.core.eval.metrics.aggregator_metrics.base_aggregator_metric import (
-            BaseAggregatorMetric,
+        from sygra.core.eval.metrics.unit_metrics.base_unit_metric import (
+            BaseUnitMetric,
         )
 
-        # Validate that class inherits from BaseAggregatorMetric
-        if not issubclass(cls, BaseAggregatorMetric):
+        # Validate that class inherits from BaseUnitMetric
+        if not issubclass(cls, BaseUnitMetric):
             raise TypeError(
-                f"{cls.__name__} must inherit from BaseAggregatorMetric to use @aggregator_metric decorator"
+                f"{cls.__name__} must inherit from BaseUnitMetric to use @unit_metric decorator"
             )
 
-        AggregatorMetricRegistry.register(name, cls)
+        UnitMetricRegistry.register(name, cls)
         return cls
 
     return decorator

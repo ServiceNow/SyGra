@@ -544,7 +544,9 @@ class BaseTaskExecutor(ABC):
 
     # merge the primary and secondary dataframe horizontally by randomlly picking one and adding into primary
     # primary : M rows(a columns), secondary: N rows(b columns), merged: M rows(a+b columns)
-    def _shuffle_and_extend(self, primary_df, secondary_df) -> pd.DataFrame:
+    def _shuffle_and_extend(
+        self, primary_df: pd.DataFrame, secondary_df: pd.DataFrame
+    ) -> pd.DataFrame:
         max_len = len(primary_df)
         # Shuffle the secondary dataframe
         shuffled_secondary = secondary_df.sample(frac=1).reset_index(drop=True)
@@ -560,7 +562,7 @@ class BaseTaskExecutor(ABC):
             final_secondary = pd.concat([shuffled_secondary, extra_rows], ignore_index=True)
 
         # now both dataset are same length, merge and return
-        return pd.concat([primary_df, final_secondary], axis=1)
+        return cast(pd.DataFrame, pd.concat([primary_df, final_secondary], axis=1))
 
     def _load_source_data(
         self, data_config: dict
@@ -587,8 +589,8 @@ class BaseTaskExecutor(ABC):
             full_data = self.apply_transforms(source_config_obj, full_data)
         elif isinstance(source_config, list):
             # if multiple dataset configured as list
-            dataset_list = []
-            primary_df = None
+            dataset_list: list[dict[str, Any]] = []
+            primary_df: Optional[pd.DataFrame] = None
             primary_config = None
             # if multiple dataset, verify if join_type and alias is defined in each config(@source and @sink)
             if isinstance(source_config, list):
@@ -650,6 +652,9 @@ class BaseTaskExecutor(ABC):
                     ds_conf: dict[str, Any] = ds.get("conf", {})
                     join_type = ds_conf.get(constants.DATASET_JOIN_TYPE)
                     current_df = ds.get("dataset")
+                    if current_df is None or not isinstance(current_df, pd.DataFrame):
+                        logger.error("Dataset is missing or not a dataframe")
+                        continue
                     if join_type == constants.JOIN_TYPE_COLUMN:
                         sec_alias_name = ds_conf.get(constants.DATASET_ALIAS)
                         pri_alias_name = (
@@ -665,22 +670,26 @@ class BaseTaskExecutor(ABC):
                         # where_clause = ds.get("conf").get("where_clause")
                         primary_df = pd.merge(
                             primary_df,
-                            current_df,
+                            cast(pd.DataFrame, current_df),
                             left_on=primary_column,
                             right_on=join_column,
                             how="left",
                         )
                     elif join_type == constants.JOIN_TYPE_SEQUENTIAL:
-                        primary_df = self._repeat_to_merge_sequentially(primary_df, current_df)
+                        primary_df = self._repeat_to_merge_sequentially(
+                            primary_df, cast(pd.DataFrame, current_df)
+                        )
                     elif join_type == constants.JOIN_TYPE_CROSS:
-                        primary_df = primary_df.merge(current_df, how="cross")
+                        primary_df = primary_df.merge(cast(pd.DataFrame, current_df), how="cross")
                     elif join_type == constants.JOIN_TYPE_RANDOM:
-                        primary_df = self._shuffle_and_extend(primary_df, current_df)
+                        primary_df = self._shuffle_and_extend(
+                            primary_df, cast(pd.DataFrame, current_df)
+                        )
                     else:
                         logger.error("Not implemented join_type")
 
                 # now convert dataframe to list of dict (full_data)
-                full_data = primary_df.to_dict(orient="records")
+                full_data = cast(list[dict[str, Any]], primary_df.to_dict(orient="records"))
         else:
             logger.error("Unsupported source config type.")
 

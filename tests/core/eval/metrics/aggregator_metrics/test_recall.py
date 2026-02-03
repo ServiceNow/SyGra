@@ -22,329 +22,83 @@ class TestRecallMetric:
 
     def test_get_metric_name(self):
         """Test that metric name is 'recall'"""
-        metric = RecallMetric(golden_key="class", positive_class="A")
+        metric = RecallMetric(golden_key="class")
         assert metric.get_metric_name() == "recall"
 
-    def test_initialization_with_parameters(self):
-        """Test initialization with custom parameters"""
-        metric = RecallMetric(golden_key="event", positive_class="click")
-        assert metric.golden_key == "event"
-        assert metric.positive_class == "click"
-
-    def test_initialization_requires_parameters(self):
-        """Test that initialization requires both golden_key and positive_class"""
-        # Should raise ValidationError when golden_key is missing
+    def test_initialization_requires_golden_key(self):
+        """Test that initialization requires golden_key"""
         with pytest.raises(ValidationError):
-            RecallMetric(positive_class="A")
+            RecallMetric()
 
-        # Should raise ValidationError when positive_class is missing
         with pytest.raises(ValidationError):
-            RecallMetric(golden_key="class")
-
-        # Should raise ValidationError when golden_key is empty
-        with pytest.raises(ValidationError):
-            RecallMetric(golden_key="", positive_class="A")
-
-        # Should raise ValidationError when positive_class is None
-        with pytest.raises(ValidationError):
-            RecallMetric(golden_key="class", positive_class=None)
+            RecallMetric(golden_key="")
 
     def test_calculate_empty_results(self):
         """Test calculate with empty results list"""
-        metric = RecallMetric(golden_key="class", positive_class="A")
-        results = []
-        output = metric.calculate(results)
+        metric = RecallMetric(golden_key="class")
+        output = metric.calculate([])
 
-        assert "recall" in output
-        assert output["recall"] == 0.0
+        assert output == {"average_recall": 0.0, "recall_per_class": {}}
 
-    def test_calculate_perfect_recall(self):
-        """Test calculate with perfect recall (all actual positives are found)"""
-        metric = RecallMetric(golden_key="class", positive_class="click")
-        results = [
-            UnitMetricResult(
-                correct=True,
-                golden={"class": "click"},
-                predicted={"class": "click"},
-            ),
-            UnitMetricResult(
-                correct=True,
-                golden={"class": "click"},
-                predicted={"class": "click"},
-            ),
-            UnitMetricResult(
-                correct=True,
-                golden={"class": "click"},
-                predicted={"class": "click"},
-            ),
-        ]
-        output = metric.calculate(results)
-
-        assert "recall" in output
-        assert output["recall"] == 1.0
-
-    def test_calculate_zero_recall(self):
-        """Test calculate with zero recall (all actual positives are missed)"""
-        metric = RecallMetric(golden_key="class", positive_class="click")
-        results = [
-            UnitMetricResult(
-                correct=False,
-                golden={"class": "click"},
-                predicted={"class": "type"},
-            ),
-            UnitMetricResult(
-                correct=False,
-                golden={"class": "click"},
-                predicted={"class": "scroll"},
-            ),
-            UnitMetricResult(
-                correct=False,
-                golden={"class": "click"},
-                predicted={"class": "hover"},
-            ),
-        ]
-        output = metric.calculate(results)
-
-        assert "recall" in output
-        assert output["recall"] == 0.0
-
-    def test_calculate_mixed_recall(self):
-        """Test calculate with mixed true positives and false negatives"""
-        metric = RecallMetric(golden_key="class", positive_class="click")
-        results = [
-            # True Positive
-            UnitMetricResult(
-                correct=True,
-                golden={"class": "click"},
-                predicted={"class": "click"},
-            ),
-            # False Negative
-            UnitMetricResult(
-                correct=False,
-                golden={"class": "click"},
-                predicted={"class": "type"},
-            ),
-            # True Positive
-            UnitMetricResult(
-                correct=True,
-                golden={"class": "click"},
-                predicted={"class": "click"},
-            ),
-            # False Negative
-            UnitMetricResult(
-                correct=False,
-                golden={"class": "click"},
-                predicted={"class": "scroll"},
-            ),
-        ]
-        output = metric.calculate(results)
-
-        # TP = 2, FN = 2, Recall = 2/(2+2) = 0.5
-        assert "recall" in output
-        assert output["recall"] == 0.5
-
-    def test_calculate_with_negative_class_in_golden(self):
-        """Test calculate when some golden values are not the positive class"""
-        metric = RecallMetric(golden_key="class", positive_class="click")
-        results = [
-            # True Positive
-            UnitMetricResult(
-                correct=True,
-                golden={"class": "click"},
-                predicted={"class": "click"},
-            ),
-            # True Negative (golden is not positive class)
-            UnitMetricResult(
-                correct=True,
-                golden={"class": "type"},
-                predicted={"class": "type"},
-            ),
-            # False Negative
-            UnitMetricResult(
-                correct=False,
-                golden={"class": "click"},
-                predicted={"class": "scroll"},
-            ),
-            # True Negative
-            UnitMetricResult(
-                correct=True,
-                golden={"class": "hover"},
-                predicted={"class": "hover"},
-            ),
-        ]
-        output = metric.calculate(results)
-
-        # TP = 1, FN = 1, Recall = 1/(1+1) = 0.5
-        # True negatives don't affect recall
-        assert "recall" in output
-        assert output["recall"] == 0.5
-
-    def test_calculate_no_actual_positives(self):
-        """Test calculate when no golden values are the positive class"""
-        metric = RecallMetric(golden_key="class", positive_class="click")
-        results = [
-            UnitMetricResult(
-                correct=True,
-                golden={"class": "type"},
-                predicted={"class": "type"},
-            ),
-            UnitMetricResult(
-                correct=True,
-                golden={"class": "scroll"},
-                predicted={"class": "scroll"},
-            ),
-            UnitMetricResult(
-                correct=True,
-                golden={"class": "hover"},
-                predicted={"class": "hover"},
-            ),
-        ]
-        output = metric.calculate(results)
-
-        # TP = 0, FN = 0, Recall = 0/0 = 0.0 (safe divide)
-        assert "recall" in output
-        assert output["recall"] == 0.0
-
-    def test_calculate_with_different_golden_key(self):
-        """Test calculate with different golden_key"""
-        metric = RecallMetric(golden_key="event", positive_class="click")
-        results = [
-            UnitMetricResult(
-                correct=True,
-                golden={"event": "click"},
-                predicted={"tool": "click"},
-            ),
-            UnitMetricResult(
-                correct=False,
-                golden={"event": "click"},
-                predicted={"tool": "type"},
-            ),
-            UnitMetricResult(
-                correct=True,
-                golden={"event": "click"},
-                predicted={"tool": "click"},
-            ),
-        ]
-        output = metric.calculate(results)
-
-        # TP = 2, FN = 1, Recall = 2/(2+1) = 0.666...
-        assert "recall" in output
-        assert output["recall"] == pytest.approx(0.666, rel=1e-2)
-
-    def test_calculate_with_numeric_positive_class(self):
-        """Test calculate with numeric positive class"""
-        metric = RecallMetric(golden_key="label", positive_class=1)
-        results = [
-            UnitMetricResult(correct=True, golden={"label": 1}, predicted={"label": 1}),
-            UnitMetricResult(correct=False, golden={"label": 1}, predicted={"label": 0}),
-            UnitMetricResult(correct=True, golden={"label": 1}, predicted={"label": 1}),
-            UnitMetricResult(correct=True, golden={"label": 0}, predicted={"label": 0}),
-        ]
-        output = metric.calculate(results)
-
-        # TP = 2, FN = 1, Recall = 2/(2+1) = 0.666...
-        assert "recall" in output
-        assert output["recall"] == pytest.approx(0.666, rel=1e-2)
-
-    def test_calculate_with_boolean_positive_class(self):
-        """Test calculate with boolean positive class"""
-        metric = RecallMetric(golden_key="is_valid", positive_class=True)
-        results = [
-            UnitMetricResult(
-                correct=True,
-                golden={"is_valid": True},
-                predicted={"is_valid": True},
-            ),
-            UnitMetricResult(
-                correct=True,
-                golden={"is_valid": True},
-                predicted={"is_valid": True},
-            ),
-            UnitMetricResult(
-                correct=False,
-                golden={"is_valid": True},
-                predicted={"is_valid": False},
-            ),
-        ]
-        output = metric.calculate(results)
-
-        # TP = 2, FN = 1, Recall = 2/(2+1) = 0.666...
-        assert "recall" in output
-        assert output["recall"] == pytest.approx(0.666, rel=1e-2)
-
-    def test_calculate_single_true_positive(self):
-        """Test calculate with single true positive"""
-        metric = RecallMetric(golden_key="class", positive_class="A")
-        results = [UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"})]
-        output = metric.calculate(results)
-
-        assert "recall" in output
-        assert output["recall"] == 1.0
-
-    def test_calculate_single_false_negative(self):
-        """Test calculate with single false negative"""
-        metric = RecallMetric(golden_key="class", positive_class="A")
-        results = [UnitMetricResult(correct=False, golden={"class": "A"}, predicted={"class": "B"})]
-        output = metric.calculate(results)
-
-        assert "recall" in output
-        assert output["recall"] == 0.0
-
-    def test_calculate_with_missing_golden_key(self):
-        """Test calculate when golden dict doesn't have the key"""
-        metric = RecallMetric(golden_key="class", positive_class="A")
-        results = [
-            UnitMetricResult(
-                correct=False,
-                golden={"other_key": "B"},  # Missing 'class' key
-                predicted={"class": "A"},
-            ),
-            UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
-        ]
-        output = metric.calculate(results)
-
-        # Only 1 TP (second result), 0 FN
-        assert "recall" in output
-        assert output["recall"] == 1.0
-
-    def test_calculate_various_recall_values(self):
-        """Test calculate with various recall percentages"""
-        # 80% recall (4 TP, 1 FN)
-        metric = RecallMetric(golden_key="class", positive_class="A")
-        results = [
-            UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
-            UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
-            UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
-            UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
-            UnitMetricResult(correct=False, golden={"class": "A"}, predicted={"class": "B"}),
-        ]
-        output = metric.calculate(results)
-        assert output["recall"] == 0.8
-
-        # 25% recall (1 TP, 3 FN)
+    def test_calculate_recall_per_class_and_average(self):
+        """Test recall per class and macro-average recall"""
+        metric = RecallMetric(golden_key="class")
         results = [
             UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
             UnitMetricResult(correct=False, golden={"class": "A"}, predicted={"class": "B"}),
-            UnitMetricResult(correct=False, golden={"class": "A"}, predicted={"class": "C"}),
-            UnitMetricResult(correct=False, golden={"class": "A"}, predicted={"class": "D"}),
+            UnitMetricResult(correct=True, golden={"class": "B"}, predicted={"class": "B"}),
+            UnitMetricResult(correct=True, golden={"class": "B"}, predicted={"class": "B"}),
         ]
         output = metric.calculate(results)
-        assert output["recall"] == 0.25
 
-    def test_calculate_with_false_positives_not_affecting_recall(self):
-        """Test that false positives don't affect recall calculation"""
-        metric = RecallMetric(golden_key="class", positive_class="A")
+        # Golden counts: A=2, B=2
+        # True positives by golden label: A=1, B=2
+        # recall(A)=1/2, recall(B)=2/2
+        assert output["recall_per_class"] == {"A": 0.5, "B": 1.0}
+        assert output["average_recall"] == pytest.approx((0.5 + 1.0) / 2)
+
+    def test_calculate_skips_rows_missing_golden_key(self):
+        """Test that rows missing golden_key are skipped"""
+        metric = RecallMetric(golden_key="class")
         results = [
-            # True Positive
+            UnitMetricResult(correct=False, golden={"other": "A"}, predicted={"class": "A"}),
             UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
-            # False Positive (doesn't affect recall)
-            UnitMetricResult(correct=False, golden={"class": "B"}, predicted={"class": "A"}),
-            # False Positive (doesn't affect recall)
+        ]
+        output = metric.calculate(results)
+
+        assert output["recall_per_class"] == {"A": 1.0}
+        assert output["average_recall"] == 1.0
+
+    def test_calculate_returns_zero_when_all_rows_missing_golden_key(self):
+        """Test safe behavior when nothing is usable for calculation"""
+        metric = RecallMetric(golden_key="class")
+        results = [
+            UnitMetricResult(correct=True, golden={"other": "A"}, predicted={"class": "A"}),
+            UnitMetricResult(correct=False, golden={"other": "B"}, predicted={"class": "B"}),
+        ]
+        output = metric.calculate(results)
+
+        assert output == {"average_recall": 0.0, "recall_per_class": {}}
+
+    def test_calculate_multi_class_recall(self):
+        """Test multi-class recall computation across 3 classes"""
+        metric = RecallMetric(golden_key="class")
+        results = [
+            # Golden A: 2 total, 1 correct => recall(A)=0.5
+            UnitMetricResult(correct=True, golden={"class": "A"}, predicted={"class": "A"}),
+            UnitMetricResult(correct=False, golden={"class": "A"}, predicted={"class": "B"}),
+            # Golden B: 3 total, 2 correct => recall(B)=2/3
+            UnitMetricResult(correct=True, golden={"class": "B"}, predicted={"class": "B"}),
+            UnitMetricResult(correct=True, golden={"class": "B"}, predicted={"class": "B"}),
+            UnitMetricResult(correct=False, golden={"class": "B"}, predicted={"class": "C"}),
+            # Golden C: 1 total, 0 correct => recall(C)=0.0
             UnitMetricResult(correct=False, golden={"class": "C"}, predicted={"class": "A"}),
         ]
         output = metric.calculate(results)
 
-        # TP = 1, FN = 0, Recall = 1/(1+0) = 1.0
-        # False positives don't affect recall
-        assert "recall" in output
-        assert output["recall"] == 1.0
+        assert output["recall_per_class"] == {
+            "A": 0.5,
+            "B": pytest.approx(2 / 3),
+            "C": 0.0,
+        }
+        assert output["average_recall"] == pytest.approx((0.5 + (2 / 3) + 0.0) / 3)
