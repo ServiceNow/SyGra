@@ -247,6 +247,154 @@
 		a.click();
 		URL.revokeObjectURL(url);
 	}
+
+	function getBasename(path: string): string {
+		const parts = path.split('/');
+		return parts[parts.length - 1] || path;
+	}
+
+	async function downloadJsonData(data: unknown, filename: string) {
+		const json = JSON.stringify(data, null, 2);
+		const blob = new Blob([json], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = filename;
+		a.click();
+		URL.revokeObjectURL(url);
+	}
+
+	async function fetchJsonFromPath(path: string): Promise<unknown | null> {
+		try {
+			const url = `/api/media/file?path=${encodeURIComponent(path)}&workflow_id=${encodeURIComponent(execution.workflow_id)}`;
+			const resp = await fetch(url);
+			if (!resp.ok) return null;
+			const text = await resp.text();
+			return JSON.parse(text);
+		} catch {
+			return null;
+		}
+	}
+
+	function formatPostProcessorKey(key: string): string {
+		return key
+			.split('_')
+			.filter(Boolean)
+			.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+			.join(' ');
+	}
+
+	function formatPostProcessorArtifactLabel(label: string): string {
+		return label
+			.replace(/_file$/i, '')
+			.split('_')
+			.filter(Boolean)
+			.map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+			.join(' ');
+	}
+	type PostProcessorArtifactsIndex = {
+		files?: string[];
+		[key: string]: unknown;
+	};
+
+	async function fetchPostProcessorArtifactsIndex(): Promise<PostProcessorArtifactsIndex | null> {
+		try {
+			const resp = await fetch(`/api/executions/${encodeURIComponent(execution.id)}/artifacts/post-processors`);
+			if (!resp.ok) return null;
+			const payload = await resp.json();
+			return payload;
+		} catch {
+			return null;
+		}
+	}
+
+	let postProcessorArtifactsLoading = $state(false);
+	let postProcessorArtifactsLoaded = $state(false);
+	type PostProcessorGroupArtifact = { label: string; path: string; data: unknown };
+	type PostProcessorGroup = { key: string; artifacts: PostProcessorGroupArtifact[] };
+	let postProcessorGroups = $state<PostProcessorGroup[]>([]);
+	let semanticDedupGroup = $derived(() => postProcessorGroups.find((g) => g.key === 'semantic_dedup') ?? null);
+	let semanticDedupAvailable = $derived(() => {
+		const g = semanticDedupGroup();
+		return !!g && g.artifacts.length > 0;
+	});
+	let postProcessorGroupsAvailable = $derived(() => postProcessorGroups.some((g) => g.artifacts.length > 0));
+
+	type PostProcessorArtifact = { path: string; data: unknown };
+	let postProcessorArtifacts = $state<PostProcessorArtifact[]>([]);
+	let postProcessorArtifactsAvailable = $derived(() => postProcessorArtifacts.length > 0);
+
+	let lastSemanticDedupProbeKey = $state<string | null>(null);
+	let semanticDedupProbeKey = $derived(() => {
+		const runName = metadata?.execution?.run_name ?? '';
+		const outFile = execution.output_file ?? '';
+		return `${execution.id}:${runName}:${outFile}`;
+	});
+
+	$effect(() => {
+		if (semanticDedupProbeKey() !== lastSemanticDedupProbeKey) {
+			lastSemanticDedupProbeKey = semanticDedupProbeKey();
+			postProcessorArtifactsLoading = false;
+			postProcessorArtifactsLoaded = false;
+			postProcessorGroups = [];
+			postProcessorArtifacts = [];
+		}
+	});
+
+	async function loadPostProcessorArtifacts() {
+		if (postProcessorArtifactsLoading || postProcessorArtifactsLoaded) return;
+		postProcessorArtifactsLoading = true;
+		try {
+			const idx = await fetchPostProcessorArtifactsIndex();
+			const files = Array.isArray(idx?.files) ? (idx?.files as string[]) : [];
+			const entries = idx ? Object.entries(idx) : [];
+			const groupEntries = entries.filter(([k, v]) => {
+				if (k === 'files') return false;
+				if (!v || typeof v !== 'object') return false;
+				return Object.values(v as Record<string, unknown>).some((val) => typeof val === 'string' && val);
+			});
+
+			postProcessorGroups = await Promise.all(
+				groupEntries.map(async ([key, v]) => {
+					const obj = v as Record<string, unknown>;
+					const pathEntries = Object.entries(obj).filter(([, value]) => typeof value === 'string' && value);
+					const artifacts = await Promise.all(
+						pathEntries.map(async ([label, path]) => {
+							const data = await fetchJsonFromPath(path as string);
+							return data === null ? null : ({ label, path: path as string, data } satisfies PostProcessorGroupArtifact);
+						})
+					);
+					return { key, artifacts: artifacts.filter((x): x is PostProcessorGroupArtifact => x !== null) };
+				})
+			);
+
+			const groupPaths = new Set<string>();
+			for (const g of postProcessorGroups) {
+				for (const a of g.artifacts) groupPaths.add(a.path);
+			}
+
+			const filteredPaths = files.filter((p) => p && !groupPaths.has(p));
+			const uniquePaths = Array.from(new Set(filteredPaths));
+
+			const results = await Promise.all(
+				uniquePaths.map(async (path) => {
+					const data = await fetchJsonFromPath(path);
+					return data === null ? null : ({ path, data } satisfies PostProcessorArtifact);
+				})
+			);
+
+			postProcessorArtifacts = results.filter((x): x is PostProcessorArtifact => x !== null);
+			postProcessorArtifactsLoaded = true;
+		} finally {
+			postProcessorArtifactsLoading = false;
+		}
+	}
+
+	$effect(() => {
+		if (activeTab === 'output') {
+			loadPostProcessorArtifacts();
+		}
+	});
 </script>
 
 <div class="h-full w-full flex flex-col bg-surface">
@@ -670,7 +818,200 @@
 						showViewToggle={true}
 						defaultView="table"
 					/>
-				{:else}
+				{/if}
+
+				{#if semanticDedupAvailable()}
+					<details class="group bg-surface-secondary rounded-xl border border-[var(--border)] p-4">
+						<summary class="cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary flex items-center gap-2">
+							<ChevronDown size={16} class="transition-transform group-open:rotate-180" />
+							Semantic Deduplication
+						</summary>
+
+						<div class="mt-4 space-y-6">
+							{#each semanticDedupGroup()!.artifacts as artifact (artifact.path)}
+								<div class="space-y-3">
+									<div class="flex items-center justify-between gap-4">
+										<div class="min-w-0">
+											<button
+												onclick={() => copyToClipboard(artifact.path, `semantic_dedup_artifact_path:${artifact.path}`)}
+												class="font-mono text-xs text-text-primary hover:text-info flex items-center gap-1 break-all text-left"
+												title="Click to copy full path: {artifact.path}"
+											>
+												{formatPostProcessorArtifactLabel(artifact.label)}
+												<span class="opacity-70">({getBasename(artifact.path)})</span>
+											</button>
+										</div>
+										<button
+											onclick={() => downloadJsonData(artifact.data, getBasename(artifact.path) || `run-${execution.id.slice(0, 8)}-semantic-dedup.json`)}
+											class="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover rounded-lg border border-[var(--border)] flex-shrink-0"
+										>
+											<Download size={14} />
+											Download
+										</button>
+									</div>
+
+									{#if typeof artifact.data === 'object' && artifact.data !== null && artifact.label === 'report_file' && 'duplicates' in (artifact.data as any) && Array.isArray((artifact.data as any).duplicates)}
+										<DataTableViewer
+											data={(artifact.data as any).duplicates}
+											title="Semantic Dedup Report (Duplicates)"
+											total={(artifact.data as any).duplicates.length}
+											maxRecords={20}
+											showViewToggle={true}
+											defaultView="table"
+										/>
+									{:else if Array.isArray(artifact.data)}
+										<DataTableViewer
+											data={artifact.data}
+											title={formatPostProcessorArtifactLabel(artifact.label)}
+											total={artifact.data.length}
+											maxRecords={20}
+											showViewToggle={true}
+											defaultView="table"
+										/>
+									{:else if typeof artifact.data === 'object' && artifact.data !== null}
+										<DataTableViewer
+											data={[artifact.data]}
+											title={formatPostProcessorArtifactLabel(artifact.label)}
+											total={1}
+											maxRecords={20}
+											showViewToggle={true}
+											defaultView="json"
+										/>
+									{:else}
+										<pre class="p-4 bg-brand-primary text-white rounded-lg text-xs overflow-auto max-h-64 font-mono">{JSON.stringify(artifact.data, null, 2)}</pre>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</details>
+				{/if}
+
+				{#each postProcessorGroups.filter((g) => g.key !== 'semantic_dedup' && g.artifacts.length > 0) as group (group.key)}
+					<details class="group bg-surface-secondary rounded-xl border border-[var(--border)] p-4">
+						<summary class="cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary flex items-center gap-2">
+							<ChevronDown size={16} class="transition-transform group-open:rotate-180" />
+							{formatPostProcessorKey(group.key)}
+						</summary>
+
+						<div class="mt-4 space-y-6">
+							{#each group.artifacts as artifact (artifact.path)}
+								<div class="space-y-3">
+									<div class="flex items-center justify-between gap-4">
+										<div class="min-w-0">
+											<button
+												onclick={() => copyToClipboard(artifact.path, `post_processor_group_artifact_path:${artifact.path}`)}
+												class="font-mono text-xs text-text-primary hover:text-info flex items-center gap-1 break-all text-left"
+												title="Click to copy full path: {artifact.path}"
+											>
+												{formatPostProcessorArtifactLabel(artifact.label)}
+												<span class="opacity-70">({getBasename(artifact.path)})</span>
+											</button>
+										</div>
+										<button
+											onclick={() => downloadJsonData(artifact.data, getBasename(artifact.path) || `run-${execution.id.slice(0, 8)}-artifact.json`)}
+											class="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover rounded-lg border border-[var(--border)] flex-shrink-0"
+										>
+											<Download size={14} />
+											Download
+										</button>
+									</div>
+
+									{#if Array.isArray(artifact.data)}
+										<DataTableViewer
+											data={artifact.data}
+											title={formatPostProcessorArtifactLabel(artifact.label)}
+											total={artifact.data.length}
+											maxRecords={20}
+											showViewToggle={true}
+											defaultView="table"
+										/>
+									{:else if typeof artifact.data === 'object' && artifact.data !== null}
+										<DataTableViewer
+											data={[artifact.data]}
+											title={formatPostProcessorArtifactLabel(artifact.label)}
+											total={1}
+											maxRecords={20}
+											showViewToggle={true}
+											defaultView="json"
+										/>
+									{:else}
+										<pre class="p-4 bg-brand-primary text-white rounded-lg text-xs overflow-auto max-h-64 font-mono">{JSON.stringify(artifact.data, null, 2)}</pre>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</details>
+				{/each}
+
+				{#if postProcessorArtifactsLoading}
+					<div class="text-center py-6 text-text-muted">
+						<Loader2 size={20} class="mx-auto mb-2 animate-spin" />
+						<p class="text-sm font-medium">Loading post-processor artifacts...</p>
+					</div>
+				{/if}
+
+				{#if postProcessorArtifactsAvailable()}
+					<details class="group bg-surface-secondary rounded-xl border border-[var(--border)] p-4">
+						<summary class="cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary flex items-center gap-2">
+							<ChevronDown size={16} class="transition-transform group-open:rotate-180" />
+							Post-processor Artifacts
+						</summary>
+
+						<div class="mt-4 space-y-6">
+							{#each postProcessorArtifacts as artifact (artifact.path)}
+								<div class="space-y-3">
+									<div class="flex items-center justify-between gap-4">
+										<div class="min-w-0">
+											<button
+												onclick={() => copyToClipboard(artifact.path, `post_processor_artifact_path:${artifact.path}`)}
+												class="font-mono text-xs text-text-primary hover:text-info flex items-center gap-1 break-all text-left"
+												title="Click to copy full path: {artifact.path}"
+											>
+												{getBasename(artifact.path)}
+												{#if copiedField === `post_processor_artifact_path:${artifact.path}`}
+													<Check size={10} class="text-success flex-shrink-0" />
+												{:else}
+													<Copy size={10} class="opacity-50 flex-shrink-0" />
+												{/if}
+											</button>
+										</div>
+										<button
+											onclick={() => downloadJsonData(artifact.data, getBasename(artifact.path) || `run-${execution.id.slice(0, 8)}-artifact.json`)}
+											class="flex items-center gap-2 px-3 py-1.5 text-sm text-text-secondary hover:bg-surface-hover rounded-lg border border-[var(--border)] flex-shrink-0"
+										>
+											<Download size={14} />
+											Download
+										</button>
+									</div>
+
+									{#if Array.isArray(artifact.data)}
+										<DataTableViewer
+											data={artifact.data}
+											title={getBasename(artifact.path)}
+											total={artifact.data.length}
+											maxRecords={20}
+											showViewToggle={true}
+											defaultView="table"
+										/>
+									{:else if typeof artifact.data === 'object' && artifact.data !== null}
+										<DataTableViewer
+											data={[artifact.data]}
+											title={getBasename(artifact.path)}
+											total={1}
+											maxRecords={20}
+											showViewToggle={true}
+											defaultView="json"
+										/>
+									{:else}
+										<pre class="p-4 bg-brand-primary text-white rounded-lg text-xs overflow-auto max-h-64 font-mono">{JSON.stringify(artifact.data, null, 2)}</pre>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</details>
+				{/if}
+
+				{#if !execution.output_data && !postProcessorArtifactsLoading && !postProcessorGroupsAvailable() && !postProcessorArtifactsAvailable()}
 					<div class="text-center py-12 text-text-muted">
 						<FileJson size={48} class="mx-auto mb-4 opacity-50" />
 						<p class="text-sm font-medium">No output data available</p>
