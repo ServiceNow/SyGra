@@ -1,0 +1,370 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: "tasks/examples/customer_service_agent_audio_realistic/input.json"
+    file_format: "json"
+
+graph_config:
+  graph_properties:
+    chat_conversation: multiturn
+    chat_history_window_size: 20
+
+  nodes:
+    sample_user_personality:
+      node_type: weighted_sampler
+      attributes:
+        user_mood:
+          values: [polite, neutral, impatient, frustrated, sarcastic, confused, rushed]
+          weights: [2, 3, 2, 1, 1, 1, 1]
+        speech_style:
+          values: [fluent, with_fillers, hesitant, rambling, curt]
+          weights: [2, 4, 2, 1, 2]
+        accent_hint:
+          values: [neutral, slight_southern, slight_british, slight_indian]
+          weights: [6, 1, 1, 2]
+        emotional_expressions:
+          values: [none, occasional_laugh, sighs, frustrated_sounds]
+          weights: [3, 2, 2, 2]
+        background_noise:
+          values: [none, coffee_shop, street, office, home_with_kids, car]
+          weights: [2, 3, 2, 2, 1, 1]
+        user_voice:
+          values: [echo, onyx, fable, alloy]
+          weights: [3, 2, 2, 2]
+        interruption_tendency:
+          values: [none, occasional, frequent]
+          weights: [5, 3, 1]
+
+    analyze_query:
+      node_type: llm
+      prompt:
+        - system: |
+            You are an intelligent query analyzer for a customer service system.
+            Analyze the user's request and determine:
+            1. What information is REQUIRED to fulfill this request
+            2. What information the user has ALREADY PROVIDED
+            3. What information is MISSING and needs to be gathered
+
+            Common request types and their required fields:
+            - Flight booking: origin, destination, travel_date, return_date, number_of_passengers, class_preference
+            - Hotel reservation: location, check_in_date, check_out_date, room_type, number_of_guests
+            - Internet support: account_number, issue_description, troubleshooting_tried
+            - Technical support: product_name, issue_description, steps_tried
+
+            Output a valid JSON:
+            {{
+              "required_fields": ["list of fields needed"],
+              "provided_fields": {{"field": "value"}},
+              "missing_fields": ["fields not yet provided"],
+              "analysis_summary": "brief summary"
+            }}
+        - user: |
+            Analyze this request (only what is explicitly stated):
+            Request: {initial_query}
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.1
+      post_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.AnalyzeQueryPostProcessor
+
+    ask_clarifying_question:
+      node_type: agent
+      chat_history: true
+      prompt:
+        - system: |
+            You are a polite, warm, and professional customer service assistant.
+
+            Your task is to ask for missing information needed to complete the request.
+
+            CRITICAL - ALWAYS MAINTAIN PROFESSIONALISM:
+            - You MUST ALWAYS be polite, warm, patient, and professional
+            - NEVER mirror the user's frustration, impatience, or sarcasm
+            - NEVER sound annoyed, rushed, or dismissive
+            - NEVER use sarcasm or passive-aggressive language
+            - If the user is rude or frustrated, respond with extra kindness and empathy
+            - Use phrases like "I understand", "I appreciate your patience", "I'm here to help"
+            - Keep a consistently warm and helpful tone throughout the entire conversation
+
+            Guidelines:
+            - Be friendly and conversational (this will be spoken aloud)
+            - Keep responses concise and natural for speech
+            - Ask ONE question at a time
+            - Acknowledge what you know before asking for more
+
+            Missing info needed: {missing_fields}
+            Already collected: {collected_info}
+            Original request: {initial_query}
+        - user: |
+            {user_message}
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.7
+      post_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.AssistantResponsePostProcessor
+
+    simulate_user_response:
+      node_type: llm
+      chat_history: true
+      pre_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.SimulateUserPreProcessor
+      prompt:
+        - system: |
+            You are simulating a REALISTIC customer responding to a service assistant.
+            Your goal is to sound like a REAL HUMAN, not a robot.
+
+            USER PERSONALITY PROFILE:
+            - Mood: {user_mood}
+            - Speech style: {speech_style}
+            - Accent hint: {accent_hint}
+            - Emotional expressions: {emotional_expressions}
+            - Interruption tendency: {interruption_tendency}
+
+            PERSONALITY GUIDELINES:
+
+            **Mood behaviors:**
+            - polite: Friendly, says "please" and "thank you", patient
+            - neutral: Straightforward, neither warm nor cold
+            - impatient: Short responses, might say "come on" or "hurry up", sighs
+            - frustrated: Expresses annoyance, might say "ugh" or "seriously?", raises voice (USE CAPS occasionally)
+            - sarcastic: Uses irony, might say "oh great" or "wonderful" sarcastically
+            - confused: Asks for clarification, says "wait, what?" or "I don't understand"
+            - rushed: Very brief answers, might say "look, I'm in a hurry"
+
+            **Speech style guidelines:**
+            - fluent: Clear, complete sentences
+            - with_fillers: Include "um", "uh", "like", "you know", "so", "I mean" naturally
+            - hesitant: Incomplete thoughts, self-corrections, "wait, no, I meant..."
+            - rambling: Extra details, tangents, over-explains
+            - curt: Very short, sometimes one-word answers
+
+            **Emotional expressions to include:**
+            - occasional_laugh: Add "haha", "*chuckles*", "heh"
+            - sighs: Add "*sigh*", "ugh"
+            - frustrated_sounds: Add "argh", "ugh", "oh come ON"
+
+            **Accent hints (subtle word choices):**
+            - slight_southern: "y'all", "fixin' to", "reckon"
+            - slight_british: "quite", "rather", "brilliant", "cheers"
+            - slight_indian: "actually", "only", "itself", slightly formal phrasing
+
+            GROUND TRUTH INFO (provide this when asked):
+            {ground_truth_info}
+
+            Original request: {initial_query}
+
+            IMPORTANT:
+            - Sound like a REAL person on a phone call
+            - Include natural speech patterns based on your personality
+            - DON'T be perfectly polite unless mood is "polite"
+            - DON'T over-do it - subtle is better than exaggerated
+            - Keep responses appropriate length for the speech style
+        - user: |
+            The assistant asked: {assistant_response}
+
+            Respond as this customer with the personality described above.
+            Remember to include fillers, emotions, and speech patterns naturally.
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.8
+      post_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.UserResponsePostProcessor
+
+    update_and_check:
+      node_type: llm
+      prompt:
+        - system: |
+            Track what information has been collected in this customer service conversation.
+            Ignore filler words, emotions, and extract only the actual information.
+
+            Original request: {initial_query}
+            Required fields: {required_fields}
+            Previously collected: {collected_info}
+
+            Output JSON:
+            {{
+              "collected_info": {{"field": "value"}},
+              "missing_fields": ["still needed"],
+              "is_complete": true/false,
+              "ready_for_confirmation": true/false
+            }}
+        - user: |
+            Latest exchange:
+            Assistant: {assistant_response}
+            Customer: {user_message}
+
+            Extract the actual information (ignore fillers, emotions, etc.) and update tracking.
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.1
+      post_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.UpdateCheckPostProcessor
+
+    generate_confirmation:
+      node_type: agent
+      chat_history: true
+      prompt:
+        - system: |
+            You are a polite, warm, and professional customer service assistant.
+
+            Summarize all collected information and ask for confirmation.
+            Keep it natural for speech - this will be spoken aloud.
+
+            CRITICAL - ALWAYS MAINTAIN PROFESSIONALISM:
+            - You MUST ALWAYS be polite, warm, patient, and professional
+            - NEVER mirror the user's frustration, impatience, or sarcasm
+            - NEVER sound annoyed, rushed, or dismissive
+            - Even if the conversation has been difficult, remain kind and helpful
+            - Thank the customer for their patience and for providing the information
+            - Use a warm, appreciative tone
+
+            Collected info: {collected_info}
+            Original request: {initial_query}
+        - user: |
+            {user_message}
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.5
+      post_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.AssistantResponsePostProcessor
+
+    simulate_user_confirmation:
+      node_type: llm
+      chat_history: true
+      pre_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.SimulateUserPreProcessor
+      prompt:
+        - system: |
+            You are simulating a REALISTIC customer confirming their request.
+
+            USER PERSONALITY (stay consistent):
+            - Mood: {user_mood}
+            - Speech style: {speech_style}
+            - Emotional expressions: {emotional_expressions}
+
+            Ground truth: {ground_truth_info}
+            Collected info shown: {collected_info}
+
+            If info matches ground truth, confirm - but do it in YOUR personality style:
+            - polite: "Yes, that's perfect, thank you!"
+            - impatient: "Yeah yeah, that's right, let's go"
+            - frustrated: "*sigh* Yes, finally. That's correct."
+            - sarcastic: "Wow, we got there eventually. Yes, that's right."
+
+            Output JSON:
+            {{
+              "user_message": "your spoken response in character",
+              "user_confirmed": true/false
+            }}
+        - user: |
+            The assistant is asking you to confirm:
+            {assistant_response}
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.7
+      post_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.UserConfirmationPostProcessor
+
+    generate_completion:
+      node_type: agent
+      chat_history: true
+      prompt:
+        - system: |
+            You are a warm, professional customer service assistant.
+
+            The customer has confirmed. Complete the interaction by:
+            1. Thanking them sincerely for their patience and for choosing your service
+            2. Stating you're processing their request
+            3. Providing a reference number
+            4. Offering further help warmly
+
+            CRITICAL - ALWAYS MAINTAIN PROFESSIONALISM:
+            - You MUST ALWAYS be polite, warm, patient, and professional
+            - NEVER sound relieved that the call is over
+            - NEVER be sarcastic or passive-aggressive
+            - Even if the customer was difficult, end on a genuinely warm and helpful note
+            - Express sincere appreciation for their business
+
+            Keep it warm and natural for speech.
+
+            Collected info: {collected_info}
+            Original request: {initial_query}
+        - user: |
+            {user_message}
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.5
+      post_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.CompletionPostProcessor
+
+    synthesize_audio:
+      node_type: lambda
+      lambda: tasks.examples.customer_service_agent_audio_realistic.task_executor.SynthesizeRealisticConversationAudio
+      assistant_voice: nova
+      output_keys:
+        - conversation_audio
+        - user_voice
+        - assistant_voice
+        - background_noise_applied
+
+  edges:
+    - from: START
+      to: sample_user_personality
+
+    - from: sample_user_personality
+      to: analyze_query
+
+    - from: analyze_query
+      condition: tasks.examples.customer_service_agent_audio_realistic.task_executor.NeedsClarificationCondition
+      path_map:
+        ask_clarifying_question: ask_clarifying_question
+        generate_confirmation: generate_confirmation
+
+    - from: ask_clarifying_question
+      to: simulate_user_response
+
+    - from: simulate_user_response
+      to: update_and_check
+
+    - from: update_and_check
+      condition: tasks.examples.customer_service_agent_audio_realistic.task_executor.CheckCompletenessCondition
+      path_map:
+        ask_clarifying_question: ask_clarifying_question
+        generate_confirmation: generate_confirmation
+
+    - from: generate_confirmation
+      to: simulate_user_confirmation
+
+    - from: simulate_user_confirmation
+      condition: tasks.examples.customer_service_agent_audio_realistic.task_executor.UserConfirmedCondition
+      path_map:
+        generate_completion: generate_completion
+        ask_clarifying_question: ask_clarifying_question
+
+    - from: generate_completion
+      to: synthesize_audio
+
+    - from: synthesize_audio
+      to: END
+
+output_config:
+  generator: tasks.examples.customer_service_agent_audio_realistic.task_executor.CustomerServiceAudioOutputGenerator
+
+  output_map:
+    id:
+      from: "id"
+    initial_query:
+      from: "initial_query"
+    conversation:
+      from: "__chat_history__"
+      transform: "build_conversation"
+    conversation_audio:
+      from: "conversation_audio"
+    collected_info:
+      from: "collected_info"
+    user_personality:
+      from: "user_mood"
+      transform: "build_personality_metadata"
+    user_voice:
+      from: "user_voice"
+    assistant_voice:
+      from: "assistant_voice"
+    background_noise:
+      from: "background_noise_applied"

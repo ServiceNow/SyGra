@@ -302,7 +302,86 @@ class HuggingFaceHandler(DataHandler):
             streaming=sc.streaming,
             token=sc.token,
         )
+
+        # If audio_decode is False, cast audio columns to avoid torchcodec dependency
+        if not getattr(sc, "audio_decode", True):
+            ds = self._disable_audio_decode(ds)
+
         return cast(Union[Dataset, IterableDataset], ds)
+
+    def _disable_audio_decode(
+        self, ds: Union[Dataset, IterableDataset]
+    ) -> Union[Dataset, IterableDataset]:
+        """Disable audio decoding to avoid torchcodec dependency.
+
+        Since HuggingFace's encode_example unconditionally imports torchcodec,
+        we need to remove the Audio feature entirely and extract just the paths.
+        This is done by mapping the dataset to extract audio paths before
+        the DataFrame conversion triggers encode_example.
+        """
+        try:
+            # Get features from the dataset
+            features = ds.features if hasattr(ds, "features") else None
+            if not features:
+                return ds
+
+            # Find audio columns
+            audio_columns = [
+                col_name
+                for col_name, feature in features.items()
+                if isinstance(feature, datasets.Audio)
+            ]
+
+            if not audio_columns:
+                return ds
+
+            logger.info(f"Extracting audio paths for columns: {audio_columns}")
+
+            # For streaming datasets, we need to map and remove features
+            # Extract audio paths/bytes before encoding can happen
+            def extract_audio_info(example: dict) -> dict:
+                """Extract audio file info without triggering encoding."""
+                result = dict(example)
+                for col in audio_columns:
+                    if col in result:
+                        audio_data = result[col]
+                        # Store as dict with path/bytes info, not Audio feature
+                        if isinstance(audio_data, dict):
+                            # Already a dict, keep path and bytes if present
+                            result[col] = {
+                                "path": audio_data.get("path"),
+                                "bytes": audio_data.get("bytes"),
+                            }
+                        elif isinstance(audio_data, str):
+                            # It's a path string
+                            result[col] = {"path": audio_data, "bytes": None}
+                        else:
+                            result[col] = {"path": None, "bytes": None}
+                return result
+
+            # Map the dataset to extract audio info
+            ds = ds.map(extract_audio_info, remove_columns=[])
+
+            # Remove the Audio feature type to prevent encoding
+            # Create new features without Audio type
+            new_features = {}
+            for col_name, feature in features.items():
+                if col_name in audio_columns:
+                    # Replace Audio with a simple dict structure
+                    new_features[col_name] = {
+                        "path": datasets.Value("string"),
+                        "bytes": datasets.Value("binary"),
+                    }
+                else:
+                    new_features[col_name] = feature
+
+            # Cast to new features
+            ds = ds.cast(datasets.Features(new_features))
+
+            return ds
+        except Exception as e:
+            logger.warning(f"Could not disable audio decode: {e}")
+            return ds
 
     def _read_dataset(self) -> Union[list[dict[str, Any]], Iterator[dict[str, Any]]]:
         """Read complete dataset, handling multiple splits if specified."""

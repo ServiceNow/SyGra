@@ -99,9 +99,8 @@ tts_openai:
   api_version: 2025-03-01-preview
   # URL and api_key should be defined at .env file as SYGRA_TTS_OPENAI_URL and SYGRA_TTS_OPENAI_TOKEN
   parameters:
-    audio:
-      voice: "alloy"
-      response_format: "wav"
+    voice: "alloy"
+    response_format: "wav"
 
 transcribe:
   model: gpt-4o-transcribe

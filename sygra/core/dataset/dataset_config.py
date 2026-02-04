@@ -117,6 +117,7 @@ class DataSourceConfig(BaseModel):
     token: Optional[str] = None
     streaming: bool = False
     shard: Optional[ShardConfig] = None
+    audio_decode: bool = True  # Set to False to avoid torchcodec dependency for audio columns
 
     # For disk files
     file_format: Optional[str] = None

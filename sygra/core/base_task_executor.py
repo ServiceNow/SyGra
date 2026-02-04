@@ -325,8 +325,14 @@ class BaseTaskExecutor(ABC):
 
         # Configure and load source data
         data = self._load_source_data(data_config)
-        # get select fields if defined
-        select_fields = data_config.get("source", {}).get("fields", [])
+        # get select fields if defined (handle both single dict and list of dicts)
+        source_config = data_config.get("source", {})
+        if isinstance(source_config, list):
+            # Multi-dataset config: get fields from primary dataset if present
+            primary_sources = [s for s in source_config if s.get("join_type") == "primary"]
+            select_fields = primary_sources[0].get("fields", []) if primary_sources else []
+        else:
+            select_fields = source_config.get("fields", [])
         # select only required fields
         data = self._process_feilds(data, select_fields)
 
@@ -562,6 +568,33 @@ class BaseTaskExecutor(ABC):
         # now both dataset are same length, merge and return
         return pd.concat([primary_df, final_secondary], axis=1)
 
+    def _sample_from_streaming_dataset(
+        self, dataset: datasets.IterableDataset, num_samples: int
+    ) -> list[dict]:
+        """
+        Efficiently sample records from a streaming dataset.
+        Uses reservoir sampling to get random samples without loading entire dataset.
+        """
+        import random
+
+        samples: list[dict] = []
+        for i, record in enumerate(dataset):
+            if i < num_samples:
+                samples.append(record)
+            else:
+                # Reservoir sampling: replace with decreasing probability
+                j = random.randint(0, i)
+                if j < num_samples:
+                    samples[j] = record
+            # Early exit if we've seen enough records for good randomness
+            # (at least 2x the needed samples for reasonable distribution)
+            if i >= num_samples * 2:
+                break
+
+        # Shuffle the samples for additional randomness
+        random.shuffle(samples)
+        return samples
+
     def _load_source_data(
         self, data_config: dict
     ) -> Union[list[dict], datasets.Dataset, datasets.IterableDataset]:
@@ -627,8 +660,25 @@ class BaseTaskExecutor(ABC):
                     self._capture_dataset_metadata_for_alias(sec_dataset, reader, alias, conf_obj)
                     # Apply transformations to the dataset
                     sec_dataset = self.apply_transforms(conf_obj, sec_dataset)
-                    # convert to dataframe
-                    sec_df = pd.DataFrame(sec_dataset)
+
+                    # Optimize: For random join with streaming datasets, sample only needed records
+                    if (
+                        join_type == constants.JOIN_TYPE_RANDOM
+                        and isinstance(sec_dataset, datasets.IterableDataset)
+                        and primary_df is not None
+                    ):
+                        num_needed = len(primary_df)
+                        logger.info(
+                            f"Sampling {num_needed} records from streaming dataset for random join"
+                        )
+                        sampled_records = self._sample_from_streaming_dataset(
+                            sec_dataset, num_needed
+                        )
+                        sec_df = pd.DataFrame(sampled_records)
+                    else:
+                        # convert to dataframe (standard path)
+                        sec_df = pd.DataFrame(sec_dataset)
+
                     # add alias prefix in the column name (avoid column rename for join_type==vstack)
                     sec_df = self._rename_dataframe(sec_df, alias) if is_vstack is False else sec_df
                     # store the dataframe in to the list
