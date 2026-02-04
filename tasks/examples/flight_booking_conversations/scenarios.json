@@ -1,0 +1,303 @@
+[
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "all_details",
+      "quick_booking",
+      "confirmation"
+    ],
+    "description": "User provides origin, destination, date, passengers, cabin class, and preferences in the first message. Agent confirms, offers add-ons, and summarizes.",
+    "goal": "Complete a one-way flight booking successfully",
+    "name": "One-way booking with complete details",
+    "outcome": "success",
+    "scenario_id": "one_way_complete_details",
+    "subcategory": "Flight booking",
+    "weight": 6
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "partial_details",
+      "clarifications"
+    ],
+    "description": "User wants a round trip but omits key details (dates or return city). Agent asks clarifying questions and iterates.",
+    "goal": "Collect missing details and complete a round-trip booking successfully",
+    "name": "Round-trip booking with missing info",
+    "outcome": "success",
+    "scenario_id": "round_trip_partial_details",
+    "subcategory": "Flight booking",
+    "weight": 10
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "flexible_dates",
+      "budget"
+    ],
+    "description": "User is flexible on dates and wants the cheapest option. Agent asks for constraints (time windows, max stops) and proposes tradeoffs.",
+    "goal": "Propose options and complete the booking (or confirm the selection) successfully",
+    "name": "Flexible dates, find cheapest",
+    "outcome": "success",
+    "scenario_id": "flexible_dates_cheapest",
+    "subcategory": "Flight shopping",
+    "weight": 8
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "multi_city",
+      "complex"
+    ],
+    "description": "User needs multi-city travel (e.g., NYC→LON→PAR→NYC). Agent gathers segment dates, time preferences, and constraints.",
+    "goal": "Gather segment details and complete a multi-city booking successfully",
+    "name": "Multi-city itinerary",
+    "outcome": "success",
+    "scenario_id": "multi_city_itinerary",
+    "subcategory": "Flight booking",
+    "weight": 4
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "business",
+      "policy",
+      "constraints"
+    ],
+    "description": "User travels for work and must follow a policy (budget cap, preferred airlines, max stops). Agent ensures compliance and offers alternatives.",
+    "goal": "Find a policy-compliant itinerary and complete the booking successfully",
+    "name": "Business booking with policy constraints",
+    "outcome": "success",
+    "scenario_id": "business_policy_compliance",
+    "subcategory": "Corporate travel",
+    "weight": 6
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "upsell",
+      "upgrade"
+    ],
+    "description": "User starts with economy. Agent asks if they'd like to upgrade (premium economy/business) and explains benefits and tradeoffs.",
+    "goal": "Complete the booking and resolve whether the user upgrades or stays in economy",
+    "name": "Agent offers premium upgrade",
+    "outcome": "success",
+    "scenario_id": "premium_upgrade_offer",
+    "subcategory": "Upsell",
+    "weight": 7
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "preferences",
+      "accessibility"
+    ],
+    "description": "User cares about seat (aisle/window, extra legroom) and meal (vegetarian/halal). Agent confirms availability and captures preferences.",
+    "goal": "Capture preferences and complete the booking successfully",
+    "name": "Seat/meal preferences",
+    "outcome": "success",
+    "scenario_id": "seat_and_meal_preferences",
+    "subcategory": "Preferences",
+    "weight": 5
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "baggage",
+      "fees",
+      "clarifications"
+    ],
+    "description": "User has additional bags (or overweight/oversize). Agent clarifies baggage needs and discusses typical fee considerations without quoting exact policy as factual.",
+    "goal": "Clarify baggage needs and complete the booking successfully",
+    "name": "Extra baggage / baggage fees",
+    "outcome": "success",
+    "scenario_id": "extra_baggage_and_fees",
+    "subcategory": "Baggage",
+    "weight": 6
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "infant",
+      "special_assistance"
+    ],
+    "description": "User is traveling with an infant. Agent asks about lap infant vs seat, stroller, and timing needs.",
+    "goal": "Clarify infant travel requirements and complete the booking successfully",
+    "name": "Traveling with infant",
+    "outcome": "success",
+    "scenario_id": "traveling_with_infant",
+    "subcategory": "Special passengers",
+    "weight": 4
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "minor",
+      "constraints"
+    ],
+    "description": "User asks about booking for a minor traveling alone. Agent requests age range and mentions that rules vary by airline; offers general guidance.",
+    "goal": "Explain requirements and either proceed to booking steps or state limitations clearly",
+    "name": "Unaccompanied minor",
+    "outcome": "success",
+    "scenario_id": "unaccompanied_minor",
+    "subcategory": "Special passengers",
+    "weight": 2
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "accessibility",
+      "assistance"
+    ],
+    "description": "User requests accessibility support. Agent collects assistance type and timing and ensures respectful language.",
+    "goal": "Capture accessibility needs and complete the booking successfully",
+    "name": "Wheelchair / accessibility assistance",
+    "outcome": "success",
+    "scenario_id": "wheelchair_assistance",
+    "subcategory": "Accessibility",
+    "weight": 3
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "pet",
+      "policy_varies"
+    ],
+    "description": "User wants to travel with a small pet. Agent asks for pet type/size and notes that policies vary by airline.",
+    "goal": "Clarify pet details and either proceed with booking or state constraints clearly",
+    "name": "Pet in cabin",
+    "outcome": "success",
+    "scenario_id": "pet_in_cabin",
+    "subcategory": "Special requests",
+    "weight": 2
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "group",
+      "coordination"
+    ],
+    "description": "User books for a large group. Agent asks for passenger count, flexibility, and whether they need to sit together.",
+    "goal": "Collect group requirements and conclude with a clear booking plan (or next steps)",
+    "name": "Group booking",
+    "outcome": "success",
+    "scenario_id": "group_booking",
+    "subcategory": "Group travel",
+    "weight": 2
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "loyalty",
+      "payment_options"
+    ],
+    "description": "User asks to use points/miles. Agent clarifies program, flexibility, and offers a cash vs points comparison.",
+    "goal": "Help the user choose points vs cash and conclude with a clear booking decision/next steps",
+    "name": "Use miles/points",
+    "outcome": "success",
+    "scenario_id": "loyalty_points_and_miles",
+    "subcategory": "Loyalty",
+    "weight": 3
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "rebooking",
+      "post_purchase"
+    ],
+    "description": "User wants to change dates/times for an existing booking. Agent collects itinerary basics and desired change, and explains typical steps.",
+    "goal": "Conclude with the change successfully processed or clearly explain why it cannot be done",
+    "name": "Change existing booking",
+    "outcome": "success",
+    "scenario_id": "change_flight_rebooking",
+    "subcategory": "Manage booking",
+    "weight": 4
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "refund",
+      "policy_varies"
+    ],
+    "description": "User asks about canceling and refunds. Agent asks fare type and notes that policies vary; provides general guidance.",
+    "goal": "Conclude with clear cancellation/refund guidance and next steps",
+    "name": "Cancellation / refund inquiry",
+    "outcome": "success",
+    "scenario_id": "cancellation_refund_question",
+    "subcategory": "Manage booking",
+    "weight": 4
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "disruption",
+      "risk"
+    ],
+    "description": "User missed a connection or anticipates delay risk. Agent asks constraints and proposes safer itineraries or buffers.",
+    "goal": "Conclude with a concrete rebooking/itinerary recommendation and next steps",
+    "name": "Missed connection scenario",
+    "outcome": "success",
+    "scenario_id": "missed_connection_recovery",
+    "subcategory": "Disruption handling",
+    "weight": 3
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "name_change",
+      "policy_varies"
+    ],
+    "description": "User needs to correct passenger name. Agent requests exact mismatch and notes that policies vary.",
+    "goal": "Conclude with the correction request captured and clear next steps",
+    "name": "Name correction",
+    "outcome": "success",
+    "scenario_id": "name_correction",
+    "subcategory": "Manage booking",
+    "weight": 2
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "payment",
+      "troubleshooting"
+    ],
+    "description": "User has a payment issue (card declined) or requests pay-later options. Agent troubleshoots and offers alternatives.",
+    "failure_reason": "Payment could not be authorized",
+    "goal": "Either successfully complete payment and booking, or clearly fail due to payment issues and provide alternatives",
+    "name": "Payment failure / alternative payment",
+    "outcome": "failure",
+    "scenario_id": "payment_method_issue",
+    "subcategory": "Payment",
+    "weight": 3
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "urgent",
+      "last_minute"
+    ],
+    "description": "User needs a flight urgently (same day / next day). Agent prioritizes constraints, confirms flexibility, and summarizes.",
+    "failure_reason": "No flights available that match the requested constraints",
+    "goal": "Attempt to book a last-minute flight; if no suitable flights exist, clearly explain unavailability and propose alternatives",
+    "name": "Last-minute booking",
+    "outcome": "failure",
+    "scenario_id": "last_minute_booking",
+    "subcategory": "Flight booking",
+    "weight": 3
+  },
+  {
+    "category": "Travel",
+    "coverage_tags": [
+      "unavailability",
+      "strict_constraints",
+      "alternatives"
+    ],
+    "description": "User has very strict constraints (specific time window, nonstop only, tight budget). Agent searches plausibly, cannot find matching options, and offers near-miss alternatives.",
+    "failure_reason": "No available itinerary meets the constraints (time window / nonstop / budget)",
+    "goal": "Fail gracefully due to unavailability under strict constraints and propose workable alternatives",
+    "name": "No flights match strict constraints",
+    "outcome": "failure",
+    "scenario_id": "no_flights_match_constraints",
+    "subcategory": "Flight booking",
+    "weight": 2
+  }
+]
