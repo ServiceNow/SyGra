@@ -1,0 +1,186 @@
+data_config:
+  resumable: false
+
+graph_config:
+  nodes:
+    scenario_attributes:
+      node_type: weighted_sampler
+      attributes:
+        scenario_theme:
+          values:
+            - new_booking_simple
+            - new_booking_family
+            - new_booking_business
+            - new_booking_student
+            - new_booking_multi_city
+            - new_booking_open_jaw
+            - last_minute_booking
+            - strict_constraints_no_match
+            - flexible_dates_lowest_fare
+            - upgrade_discussion
+            - baggage_overweight_oversize
+            - seat_selection_request
+            - special_meal_request
+            - traveling_with_infant
+            - traveling_while_pregnant
+            - unaccompanied_minor
+            - wheelchair_assistance
+            - traveling_with_pet
+            - medical_device_oxygen
+            - loyalty_points_redemption
+            - voucher_or_travel_credit
+            - change_flight_rebooking
+            - cancellation_refund
+            - name_correction
+            - missed_connection_recovery
+            - airline_fee_question
+            - passport_visa_question
+            - codeshare_airline_confusion
+            - group_booking
+            - payment_authorization_failure
+          weights: [5, 4, 4, 3, 3, 2, 3, 2, 4, 4, 3, 3, 2, 2, 1, 2, 2, 2, 1, 3, 2, 3, 3, 2, 2, 2, 1, 1, 2, 2]
+
+        trip_type:
+          values: [one_way, round_trip, multi_city]
+          weights: [5, 5, 2]
+
+        booking_stage:
+          values: [shopping, booking, manage_booking]
+          weights: [5, 5, 3]
+
+        outcome:
+          values: [success, failure]
+          weights: [7, 3]
+
+        locale:
+          values: [en-US, en-GB, en-IN]
+          weights: [5, 2, 3]
+
+        complexity:
+          values: [low, medium, high]
+          weights: [4, 5, 3]
+
+    generate_scenario:
+      node_type: llm
+      pre_process: tasks.examples.flight_booking_scenarios_generator.task_executor.ScenarioPreProcessor
+      post_process: tasks.examples.flight_booking_scenarios_generator.task_executor.ScenarioPostProcessor
+      output_keys:
+        - scenario_id
+        - name
+        - description
+        - goal
+        - outcome
+        - failure_reason
+        - policy
+        - coverage_tags
+        - category
+        - subcategory
+        - weight
+        - dedup_text
+      prompt:
+        - system: |
+            You are a synthetic data designer.
+            You create scenario entries for a flight booking conversation dataset.
+
+        - user: |
+            Generate ONE scenario entry.
+
+            Inputs:
+              record_id: {id}
+              scenario_theme: {scenario_theme}
+              trip_type: {trip_type}
+              booking_stage: {booking_stage}
+              locale: {locale}
+              complexity: {complexity}
+              expected_outcome: {outcome}
+
+            Requirements:
+              - Create a scenario relevant to flight shopping/booking/manage-booking.
+              - Make it materially distinct from common templates; include a specific twist based on scenario_theme and complexity.
+              - Ensure the scenario is internally consistent.
+              - outcome MUST equal expected_outcome.
+              - If outcome is failure, include a specific failure_reason.
+              - coverage_tags must capture variations (theme + key constraints + passenger/special-service details) so downstream audits can see diversity.
+
+            Policy requirements (VERY IMPORTANT):
+              - policy must be written like a short knowledge article relevant to this scenario.
+              - policy MUST be the authoritative statement of what the agent can/cannot do.
+              - The agent operates in a simulated environment unless the policy explicitly allows simulated confirmation.
+              - Include:
+                  - a Knowledge Article title
+                  - an overview
+                  - Supported actions
+                  - Not supported actions
+                  - How to refuse unsupported requests and suggest alternatives
+
+            Formatting requirements:
+              - scenario_id must be unique, snake_case, and describe the variation.
+              - category should be "Travel".
+              - subcategory should be a short string (e.g., "Flight booking", "Manage booking", "Baggage", "Disruption handling").
+              - weight should be an integer from 1 to 10.
+              - policy must be a list of strings.
+              - coverage_tags must be a list of strings.
+              - dedup_text must be a single string that summarizes the scenario in a way that is good for semantic deduplication.
+
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 1.0
+          max_tokens: 1800
+        structured_output:
+          schema: tasks.examples.flight_booking_scenarios_generator.task_executor.FlightBookingScenario
+
+  edges:
+    - from: START
+      to: scenario_attributes
+    - from: scenario_attributes
+      to: generate_scenario
+    - from: generate_scenario
+      to: END
+
+graph_post_process:
+  - processor: sygra.core.graph.graph_postprocessor.SemanticDedupPostProcessor
+    params:
+      field: dedup_text
+      similarity_threshold: 0.90
+      id_field: scenario_id
+      embedding_backend: sentence_transformers
+      embedding_model: all-MiniLM-L6-v2
+      dedup_mode: nearest_neighbor
+      vectorstore_k: 20
+      keep: first
+      max_pairs_in_report: 2000
+
+  - processor: tasks.examples.flight_booking_scenarios_generator.task_executor.ExportFlightBookingScenariosJsonPostProcessor
+    params:
+      target_task: tasks.examples.flight_booking_conversations
+      target_filename: scenarios_generated.json
+      dedup_processor_name: SemanticDedupPostProcessor
+      overwrite: true
+
+output_config:
+  output_map:
+    scenario_id:
+      from: scenario_id
+    name:
+      from: name
+    description:
+      from: description
+    goal:
+      from: goal
+    outcome:
+      from: outcome
+    failure_reason:
+      from: failure_reason
+    policy:
+      from: policy
+    coverage_tags:
+      from: coverage_tags
+    category:
+      from: category
+    subcategory:
+      from: subcategory
+    weight:
+      from: weight
+    dedup_text:
+      from: dedup_text

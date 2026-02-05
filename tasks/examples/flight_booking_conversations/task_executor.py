@@ -254,7 +254,12 @@ class SynthesizeConversationAudio:
             state.get("assistant_voice") or lambda_node_dict.get("assistant_voice", "alloy")
         )
         if user_voice == assistant_voice:
-            assistant_voice = "alloy" if user_voice != "alloy" else "nova"
+            voice_pool = ["alloy", "nova", "shimmer", "onyx", "echo", "fable"]
+            candidates = [v for v in voice_pool if v != user_voice]
+            if candidates:
+                assistant_voice = _stable_rng(state).choice(candidates)
+            else:
+                assistant_voice = "alloy" if user_voice != "alloy" else "nova"
 
         client, model_name = await _get_tts_client()
 
