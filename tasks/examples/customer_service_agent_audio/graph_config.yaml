@@ -1,7 +1,7 @@
 data_config:
   source:
     type: "disk"
-    file_path: "tasks/examples/customer_service_agent_audio_realistic/input.json"
+    file_path: "tasks/examples/customer_service_agent_audio/input.json"
     file_format: "json"
 
 graph_config:
@@ -65,7 +65,7 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.1
-      post_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.AnalyzeQueryPostProcessor
+      post_process: tasks.examples.customer_service_agent_audio.task_executor.AnalyzeQueryPostProcessor
 
     ask_clarifying_question:
       node_type: agent
@@ -100,12 +100,12 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.7
-      post_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.AssistantResponsePostProcessor
+      post_process: tasks.examples.customer_service_agent_audio.task_executor.AssistantResponsePostProcessor
 
     simulate_user_response:
       node_type: llm
       chat_history: true
-      pre_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.SimulateUserPreProcessor
+      pre_process: tasks.examples.customer_service_agent_audio.task_executor.SimulateUserPreProcessor
       prompt:
         - system: |
             You are simulating a REALISTIC customer responding to a service assistant.
@@ -166,7 +166,7 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.8
-      post_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.UserResponsePostProcessor
+      post_process: tasks.examples.customer_service_agent_audio.task_executor.UserResponsePostProcessor
 
     update_and_check:
       node_type: llm
@@ -196,7 +196,7 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.1
-      post_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.UpdateCheckPostProcessor
+      post_process: tasks.examples.customer_service_agent_audio.task_executor.UpdateCheckPostProcessor
 
     generate_confirmation:
       node_type: agent
@@ -224,12 +224,12 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.5
-      post_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.AssistantResponsePostProcessor
+      post_process: tasks.examples.customer_service_agent_audio.task_executor.AssistantResponsePostProcessor
 
     simulate_user_confirmation:
       node_type: llm
       chat_history: true
-      pre_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.SimulateUserPreProcessor
+      pre_process: tasks.examples.customer_service_agent_audio.task_executor.SimulateUserPreProcessor
       prompt:
         - system: |
             You are simulating a REALISTIC customer confirming their request.
@@ -260,7 +260,7 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.7
-      post_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.UserConfirmationPostProcessor
+      post_process: tasks.examples.customer_service_agent_audio.task_executor.UserConfirmationPostProcessor
 
     generate_completion:
       node_type: agent
@@ -292,11 +292,11 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.5
-      post_process: tasks.examples.customer_service_agent_audio_realistic.task_executor.CompletionPostProcessor
+      post_process: tasks.examples.customer_service_agent_audio.task_executor.CompletionPostProcessor
 
     synthesize_audio:
       node_type: lambda
-      lambda: tasks.examples.customer_service_agent_audio_realistic.task_executor.SynthesizeRealisticConversationAudio
+      lambda: tasks.examples.customer_service_agent_audio.task_executor.SynthesizeRealisticConversationAudio
       assistant_voice: nova
       output_keys:
         - conversation_audio
@@ -312,7 +312,7 @@ graph_config:
       to: analyze_query
 
     - from: analyze_query
-      condition: tasks.examples.customer_service_agent_audio_realistic.task_executor.NeedsClarificationCondition
+      condition: tasks.examples.customer_service_agent_audio.task_executor.NeedsClarificationCondition
       path_map:
         ask_clarifying_question: ask_clarifying_question
         generate_confirmation: generate_confirmation
@@ -324,7 +324,7 @@ graph_config:
       to: update_and_check
 
     - from: update_and_check
-      condition: tasks.examples.customer_service_agent_audio_realistic.task_executor.CheckCompletenessCondition
+      condition: tasks.examples.customer_service_agent_audio.task_executor.CheckCompletenessCondition
       path_map:
         ask_clarifying_question: ask_clarifying_question
         generate_confirmation: generate_confirmation
@@ -333,7 +333,7 @@ graph_config:
       to: simulate_user_confirmation
 
     - from: simulate_user_confirmation
-      condition: tasks.examples.customer_service_agent_audio_realistic.task_executor.UserConfirmedCondition
+      condition: tasks.examples.customer_service_agent_audio.task_executor.UserConfirmedCondition
       path_map:
         generate_completion: generate_completion
         ask_clarifying_question: ask_clarifying_question
@@ -345,7 +345,7 @@ graph_config:
       to: END
 
 output_config:
-  generator: tasks.examples.customer_service_agent_audio_realistic.task_executor.CustomerServiceAudioOutputGenerator
+  generator: tasks.examples.customer_service_agent_audio.task_executor.CustomerServiceAudioOutputGenerator
 
   output_map:
     id:
