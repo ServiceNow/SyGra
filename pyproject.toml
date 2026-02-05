@@ -65,6 +65,7 @@ dependencies = [
   "fastapi (>=0.124.4,<0.125.0)",
   "uvicorn (>=0.38.0,<0.39.0)",
   "debugpy (>=1.8.19,<2.0.0)",
+  "flask>=3.1.2",
 ]
 
 [project.optional-dependencies]
