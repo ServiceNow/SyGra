@@ -10,6 +10,14 @@
     "goal": "Complete a one-way flight booking successfully",
     "name": "One-way booking with complete details",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Simulated Flight Booking (One-way / Complete Details)",
+      "Overview: Provide a realistic end-to-end booking conversation while clearly operating in a simulated environment.",
+      "Supported: Ask for/confirm origin, destination, date, passenger count, cabin, baggage, seat/meal preferences; present plausible estimated options; collect contact and payment inputs.",
+      "Supported: Confirm a simulated booking and provide a realistic fake record locator/confirmation code.",
+      "Not supported: Real-time inventory/pricing checks, live seat maps, guaranteed specific seats/meals, fee waivers, or any claim of completing a real transaction.",
+      "If unsupported is requested: Clearly refuse (\"I can’t do that\"), explain why (policy limitation), and offer policy-compliant alternatives (estimates, flexible dates, different cabin/route)."
+    ],
     "scenario_id": "one_way_complete_details",
     "subcategory": "Flight booking",
     "weight": 6
@@ -24,6 +32,14 @@
     "goal": "Collect missing details and complete a round-trip booking successfully",
     "name": "Round-trip booking with missing info",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Round-trip Booking with Missing Information (Clarification-Driven)",
+      "Overview: Drive the conversation to completion by gathering missing details while keeping the interaction realistic and efficient.",
+      "Supported: Ask targeted clarifying questions (dates, airports, times, stops, passenger details); propose reasonable defaults only with explicit user confirmation.",
+      "Supported: Offer plausible estimated options and then confirm a simulated booking with a fake record locator.",
+      "Not supported: Any claim of live fare/availability checks or completing a real purchase; do not guarantee prices or inventory.",
+      "If unsupported is requested: Refuse and suggest alternatives (e.g., provide an estimate range, broaden time window, allow 1 stop, adjust dates)."
+    ],
     "scenario_id": "round_trip_partial_details",
     "subcategory": "Flight booking",
     "weight": 10
@@ -38,6 +54,14 @@
     "goal": "Propose options and complete the booking (or confirm the selection) successfully",
     "name": "Flexible dates, find cheapest",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Flexible-Date Fare Shopping (Budget Optimization)",
+      "Overview: Help the user decide among tradeoffs (time vs stops vs price) using estimated information.",
+      "Supported: Ask constraints (time window, max stops, airports, baggage); provide plausible estimated options and explain tradeoffs.",
+      "Supported: If the user selects an option, confirm a simulated booking and provide a fake record locator.",
+      "Not supported: Guaranteeing the absolute cheapest fare, holding fares, or claiming live pricing/inventory.",
+      "If unsupported is requested: Refuse and propose alternatives (widen date window, accept 1 stop, change airport, adjust cabin)."
+    ],
     "scenario_id": "flexible_dates_cheapest",
     "subcategory": "Flight shopping",
     "weight": 8
@@ -52,6 +76,14 @@
     "goal": "Gather segment details and complete a multi-city booking successfully",
     "name": "Multi-city itinerary",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Multi-city Itinerary Planning (Estimated Options)",
+      "Overview: Plan a complex itinerary by collecting segment-by-segment requirements and presenting plausible estimated options.",
+      "Supported: Collect segment dates/times, preferred connection limits, baggage needs; propose estimated connections and constraints.",
+      "Supported: Confirm a simulated booking for the chosen itinerary and provide a fake record locator.",
+      "Not supported: Live availability checks, guarantees about protected connections/through-ticketing, or claims of real purchase.",
+      "If unsupported is requested: Refuse and offer alternatives (simplify route, adjust dates, add connection flexibility, split into separate tickets as an option with caveats)."
+    ],
     "scenario_id": "multi_city_itinerary",
     "subcategory": "Flight booking",
     "weight": 4
@@ -67,6 +99,14 @@
     "goal": "Find a policy-compliant itinerary and complete the booking successfully",
     "name": "Business booking with policy constraints",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Corporate Travel Booking (Policy/Constraint Compliance)",
+      "Overview: Produce an itinerary recommendation that respects corporate constraints and document tradeoffs transparently.",
+      "Supported: Enforce stated rules (budget cap, preferred airlines, max stops, cabin restrictions); propose estimated compliant options.",
+      "Supported: If the user approves, confirm a simulated booking and provide a fake record locator.",
+      "Not supported: Booking options that violate the stated constraints; guarantees of upgrades; claims of real-time corporate booking system access.",
+      "If unsupported/violating request occurs: Refuse and propose compliant alternatives (nearby airports, different times, 1 stop, policy exception request suggestion)."
+    ],
     "scenario_id": "business_policy_compliance",
     "subcategory": "Corporate travel",
     "weight": 6
@@ -81,6 +121,14 @@
     "goal": "Complete the booking and resolve whether the user upgrades or stays in economy",
     "name": "Agent offers premium upgrade",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Cabin Upgrade Guidance (Upsell with Constraints)",
+      "Overview: Educate the user on cabin differences and capture an explicit decision without overpromising.",
+      "Supported: Explain benefits/tradeoffs of economy vs premium economy vs business; ask preference and budget constraints.",
+      "Supported: Confirm a simulated booking in the selected cabin and provide a fake record locator.",
+      "Not supported: Claims of live upgrade inventory, guaranteed upgrades, or free upgrades.",
+      "If unsupported is requested: Refuse and suggest alternatives (different dates, different carrier, flexible fare, paid upgrade ranges as estimates)."
+    ],
     "scenario_id": "premium_upgrade_offer",
     "subcategory": "Upsell",
     "weight": 7
@@ -95,6 +143,14 @@
     "goal": "Capture preferences and complete the booking successfully",
     "name": "Seat/meal preferences",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Seat & Meal Preference Handling (Request vs Guarantee)",
+      "Overview: Capture preferences as requests and set expectations about availability.",
+      "Supported: Ask seat/meal preferences; explain common options; record preferences as requests.",
+      "Supported: Confirm a simulated booking with a fake record locator and summarize recorded preferences.",
+      "Not supported: Live seat map access, guaranteeing specific seat numbers/meal availability.",
+      "If unsupported is requested: Refuse and suggest alternatives (request at booking, check-in early, flexible seating, contact airline)."
+    ],
     "scenario_id": "seat_and_meal_preferences",
     "subcategory": "Preferences",
     "weight": 5
@@ -110,6 +166,14 @@
     "goal": "Clarify baggage needs and complete the booking successfully",
     "name": "Extra baggage / baggage fees",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Baggage Guidance (General Information Only)",
+      "Overview: Provide general baggage guidance and capture needs without presenting airline-specific rules as guaranteed.",
+      "Supported: Ask number/size/weight of bags; discuss typical fee considerations as estimates; suggest practical packing options.",
+      "Supported: Confirm a simulated booking with a fake record locator and state baggage rules vary by airline/fare.",
+      "Not supported: Quoting exact airline fees/rules as facts, waiving fees, or claiming policy exceptions.",
+      "If unsupported is requested: Refuse and offer alternatives (prepay baggage, choose fare with bags included, reduce bags/weight, different airline)."
+    ],
     "scenario_id": "extra_baggage_and_fees",
     "subcategory": "Baggage",
     "weight": 6
@@ -124,6 +188,14 @@
     "goal": "Clarify infant travel requirements and complete the booking successfully",
     "name": "Traveling with infant",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Traveling with an Infant (Policy-Varies Guidance)",
+      "Overview: Collect infant travel details and provide respectful, policy-varies guidance.",
+      "Supported: Ask lap infant vs seat, infant age, stroller/car seat needs, timing considerations; note typical practices.",
+      "Supported: Confirm a simulated booking with a fake record locator and summarize infant-related requests.",
+      "Not supported: Guaranteeing airline-specific rules, fees, or acceptance.",
+      "If unsupported is requested: Refuse to guarantee; suggest alternatives (check airline policy, choose flexible fares, allow extra buffer, consider infant seat)."
+    ],
     "scenario_id": "traveling_with_infant",
     "subcategory": "Special passengers",
     "weight": 4
@@ -138,6 +210,14 @@
     "goal": "Explain requirements and either proceed to booking steps or state limitations clearly",
     "name": "Unaccompanied minor",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Unaccompanied Minor Requests (Eligibility Not Guaranteed)",
+      "Overview: Provide general information and collect details while emphasizing airline-specific eligibility rules.",
+      "Supported: Ask age range, route, nonstop vs connection preference; explain that requirements vary by airline.",
+      "Supported: Simulate capturing the request and next steps (what information would be submitted).",
+      "Not supported: Guaranteeing acceptance, claiming enrollment in UMNR services, or completing real airline special-service bookings.",
+      "If unsupported is requested: Refuse and suggest alternatives (adult accompaniment, choose airlines/routes known to support UMNR, different itinerary)."
+    ],
     "scenario_id": "unaccompanied_minor",
     "subcategory": "Special passengers",
     "weight": 2
@@ -152,6 +232,14 @@
     "goal": "Capture accessibility needs and complete the booking successfully",
     "name": "Wheelchair / accessibility assistance",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Accessibility Assistance Requests (Capture & Set Expectations)",
+      "Overview: Capture assistance needs and communicate that accommodations are subject to airline processes.",
+      "Supported: Ask for wheelchair type/assistance level, airport assistance needs, timing; provide general guidance respectfully.",
+      "Supported: Confirm a simulated booking with a fake record locator and summarize assistance requests.",
+      "Not supported: Guaranteeing specific accommodations or claiming direct control of airline accessibility operations.",
+      "If unsupported is requested: Refuse to guarantee; suggest alternatives (contact airline accessibility desk, arrive early, carry documentation if needed)."
+    ],
     "scenario_id": "wheelchair_assistance",
     "subcategory": "Accessibility",
     "weight": 3
@@ -166,6 +254,14 @@
     "goal": "Clarify pet details and either proceed with booking or state constraints clearly",
     "name": "Pet in cabin",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Pet-in-Cabin Requests (Policy-Varies)",
+      "Overview: Gather pet details and provide general guidance while clarifying that airline policies vary.",
+      "Supported: Ask pet type/size, carrier dimensions, route details; provide general guidelines and preparations.",
+      "Supported: Confirm a simulated booking with a fake record locator and state the pet request is subject to airline approval.",
+      "Not supported: Guaranteeing pet acceptance or quoting airline-specific limits as certain.",
+      "If unsupported is requested: Refuse to guarantee; suggest alternatives (pet-friendly airlines, different dates/routes, cargo options with caveats)."
+    ],
     "scenario_id": "pet_in_cabin",
     "subcategory": "Special requests",
     "weight": 2
@@ -180,6 +276,14 @@
     "goal": "Collect group requirements and conclude with a clear booking plan (or next steps)",
     "name": "Group booking",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Group Flight Booking (Coordination & Expectations)",
+      "Overview: Coordinate group requirements and provide a realistic plan without claiming access to airline group contracting.",
+      "Supported: Gather passenger count, flexibility, seat-together preference, baggage needs; propose estimated options and planning steps.",
+      "Supported: Simulate an itinerary selection and confirm a simulated booking/plan with a fake reference.",
+      "Not supported: Real-time group rate negotiations, blocking seats, or guaranteeing everyone sits together.",
+      "If unsupported is requested: Refuse and propose alternatives (book earlier, choose seats later, split across flights, relax constraints)."
+    ],
     "scenario_id": "group_booking",
     "subcategory": "Group travel",
     "weight": 2
@@ -194,6 +298,13 @@
     "goal": "Help the user choose points vs cash and conclude with a clear booking decision/next steps",
     "name": "Use miles/points",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Loyalty Points vs Cash Booking (High-Level Guidance)",
+      "Overview: Provide a cash vs points comparison using non-real-time, illustrative guidance.",
+      "Supported: Ask loyalty program and flexibility; discuss typical tradeoffs (availability, change rules, value-per-point). Supported: Summarize a recommended decision and next steps for completing booking via the appropriate channel.",
+      "Not supported: Accessing real-time award inventory, quoting exact redemption rates, or transferring points on the user's behalf.",
+      "If unsupported is requested: Refuse and suggest alternatives (check loyalty portal, contact program support, consider cash booking, widen dates)."
+    ],
     "scenario_id": "loyalty_points_and_miles",
     "subcategory": "Loyalty",
     "weight": 3
@@ -208,6 +319,14 @@
     "goal": "Conclude with the change successfully processed or clearly explain why it cannot be done",
     "name": "Change existing booking",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Change/Rebooking Requests (No Direct Booking Access)",
+      "Overview: Provide change guidance and capture details while clarifying limitations.",
+      "Supported: Ask for booking reference, fare type/channel, desired new dates/times; explain typical change steps and considerations.",
+      "Supported: Simulate capturing the change request and summarize next steps.",
+      "Not supported: Accessing/modifying a real booking, guaranteeing fee waivers, or claiming the change was processed.",
+      "If unsupported is requested: Refuse and suggest alternatives (check fare rules, flexible fares, travel credits, contact airline/OTA)."
+    ],
     "scenario_id": "change_flight_rebooking",
     "subcategory": "Manage booking",
     "weight": 4
@@ -222,6 +341,14 @@
     "goal": "Conclude with clear cancellation/refund guidance and next steps",
     "name": "Cancellation / refund inquiry",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Cancellation & Refund Guidance (Policy Varies)",
+      "Overview: Provide general guidance and set expectations about variability across airlines/fare types.",
+      "Supported: Ask fare type, booking channel, timing; explain typical refund vs credit outcomes as general guidance.",
+      "Supported: Simulate capturing the cancellation intent and summarize next steps.",
+      "Not supported: Guaranteeing refund eligibility/amounts or canceling a real booking.",
+      "If unsupported is requested: Refuse to guarantee; suggest alternatives (travel credits, rebooking, contacting airline/OTA, travel insurance)."
+    ],
     "scenario_id": "cancellation_refund_question",
     "subcategory": "Manage booking",
     "weight": 4
@@ -236,6 +363,14 @@
     "goal": "Conclude with a concrete rebooking/itinerary recommendation and next steps",
     "name": "Missed connection scenario",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Disruption Handling (Missed Connection / Delay Risk)",
+      "Overview: Provide safety-first guidance and recommended next steps without claiming real-time operational access.",
+      "Supported: Ask constraints; recommend buffers, earlier departures, fewer connections; provide general rebooking guidance.",
+      "Supported: Simulate capturing rebooking preferences and summarize recommended next steps.",
+      "Not supported: Accessing real-time disruption tools, rebooking in live systems, or guaranteeing compensation.",
+      "If unsupported is requested: Refuse and suggest alternatives (contact airline, consider travel insurance, choose itineraries with longer layovers)."
+    ],
     "scenario_id": "missed_connection_recovery",
     "subcategory": "Disruption handling",
     "weight": 3
@@ -250,6 +385,14 @@
     "goal": "Conclude with the correction request captured and clear next steps",
     "name": "Name correction",
     "outcome": "success",
+    "policy": [
+      "Knowledge Article: Passenger Name Correction (Policy Varies)",
+      "Overview: Capture the mismatch details and provide general next steps while clarifying variability.",
+      "Supported: Ask the exact incorrect vs correct name; explain typical correction pathways at a high level.",
+      "Supported: Simulate capturing the correction request and summarize next steps.",
+      "Not supported: Changing a real booking, guaranteeing acceptance, or guaranteeing a free correction.",
+      "If unsupported is requested: Refuse and suggest alternatives (contact airline support, check fare rules, reissue/refund where allowed)."
+    ],
     "scenario_id": "name_correction",
     "subcategory": "Manage booking",
     "weight": 2
@@ -265,6 +408,14 @@
     "goal": "Either successfully complete payment and booking, or clearly fail due to payment issues and provide alternatives",
     "name": "Payment failure / alternative payment",
     "outcome": "failure",
+    "policy": [
+      "Knowledge Article: Payment Authorization Failure (Booking Not Completed)",
+      "Overview: When payment fails, the booking must not be confirmed; focus on troubleshooting and alternatives.",
+      "Supported: Ask for the error context; suggest troubleshooting (verify billing address, funds, bank blocks) and alternative payment methods.",
+      "Supported: Clearly state booking could not be completed due to authorization failure and propose next steps.",
+      "Not supported: Claiming payment succeeded, bypassing bank authorization, or confirming booking despite failure.",
+      "If unsupported is requested: Refuse and suggest alternatives (different card, pay-later option, call bank, try another payment channel)."
+    ],
     "scenario_id": "payment_method_issue",
     "subcategory": "Payment",
     "weight": 3
@@ -280,6 +431,14 @@
     "goal": "Attempt to book a last-minute flight; if no suitable flights exist, clearly explain unavailability and propose alternatives",
     "name": "Last-minute booking",
     "outcome": "failure",
+    "policy": [
+      "Knowledge Article: Last-Minute Booking Attempt (Unavailability Handling)",
+      "Overview: Handle urgent requests by clarifying constraints and, if unavailable, failing gracefully with alternatives.",
+      "Supported: Propose plausible estimated options and explain tradeoffs; if outcome is failure, do not confirm booking.",
+      "Supported: Clearly explain why constraints cannot be met and provide at least two alternatives (time/date, nearby airports, add a stop, cabin change).",
+      "Not supported: Real-time availability checks, forcing sold-out flights, or confirming booking when outcome is failure.",
+      "If unsupported is requested: Refuse and reiterate available alternatives within policy."
+    ],
     "scenario_id": "last_minute_booking",
     "subcategory": "Flight booking",
     "weight": 3
@@ -296,6 +455,14 @@
     "goal": "Fail gracefully due to unavailability under strict constraints and propose workable alternatives",
     "name": "No flights match strict constraints",
     "outcome": "failure",
+    "policy": [
+      "Knowledge Article: No Options Match Strict Constraints (Graceful Failure)",
+      "Overview: When constraints cannot be satisfied, clearly explain the mismatch and propose workable alternatives.",
+      "Supported: Evaluate constraints; propose near-miss alternatives (relax time window, allow 1 stop, nearby airports, higher budget) using estimates.",
+      "Supported: Clearly state failure/unavailability and present at least two alternatives; ask which alternative the user prefers.",
+      "Not supported: Real-time search claims, overriding inventory, or confirming booking when outcome is failure.",
+      "If unsupported is requested: Refuse and restate policy-compliant alternatives."
+    ],
     "scenario_id": "no_flights_match_constraints",
     "subcategory": "Flight booking",
     "weight": 2

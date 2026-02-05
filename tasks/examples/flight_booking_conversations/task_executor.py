@@ -71,6 +71,87 @@ def _get_conversation_turns(state: SygraState) -> list[dict[str, str]]:
     return normalized
 
 
+def _normalize_conversation_alternation(
+    turns: list[dict[str, str]],
+) -> tuple[list[dict[str, str]], dict[str, Any]]:
+    stats: dict[str, Any] = {
+        "alternation_modified": False,
+        "merged_turns": 0,
+        "dropped_leading_assistant": 0,
+        "dropped_trailing_user": 0,
+        "notes": "",
+    }
+
+    def _norm_role(role: str) -> str | None:
+        r = role.strip().lower()
+        if r in {"user", "human", "customer"}:
+            return "user"
+        if r in {"assistant", "ai", "agent", "system"}:
+            return "assistant"
+        return None
+
+    cleaned: list[dict[str, str]] = []
+    for t in turns:
+        role = t.get("role")
+        content = t.get("content")
+        if not isinstance(role, str) or not isinstance(content, str):
+            continue
+        nr = _norm_role(role)
+        if nr is None:
+            continue
+        c = content.strip()
+        if not c:
+            continue
+        cleaned.append({"role": nr, "content": c})
+
+    if not cleaned:
+        return [], stats
+
+    while cleaned and cleaned[0]["role"] != "user":
+        cleaned.pop(0)
+        stats["dropped_leading_assistant"] += 1
+        stats["alternation_modified"] = True
+
+    merged: list[dict[str, str]] = []
+    for t in cleaned:
+        if not merged:
+            merged.append(t)
+            continue
+        if merged[-1]["role"] == t["role"]:
+            merged[-1]["content"] = merged[-1]["content"].rstrip() + "\n\n" + t["content"].lstrip()
+            stats["merged_turns"] += 1
+            stats["alternation_modified"] = True
+            continue
+        merged.append(t)
+
+    if merged and merged[-1]["role"] == "user":
+        merged.pop()
+        stats["dropped_trailing_user"] += 1
+        stats["alternation_modified"] = True
+        stats["notes"] = "dropped_trailing_user_to_end_with_assistant"
+
+    return merged, stats
+
+
+class NormalizeConversationAlternation:
+    @staticmethod
+    def apply(lambda_node_dict: dict, state: SygraState):
+        turns = _get_conversation_turns(state)
+        normalized, stats = _normalize_conversation_alternation(turns)
+
+        state["alternation_modified"] = bool(stats.get("alternation_modified"))
+        state["alternation_merged_turns"] = int(stats.get("merged_turns") or 0)
+        state["alternation_dropped_leading_assistant"] = int(
+            stats.get("dropped_leading_assistant") or 0
+        )
+        state["alternation_dropped_trailing_user"] = int(stats.get("dropped_trailing_user") or 0)
+        state["alternation_notes"] = str(stats.get("notes") or "")
+
+        # Write back a canonical JSON string for downstream consumers
+        state["raw_conversation"] = json.dumps({"conversation": normalized}, ensure_ascii=False)
+        return state
+
+
 def _get_tts_config() -> dict[str, Any]:
     model_configs = utils.load_model_config()
     cfg = model_configs.get("tts_openai")
@@ -222,6 +303,15 @@ class PickScenario(LambdaFunction):
         state["scenario_goal"] = chosen.get("goal") or ""
         state["scenario_outcome"] = chosen.get("outcome") or "success"
         state["failure_reason"] = chosen.get("failure_reason") or ""
+
+        policy = chosen.get("policy")
+        if isinstance(policy, str):
+            state["scenario_policy"] = policy
+        elif isinstance(policy, list) and all(isinstance(p, str) for p in policy):
+            state["scenario_policy"] = "\n".join(policy)
+        else:
+            state["scenario_policy"] = ""
+
         state["coverage_tags"] = chosen.get("coverage_tags", [])
         state["category"] = chosen.get("category") or "Travel"
         state["subcategory"] = chosen.get("subcategory") or "Flight booking"
@@ -321,7 +411,7 @@ class ValidateConversationResolution:
 
         # Optional: validate wrap-up pattern if enabled
         if wrapup_style != "none" and len(turns) >= 2:
-            ask_idx = len(turns) - 2
+            ask_idx = len(turns) - 3
             ask_text = str(turns[ask_idx].get("content", "")).lower() if ask_idx >= 0 else ""
             if "anything else" not in ask_text and "help" not in ask_text:
                 state["completion_notes"] = "resolution_detected_but_wrapup_prompt_missing"
@@ -396,6 +486,7 @@ class FlightBookingOutputGenerator(BaseOutputGenerator):
                 "scenario_goal": state.get("scenario_goal"),
                 "scenario_outcome": state.get("scenario_outcome"),
                 "failure_reason": state.get("failure_reason"),
+                "scenario_policy": state.get("scenario_policy"),
                 "wrapup_style": state.get("wrapup_style"),
                 "coverage_tags": state.get("coverage_tags"),
             }
@@ -408,9 +499,16 @@ class FlightBookingOutputGenerator(BaseOutputGenerator):
             "scenario_goal": state.get("scenario_goal"),
             "scenario_outcome": state.get("scenario_outcome"),
             "failure_reason": state.get("failure_reason"),
+            "scenario_policy": state.get("scenario_policy"),
             "conversation_complete": state.get("conversation_complete"),
             "completion_notes": state.get("completion_notes"),
-            "num_turns": state.get("num_turns"),
+            "alternation_modified": state.get("alternation_modified"),
+            "alternation_merged_turns": state.get("alternation_merged_turns"),
+            "alternation_dropped_leading_assistant": state.get(
+                "alternation_dropped_leading_assistant"
+            ),
+            "alternation_dropped_trailing_user": state.get("alternation_dropped_trailing_user"),
+            "alternation_notes": state.get("alternation_notes"),
             "user_detail_level": state.get("user_detail_level"),
             "include_upgrade_offer": state.get("include_upgrade_offer"),
             "include_baggage": state.get("include_baggage"),

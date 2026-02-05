@@ -13,6 +13,7 @@ graph_config:
         - scenario_goal
         - scenario_outcome
         - failure_reason
+        - scenario_policy
         - coverage_tags
         - category
         - subcategory
@@ -20,9 +21,6 @@ graph_config:
     convo_attributes:
       node_type: weighted_sampler
       attributes:
-        num_turns:
-          values: [6, 8, 10, 12]
-          weights: [3, 5, 4, 2]
         user_detail_level:
           values: [complete, partial, minimal]
           weights: [3, 6, 2]
@@ -36,8 +34,8 @@ graph_config:
           values: [true, false]
           weights: [4, 6]
         tone:
-          values: [professional, friendly, casual, formal]
-          weights: [5, 4, 2, 2]
+          values: [professional, friendly, casual, formal, frustrated, rude]
+          weights: [2, 2, 2, 2, 2, 2]
         locale:
           values: [en-US, en-GB, en-IN]
           weights: [5, 2, 3]
@@ -49,7 +47,7 @@ graph_config:
           weights: [3, 2, 2, 2, 1, 1]
         wrapup_style:
           values: [none, close, followup]
-          weights: [7, 2, 1]
+          weights: [4, 3, 3]
 
     generate_conversation:
       node_type: llm
@@ -71,6 +69,8 @@ graph_config:
               goal: {scenario_goal}
               expected_outcome: {scenario_outcome}
               failure_reason_if_any: {failure_reason}
+              policy (MUST follow; do not assume capabilities beyond this):
+                {scenario_policy}
               coverage_tags: {coverage_tags}
 
             Conversation controls:
@@ -80,25 +80,25 @@ graph_config:
               include_upgrade_offer: {include_upgrade_offer}
               include_baggage: {include_baggage}
               include_seat_meal_prefs: {include_seat_meal_prefs}
-              num_turns: {num_turns}
               wrapup_style: {wrapup_style}
 
             Requirements:
-              - The conversation must have exactly {num_turns} messages.
               - Messages must strictly alternate roles starting with user and ending with assistant.
               - The user should be natural and sometimes provide incomplete information depending on user_detail_level.
               - The assistant should ask concise clarifying questions when details are missing, but must converge quickly.
-              - If some details remain missing late in the conversation, the assistant should propose reasonable defaults (and explicitly state them) to ensure the outcome can be reached within {num_turns} messages.
+              - If some details remain missing late in the conversation, the assistant should propose reasonable defaults (and explicitly state them) to ensure the outcome can be reached.
+              - The assistant MUST strictly adhere to the policy. If the user requests something not supported by the policy, the assistant must say it is not possible and suggest policy-compliant alternatives.
+              - The assistant MUST NOT claim to access real-time airline inventory, pricing, seat maps, or to have performed real transactions unless the policy explicitly allows simulated confirmation.
               - If include_upgrade_offer is true, the assistant must proactively ask about upgrading (e.g., premium economy / business) and explain tradeoffs.
               - If include_baggage is true, include a discussion about baggage needs.
               - If include_seat_meal_prefs is true, include seat and/or meal preferences.
               - Keep all details internally consistent (cities, dates, passenger counts, etc.).
               - The conversation must reach a clear resolution consistent with expected_outcome.
               - If wrapup_style is not "none", you must include a short wrap-up sequence at the end:
-                  - The resolution MUST occur no later than the assistant message at position {num_turns}-4.
-                  - The assistant message at position {num_turns}-2 MUST ask: "Is there anything else I can help you with?"
-                  - If wrapup_style is "close", the user (position {num_turns}-1) should say they are done, and the assistant (final message) should politely close.
-                  - If wrapup_style is "followup", the user (position {num_turns}-1) should ask a new, related question (baggage, seats, check-in, changes, refunds, loyalty, etc.), and the assistant (final message) should answer and then close.
+                  - The resolution MUST occur before the wrap-up sequence begins.
+                  - The second-to-last assistant message MUST ask: "Is there anything else I can help you with?"
+                  - If wrapup_style is "close", the user should say they are done, and the final assistant message should politely close.
+                  - If wrapup_style is "followup", the user should ask a new, related question (baggage, seats, check-in, changes, refunds, loyalty, etc.), and the final assistant message should answer and then close.
               - If wrapup_style is "none", the final assistant message must be the resolution/closure (do not introduce new unresolved questions at the end for success).
               - If expected_outcome is "success", the resolution MUST include:
                   - confirm the booking was completed (include a realistic confirmation code / record locator)
@@ -122,6 +122,16 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 1.0
+
+    normalize_conversation:
+      node_type: lambda
+      lambda: tasks.examples.flight_booking_conversations.task_executor.NormalizeConversationAlternation
+      output_keys:
+        - alternation_modified
+        - alternation_merged_turns
+        - alternation_dropped_leading_assistant
+        - alternation_dropped_trailing_user
+        - alternation_notes
 
     validate_conversation:
       node_type: lambda
@@ -148,6 +158,8 @@ graph_config:
     - from: convo_attributes
       to: generate_conversation
     - from: generate_conversation
+      to: normalize_conversation
+    - from: normalize_conversation
       to: validate_conversation
     - from: validate_conversation
       to: synthesize_audio
