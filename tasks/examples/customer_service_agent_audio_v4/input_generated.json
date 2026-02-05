@@ -1,0 +1,62 @@
+[
+  {
+    "ground_truth": "Username: johndoe123. Email associated with the account: johndoe@example.com. Last successful login date: September 15, 2023. Device: Windows laptop. Error message: 'Incorrect password' after multiple attempts. Two-factor authentication: Enabled. Preferred method for reset link: Email.",
+    "id": "cs_PR_001",
+    "initial_query": "Hey, I think I need to reset my password for the system.",
+    "scenario_context": "The user needs help with resetting their password for the company intranet system. The details they should provide when prompted:\n- Username: johndoe123\n- Email associated with the account: johndoe@example.com\n- Last successful login date: September 15, 2023\n- The type of device being used: Windows laptop\n- Any error messages received: 'Incorrect password' after multiple attempts\n- Two-factor authentication status: Enabled\n- Preferred method for receiving the reset link: Email"
+  },
+  {
+    "ground_truth": "Order Number: 123456789. Product Name: Wireless Bluetooth Headphones. Purchase Date: October 10, 2023. Reason for Return: Item is defective. Desired Outcome: Exchange for the same item. Condition of the Item: Used but in original packaging. Return Shipping Method: Prepaid return label requested. Customer Contact Information: John Doe, john.doe@example.com, (555) 123-4567.",
+    "id": "cs_PR_002",
+    "initial_query": "Hey, I need some help with a return.",
+    "scenario_context": "The user needs help with a return. The details they should provide when prompted:\n- Order Number: 123456789\n- Product Name: Wireless Bluetooth Headphones\n- Purchase Date: October 10, 2023\n- Reason for Return: Item is defective\n- Desired Outcome: Exchange for the same item\n- Condition of the Item: Used but in original packaging\n- Return Shipping Method: Prepaid return label requested\n- Customer Contact Information: John Doe, john.doe@example.com, (555) 123-4567"
+  },
+  {
+    "ground_truth": "Software Name: Adobe Photoshop 2023. Operating System: Windows 10, 64-bit. Error Message: 'Installation failed due to insufficient permissions'. Installation Method: Downloaded from the official website. User Permissions: Standard User account. Previous Attempts: Tried running as Administrator but still failed. Antivirus Software: Norton Security, which may be blocking installation. Internet Connection: Stable, connected via Wi-Fi.",
+    "id": "cs_SI_003",
+    "initial_query": "Hey, I'm having trouble installing some software on my computer.",
+    "scenario_context": "The user needs help with installing software on their computer. The details they should provide when prompted:\n- Software Name: Adobe Photoshop 2023\n- Operating System: Windows 10, 64-bit\n- Error Message: 'Installation failed due to insufficient permissions'\n- Installation Method: Downloaded from the official website\n- User Permissions: Standard User account\n- Previous Attempts: Tried running as Administrator but still failed\n- Antivirus Software: Norton Security, which may be blocking installation\n- Internet Connection: Stable, connected via Wi-Fi"
+  },
+  {
+    "ground_truth": "Server Name: DB-Server-01. Department: Finance. Preferred Date: October 15, 2023. Preferred Time: 2:00 AM (UTC). Duration of Restart: Approximately 30 minutes. Contact Person: Sarah Johnson. Contact Number: 555-0123. Backup Status: Last backup completed on October 14, 2023.",
+    "id": "cs_SR_004",
+    "initial_query": "Hey, I need to arrange a time for a server restart.",
+    "scenario_context": "The user needs help with scheduling a server restart for maintenance. The details they should provide when prompted:\n- Server Name: DB-Server-01\n- Department: Finance\n- Preferred Date: October 15, 2023\n- Preferred Time: 2:00 AM (UTC)\n- Duration of Restart: Approximately 30 minutes\n- Contact Person: Sarah Johnson\n- Contact Number: 555-0123\n- Backup Status: Last backup completed on October 14, 2023"
+  },
+  {
+    "ground_truth": "Departure city: San Francisco. Preferred travel dates: March 15th to March 20th, 2024. Number of passengers: 2 adults. Class of service: Economy. Specific airlines preference: Delta Airlines. Return flight preference: Non-stop flight. Budget limit: $600 per person. Special requests: Vegetarian meal for one passenger.",
+    "id": "cs_FB_005",
+    "initial_query": "Hey there, I’m looking to book a flight to New York.",
+    "scenario_context": "The user needs help with booking a flight to New York. The details they should provide when prompted:\n- Departure city: San Francisco\n- Preferred travel dates: March 15th to March 20th, 2024\n- Number of passengers: 2 adults\n- Class of service: Economy\n- Any specific airlines preference: Delta Airlines\n- Return flight preference: Non-stop flight\n- Budget limit: $600 per person\n- Special requests: Vegetarian meal for one passenger"
+  },
+  {
+    "ground_truth": "Patient's full name: John Doe. Date of birth: January 15, 1985. Preferred appointment date: October 12, 2023. Preferred time slot: Morning, between 9 AM and 11 AM. Reason for visit: Routine check-up. Doctor's specialty: General Practitioner. Insurance provider: Blue Cross Blue Shield. Contact number: (555) 123-4567.",
+    "id": "cs_AS_006",
+    "initial_query": "Hi, I need to set up a doctor's appointment.",
+    "scenario_context": "The user needs help with scheduling a doctor's appointment. The details they should provide when prompted:\n- Patient's full name: John Doe\n- Date of birth: January 15, 1985\n- Preferred appointment date: October 12, 2023\n- Preferred time slot: Morning, between 9 AM and 11 AM\n- Reason for visit: Routine check-up\n- Doctor's specialty: General Practitioner\n- Insurance provider: Blue Cross Blue Shield\n- Contact number: (555) 123-4567"
+  },
+  {
+    "ground_truth": "Field 1: Internet connection type (cable). Field 2: ISP name (Comcast). Field 3: First noticed issues (October 15, 2023). Field 4: Affected devices (only on laptop). Field 5: Troubleshooting steps attempted (restarted modem). Field 6: Modem/router model (Netgear Nighthawk RAX40). Field 7: Error messages (none). Field 8: Time of day for interruptions (evenings).",
+    "id": "cs_IS_007",
+    "initial_query": "Hey, my internet keeps cutting out, and it's really frustrating.",
+    "scenario_context": "The user needs help with internet connectivity issues. The details they should provide when prompted:\n- What type of internet connection do you have (e.g., cable, DSL, fiber)?\n- What is the name of your Internet Service Provider (ISP)?\n- When did you first notice the connectivity issues?\n- Are the issues occurring on all devices or just specific ones?\n- Have you tried any troubleshooting steps, such as restarting your modem or router?\n- What is the model number of your modem/router?\n- Are there any error messages displayed when the internet cuts out?\n- Is there a consistent time of day when the interruptions occur?"
+  },
+  {
+    "ground_truth": "Rental location: San Francisco International Airport (SFO). Rental dates: From Friday, March 24, 2023, at 2:00 PM to Sunday, March 26, 2023, at 6:00 PM. Car type preference: Compact car. Number of passengers: 2 adults. Age of the primary driver: 28 years old. Preferred rental company: Hertz or Enterprise. Payment method: Credit card (Visa). Additional requirements: GPS navigation system.",
+    "id": "cs_CR_008",
+    "initial_query": "Hey, I'm looking to rent a car for the weekend.",
+    "scenario_context": "The user needs help with renting a car for the weekend. The details they should provide when prompted:\n- Rental location: San Francisco International Airport (SFO)\n- Rental dates: From Friday, March 24, 2023, at 2:00 PM to Sunday, March 26, 2023, at 6:00 PM\n- Car type preference: Compact car (e.g., Toyota Corolla or similar)\n- Number of passengers: 2 adults\n- Age of the primary driver: 28 years old\n- Preferred rental company: Hertz or Enterprise\n- Payment method: Credit card (Visa)\n- Additional requirements: GPS navigation system included"
+  },
+  {
+    "ground_truth": "Check-in date: October 14, 2023. Check-out date: October 16, 2023. Location: San Francisco, CA. Number of guests: 2 adults. Room preferences: One queen bed, non-smoking room. Budget range: $150 - $250 per night. Special requests: Late check-in after 8 PM. Contact information: User's phone number and email address.",
+    "id": "cs_HR_009",
+    "initial_query": "Hi there, I'm looking to book a hotel room for next weekend.",
+    "scenario_context": "The user needs help with booking a hotel room for next weekend. The details they should provide when prompted:\n- Check-in date: October 14, 2023\n- Check-out date: October 16, 2023\n- Location: San Francisco, CA\n- Number of guests: 2 adults\n- Room preferences: One queen bed, non-smoking room\n- Budget range: $150 - $250 per night\n- Special requests: Late check-in after 8 PM\n- Contact information: User's phone number and email address for confirmation."
+  },
+  {
+    "ground_truth": "Account number: 123456789. Billing period: September 1, 2023 - September 30, 2023. Total amount due: $89.99. Specific charges in question: Data overage charges of $25.00 and a late payment fee of $15.00. Payment method: Credit card ending in 1234. Previous balance: $60.00. Promotions applied: 10% discount for loyalty program. Contact number: (555) 123-4567.",
+    "id": "cs_BI_010",
+    "initial_query": "Hey, I just looked at my latest bill and I have a few questions.",
+    "scenario_context": "The user needs help with understanding their bill and charges. The details they should provide when prompted:\n- Account number: 123456789\n- Billing period: September 1, 2023 - September 30, 2023\n- Total amount due: $89.99\n- Specific charges in question: Data overage charges of $25.00 and a late payment fee of $15.00\n- Payment method: Credit card ending in 1234\n- Previous balance: $60.00\n- Any promotions or discounts applied: 10% discount for loyalty program\n- Contact number associated with the account: (555) 123-4567"
+  }
+]

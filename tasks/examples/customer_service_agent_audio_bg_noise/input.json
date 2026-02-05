@@ -1,26 +1,8 @@
 [
   {
-    "ground_truth": "Origin: San Francisco. Destination: New York. Departure: Next Friday. Return: Sunday evening. Passengers: 1 adult. Class: Economy.",
-    "id": "audio_001",
-    "initial_query": "I'd like to book a flight please.",
-    "scenario_context": "The customer wants to book a flight. When asked, they should provide:\n- Origin: San Francisco\n- Destination: New York\n- Travel date: Next Friday\n- Return: Sunday evening\n- Passengers: Just me, one adult\n- Class: Economy is fine"
-  },
-  {
-    "ground_truth": "Account: 4589712. Issue: Internet keeps dropping every few minutes. Started: This morning around 8 AM. Troubleshooting: Restarted router twice. Equipment: Standard company-provided modem.",
-    "id": "audio_002",
-    "initial_query": "Hi, I need some help with my internet connection.",
-    "scenario_context": "The customer is experiencing internet issues. When asked, they should provide:\n- Account number: 4589712\n- Issue: Internet keeps dropping every few minutes\n- Started: This morning around 8 AM\n- Troubleshooting tried: Already restarted the router twice\n- Equipment: Using the standard modem you guys provided"
-  },
-  {
-    "ground_truth": "Location: Downtown Chicago. Check-in: December 20th. Check-out: December 23rd. Room: King bed preferred. Guests: 2 adults.",
-    "id": "audio_003",
-    "initial_query": "I want to make a hotel reservation.",
-    "scenario_context": "The customer wants to book a hotel. When asked, they should provide:\n- Location: Downtown Chicago\n- Check-in: December 20th\n- Check-out: December 23rd\n- Room type: King bed if available\n- Guests: Two adults"
-  },
-  {
-    "ground_truth": "Doctor: Dr. Sarah Johnson. Reason: Annual checkup. Preferred time: Morning, any day next week. Insurance: Blue Cross, ID ending 7823.",
-    "id": "audio_004",
-    "initial_query": "Can you help me schedule a doctor's appointment?",
-    "scenario_context": "The patient wants to schedule an appointment. When asked, they should provide:\n- Doctor: Dr. Sarah Johnson, my regular physician\n- Reason: Annual checkup\n- Preferred time: Morning appointments work best, any day next week\n- Insurance: Blue Cross, member ID ending in 7823"
+    "ground_truth": "Purpose: Scheduled maintenance check. Detailed purpose: Routine system health verification and patch updates. Server name: SAP AppSRV01. Restart time: Tomorrow at 2:00 AM. Secondary server: DatabaseServer1. Secondary reboot time: Tomorrow at 2:30 AM. Reason: Preventive maintenance. Detailed reason: To ensure optimal performance and minimize downtime.",
+    "id": "cs_001",
+    "initial_query": "I need to schedule a server restart.",
+    "scenario_context": "The user needs help with scheduling a server restart for maintenance. The details they should provide when prompted:\n- Purpose to restart the server: Scheduled maintenance check\n- Please give the purpose of restart in details: Routine system health verification and patch updates.\n- Name of server to restart: SAP AppSRV01\n- Preferred time and date to restart: Tomorrow at 2:00 AM\n- Server to reboot: DatabaseServer1\n- Desired date and time of reboot: Tomorrow at 2:30 AM\n- Reason for reboot: Preventive maintenance\n- Detailed reason for reboot: To ensure optimal performance and minimize downtime for business operations."
   }
 ]

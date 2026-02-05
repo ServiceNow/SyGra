@@ -1,0 +1,118 @@
+# Customer Service Scenario Generator
+#
+# This task generates input.json files for the customer_service_agent_audio tasks.
+# It takes seed scenario types and uses LLMs to generate realistic, diverse scenarios.
+#
+# Output format matches: tasks/examples/customer_service_agent_audio_v4/input.json
+# - id: unique identifier
+# - initial_query: the customer's first message (brief, natural)
+# - scenario_context: detailed info the simulated user should provide
+# - ground_truth: expected collected information summary
+
+data_config:
+  id_column: id
+  source:
+    type: disk
+    file_path: "tasks/examples/customer_service_scenario_generator/seed.json"
+    file_format: json
+
+graph_config:
+  nodes:
+    # Step 1: Generate the initial customer query
+    generate_initial_query:
+      node_type: llm
+      output_keys: initial_query
+      prompt:
+        - system: |
+            You are generating realistic customer service conversation starters.
+
+            Given a scenario type, create a BRIEF, NATURAL opening message that a real customer
+            might say when contacting customer service.
+
+            Guidelines:
+            - Keep it short (1-2 sentences max)
+            - Sound natural and conversational
+            - Don't provide too much detail upfront - real customers often start vague
+            - Vary the tone and style
+
+            Examples of good opening messages:
+            - "Hi, I need to schedule a server restart."
+            - "My internet's been acting up all morning."
+            - "I'd like to book a flight to Chicago."
+            - "Can someone help me reset my password?"
+            - "I have a question about my last bill."
+
+            Output ONLY the customer's opening message, nothing else.
+        - user: |
+            Scenario type: {scenario_type}
+            Domain: {domain}
+            Description: {description}
+
+            Generate a natural opening message for this scenario:
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.9
+      post_process: tasks.examples.customer_service_scenario_generator.task_executor.InitialQueryPostProcessor
+
+    # Step 2: Generate the detailed scenario context and ground truth
+    generate_scenario_details:
+      node_type: llm
+      output_keys:
+        - scenario_context
+        - ground_truth
+      prompt:
+        - system: |
+            You are generating detailed customer service scenarios for training data.
+
+            Given a scenario type and initial query, create:
+            1. scenario_context: Detailed information the customer should provide when prompted
+            2. ground_truth: A summary of all the key information
+
+            The scenario_context should include 5-8 specific details that a customer service
+            agent would need to collect. Make these details realistic and specific.
+
+            Format your response as JSON:
+            {{
+              "scenario_context": "The user needs help with [description]. The details they should provide when prompted:\n- Field 1: Value 1\n- Field 2: Value 2\n...",
+              "ground_truth": "Field 1: Value 1. Field 2: Value 2. ..."
+            }}
+
+            Be creative with the specific values - use realistic names, dates, numbers, etc.
+            Vary the complexity and details across different scenarios.
+        - user: |
+            Scenario type: {scenario_type}
+            Domain: {domain}
+            Description: {description}
+            Initial query: {initial_query}
+
+            Generate the scenario_context and ground_truth:
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.8
+      post_process: tasks.examples.customer_service_scenario_generator.task_executor.ScenarioDetailsPostProcessor
+
+  edges:
+    - from: START
+      to: generate_initial_query
+
+    - from: generate_initial_query
+      to: generate_scenario_details
+
+    - from: generate_scenario_details
+      to: END
+
+output_config:
+  generator: tasks.examples.customer_service_scenario_generator.task_executor.ScenarioOutputGenerator
+
+  output_map:
+    id:
+      from: "id"
+      transform: "generate_unique_id"
+    initial_query:
+      from: "initial_query"
+    scenario_context:
+      from: "scenario_context"
+    ground_truth:
+      from: "ground_truth"

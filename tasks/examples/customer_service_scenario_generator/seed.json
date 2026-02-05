@@ -1,0 +1,92 @@
+[
+  {
+    "description": "User needs to schedule a server restart or reboot for maintenance",
+    "domain": "IT Support",
+    "id": "seed_001",
+    "scenario_type": "server_restart"
+  },
+  {
+    "description": "User wants to book a flight to a destination",
+    "domain": "Travel",
+    "id": "seed_002",
+    "scenario_type": "flight_booking"
+  },
+  {
+    "description": "User wants to book a hotel room",
+    "domain": "Travel",
+    "id": "seed_003",
+    "scenario_type": "hotel_reservation"
+  },
+  {
+    "description": "User is experiencing internet connectivity issues",
+    "domain": "Technical Support",
+    "id": "seed_004",
+    "scenario_type": "internet_support"
+  },
+  {
+    "description": "User needs to reset their password for a system or application",
+    "domain": "IT Support",
+    "id": "seed_005",
+    "scenario_type": "password_reset"
+  },
+  {
+    "description": "User needs help installing or configuring software",
+    "domain": "IT Support",
+    "id": "seed_006",
+    "scenario_type": "software_installation"
+  },
+  {
+    "description": "User has questions about their bill or charges",
+    "domain": "Customer Service",
+    "id": "seed_007",
+    "scenario_type": "billing_inquiry"
+  },
+  {
+    "description": "User wants to return or exchange a product",
+    "domain": "E-commerce",
+    "id": "seed_008",
+    "scenario_type": "product_return"
+  },
+  {
+    "description": "User wants to schedule a medical appointment",
+    "domain": "Healthcare",
+    "id": "seed_009",
+    "scenario_type": "appointment_scheduling"
+  },
+  {
+    "description": "User wants to rent a car",
+    "domain": "Travel",
+    "id": "seed_010",
+    "scenario_type": "car_rental"
+  },
+  {
+    "description": "User needs help setting up or troubleshooting VPN access",
+    "domain": "IT Support",
+    "id": "seed_011",
+    "scenario_type": "vpn_access"
+  },
+  {
+    "description": "User is having problems with their printer",
+    "domain": "Technical Support",
+    "id": "seed_012",
+    "scenario_type": "printer_issue"
+  },
+  {
+    "description": "User wants to cancel or modify their subscription",
+    "domain": "Customer Service",
+    "id": "seed_013",
+    "scenario_type": "subscription_cancellation"
+  },
+  {
+    "description": "User wants to track or inquire about a package delivery",
+    "domain": "E-commerce",
+    "id": "seed_014",
+    "scenario_type": "delivery_tracking"
+  },
+  {
+    "description": "User needs to update their account information",
+    "domain": "Customer Service",
+    "id": "seed_015",
+    "scenario_type": "account_update"
+  }
+]
