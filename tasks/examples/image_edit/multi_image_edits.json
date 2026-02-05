@@ -1,0 +1,12 @@
+[
+  {
+    "edit_instruction": "Combine these into a cohesive scene with natural perspective",
+    "id": "multi_002",
+    "images": [
+      "tasks/examples/image_edit/data/room_photo.png",
+      "tasks/examples/image_edit/data/object1.png",
+      "tasks/examples/image_edit/data/car_photo.png"
+    ],
+    "title": "Scene Composition"
+  }
+]
