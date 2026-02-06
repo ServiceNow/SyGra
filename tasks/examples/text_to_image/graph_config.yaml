@@ -1,0 +1,32 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: "tasks/examples/text_to_image/concepts.json"
+
+graph_config:
+  nodes:
+    generate_variations:
+      node_type: llm
+      output_keys: images
+      prompt:
+        - user: |
+            {prompt}
+      model:
+        name: gpt_image_1
+        parameters:
+          n: 3
+
+  edges:
+    - from: START
+      to: generate_variations
+    - from: generate_variations
+      to: END
+
+output_config:
+  output_map:
+    id:
+      from: "id"
+    concept:
+      from: "concept_description"
+    images:
+      from: "images"

@@ -1,0 +1,26 @@
+[
+  {
+    "edit_instruction": "Remove the red chair from the room",
+    "id": "edit_001",
+    "source_image": "tasks/examples/image_edit/data/room_photo.png",
+    "title": "Remove Background Object"
+  },
+  {
+    "edit_instruction": "Change the car color from blue to red",
+    "id": "edit_002",
+    "source_image": "tasks/examples/image_edit/data/car_photo.png",
+    "title": "Change Color"
+  },
+  {
+    "edit_instruction": "Add a rainbow in the sky",
+    "id": "edit_003",
+    "source_image": "tasks/examples/image_edit/data/landscape.png",
+    "title": "Add Element"
+  },
+  {
+    "edit_instruction": "Make the background blurry and add bokeh effect",
+    "id": "edit_004",
+    "source_image": "tasks/examples/image_edit/data/portrait.png",
+    "title": "Style Transfer"
+  }
+]

@@ -1,0 +1,36 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: "tasks/examples/text_to_speech/test.json"
+    file_format: "json"
+
+graph_config:
+  nodes:
+    generate_audio:
+      node_type: llm
+      output_keys: llm_response
+      prompt:
+        - user: |
+            {text}
+      model:
+        name: gpt-audio
+        output_type: audio
+        parameters:
+          audio:
+            voice: "alloy"
+            format: "wav"
+
+  edges:
+    - from: START
+      to: generate_audio
+    - from: generate_audio
+      to: END
+
+output_config:
+  output_map:
+    id:
+      from: id
+    text:
+      from: text
+    llm_response:
+      from: llm_response
