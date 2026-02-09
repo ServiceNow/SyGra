@@ -1,25 +1,3 @@
-"""
-Customer Service Agent with Realistic Audio V4 - Task Executor
-
-Improvements over V3:
-1. Configurable max turns to prevent endless loops
-2. Configurable background noise (enabled/disabled, type, intensity)
-3. Logical chat conclusion with user goodbye and assistant final greeting
-4. Duplex channel simulation - BOTH user AND assistant have background noise
-
-Audio Processing Features:
-- Real noise samples from MUSAN (music, speech, noise)
-- Noise applied to BOTH user and assistant turns (duplex simulation)
-- Random cropping to match speech duration
-- Loop with crossfades if noise is shorter than speech
-- Loudness normalization (RMS-based)
-- Mix with random SNR distribution:
-  - subtle: 15-25 dB (noise barely audible)
-  - moderate: 8-15 dB (noticeable but not distracting)
-  - noisy: 0-8 dB (realistic loud environment)
-- Optional random gain drift over time for realism
-"""
-
 import base64
 import io
 import json
@@ -43,7 +21,6 @@ from sygra.processors.output_record_generator import BaseOutputGenerator
 from sygra.utils import audio_utils, utils
 
 
-# ============== TTS Client Cache ==============
 _TTS_CLIENT = None
 _TTS_MODEL_NAME = None
 
@@ -155,8 +132,6 @@ def _chunk_text_for_tts(text: str, max_chars: int = 3800) -> list[str]:
         start = end
     return [p for p in parts if p]
 
-
-# ============== Professional Audio Mixing with MUSAN ==============
 
 
 class AudioProcessor:
@@ -515,15 +490,14 @@ def _get_conversation_turns(state: SygraState) -> list[dict[str, str]]:
     # Handle aliased initial_query
     initial_query = state.get("scenario->initial_query") or state.get("initial_query", "")
 
-    # V4: Include new goodbye/farewell nodes
     conversation_nodes = {
         "ask_clarifying_question": "assistant",
         "generate_confirmation": "assistant",
         "generate_completion": "assistant",
-        "generate_final_greeting": "assistant",  # V4: Final assistant goodbye
+        "generate_final_greeting": "assistant",
         "simulate_user_response": "user",
         "simulate_user_confirmation": "user",
-        "simulate_user_goodbye": "user",  # V4: User goodbye
+        "simulate_user_goodbye": "user",
     }
 
     turns: list[dict[str, str]] = []
@@ -560,9 +534,6 @@ def _get_conversation_turns(state: SygraState) -> list[dict[str, str]]:
     return turns
 
 
-# ============== Analysis Processor ==============
-
-
 class AnalyzeQueryPostProcessor(NodePostProcessorWithState):
     """Analyzes the initial query and initializes state."""
 
@@ -585,9 +556,6 @@ class AnalyzeQueryPostProcessor(NodePostProcessorWithState):
         return state
 
 
-# ============== Assistant Processors ==============
-
-
 class AssistantResponsePostProcessor(NodePostProcessorWithState):
     """Stores assistant's text response."""
 
@@ -596,9 +564,6 @@ class AssistantResponsePostProcessor(NodePostProcessorWithState):
         state["assistant_response"] = content
         state["turn_count"] = state.get("turn_count", 0) + 1
         return state
-
-
-# ============== User Simulation Processors ==============
 
 
 class SimulateUserPreProcessor(NodePreProcessor):
@@ -647,7 +612,7 @@ class UserConfirmationPostProcessor(NodePostProcessorWithState):
 
 
 class UserGoodbyePostProcessor(NodePostProcessorWithState):
-    """V4: Handles user goodbye response."""
+    """Handles user goodbye response."""
 
     def apply(self, response: SygraMessage, state: SygraState) -> SygraState:
         content = response.message.content
@@ -659,8 +624,6 @@ class UserGoodbyePostProcessor(NodePostProcessorWithState):
             state["user_message"] = content.strip()
         return state
 
-
-# ============== Update and Completion Processors ==============
 
 
 class UpdateCheckPostProcessor(NodePostProcessorWithState):
@@ -692,7 +655,7 @@ class CompletionPostProcessor(NodePostProcessorWithState):
 
 
 class FinalGreetingPostProcessor(NodePostProcessorWithState):
-    """V4: Handles final assistant greeting/goodbye."""
+    """Handles final assistant greeting/goodbye."""
 
     def apply(self, response: SygraMessage, state: SygraState) -> SygraState:
         content = response.message.content
@@ -700,8 +663,6 @@ class FinalGreetingPostProcessor(NodePostProcessorWithState):
         state["conversation_concluded"] = True
         return state
 
-
-# ============== Edge Conditions ==============
 
 
 class NeedsClarificationCondition(EdgeCondition):
@@ -721,7 +682,7 @@ class CheckCompletenessCondition(EdgeCondition):
         is_complete = state.get("is_complete", False)
         ready_for_confirmation = state.get("ready_for_confirmation", False)
         turn_count = state.get("turn_count", 0)
-        # V4: Configurable max turns (default 5)
+        # Configurable max turns (default 5)
         max_turns = state.get("__graph_properties__", {}).get("max_conversation_turns", 10) // 2
 
         if is_complete or ready_for_confirmation or turn_count >= max_turns:
@@ -735,7 +696,7 @@ class UserConfirmedCondition(EdgeCondition):
     def apply(state: SygraState) -> str:
         user_confirmed = state.get("user_confirmed", False)
         turn_count = state.get("turn_count", 0)
-        # V4: Configurable max turns (default 6)
+        # Configurable max turns (default 6)
         max_turns = (state.get("__graph_properties__", {}).get("max_conversation_turns", 10) // 2) + 1
 
         if user_confirmed or turn_count >= max_turns:
@@ -743,14 +704,12 @@ class UserConfirmedCondition(EdgeCondition):
         return "ask_clarifying_question"
 
 
-# ============== Audio Synthesis Lambda with MUSAN (V4 Duplex) ==============
-
 
 class SynthesizeWithMusanNoise:
     """
-    V4 Lambda function to synthesize audio using REAL MUSAN noise samples.
+    Lambda function to synthesize audio using REAL MUSAN noise samples.
 
-    V4 Improvements:
+    Improvements:
     - CONTINUOUS background noise across entire conversation (not per-turn)
     - Noise applied to BOTH user AND assistant turns (duplex channel simulation)
     - Configurable noise (enabled/disabled, type, intensity)
@@ -781,7 +740,7 @@ class SynthesizeWithMusanNoise:
         assistant_voice = str(lambda_node_dict.get("assistant_voice", "nova"))
         noise_level = str(state.get("noise_level", "moderate"))
 
-        # V4: Check if noise is enabled
+        # Check if noise is enabled
         noise_enabled_raw = state.get("noise_enabled", True)
         # Handle string "true"/"false" from weighted_sampler
         if isinstance(noise_enabled_raw, str):
@@ -865,7 +824,7 @@ class SynthesizeWithMusanNoise:
             # Step 2: Concatenate all turns into one continuous audio
             combined_clean = _concat_wav_segments(wav_segments, pause_ms=250)
 
-            # Step 3: Apply CONTINUOUS noise to entire conversation (V4 fix)
+            # Step 3: Apply CONTINUOUS noise to entire conversation
             if noise_samples:
                 # Decode the full conversation audio
                 speech_samples, speech_sr = AudioProcessor.decode_wav_bytes(combined_clean)
@@ -927,8 +886,6 @@ class SynthesizeWithMusanNoise:
         return state
 
 
-# ============== Output Generator ==============
-
 
 class CustomerServiceAudioOutputGenerator(BaseOutputGenerator):
     """Generates output with both text and audio conversations, including personality and noise metadata."""
@@ -951,7 +908,7 @@ class CustomerServiceAudioOutputGenerator(BaseOutputGenerator):
 
     @staticmethod
     def build_noise_metadata(data: Any, state: SygraState) -> dict:
-        """V4: Build noise configuration metadata."""
+        """Build noise configuration metadata."""
         noise_enabled_raw = state.get("noise_enabled", True)
         if isinstance(noise_enabled_raw, str):
             noise_enabled = noise_enabled_raw.lower() == "true"
@@ -962,5 +919,5 @@ class CustomerServiceAudioOutputGenerator(BaseOutputGenerator):
             "enabled": noise_enabled,
             "type": state.get("noise_type", "any") if noise_enabled else None,
             "level": state.get("noise_level", "moderate") if noise_enabled else None,
-            "duplex": True,  # V4: Both sides have noise
+            "duplex": True,  # Both sides have noise
         }

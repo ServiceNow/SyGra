@@ -1,27 +1,11 @@
-# Customer Service Agent with Realistic Audio V4
-#
-# Improvements over previous versions:
-# 1. Configurable max turns to prevent endless loops
-# 2. Configurable background noise (enabled/disabled, type, intensity)
-# 3. Logical chat conclusion with user goodbye and assistant final greeting
-# 4. Duplex channel simulation - both user AND assistant have background noise
-#
-# Multi-Dataset Configuration:
-# - Primary: Customer service scenarios from input.json
-# - Secondary: MUSAN noise samples with join_type: random
-#
-# MUSAN noise types available: music, speech, noise
-# Set noise_type to filter, or use "any" for random selection
-
 data_config:
   id_column: id
   source:
     # Primary dataset: Customer service scenarios
-    # Use input.json for manual scenarios or input_generated.json for auto-generated ones
     - alias: scenario
       join_type: primary
       type: disk
-      file_path: "tasks/examples/customer_service_agent_audio_v4/input.json"
+      file_path: "tasks/examples/customer_service_agent_audio_bg_noise_v2/input.json"
       file_format: json
 
     # Secondary dataset: MUSAN noise samples (randomly joined)
@@ -36,11 +20,9 @@ graph_config:
   graph_properties:
     chat_conversation: multiturn
     chat_history_window_size: 20
-    # Global max turns to prevent infinite loops
     max_conversation_turns: 10
 
   nodes:
-    # ========== Step 0: Sample User Personality & Noise Config ==========
     sample_user_personality:
       node_type: weighted_sampler
       attributes:
@@ -73,7 +55,6 @@ graph_config:
           values: [subtle, moderate, noisy]
           weights: [4, 4, 2]
 
-    # ========== Step 1: Analyze Query ==========
     analyze_query:
       node_type: llm
       prompt:
@@ -105,9 +86,8 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.1
-      post_process: tasks.examples.customer_service_agent_audio_v4.task_executor.AnalyzeQueryPostProcessor
+      post_process: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.AnalyzeQueryPostProcessor
 
-    # ========== Step 2: Assistant Asks Clarifying Question ==========
     ask_clarifying_question:
       node_type: agent
       chat_history: true
@@ -141,13 +121,12 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.7
-      post_process: tasks.examples.customer_service_agent_audio_v4.task_executor.AssistantResponsePostProcessor
+      post_process: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.AssistantResponsePostProcessor
 
-    # ========== Step 3: Simulate REALISTIC User Response ==========
     simulate_user_response:
       node_type: llm
       chat_history: true
-      pre_process: tasks.examples.customer_service_agent_audio_v4.task_executor.SimulateUserPreProcessor
+      pre_process: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.SimulateUserPreProcessor
       prompt:
         - system: |
             You are simulating a REALISTIC customer responding to a service assistant.
@@ -208,9 +187,8 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.8
-      post_process: tasks.examples.customer_service_agent_audio_v4.task_executor.UserResponsePostProcessor
+      post_process: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.UserResponsePostProcessor
 
-    # ========== Step 4: Update and Check Completeness ==========
     update_and_check:
       node_type: llm
       prompt:
@@ -239,9 +217,8 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.1
-      post_process: tasks.examples.customer_service_agent_audio_v4.task_executor.UpdateCheckPostProcessor
+      post_process: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.UpdateCheckPostProcessor
 
-    # ========== Step 5: Generate Confirmation ==========
     generate_confirmation:
       node_type: agent
       chat_history: true
@@ -268,13 +245,12 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.5
-      post_process: tasks.examples.customer_service_agent_audio_v4.task_executor.AssistantResponsePostProcessor
+      post_process: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.AssistantResponsePostProcessor
 
-    # ========== Step 6: Simulate REALISTIC User Confirmation ==========
     simulate_user_confirmation:
       node_type: llm
       chat_history: true
-      pre_process: tasks.examples.customer_service_agent_audio_v4.task_executor.SimulateUserPreProcessor
+      pre_process: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.SimulateUserPreProcessor
       prompt:
         - system: |
             You are simulating a REALISTIC customer confirming their request.
@@ -305,9 +281,8 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.7
-      post_process: tasks.examples.customer_service_agent_audio_v4.task_executor.UserConfirmationPostProcessor
+      post_process: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.UserConfirmationPostProcessor
 
-    # ========== Step 7: Generate Completion (Assistant provides reference) ==========
     generate_completion:
       node_type: agent
       chat_history: true
@@ -338,13 +313,12 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.5
-      post_process: tasks.examples.customer_service_agent_audio_v4.task_executor.AssistantResponsePostProcessor
+      post_process: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.AssistantResponsePostProcessor
 
-    # ========== Step 8: Simulate User Goodbye ==========
     simulate_user_goodbye:
       node_type: llm
       chat_history: true
-      pre_process: tasks.examples.customer_service_agent_audio_v4.task_executor.SimulateUserPreProcessor
+      pre_process: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.SimulateUserPreProcessor
       prompt:
         - system: |
             You are simulating a customer saying goodbye after their request was completed.
@@ -375,9 +349,8 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.7
-      post_process: tasks.examples.customer_service_agent_audio_v4.task_executor.UserGoodbyePostProcessor
+      post_process: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.UserGoodbyePostProcessor
 
-    # ========== Step 9: Generate Final Assistant Greeting ==========
     generate_final_greeting:
       node_type: agent
       chat_history: true
@@ -406,12 +379,11 @@ graph_config:
         name: gpt-4o-mini
         parameters:
           temperature: 0.5
-      post_process: tasks.examples.customer_service_agent_audio_v4.task_executor.FinalGreetingPostProcessor
+      post_process: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.FinalGreetingPostProcessor
 
-    # ========== Step 10: Synthesize Audio with MUSAN Noise ==========
     synthesize_audio:
       node_type: lambda
-      lambda: tasks.examples.customer_service_agent_audio_v4.task_executor.SynthesizeWithMusanNoise
+      lambda: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.SynthesizeWithMusanNoise
       assistant_voice: nova
       output_keys:
         - conversation_audio
@@ -430,7 +402,7 @@ graph_config:
       to: analyze_query
 
     - from: analyze_query
-      condition: tasks.examples.customer_service_agent_audio_v4.task_executor.NeedsClarificationCondition
+      condition: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.NeedsClarificationCondition
       path_map:
         ask_clarifying_question: ask_clarifying_question
         generate_confirmation: generate_confirmation
@@ -442,7 +414,7 @@ graph_config:
       to: update_and_check
 
     - from: update_and_check
-      condition: tasks.examples.customer_service_agent_audio_v4.task_executor.CheckCompletenessCondition
+      condition: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.CheckCompletenessCondition
       path_map:
         ask_clarifying_question: ask_clarifying_question
         generate_confirmation: generate_confirmation
@@ -451,7 +423,7 @@ graph_config:
       to: simulate_user_confirmation
 
     - from: simulate_user_confirmation
-      condition: tasks.examples.customer_service_agent_audio_v4.task_executor.UserConfirmedCondition
+      condition: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.UserConfirmedCondition
       path_map:
         generate_completion: generate_completion
         ask_clarifying_question: ask_clarifying_question
@@ -469,7 +441,7 @@ graph_config:
       to: END
 
 output_config:
-  generator: tasks.examples.customer_service_agent_audio_v4.task_executor.CustomerServiceAudioOutputGenerator
+  generator: tasks.examples.customer_service_agent_audio_bg_noise_v2.task_executor.CustomerServiceAudioOutputGenerator
 
   output_map:
     id:
