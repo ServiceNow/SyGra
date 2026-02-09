@@ -1093,13 +1093,33 @@ class BaseTaskExecutor(ABC):
 
         # Write to sink if configured
         if self.output_config and dataset_processor.is_valid_schema:
+            sink_input_file = out_file
+            post_processors = self.graph_config.config.get("graph_post_process", [])
+            if post_processors:
+                post_processor = post_processors[-1]
+                processor_path = None
+                if isinstance(post_processor, str):
+                    processor_path = post_processor
+                elif isinstance(post_processor, dict):
+                    processor_path = post_processor.get("processor")
+                if processor_path:
+                    processor_name = processor_path.split(".")[-1]
+                    sink_candidate = out_file[: out_file.rfind("/") + 1] + out_file[
+                        out_file.rfind("/") + 1 :
+                    ].replace("output", processor_name, 1)
+                    if os.path.exists(sink_candidate):
+                        sink_input_file = sink_candidate
             try:
-                with open(out_file, "r") as f:
-                    data = (
-                        json.load(f)
-                        if out_file_type == "json"
-                        else [json.loads(line) for line in f]
-                    )
+                with open(sink_input_file, "r") as f:
+                    sink_file_type = os.path.splitext(sink_input_file)[1].lstrip(".")
+                    if sink_file_type == "json":
+                        data = json.load(f)
+                    else:
+                        try:
+                            data = json.load(f)
+                        except Exception:
+                            f.seek(0)
+                            data = [json.loads(line) for line in f if line.strip()]
                 # Ensure data is always a list for _split_data_per_alias
                 if isinstance(data, dict):
                     data = [data]

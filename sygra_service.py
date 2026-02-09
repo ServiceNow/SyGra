@@ -168,10 +168,12 @@ def create_custom_prompt_task(original_task_name, custom_prompts, job_id):
     """
 
     # Generate a new task name with UUID
-    new_task_name = f"{original_task_name}_custom_{job_id}"
+    original_task_actual_name = original_task_name.split(".")[-1]
+    new_task_name = f"{original_task_actual_name}_custom_{job_id}"
     # Get the original task's graph config file path
     cur_dir = os.path.join(os.getcwd())
-    original_task_dir = os.path.join(cur_dir, "tasks", original_task_name)
+    task_dir = original_task_name.replace(".", "/")
+    original_task_dir = os.path.join(cur_dir, task_dir)
     original_yaml_path = os.path.join(original_task_dir, "graph_config.yaml")
 
     if not os.path.exists(original_yaml_path):
@@ -207,7 +209,7 @@ def create_custom_prompt_task(original_task_name, custom_prompts, job_id):
                 logger.warning(f"Warning: Node {node_name} not found in graph configuration")
 
     # Create new task directory
-    new_task_dir = os.path.join(cur_dir, "tasks", new_task_name)
+    new_task_dir = os.path.join(cur_dir, "tasks", "examples", new_task_name)
     os.makedirs(new_task_dir, exist_ok=True)
 
     # Convert back to YAML
@@ -218,6 +220,10 @@ def create_custom_prompt_task(original_task_name, custom_prompts, job_id):
     with open(new_yaml_path, 'w') as f:
         f.write(updated_yaml)
 
+    # Update task name
+    orignal_task_path = original_task_name.split(".")
+    orignal_task_path[-1] = new_task_name
+    new_task_name = ".".join(orignal_task_path)
     return new_task_name, updated_yaml, updated_nodes
 
 
@@ -444,7 +450,7 @@ def submit_yaml_task():
     })
 
 
-@app.route('/sygra/submit-custom-yaml', methods=['POST'])
+@app.route('/sygra/submit-custom', methods=['POST'])
 def submit_custom_yaml():
     """API endpoint to update custom prompts in a task's graph config and run the pipeline"""
     data = request.json

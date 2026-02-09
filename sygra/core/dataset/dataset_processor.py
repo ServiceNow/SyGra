@@ -438,7 +438,10 @@ class DatasetProcessor:
                 logger.info(f"Doing post processing on {output_file} to generate metrics")
                 output_data = []
                 with open(output_file, "r") as f:
-                    output_data = json.load(f)
+                    if str(output_file).endswith(".jsonl"):
+                        output_data = [json.loads(line) for line in f if line.strip()]
+                    else:
+                        output_data = json.load(f)
                 for post_processor in post_processors:
                     processor_path = None
                     processor_params: dict[str, Any] = {}
