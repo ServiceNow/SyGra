@@ -1,0 +1,170 @@
+graph_config:
+  nodes:
+    sample_attributes:
+      node_type: weighted_sampler
+      attributes:
+        category:
+          values: [hr]
+          weights: [1]
+        usecase:
+          values: [Time Off, Travel Expense, Update Profile]
+          weights: [1, 1, 1]
+
+    # Step 2: Generate user goal and first utterance
+    generate_user_scenario:
+      node_type: llm
+      output_keys:
+        - user_goal
+        - first_utterance
+      prompt:
+        - system: |
+            You are generating realistic voice agent conversation scenarios.
+
+            Given a category, usecase, create:
+            1. user_goal: Instructions describing what the user wants and how they should behave
+            2. first_utterance: The user's natural opening message when calling
+
+            The first_utterance should:
+            - Sound natural and conversational (spoken aloud)
+            - Be 1-3 sentences
+            - Not provide ALL information upfront (leave room for conversation)
+        - user: |
+            Category: {category}
+            Usecase: {usecase}
+
+            Generate a realistic user_goal and first_utterance.
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.7
+        structured_output:
+          schema:
+            fields:
+              user_goal:
+                type: str
+                description: "Instructions describing what the user wants"
+              first_utterance:
+                type: str
+                description: "The user's natural opening message when calling (1-3 sentences, conversational)"
+      post_process: tasks.examples.voice_agent_scenario_generator.task_executor.UserScenarioPostProcessor
+
+    # Step 3: Generate detailed user scenario script
+    generate_user_scenario_script:
+      node_type: llm
+      output_keys:
+        - user_scenario
+      prompt:
+        - system: |
+            You are generating a detailed user scenario script for voice agent testing.
+
+            Create a comprehensive scenario script that describes:
+            1. Initial Goal: What the user wants to accomplish
+            2. User Background: Context about the user's situation
+            3. Key Information: Specific details the user will provide (names, dates, amounts, etc.)
+            4. Potential Complications: Any issues or corrections that might occur
+
+            Format as a readable script with clear sections marked by **Bold Headers**.
+
+            Example format:
+            **User Scenario Script**
+
+            **Initial Goal:**
+            The user wants to submit an expense for a business meal.
+
+            **User Background:**
+            The user recently returned from a business trip and needs to file expenses.
+
+            **Key Information to Provide:**
+            - Merchant: Joe's Diner
+            - Date: September 28th, 2025
+            - Amount: $24.50
+            - Category: Meals and Entertainment
+            - Purpose: Business lunch with client
+
+            **Potential Complications:**
+            The user might initially give the wrong date and need to correct it.
+        - user: |
+            Category: {category}
+            Usecase: {usecase}
+            User goal: {user_goal}
+            First utterance: {first_utterance}
+
+            Generate a detailed user scenario script:
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.7
+      post_process: tasks.examples.voice_agent_scenario_generator.task_executor.UserScenarioScriptPostProcessor
+
+    # Step 4: Generate expected outcome
+    generate_expected_outcome:
+      node_type: llm
+      output_keys:
+        - expected_outcome
+      prompt:
+        - system: |
+            You are summarizing the expected outcome of a voice agent customer service interaction.
+
+            Given the user's goal and scenario details, produce a single concise sentence
+            describing the concrete result of a successful interaction.
+
+            Guidelines:
+            - Be factual and specific (include names, dates, amounts, categories when available)
+            - Use past tense (e.g. "An expense was submitted...", "A time-off request was created...")
+            - Keep it to ONE sentence, max ~30 words
+            - Focus on the action completed, not the conversation itself
+
+            Examples:
+            - "An expense was submitted for a $24.50 meal at Joe's Diner on 2025-09-28 under \"Meals and Entertainment.\""
+            - "A time-off request was created for Dec 23-27 (PTO)."
+            - "The user's phone number was updated to (555) 123-4567 in their HR profile."
+            - "The holiday calendar for Q1 2026 was retrieved and shared with the user."
+        - user: |
+            Category: {category}
+            Usecase: {usecase}
+            User goal: {user_goal}
+            User scenario details: {user_scenario}
+
+            Generate the expected_outcome as a single concise sentence.
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.3
+        structured_output:
+          schema:
+            fields:
+              expected_outcome:
+                type: str
+                description: "A single concise sentence describing the concrete result of the interaction"
+      post_process: tasks.examples.voice_agent_scenario_generator.task_executor.ExpectedOutcomePostProcessor
+
+  edges:
+    - from: START
+      to: sample_attributes
+
+    - from: sample_attributes
+      to: generate_user_scenario
+
+    - from: generate_user_scenario
+      to: generate_user_scenario_script
+
+    - from: generate_user_scenario_script
+      to: generate_expected_outcome
+
+    - from: generate_expected_outcome
+      to: END
+
+output_config:
+  output_map:
+    category:
+      from: "category"
+    usecase:
+      from: "usecase"
+    user_goal:
+      from: "user_goal"
+    first_utterance:
+      from: "first_utterance"
+    expected_outcome:
+      from: "expected_outcome"
+    user_scenario:
+      from: "user_scenario"
