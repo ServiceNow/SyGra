@@ -1,0 +1,198 @@
+graph_config:
+  nodes:
+    generate_attributes:
+      node_type: weighted_sampler
+      attributes:
+        category:
+          values: ["HR (Human Resources)"]
+
+    generate_user_scenario:
+      node_type: llm
+      pre_process: tasks.examples.voice_eval_datagen.task_executor.SeedPreProcessor
+      post_process: tasks.examples.voice_eval_datagen.task_executor.GenerateUserScenarioPostProcessor
+      output_keys:
+        - user_scenario
+      prompt:
+        - system: |
+            You generate a realistic User Scenario Script that will act as ground truth for a simulated user.
+
+            You will be given:
+            - category
+
+            Your job is to output a single JSON object with:
+            - user_scenario: a complete, end-to-end scenario script that a user can follow
+
+            Constraints:
+            - The scenario must be appropriate for the given category.
+            - The scenario must include an initial goal, step-by-step interaction, and conditional rules.
+            - Every step MUST specify what the agent can do and what the underlying system supports at that step.
+              For each step, include:
+              - User intent/action
+              - Agent action (what the assistant does)
+              - System operation (what the platform does)
+              - Required inputs/fields (and which are optional)
+              - Validation rules / error cases (what happens when inputs are missing/invalid)
+              - Successful output/confirmation produced by the system
+            - The scenario must be specific enough to guide a conversation, but it MUST be generic and reusable.
+            - Do NOT include personal names (e.g., no "Sarah", "John"), email addresses, phone numbers, URLs, employee IDs, ticket numbers, or system-specific identifiers.
+            - Do NOT include specific job titles or one-off task instances (e.g., no specific role like "Remote Project Manager", no specific company name).
+            - Do NOT include exact dates, exact amounts, or named merchants/vendors. Use generic descriptions (e.g., "a recent date", "a reasonable amount", "a vendor").
+            - Use neutral phrasing like "the user" / "the employee" / "the manager".
+            - The scenario MUST be different from a travel meal/expense submission scenario.
+            - Do NOT reference seed artifacts like usecase/first_utterance/expected_outcome; only produce the scenario.
+            - Output ONLY valid JSON.
+
+        - user: |
+            Unique ID: {unique_id}
+
+            category: {category}
+
+            OUTPUT (JSON only)
+
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.9
+        structured_output:
+          schema:
+            fields:
+              user_scenario:
+                type: str
+                description: "End-to-end user scenario script with steps and conditional rules"
+
+    generate_seed:
+      node_type: llm
+      pre_process: tasks.examples.voice_eval_datagen.task_executor.SeedPreProcessor
+      post_process: tasks.examples.voice_eval_datagen.task_executor.GenerateScenarioSeedPostProcessor
+      output_keys:
+        - usecase
+        - user_goal
+        - first_utterance
+        - expected_outcome
+      prompt:
+        - system: |
+            You generate seed records that will be used to create an agent-user conversation.
+
+            The reference example below is ONLY a formatting example. It is not a scenario to reuse.
+            Do NOT copy any example-specific details (names, dates, amounts, category labels, etc.) unless they appear in the provided INPUT user_scenario.
+
+            You will be given:
+            - category
+            - a User Scenario Script that contains ground-truth steps the user must follow
+
+            Your job is to produce a single JSON object with:
+            - usecase: short title for the workflow (2-6 words)
+            - user_goal: an instruction to the simulated user describing their intent and how to behave; must align with the scenario steps
+            - first_utterance: the first thing the user would say to start the conversation (natural, slightly imperfect is okay)
+            - expected_outcome: a concise description of the successful end state
+
+            Constraints:
+            - The seed must strictly adhere to the User Scenario Script.
+            - Ground the content in the provided INPUT user_scenario. If the script includes fixed entities (e.g., merchant/date/amount), use them. If it does not, invent plausible specifics consistent with the script.
+            - The user_scenario may be generic. In that case, instantiate it into a concrete seed by choosing plausible specifics (dates, amounts, locations) consistent with the scenario.
+            - Do NOT use personal names, email addresses, phone numbers, URLs, employee IDs, or system-specific identifiers in any field.
+            - Keep roles generic (e.g., "the user", "the employee", "the manager", "the agent").
+            - first_utterance must be consistent with Step 1 (the initiation step) in the INPUT user_scenario.
+            - Make first_utterance diverse and not templated; avoid reusing identical phrasing.
+            - expected_outcome must be concrete and specific (include key entities, amounts, dates where applicable).
+            - Output ONLY valid JSON.
+
+        - user: |
+            Here is a reference example.
+
+            INPUT
+            category: hr
+            user_scenario:
+            **User Scenario Script**
+
+            **Initial Goal:**
+            The user wants to submit an expense for food purchased while traveling for work.
+
+            **Step-by-Step User Actions:**
+            1. Initiate Request
+            2. Provide Expense Details When Prompted (Joe's Diner, September 28th, $24.50)
+            3. Respond to Category Inquiry (Meals and Entertainment)
+            4. Confirm Submission
+            5. Conclude the Interaction
+
+            OUTPUT
+
+        - assistant: |
+            {{
+              "usecase": "Travel Expense",
+              "user_goal": "You are calling to submit an expense, but you only have vague details. Say something like, 'I need to submit an expense for some food.' The Agent will ask you for the date, amount, and purpose.",
+              "first_utterance": "Hi, um, I need to submit an expense for some food I bought while traveling. Can you help me with that?",
+              "expected_outcome": "An expense was submitted for a $24.50 meal at Joe's Diner on 2025-09-28 under \"Meals and Entertainment.\""
+            }}
+
+        - user: |
+            Generate a NEW seed record.
+
+            Unique ID: {unique_id}
+
+            INPUT
+            category: {category}
+            user_scenario:
+            {user_scenario}
+
+            OUTPUT (JSON only)
+
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.9
+        structured_output:
+          schema:
+            fields:
+              usecase:
+                type: str
+                description: "Short title for the workflow (2-6 words)"
+              user_goal:
+                type: str
+                description: "Instruction to the simulated user describing their goal and behavior"
+              first_utterance:
+                type: str
+                description: "The first user utterance that starts the conversation"
+              expected_outcome:
+                type: str
+                description: "Concise description of the successful end state"
+
+  edges:
+    - from: START
+      to: generate_attributes
+    - from: generate_attributes
+      to: generate_user_scenario
+    - from: generate_user_scenario
+      to: generate_seed
+    - from: generate_seed
+      to: END
+
+graph_post_process:
+  - processor: sygra.core.graph.graph_postprocessor.SemanticDedupPostProcessor
+    params:
+      field: user_goal
+      similarity_threshold: 0.9
+      id_field: id
+      embedding_backend: sentence_transformers
+      embedding_model: all-MiniLM-L6-v2
+      dedup_mode: nearest_neighbor
+      vectorstore_k: 20
+      keep: first
+      max_pairs_in_report: 1000
+
+output_config:
+  output_map:
+    id:
+      from: id
+    category:
+      from: category
+    user_scenario:
+      from: user_scenario
+    usecase:
+      from: usecase
+    user_goal:
+      from: user_goal
+    first_utterance:
+      from: first_utterance
+    expected_outcome:
+      from: expected_outcome
