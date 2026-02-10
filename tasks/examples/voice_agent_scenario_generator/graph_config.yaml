@@ -89,6 +89,13 @@ graph_config:
             User goal: {user_goal}
             First utterance: {first_utterance}
 
+            **Instructions:**
+            - The scenario must be specific enough to guide a conversation, but it MUST be generic and reusable.
+            - Do NOT include personal names (e.g., no "Sarah", "John"), email addresses, phone numbers, URLs, employee IDs, ticket numbers, or system-specific identifiers.
+            - Do NOT include specific job titles or one-off task instances (e.g., no specific role like "Remote Project Manager", no specific company name).
+            - Do NOT include exact dates, exact amounts, or named merchants/vendors. Use generic descriptions (e.g., "a recent date", "a reasonable amount", "a vendor").
+            - Use neutral phrasing like "the user" / "the employee" / "the manager".
+
             Generate a detailed user scenario script:
       model:
         name: gpt-4o-mini
