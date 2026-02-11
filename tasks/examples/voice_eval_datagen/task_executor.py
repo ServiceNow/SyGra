@@ -45,7 +45,6 @@ class GenerateUserScenarioPostProcessor(NodePostProcessorWithState):
 class GenerateScenarioSeedPostProcessor(NodePostProcessorWithState):
     def apply(self, resp: SygraMessage, state: SygraState) -> SygraState:
         seed = parse_response_as_json(resp.message.content)
-        state["usecase"] = seed.get("usecase", "")
         state["user_goal"] = seed.get("user_goal", "")
         state["first_utterance"] = seed.get("first_utterance", "")
         state["expected_outcome"] = seed.get("expected_outcome", "")

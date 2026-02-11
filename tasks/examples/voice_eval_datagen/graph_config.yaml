@@ -4,7 +4,10 @@ graph_config:
       node_type: weighted_sampler
       attributes:
         category:
-          values: ["HR (Human Resources)"]
+          values: ["hr"]
+        usecase:
+          values: [ Time Off, Travel Expense, Update Profile ]
+          weights: [ 1, 1, 1 ]
 
     generate_user_scenario:
       node_type: llm
@@ -18,12 +21,13 @@ graph_config:
 
             You will be given:
             - category
+            - usecase
 
             Your job is to output a single JSON object with:
             - user_scenario: a complete, end-to-end scenario script that a user can follow
 
             Constraints:
-            - The scenario must be appropriate for the given category.
+            - The scenario must be appropriate for the given category AND usecase.
             - The scenario must include an initial goal, step-by-step interaction, and conditional rules.
             - Every step MUST specify what the agent can do and what the underlying system supports at that step.
               For each step, include:
@@ -38,7 +42,6 @@ graph_config:
             - Do NOT include specific job titles or one-off task instances (e.g., no specific role like "Remote Project Manager", no specific company name).
             - Do NOT include exact dates, exact amounts, or named merchants/vendors. Use generic descriptions (e.g., "a recent date", "a reasonable amount", "a vendor").
             - Use neutral phrasing like "the user" / "the employee" / "the manager".
-            - The scenario MUST be different from a travel meal/expense submission scenario.
             - Do NOT reference seed artifacts like usecase/first_utterance/expected_outcome; only produce the scenario.
             - Output ONLY valid JSON.
 
@@ -46,6 +49,7 @@ graph_config:
             Unique ID: {unique_id}
 
             category: {category}
+            usecase: {usecase}
 
             OUTPUT (JSON only)
 
@@ -65,7 +69,6 @@ graph_config:
       pre_process: tasks.examples.voice_eval_datagen.task_executor.SeedPreProcessor
       post_process: tasks.examples.voice_eval_datagen.task_executor.GenerateScenarioSeedPostProcessor
       output_keys:
-        - usecase
         - user_goal
         - first_utterance
         - expected_outcome
@@ -78,16 +81,17 @@ graph_config:
 
             You will be given:
             - category
+            - usecase
             - a User Scenario Script that contains ground-truth steps the user must follow
 
             Your job is to produce a single JSON object with:
-            - usecase: short title for the workflow (2-6 words)
             - user_goal: an instruction to the simulated user describing their intent and how to behave; must align with the scenario steps
             - first_utterance: the first thing the user would say to start the conversation (natural, slightly imperfect is okay)
             - expected_outcome: a concise description of the successful end state
 
             Constraints:
             - The seed must strictly adhere to the User Scenario Script.
+            - The seed must be relevant to the given usecase within the given category. Do not drift to other usecases.
             - Ground the content in the provided INPUT user_scenario. If the script includes fixed entities (e.g., merchant/date/amount), use them. If it does not, invent plausible specifics consistent with the script.
             - The user_scenario may be generic. In that case, instantiate it into a concrete seed by choosing plausible specifics (dates, amounts, locations) consistent with the scenario.
             - Do NOT use personal names, email addresses, phone numbers, URLs, employee IDs, or system-specific identifiers in any field.
@@ -102,6 +106,7 @@ graph_config:
 
             INPUT
             category: hr
+            usecase: Travel Expense
             user_scenario:
             **User Scenario Script**
 
@@ -119,7 +124,6 @@ graph_config:
 
         - assistant: |
             {{
-              "usecase": "Travel Expense",
               "user_goal": "You are calling to submit an expense, but you only have vague details. Say something like, 'I need to submit an expense for some food.' The Agent will ask you for the date, amount, and purpose.",
               "first_utterance": "Hi, um, I need to submit an expense for some food I bought while traveling. Can you help me with that?",
               "expected_outcome": "An expense was submitted for a $24.50 meal at Joe's Diner on 2025-09-28 under \"Meals and Entertainment.\""
@@ -132,6 +136,7 @@ graph_config:
 
             INPUT
             category: {category}
+            usecase: {usecase}
             user_scenario:
             {user_scenario}
 
@@ -144,9 +149,6 @@ graph_config:
         structured_output:
           schema:
             fields:
-              usecase:
-                type: str
-                description: "Short title for the workflow (2-6 words)"
               user_goal:
                 type: str
                 description: "Instruction to the simulated user describing their goal and behavior"
