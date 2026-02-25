@@ -55,7 +55,7 @@ studio-build: ## Build the Studio frontend (only if not already built)
 		echo "📦 Building Studio frontend..."; \
 		cd $(STUDIO_FRONTEND_DIR) && npm install && npm run build; \
 	else \
-		echo "✅ Studio frontend already built. Use 'make studio-rebuild' to force rebuild."; \
+		echo "[SUCCESS] Studio frontend already built. Use 'make studio-rebuild' to force rebuild."; \
 	fi
 
 .PHONY: studio-rebuild
@@ -111,6 +111,29 @@ docs-serve: ## Serve documentation locally
 ########################################################################################################################
 # BUILDING & PUBLISHING
 ########################################################################################################################
+
+.PHONY: version
+version: ## Show current version
+	@python3 -c "import re; m=re.search(r'__version__\s*=\s*\"(.+?)\"', open('sygra/__init__.py').read()); print(m.group(1))"
+
+.PHONY: bump-version
+bump-version: ## Bump version: make bump-version V=2.1.0 (or V=2.1.0.post1)
+	@if [ -z "$(V)" ]; then \
+		echo "[ERROR] Usage: make bump-version V=X.Y.Z[.postN]"; \
+		exit 1; \
+	fi
+	@if ! echo "$(V)" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(\.(post|dev)[0-9]+|(a|b|rc)[0-9]+)?$$'; then \
+		echo "[ERROR] Invalid version: $(V). Must be PEP 440 (e.g. X.Y.Z, X.Y.Z.postN)"; \
+		exit 1; \
+	fi
+	@python3 -c "import re, pathlib; p=pathlib.Path('sygra/__init__.py'); p.write_text(re.sub(r'^__version__ = \".*\"', '__version__ = \"$(V)\"', p.read_text(), count=1, flags=re.MULTILINE))"
+	@python3 -c "import re, pathlib; p=pathlib.Path('pyproject.toml'); p.write_text(re.sub(r'(\[tool\.poetry\]\nversion\s*=\s*)\"[^\"]*\"', r'\1\"$(V)\"', p.read_text(), count=1))"
+	@echo "[SUCCESS] Version bumped to $(V) in sygra/__init__.py and pyproject.toml"
+	@echo "  Next steps:"
+	@echo "  1. git add sygra/__init__.py pyproject.toml"
+	@echo "  2. git commit -m 'Bump version to $(V)'"
+	@echo "  3. git tag v$(V)"
+	@echo "  4. git push origin main --tags"
 
 .PHONY: build
 build: ## Build package

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sygra"
-version = "1.0.0"
+dynamic = ["version"]
 description = "Graph-oriented Synthetic data generation Pipeline library"
 readme = "README.md"
 requires-python = ">=3.9,<3.12,!=3.9.7"
@@ -90,6 +90,9 @@ Releases = "https://github.com/ServiceNow/SyGra/releases"
 Issues = "https://github.com/ServiceNow/SyGra/issues"
 Discussions = "https://github.com/ServiceNow/SyGra/discussions"
 
+[tool.hatch.version]
+path = "sygra/__init__.py"
+
 [tool.hatch.build.targets.wheel]
 packages = ["sygra", "studio"]
 include = [
@@ -155,6 +158,9 @@ exclude = [
 module = ["tests.*"]
 disallow_untyped_defs = false
 check_untyped_defs = false
+
+[tool.poetry]
+version = "2.0.0.post1"
 
 [tool.poetry.group.dev.dependencies]
 uvicorn = "^0.38.0"

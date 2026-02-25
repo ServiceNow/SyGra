@@ -192,6 +192,38 @@ class Workflow:
 
         self._load_existing_config_if_present()
 
+    @classmethod
+    def from_config(cls, config: Union[str, Path, dict[str, Any]]) -> "Workflow":
+        """
+        Create a Workflow from a configuration dictionary or YAML file path.
+
+        Args:
+            config: A dictionary containing the full workflow configuration,
+                    or a path to a YAML configuration file.
+
+        Returns:
+            Workflow: A configured Workflow instance ready for execution.
+
+        Examples:
+            # From dictionary
+            >>> config = {
+            ...     "data_config": {"source": {"type": "disk", "file_path": "data.json", "file_format": "json"}},
+            ...     "graph_config": {
+            ...         "nodes": {"llm_1": {"node_type": "llm", "model": {"name": "gpt-4o"}, "prompt": [{"user": "Hello {text}"}]}},
+            ...         "edges": [{"from": "START", "to": "llm_1"}, {"from": "llm_1", "to": "END"}]
+            ...     }
+            ... }
+            >>> workflow = Workflow.from_config(config)
+            >>> workflow.run(num_records=1)
+
+            # From YAML file
+            >>> workflow = Workflow.from_config("tasks/examples/text_to_speech/graph_config.yaml")
+        """
+        from sygra.configuration import ConfigLoader
+
+        loader = ConfigLoader()
+        return loader.load_and_create(config)
+
     def _load_existing_config_if_present(self):
         """Load existing task configuration if this appears to be a task path."""
         if self.name and (os.path.exists(self.name) or "/" in self.name or "\\" in self.name):
@@ -863,8 +895,7 @@ class Workflow:
             if kwargs.get("quality_only", False):
                 executor = JudgeQualityTaskExecutor(args, kwargs.get("quality_config"))
             else:
-                executor = DefaultTaskExecutor(args)
-                BaseTaskExecutor.__init__(executor, args, modified_config)
+                executor = DefaultTaskExecutor(args, modified_config)
 
             result = executor.execute()
             logger.info(f"Successfully executed task: {task_name}")

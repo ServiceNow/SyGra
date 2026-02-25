@@ -1,14 +1,19 @@
+from __future__ import annotations
+
 import os
 from pathlib import Path
-from typing import Any, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import yaml
+
+if TYPE_CHECKING:
+    from sygra.workflow import Workflow
 
 try:
     from sygra.core.dataset.dataset_config import DataSourceConfig, OutputConfig  # noqa: F401
     from sygra.core.graph.graph_config import GraphConfig  # noqa: F401
     from sygra.utils import utils
-    from sygra.workflow import AutoNestedDict
+    from sygra.workflow import AutoNestedDict  # noqa: F401
 
     UTILS_AVAILABLE = True
 except ImportError:
@@ -42,12 +47,12 @@ class ConfigLoader:
 
         return config
 
-    def load_and_create(self, config_path: Union[str, Path, dict[str, Any]]):
+    def load_and_create(self, config_path: Union[str, Path, dict[str, Any]]) -> Workflow:
         """Load config and create appropriate Workflow or Graph object."""
         config = self.load(config_path)
 
         # Import here to avoid circular imports
-        from ..workflow import Workflow
+        from ..workflow import AutoNestedDict, Workflow
 
         workflow = Workflow()
         workflow._config = AutoNestedDict.convert_dict(config)
@@ -60,8 +65,16 @@ class ConfigLoader:
 
         if isinstance(config_path, (str, Path)):
             workflow.name = Path(config_path).parent.name
+            workflow._is_existing_task = True
         else:
             workflow.name = config.get("task_name", "loaded_workflow")
+            # Mark as existing task if config has nodes defined
+            if config.get("graph_config", {}).get("nodes"):
+                workflow._is_existing_task = True
+
+        # Track node count from loaded config
+        if "graph_config" in config and "nodes" in config["graph_config"]:
+            workflow._node_counter = len(config["graph_config"]["nodes"])
 
         return workflow
 

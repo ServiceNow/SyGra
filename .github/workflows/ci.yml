@@ -3,6 +3,7 @@ name: Run CI
 on:
   push:
     branches: [ main ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ main ]
     types: [ opened, synchronize, reopened, ready_for_review ]
@@ -74,6 +75,37 @@ jobs:
       # make setup-dev MUST *not* delete .venv — otherwise the cache is pointless.
       - name: Setup dev environment
         run: make setup-dev
+
+      # ---- VERSION CHECK ----
+      - name: Validate version format
+        run: |
+          VERSION=$(python3 -c "import re; m=re.search(r'__version__\s*=\s*\"(\d+\.\d+\.\d+(?:\.(?:post|dev)\d+|(?:a|b|rc)\d+)?)\"', open('sygra/__init__.py').read()); print(m.group(1) if m else 'INVALID')")
+          if [ "$VERSION" = "INVALID" ]; then
+            echo "[ERROR] __version__ in sygra/__init__.py is not valid PEP 440 (e.g. X.Y.Z, X.Y.Z.postN)"
+            exit 1
+          fi
+          echo "[SUCCESS] Version: $VERSION"
+
+      - name: Validate tag matches __version__ (tagged builds only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          CODE_VERSION=$(python3 -c "import re; print(re.search(r'__version__\s*=\s*\"(.+?)\"', open('sygra/__init__.py').read()).group(1))")
+          if [ "$TAG_VERSION" != "$CODE_VERSION" ]; then
+            echo "[WARNING]  Tag version ($TAG_VERSION) != __version__ ($CODE_VERSION) in sygra/__init__.py"
+            echo ""
+            echo "   If you used 'make bump-version' + 'git tag' (CLI flow):"
+            echo "     Run: make bump-version V=$TAG_VERSION"
+            echo "     Then re-tag and push."
+            echo ""
+            echo "   If you created a Release via GitHub UI:"
+            echo "     This is expected — publish.yml patches the version at build time."
+            echo "     The publish will succeed; this CI check is informational only."
+            echo ""
+            echo "   To avoid this warning, run 'make bump-version V=X.Y.Z' before tagging."
+            exit 1
+          fi
+          echo "[SUCCESS] Tag v$TAG_VERSION matches __version__"
 
       # ---- FORMAT ----
       - name: Run formatter

@@ -3,7 +3,13 @@ name: Publish to PyPI
 on:
   push:
     tags:
-      - "v*"  # Triggers when a new GitHub Tag is published eg: v1.2.3
+      - "v*"  # Triggers on tag push (e.g. git push origin --tags)
+  release:
+    types: [ published ]  # Triggers on GitHub UI Release creation
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -27,37 +33,111 @@ jobs:
       - name: Install dependencies
         run: make setup-dev
 
-      - name: Install versioning deps
+      # ---- VERSION EXTRACTION (handles push-tag + release events, with/without v prefix) ----
+      - name: Extract and validate version from tag
         run: |
-          python -m pip install --upgrade pip
-          pip install tomlkit
+          # Get tag name — works for both push (refs/tags/v1.2.3) and release events
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
 
-      - name: Set version from GitHub tag
+          # Strip optional 'v' prefix: v2.1.0 → 2.1.0, 2.1.0 → 2.1.0
+          VERSION="${TAG#v}"
+
+          # Validate PEP 440 format
+          python3 -c "
+          import re, sys
+          v = '$VERSION'
+          if not re.fullmatch(r'\d+\.\d+\.\d+([.](post|dev)\d+|(a|b|rc)\d+)?', v):
+              print(f'❌ Tag \'{TAG}\' does not contain a valid PEP 440 version (extracted: \'{v}\')')
+              print('   Expected formats: X.Y.Z, X.Y.Z.postN, X.Y.Z.devN, X.Y.ZaN, X.Y.ZbN, X.Y.ZrcN')
+              sys.exit(1)
+          "
+
+          # Export for all subsequent steps
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "✅ Extracted version: $VERSION (from tag: $TAG, event: ${{ github.event_name }})"
+
+      # ---- PRE-FLIGHT: Check version is not already burnt on PyPI ----
+      - name: Check version is available on PyPI
         run: |
-          # Extract tag like "v1.2.3" → "1.2.3"
-          export VERSION="${GITHUB_REF#refs/tags/v}"
-          echo "Setting [project].version to $VERSION"
-          python - << 'PY'
-          from pathlib import Path
-          from tomlkit import parse, dumps
-          import os
-          version = os.environ["VERSION"]
-          p = Path('pyproject.toml')
-          doc = parse(p.read_text(encoding='utf-8'))
-          # Update PEP 621 version
-          if 'project' in doc:
-            doc['project']['version'] = version
-          p.write_text(dumps(doc), encoding='utf-8')
-          PY
+          python3 -c "
+          import urllib.request, urllib.error, sys
+          try:
+              urllib.request.urlopen('https://pypi.org/pypi/sygra/${{ env.VERSION }}/json')
+              print('❌ Version ${{ env.VERSION }} already exists on PyPI — this version is burnt.')
+              print('   Options:')
+              print('   • Use a .postN suffix: v${{ env.VERSION }}.post1')
+              print('   • Bump to the next version: make bump-version V=X.Y.Z')
+              sys.exit(1)
+          except urllib.error.HTTPError as e:
+              if e.code == 404:
+                  print('✅ Version ${{ env.VERSION }} is available on PyPI')
+                  sys.exit(0)
+              print(f'⚠️  PyPI check returned HTTP {e.code} — proceeding anyway')
+          except Exception as e:
+              print(f'⚠️  PyPI check failed ({e}) — proceeding anyway')
+          "
 
+      # ---- PATCH VERSION ----
+      - name: Set version in source files
+        run: |
+          echo "Setting __version__ to $VERSION"
+
+          # Patch sygra/__init__.py (hatchling reads version from here)
+          python3 -c "
+          import re, pathlib
+          p = pathlib.Path('sygra/__init__.py')
+          p.write_text(re.sub(r'^__version__ = \".*\"', '__version__ = \"$VERSION\"', p.read_text(), count=1, flags=re.MULTILINE))
+          "
+
+          # Patch [tool.poetry] version so Poetry stays consistent
+          python3 -c "
+          import re, pathlib
+          p = pathlib.Path('pyproject.toml')
+          p.write_text(re.sub(r'(\[tool\.poetry\]\nversion\s*=\s*)\"[^\"]*\"', r'\g<1>\"$VERSION\"', p.read_text(), count=1))
+          "
+
+          # Verify
+          grep '__version__' sygra/__init__.py
+          echo "✅ Version set to $VERSION"
+
+      - name: Validate version consistency
+        run: |
+          BUILT_VERSION=$(python3 -c "import re; m=re.search(r'__version__\s*=\s*\"(.+?)\"', open('sygra/__init__.py').read()); print(m.group(1))")
+          if [ "$VERSION" != "$BUILT_VERSION" ]; then
+            echo "❌ Version mismatch: tag=$VERSION, __init__.py=$BUILT_VERSION"
+            exit 1
+          fi
+          echo "✅ Version validated: $VERSION"
+
+      # ---- BUILD ----
       - name: Build package
         run: make build
 
+      - name: Validate built artifacts
+        run: |
+          ls dist/
+          if ! ls dist/sygra-${VERSION}-*.whl 1>/dev/null 2>&1; then
+            echo "❌ No wheel found for version $VERSION in dist/"
+            ls dist/
+            exit 1
+          fi
+          if ! ls dist/sygra-${VERSION}.tar.gz 1>/dev/null 2>&1; then
+            echo "❌ No sdist found for version $VERSION in dist/"
+            ls dist/
+            exit 1
+          fi
+          echo "✅ Built artifacts verified for version $VERSION"
+
+      # ---- PUBLISH ----
       - name: Publish to PyPI
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
-          python -m pip install --upgrade pip
-          pip install twine
-          python -m twine upload --repository pypi dist/* --verbose
+          python3 -m pip install --upgrade pip
+          python3 -m pip install twine
+          python3 -m twine upload --repository pypi dist/* --verbose
