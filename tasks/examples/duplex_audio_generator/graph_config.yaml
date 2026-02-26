@@ -1,0 +1,255 @@
+data_config:
+  id_column: id
+  source:
+    type: disk
+    file_path: "tasks/examples/duplex_audio_generator/seed.json"
+    file_format: json
+
+graph_config:
+  nodes:
+    # Step 1: Sample duplex conversation attributes
+    sample_duplex_attributes:
+      node_type: weighted_sampler
+      attributes:
+        # How much overlap at turn boundaries
+        overlap_style:
+          values: [minimal, moderate, natural, heavy]
+          weights: [2, 3, 4, 1]  # Favor natural, limit heavy overlap
+        # Backchannel frequency
+        backchannel_frequency:
+          values: [occasional, frequent, very_frequent]
+          weights: [2, 4, 4]  # Balanced — allow richer listener behavior
+        # Thinking/disfluency frequency
+        thinking_frequency:
+          values: [rare, occasional, frequent]
+          weights: [3, 5, 2]
+
+    # Step 2: Naturalize conversation with fillers, pauses, self-corrections
+    naturalize_conversation:
+      node_type: llm
+      output_keys:
+        - naturalized_conversation
+      prompt:
+        - system: |
+            You are a conversation naturalizer. Your job is to take a clean, scripted conversation
+            and rewrite it so it sounds like a REAL phone call between a human and an AI assistant.
+
+            You will add natural speech phenomena that make dialogue sound authentic:
+
+            1. FILLER WORDS: "um", "uh", "like", "you know", "so", "I mean"
+               - Place mid-sentence, especially before numbers, dates, or complex info
+               - Example: "It was um about 350 dollars" or "I need to uh check my balance"
+
+            2. FALSE STARTS / SELF-CORRECTIONS:
+               - "the hotel was six... no, 600 dollars"
+               - "I went to San Fran-- San Francisco"
+               - "Can you check my... actually, let me give you my employee ID first"
+
+            3. THINKING PAUSE MARKERS: Use [pause:Xms] where X is milliseconds
+               - Before answering a question: "Let me check [pause:800ms] yes, you have 15 days"
+               - Mid-thought: "The total comes to [pause:500ms] 1,100 dollars"
+               - After being asked something complex: "[pause:600ms] So the basic tier covers..."
+
+            4. NATURAL PHRASING:
+               - Use contractions: "I'd", "you're", "that's", "don't", "won't"
+               - Discourse markers: "okay", "alright", "so", "well", "anyway"
+               - Softeners: "I think", "probably", "kind of", "sort of"
+
+            IMPORTANT RULES:
+            - Keep the same number of turns and the same roles (user/assistant)
+            - Keep the core information IDENTICAL - don't change facts, numbers, or meaning
+            - The assistant should sound professional but natural (fewer fillers than the user)
+            - The user should sound more casual and natural (more fillers, more pauses)
+            - Output ONLY a JSON array of objects with "role" and "content" keys
+            - Do NOT wrap the JSON in markdown code blocks
+
+            THINKING FREQUENCY: {thinking_frequency}
+            - rare: 0-1 fillers per turn, 1-2 [pause:Xms] markers total across all turns
+            - occasional: 1-2 fillers per longer turn, 2-4 [pause:Xms] markers total
+            - frequent: 2-3 fillers per longer turn, 4-6 [pause:Xms] markers total
+        - user: |
+            Here is the clean conversation to naturalize:
+
+            {conversation}
+
+            Thinking frequency: {thinking_frequency}
+
+            Rewrite each turn to sound natural and human. Add fillers, false starts, pause markers,
+            and natural phrasing. Keep the same number of turns and roles. Keep all facts identical.
+            Return ONLY a JSON array of {{"role": "...", "content": "..."}} objects.
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.8
+      post_process: tasks.examples.duplex_audio_generator.task_executor.NaturalizeConversationPostProcessor
+
+    # Step 3: LLM decides WHERE to place user backchannels and interruptions
+    generate_backchannel_placements:
+      node_type: llm
+      output_keys:
+        - backchannel_placements
+      prompt:
+        - system: |
+            You are designing natural listener behavior for a phone conversation between a
+            human (user) and an AI assistant. Your job is to decide where the user makes
+            small listening sounds while the assistant is talking.
+
+            KEY PRINCIPLE: REALISM COMES FROM SUBTLETY, NOT DENSITY.
+            In real phone calls, most of the conversation is one person talking and the other
+            listening quietly. The listener occasionally makes a soft sound ("mm-hm", "yeah")
+            to signal they're still there. Interruptions are RARE — maybe once in a 5-minute
+            call, not every other turn.
+
+            Only the USER talks over the ASSISTANT, never the reverse.
+
+            BACKCHANNEL TYPES (from most common to rarest):
+
+            "backchannel_short" — Brief acknowledgment sounds (300-800ms):
+              "mm-hm", "yeah", "uh-huh", "right", "okay"
+              These are SOFT, almost involuntary sounds. They signal presence, not comprehension.
+              Place them during long assistant turns. One per long turn is plenty.
+
+            "backchannel_extended" — Substantive acknowledgment (1000-2000ms):
+              "oh okay, that makes sense", "right, I see", "oh interesting"
+              These signal the listener has UNDERSTOOD something. Place near the END of
+              an assistant turn, after the key point has been made. Use sparingly (0-1 per conversation).
+
+            "thinking" — Processing sound placed AFTER the assistant finishes (500-1500ms):
+              "hmmmm", "hmm okay", "let me think"
+              Placed in the GAP between assistant's question and user's answer.
+              Use 0-1 per conversation.
+
+            "interruption" — User actually cuts off the assistant (VERY RARE):
+              "wait, what do you mean?", "hold on a second", "oh yes exactly!"
+              CRITICAL CONSTRAINT: Use AT MOST ONE interruption per conversation, and ONLY
+              when the conversation naturally invites it (user is confused, excited, or
+              needs to correct something). Most conversations have ZERO interruptions.
+              Each interruption creates a multi-second exchange that disrupts conversation flow.
+              Multiple interruptions make the audio unintelligible chaos.
+              For interruptions, include "assistant_reaction" — how the assistant yields:
+                "oh sure, go ahead", "of course, what's up?", "right, sorry, yes?"
+
+            POSITION: "early" (15-30%), "middle" (35-65%), or "late" (70-85%)
+            Short backchannels can be early or middle. Extended ones should be late.
+
+            CRITICAL RULES:
+            1. Only during ASSISTANT turns
+            2. AT MOST 1 interruption per entire conversation (most should have 0)
+            3. AT MOST 1 backchannel per short/medium assistant turn. For LONG assistant
+               turns (3+ sentences), you may place up to 2 backchannels (e.g. one early
+               "mm-hm" and one late "right") as long as they are well-separated in time.
+            4. Short conversations (4-6 turns) need 2-3 backchannels total
+            5. type must be: "backchannel_short", "backchannel_extended", "thinking", or "interruption"
+
+            Output format:
+            {{
+              "backchannel_placements": [
+                {{"during_turn_index": 1, "text": "mm-hm", "position_in_turn": "early", "type": "backchannel_short"}},
+                {{"during_turn_index": 3, "text": "right", "position_in_turn": "middle", "type": "backchannel_short"}},
+                {{"during_turn_index": 5, "text": "oh okay, that makes sense", "position_in_turn": "late", "type": "backchannel_extended"}}
+              ]
+            }}
+
+            FREQUENCY GUIDELINES:
+            - occasional: 2-3 short backchannels + 0-1 extended, 0 interruptions
+            - frequent: 3-4 short backchannels + 0-1 extended, 0-1 thinking, 0-1 interruptions
+            - very_frequent: 4-6 short backchannels + 1 extended, 0-1 thinking, 0-1 interruptions
+        - user: |
+            Conversation:
+            {naturalized_conversation}
+
+            Backchannel frequency: {backchannel_frequency}
+
+            Place subtle USER listening sounds during ASSISTANT turns.
+            Focus on short, soft backchannels ("mm-hm", "yeah") — these are the backbone
+            of realistic listening behavior. Use AT MOST one interruption for the entire
+            conversation, and only if it makes narrative sense.
+            Return JSON with backchannel_placements array.
+      model:
+        name: gpt-4o-mini
+        parameters:
+          temperature: 0.7
+      post_process: tasks.examples.duplex_audio_generator.task_executor.EnhancedTimeAnchorPostProcessor
+
+    # Step 4: Synthesize TTS for ALL turns FIRST (get actual durations)
+    synthesize_all_turns:
+      node_type: lambda
+      lambda: tasks.examples.duplex_audio_generator.task_executor.SynthesizeAllTurns
+      output_keys:
+        - synthesized_turns
+        - synthesized_backchannels
+        - user_voice
+        - assistant_voice
+
+    # Step 5: Calculate realistic timeline based on ACTUAL TTS durations
+    calculate_timeline:
+      node_type: lambda
+      lambda: tasks.examples.duplex_audio_generator.task_executor.CalculateTimeline
+      output_keys:
+        - timeline_turns
+        - timeline_backchannels
+        - timeline_reactions
+        - total_duration_ms
+        - time_anchored_spans
+
+    # Step 6: Render stems and mix duplex audio
+    render_duplex_audio:
+      node_type: lambda
+      lambda: tasks.examples.duplex_audio_generator.task_executor.RenderDuplexAudio
+      output_keys:
+        - user_stem_audio
+        - assistant_stem_audio
+        - duplex_mixed_audio
+
+  edges:
+    - from: START
+      to: sample_duplex_attributes
+
+    - from: sample_duplex_attributes
+      to: naturalize_conversation
+
+    - from: naturalize_conversation
+      to: generate_backchannel_placements
+
+    - from: generate_backchannel_placements
+      to: synthesize_all_turns
+
+    - from: synthesize_all_turns
+      to: calculate_timeline
+
+    - from: calculate_timeline
+      to: render_duplex_audio
+
+    - from: render_duplex_audio
+      to: END
+
+output_config:
+  generator: tasks.examples.duplex_audio_generator.task_executor.DuplexAudioOutputGenerator
+
+  output_map:
+    id:
+      from: "id"
+    conversation:
+      from: "conversation"
+    naturalized_conversation:
+      from: "naturalized_conversation"
+    time_anchored_spans:
+      from: "time_anchored_spans"
+    overlap_style:
+      from: "overlap_style"
+    backchannel_frequency:
+      from: "backchannel_frequency"
+    thinking_frequency:
+      from: "thinking_frequency"
+    user_voice:
+      from: "user_voice"
+    assistant_voice:
+      from: "assistant_voice"
+    user_stem_audio:
+      from: "user_stem_audio"
+    assistant_stem_audio:
+      from: "assistant_stem_audio"
+    duplex_mixed_audio:
+      from: "duplex_mixed_audio"
+    total_duration_ms:
+      from: "total_duration_ms"
