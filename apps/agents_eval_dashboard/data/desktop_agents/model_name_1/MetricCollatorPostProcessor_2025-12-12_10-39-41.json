@@ -1,0 +1,713 @@
+[
+    {
+        "evaluation_summary": {
+            "total_records": 457,
+            "processed_records": 457,
+            "skipped_records": 0,
+            "timestamp": "2025-12-12T10:44:40.845869",
+            "evaluation_type": "desktop_agent_metrics",
+            "status": "success"
+        },
+        "results": {
+            "overall": {
+                "event(tool)": {
+                    "average": {
+                        "accuracy": 0.908029197080292,
+                        "precision": 0.8903630948983743,
+                        "recall": 0.8282584009066081,
+                        "f1": 0.8283031044943041
+                    },
+                    "mouse_move": {
+                        "accuracy": 0.9582542694497154,
+                        "precision": 0.8797909407665505,
+                        "recall": 0.9582542694497154,
+                        "f1": 0.9173478655767484
+                    },
+                    "write": {
+                        "accuracy": 0.7428571428571429,
+                        "precision": 0.975,
+                        "recall": 0.7428571428571429,
+                        "f1": 0.8432432432432432
+                    },
+                    "press": {
+                        "accuracy": 0.8777777777777778,
+                        "precision": 1.0,
+                        "recall": 0.8777777777777778,
+                        "f1": 0.9349112426035503
+                    },
+                    "hot_key": {
+                        "accuracy": 0.8333333333333334,
+                        "precision": 0.9259259259259259,
+                        "recall": 0.8333333333333334,
+                        "f1": 0.8771929824561403
+                    },
+                    "vertical_scroll": {
+                        "accuracy": 1.0,
+                        "precision": 0.42857142857142855,
+                        "recall": 1.0,
+                        "f1": 0.6
+                    },
+                    "drag": {
+                        "accuracy": 0.3333333333333333,
+                        "precision": 1.0,
+                        "recall": 0.3333333333333333,
+                        "f1": 0.5
+                    },
+                    "left_click": {
+                        "accuracy": 0.921443736730361,
+                        "precision": 0.9313304721030042,
+                        "recall": 0.921443736730361,
+                        "f1": 0.9263607257203842
+                    },
+                    "right_click": {
+                        "accuracy": 0.8666666666666667,
+                        "precision": 1.0,
+                        "recall": 0.8666666666666667,
+                        "f1": 0.9285714285714286
+                    },
+                    "double_left_click": {
+                        "accuracy": 0.9761904761904762,
+                        "precision": 0.9534883720930233,
+                        "recall": 0.9761904761904762,
+                        "f1": 0.9647058823529412
+                    },
+                    "screenshot": {
+                        "accuracy": 0.7727272727272727,
+                        "precision": 0.8095238095238095,
+                        "recall": 0.7727272727272727,
+                        "f1": 0.7906976744186046
+                    },
+                    "get_current_cursor_coords": {
+                        "accuracy": 0,
+                        "precision": 0,
+                        "recall": 0,
+                        "f1": 0
+                    }
+                },
+                "confusion_matrix(tool)": {
+                    "left_click": {
+                        "left_click": 434,
+                        "mouse_move": 32,
+                        "double_left_click": 1,
+                        "none": 2,
+                        "screenshot": 2
+                    },
+                    "mouse_move": {
+                        "vertical_scroll": 2,
+                        "screenshot": 7,
+                        "mouse_move": 505,
+                        "left_click": 11,
+                        "double_left_click": 1,
+                        "write": 1
+                    },
+                    "vertical_scroll": {
+                        "vertical_scroll": 3
+                    },
+                    "press": {
+                        "press": 79,
+                        "screenshot": 1,
+                        "mouse_move": 6,
+                        "left_click": 3,
+                        "none": 1
+                    },
+                    "write": {
+                        "write": 78,
+                        "mouse_move": 14,
+                        "left_click": 12,
+                        "hot_key": 1
+                    },
+                    "screenshot": {
+                        "mouse_move": 9,
+                        "left_click": 6,
+                        "screenshot": 51
+                    },
+                    "right_click": {
+                        "mouse_move": 4,
+                        "right_click": 26
+                    },
+                    "double_left_click": {
+                        "double_left_click": 41,
+                        "mouse_move": 1
+                    },
+                    "drag": {
+                        "drag": 2,
+                        "screenshot": 1,
+                        "mouse_move": 2,
+                        "hot_key": 1
+                    },
+                    "hot_key": {
+                        "hot_key": 25,
+                        "write": 1,
+                        "mouse_move": 1,
+                        "screenshot": 1,
+                        "vertical_scroll": 2
+                    }
+                },
+                "step(tool+params)": {
+                    "average": {
+                        "accuracy": 0.859395532194481,
+                        "precision": 0.6716283045641386,
+                        "recall": 0.7067317249480437,
+                        "f1": 0.6662448137996683
+                    },
+                    "mouse_move": {
+                        "accuracy": 0.8975332068311196,
+                        "precision": 0.8240418118466899,
+                        "recall": 0.8975332068311196,
+                        "f1": 0.8592188919164395
+                    },
+                    "write": {
+                        "accuracy": 0.7428571428571429,
+                        "precision": 0.975,
+                        "recall": 0.7428571428571429,
+                        "f1": 0.8432432432432432
+                    },
+                    "press": {
+                        "accuracy": 0.8666666666666667,
+                        "precision": 0.9873417721518988,
+                        "recall": 0.8666666666666667,
+                        "f1": 0.9230769230769232
+                    },
+                    "hot_key": {
+                        "accuracy": 0.7333333333333333,
+                        "precision": 0.8148148148148148,
+                        "recall": 0.7333333333333333,
+                        "f1": 0.7719298245614035
+                    },
+                    "vertical_scroll": {
+                        "accuracy": 1.0,
+                        "precision": 0.42857142857142855,
+                        "recall": 1.0,
+                        "f1": 0.6
+                    },
+                    "drag": {
+                        "accuracy": 0.0,
+                        "precision": 0.0,
+                        "recall": 0.0,
+                        "f1": 0
+                    }
+                },
+                "confusion_matrix(step)": {
+                    "mouse_move": {
+                        "incorrect": 54,
+                        "mouse_move": 473
+                    },
+                    "vertical_scroll": {
+                        "vertical_scroll": 3
+                    },
+                    "press": {
+                        "incorrect": 12,
+                        "press": 78
+                    },
+                    "write": {
+                        "write": 78,
+                        "incorrect": 27
+                    },
+                    "drag": {
+                        "incorrect": 6
+                    },
+                    "hot_key": {
+                        "hot_key": 22,
+                        "incorrect": 8
+                    }
+                },
+                "step_metrics": {
+                    "total_retry_accuracy": 0.8802919708029197,
+                    "total_retries": 1370,
+                    "successful_retries": 1206,
+                    "tools": {
+                        "average": {
+                            "total_steps": 457,
+                            "successful_steps": 429,
+                            "step_accuracy": 0.9387308533916849
+                        },
+                        "left_click": {
+                            "total_steps": 157,
+                            "successful_steps": 157,
+                            "step_accuracy": 1.0
+                        },
+                        "mouse_move": {
+                            "total_steps": 176,
+                            "successful_steps": 161,
+                            "step_accuracy": 0.9147727272727273
+                        },
+                        "vertical_scroll": {
+                            "total_steps": 1,
+                            "successful_steps": 1,
+                            "step_accuracy": 1.0
+                        },
+                        "press": {
+                            "total_steps": 30,
+                            "successful_steps": 28,
+                            "step_accuracy": 0.9333333333333333
+                        },
+                        "write": {
+                            "total_steps": 35,
+                            "successful_steps": 33,
+                            "step_accuracy": 0.9428571428571428
+                        },
+                        "screenshot": {
+                            "total_steps": 22,
+                            "successful_steps": 17,
+                            "step_accuracy": 0.7727272727272727
+                        },
+                        "right_click": {
+                            "total_steps": 10,
+                            "successful_steps": 10,
+                            "step_accuracy": 1.0
+                        },
+                        "double_left_click": {
+                            "total_steps": 14,
+                            "successful_steps": 14,
+                            "step_accuracy": 1.0
+                        },
+                        "drag": {
+                            "total_steps": 2,
+                            "successful_steps": 0,
+                            "step_accuracy": 0.0
+                        },
+                        "hot_key": {
+                            "total_steps": 10,
+                            "successful_steps": 8,
+                            "step_accuracy": 0.8
+                        }
+                    }
+                },
+                "pass_k": {
+                    "mouse_move": {
+                        "total_steps": 176,
+                        "1": {
+                            "pass_at_k": 0.8958333333333333,
+                            "pass_power_k": 0.8958333333333333
+                        },
+                        "2": {
+                            "pass_at_k": 0.9109848484848485,
+                            "pass_power_k": 0.8857323232323234
+                        },
+                        "3": {
+                            "pass_at_k": 0.9147727272727273,
+                            "pass_power_k": 0.8798400673400674
+                        }
+                    },
+                    "write": {
+                        "total_steps": 35,
+                        "1": {
+                            "pass_at_k": 0.7428571428571428,
+                            "pass_power_k": 0.7428571428571428
+                        },
+                        "2": {
+                            "pass_at_k": 0.8476190476190477,
+                            "pass_power_k": 0.6730158730158728
+                        },
+                        "3": {
+                            "pass_at_k": 0.9428571428571428,
+                            "pass_power_k": 0.6476190476190476
+                        }
+                    },
+                    "press": {
+                        "total_steps": 30,
+                        "1": {
+                            "pass_at_k": 0.8666666666666667,
+                            "pass_power_k": 0.8666666666666667
+                        },
+                        "2": {
+                            "pass_at_k": 0.9111111111111112,
+                            "pass_power_k": 0.837037037037037
+                        },
+                        "3": {
+                            "pass_at_k": 0.9333333333333333,
+                            "pass_power_k": 0.8222222222222224
+                        }
+                    },
+                    "hot_key": {
+                        "total_steps": 10,
+                        "1": {
+                            "pass_at_k": 0.7333333333333333,
+                            "pass_power_k": 0.7333333333333333
+                        },
+                        "2": {
+                            "pass_at_k": 0.7666666666666667,
+                            "pass_power_k": 0.711111111111111
+                        },
+                        "3": {
+                            "pass_at_k": 0.8,
+                            "pass_power_k": 0.7037037037037037
+                        }
+                    },
+                    "vertical_scroll": {
+                        "total_steps": 1,
+                        "1": {
+                            "pass_at_k": 1.0,
+                            "pass_power_k": 1.0
+                        },
+                        "2": {
+                            "pass_at_k": 1.0,
+                            "pass_power_k": 1.0
+                        },
+                        "3": {
+                            "pass_at_k": 1.0,
+                            "pass_power_k": 1.0
+                        }
+                    },
+                    "drag": {
+                        "total_steps": 2,
+                        "1": {
+                            "pass_at_k": 0.0,
+                            "pass_power_k": 0.0
+                        },
+                        "2": {
+                            "pass_at_k": 0.0,
+                            "pass_power_k": 0.0
+                        },
+                        "3": {
+                            "pass_at_k": 0.0,
+                            "pass_power_k": 0.0
+                        }
+                    },
+                    "left_click": {
+                        "total_steps": 157,
+                        "1": {
+                            "pass_at_k": 0.9214437367303611,
+                            "pass_power_k": 0.9214437367303611
+                        },
+                        "2": {
+                            "pass_at_k": 0.9830148619957538,
+                            "pass_power_k": 0.8803963198867658
+                        },
+                        "3": {
+                            "pass_at_k": 1.0,
+                            "pass_power_k": 0.8568058504364234
+                        }
+                    },
+                    "right_click": {
+                        "total_steps": 10,
+                        "1": {
+                            "pass_at_k": 0.8666666666666668,
+                            "pass_power_k": 0.8666666666666668
+                        },
+                        "2": {
+                            "pass_at_k": 1.0,
+                            "pass_power_k": 0.7777777777777778
+                        },
+                        "3": {
+                            "pass_at_k": 1.0,
+                            "pass_power_k": 0.7185185185185186
+                        }
+                    },
+                    "double_left_click": {
+                        "total_steps": 14,
+                        "1": {
+                            "pass_at_k": 0.9761904761904763,
+                            "pass_power_k": 0.9761904761904763
+                        },
+                        "2": {
+                            "pass_at_k": 1.0,
+                            "pass_power_k": 0.9603174603174603
+                        },
+                        "3": {
+                            "pass_at_k": 1.0,
+                            "pass_power_k": 0.9497354497354497
+                        }
+                    },
+                    "screenshot": {
+                        "total_steps": 22,
+                        "1": {
+                            "pass_at_k": 0.7727272727272727,
+                            "pass_power_k": 0.7727272727272727
+                        },
+                        "2": {
+                            "pass_at_k": 0.7727272727272727,
+                            "pass_power_k": 0.7727272727272727
+                        },
+                        "3": {
+                            "pass_at_k": 0.7727272727272727,
+                            "pass_power_k": 0.7727272727272727
+                        }
+                    },
+                    "get_current_cursor_coords": {
+                        "total_steps": 0,
+                        "1": {
+                            "pass_at_k": 0.0,
+                            "pass_power_k": 0.0
+                        },
+                        "2": {
+                            "pass_at_k": 0.0,
+                            "pass_power_k": 0.0
+                        },
+                        "3": {
+                            "pass_at_k": 0.0,
+                            "pass_power_k": 0.0
+                        }
+                    },
+                    "average": {
+                        "total_steps": 457,
+                        "1": {
+                            "pass_at_k": 0.8796498905908096,
+                            "pass_power_k": 0.8796498905908096
+                        },
+                        "2": {
+                            "pass_at_k": 0.9219547775346466,
+                            "pass_power_k": 0.851446632628252
+                        },
+                        "3": {
+                            "pass_at_k": 0.9387308533916849,
+                            "pass_power_k": 0.8363724775103331
+                        }
+                    }
+                }
+            },
+            "efficiency": {
+                "average": {
+                    "total_step_count": 457,
+                    "retry_step_count": 608,
+                    "step_efficiency": 0.7516447368421053
+                },
+                "left_click": {
+                    "total_step_count": 157,
+                    "retry_step_count": 185,
+                    "step_efficiency": 0.8486486486486486
+                },
+                "mouse_move": {
+                    "total_step_count": 176,
+                    "retry_step_count": 228,
+                    "step_efficiency": 0.7719298245614035
+                },
+                "vertical_scroll": {
+                    "total_step_count": 1,
+                    "retry_step_count": 1,
+                    "step_efficiency": 1.0
+                },
+                "press": {
+                    "total_step_count": 30,
+                    "retry_step_count": 42,
+                    "step_efficiency": 0.7142857142857143
+                },
+                "write": {
+                    "total_step_count": 35,
+                    "retry_step_count": 62,
+                    "step_efficiency": 0.5645161290322581
+                },
+                "screenshot": {
+                    "total_step_count": 22,
+                    "retry_step_count": 37,
+                    "step_efficiency": 0.5945945945945946
+                },
+                "right_click": {
+                    "total_step_count": 10,
+                    "retry_step_count": 14,
+                    "step_efficiency": 0.7142857142857143
+                },
+                "double_left_click": {
+                    "total_step_count": 14,
+                    "retry_step_count": 15,
+                    "step_efficiency": 0.9333333333333333
+                },
+                "drag": {
+                    "total_step_count": 2,
+                    "retry_step_count": 8,
+                    "step_efficiency": 0.25
+                },
+                "hot_key": {
+                    "total_step_count": 10,
+                    "retry_step_count": 16,
+                    "step_efficiency": 0.625
+                }
+            },
+            "mission": {
+                "mission_01": {
+                    "total_step_count": 16,
+                    "retry_step_count": 20,
+                    "step_efficiency": 0.8,
+                    "successful": true
+                },
+                "mission_03": {
+                    "total_step_count": 17,
+                    "retry_step_count": 20,
+                    "step_efficiency": 0.85,
+                    "successful": true
+                },
+                "mission_02": {
+                    "total_step_count": 6,
+                    "retry_step_count": 15,
+                    "step_efficiency": 0.4,
+                    "successful": false
+                },
+                "mission_04": {
+                    "total_step_count": 19,
+                    "retry_step_count": 26,
+                    "step_efficiency": 0.7307692307692307,
+                    "successful": false
+                },
+                "mission_05": {
+                    "total_step_count": 13,
+                    "retry_step_count": 20,
+                    "step_efficiency": 0.65,
+                    "successful": true
+                },
+                "mission_06": {
+                    "total_step_count": 13,
+                    "retry_step_count": 17,
+                    "step_efficiency": 0.7647058823529411,
+                    "successful": false
+                },
+                "mission_07": {
+                    "total_step_count": 21,
+                    "retry_step_count": 33,
+                    "step_efficiency": 0.6363636363636364,
+                    "successful": false
+                },
+                "mission_08": {
+                    "total_step_count": 9,
+                    "retry_step_count": 10,
+                    "step_efficiency": 0.9,
+                    "successful": true
+                },
+                "mission_09": {
+                    "total_step_count": 6,
+                    "retry_step_count": 6,
+                    "step_efficiency": 1.0,
+                    "successful": true
+                },
+                "mission_010": {
+                    "total_step_count": 15,
+                    "retry_step_count": 18,
+                    "step_efficiency": 0.8333333333333334,
+                    "successful": true
+                },
+                "mission_011": {
+                    "total_step_count": 20,
+                    "retry_step_count": 25,
+                    "step_efficiency": 0.8,
+                    "successful": false
+                },
+                "mission_012": {
+                    "total_step_count": 15,
+                    "retry_step_count": 31,
+                    "step_efficiency": 0.4838709677419355,
+                    "successful": false
+                },
+                "mission_013": {
+                    "total_step_count": 9,
+                    "retry_step_count": 9,
+                    "step_efficiency": 1.0,
+                    "successful": true
+                },
+                "mission_014": {
+                    "total_step_count": 4,
+                    "retry_step_count": 4,
+                    "step_efficiency": 1.0,
+                    "successful": true
+                },
+                "mission_015": {
+                    "total_step_count": 13,
+                    "retry_step_count": 13,
+                    "step_efficiency": 1.0,
+                    "successful": true
+                },
+                "mission_016": {
+                    "total_step_count": 25,
+                    "retry_step_count": 34,
+                    "step_efficiency": 0.7352941176470589,
+                    "successful": false
+                },
+                "mission_017": {
+                    "total_step_count": 12,
+                    "retry_step_count": 14,
+                    "step_efficiency": 0.8571428571428571,
+                    "successful": true
+                },
+                "mission_018": {
+                    "total_step_count": 12,
+                    "retry_step_count": 14,
+                    "step_efficiency": 0.8571428571428571,
+                    "successful": true
+                },
+                "mission_019": {
+                    "total_step_count": 15,
+                    "retry_step_count": 17,
+                    "step_efficiency": 0.8823529411764706,
+                    "successful": true
+                },
+                "mission_020": {
+                    "total_step_count": 12,
+                    "retry_step_count": 15,
+                    "step_efficiency": 0.8,
+                    "successful": true
+                },
+                "mission_021": {
+                    "total_step_count": 19,
+                    "retry_step_count": 23,
+                    "step_efficiency": 0.8260869565217391,
+                    "successful": true
+                },
+                "mission_022": {
+                    "total_step_count": 15,
+                    "retry_step_count": 17,
+                    "step_efficiency": 0.8823529411764706,
+                    "successful": true
+                },
+                "mission_023": {
+                    "total_step_count": 32,
+                    "retry_step_count": 50,
+                    "step_efficiency": 0.64,
+                    "successful": false
+                },
+                "mission_024": {
+                    "total_step_count": 6,
+                    "retry_step_count": 9,
+                    "step_efficiency": 0.6666666666666666,
+                    "successful": false
+                },
+                "mission_025": {
+                    "total_step_count": 23,
+                    "retry_step_count": 27,
+                    "step_efficiency": 0.8518518518518519,
+                    "successful": true
+                },
+                "mission_026": {
+                    "total_step_count": 21,
+                    "retry_step_count": 22,
+                    "step_efficiency": 0.9545454545454546,
+                    "successful": true
+                },
+                "mission_027": {
+                    "total_step_count": 21,
+                    "retry_step_count": 27,
+                    "step_efficiency": 0.7777777777777778,
+                    "successful": false
+                },
+                "mission_028": {
+                    "total_step_count": 21,
+                    "retry_step_count": 22,
+                    "step_efficiency": 0.9545454545454546,
+                    "successful": true
+                },
+                "mission_029": {
+                    "total_step_count": 17,
+                    "retry_step_count": 23,
+                    "step_efficiency": 0.7391304347826086,
+                    "successful": false
+                },
+                "mission_030": {
+                    "total_step_count": 10,
+                    "retry_step_count": 27,
+                    "step_efficiency": 0.37037037037037035,
+                    "successful": false
+                }
+            },
+            "summary": {
+                "total_records": 457,
+                "processed_records": 457,
+                "skipped_records": 0
+            },
+            "ai_summary": {
+                "Event Identification": "**Desktop Agent Performance Summary**\n\n**Overall Insights:**  \nThe desktop agent demonstrates strong performance across most event types, with an average accuracy of **90.8%**, precision of **89%**, recall of **82.8%**, and F1 score of **82.8%**. This indicates reliable event identification and step completeness in general.\n\n**Pros:**  \n- **Mouse Move** and **Double Left Click** events are highly accurate (**95.8%** and **97.6%** respectively) with strong F1 scores (**91.7%** and **96.5%**), suggesting robust detection and execution in domains requiring navigation and selection.\n- **Left Click** and **Right Click** also perform well (accuracy > **86%**, F1 > **92%**), supporting consistent interaction in UI-driven missions.\n- **Press** and **Hot Key** events show high precision (**100%** and **92.6%**) and good F1 scores, indicating reliable keyboard input handling.\n- **Vertical Scroll** achieves perfect accuracy and recall, though its precision is low (**42.9%**), suggesting it always detects scrolls but may misclassify other events as scrolls.\n\n**Cons:**  \n- **Write** and **Screenshot** events have lower accuracy (**74.3%** and **77.3%**) and F1 scores, indicating challenges in text input and screen capture domains.\n- **Drag** event is notably weak (**33.3%** accuracy, **0.5** F1), suggesting significant issues in domains requiring drag-and-drop actions.\n- **Get Current Cursor Coords** fails completely (**0%** across all metrics), indicating inability to reliably capture cursor position, which can impact missions needing precise mouse tracking.\n\n**Domain Insights:**  \nDomains involving basic navigation (mouse move, clicks) and keyboard shortcuts are well-supported. However, domains requiring advanced interactions (drag, write, screenshot, cursor tracking) need improvement.\n\n**Recommendations:**  \nFocus on enhancing drag-and-drop, text input, screenshot, and cursor tracking capabilities to improve overall mission success and reduce retries in complex domains.\n\n**Short Summary:**\nThe desktop agent performs best on double left click, mouse move, and left/right click events, showing high accuracy and F1 scores. Write, screenshot, and hot key events show moderate performance. Drag and get_current_cursor_coords events perform poorly, with drag showing low accuracy and F1, and get_current_cursor_coords failing entirely. Vertical scroll has perfect accuracy but low precision, indicating false positives. Focus improvement on drag and cursor coordinate events.",
+                "Step Completeness": "**Desktop Agent Performance Summary**\n\n**Overall Metrics:**  \nThe desktop agent demonstrates strong overall accuracy (0.86), with moderate precision (0.67), recall (0.71), and F1 score (0.67). This indicates reliable event identification but highlights room for improvement in consistently matching predicted events to golden events and step completeness.\n\n**Event-wise Insights:**  \n- **Mouse Move:** Performs best, with high accuracy (0.90), precision (0.82), recall (0.90), and F1 (0.86). This suggests the agent reliably identifies and executes mouse movement steps across domains.\n- **Press:** Also strong, with high accuracy (0.87), precision (0.99), recall (0.87), and F1 (0.92). The agent excels in recognizing and performing key press actions.\n- **Write:** Good precision (0.98) and F1 (0.84), but lower accuracy (0.74) and recall (0.74). The agent is precise when it acts but sometimes misses correct identification or execution.\n- **Hot Key:** Moderate performance, with accuracy (0.73), precision (0.81), recall (0.73), and F1 (0.77). Hot key events are identified reasonably well but could be improved.\n- **Vertical Scroll:** Perfect accuracy and recall (1.0), but low precision (0.43) and F1 (0.60). The agent always detects scroll events but often misclassifies other events as scrolls.\n- **Drag:** Very poor performance (all metrics 0). The agent fails to identify or execute drag events, indicating a critical area for improvement.\n\n**Domain Insights:**  \nDomains involving mouse movement and key presses (e.g., navigation, form filling) perform well. Domains requiring drag actions or complex event sequences (e.g., file management, graphic manipulation) are problematic due to drag event failures.\n\n**Pros:**  \n- High reliability in mouse movement and key press events.\n- Strong precision in write actions.\n\n**Cons:**  \n- Drag events are not handled at all.\n- Vertical scroll event precision is low, leading to false positives.\n- Write and hot key events need better recall and accuracy.\n\n**Recommendations:**  \nFocus on improving drag event handling and vertical scroll precision. Enhance recall for write and hot key events to boost overall mission success.\n\n**Short Summary:**\nThe desktop agent performs best on **mouse_move** and **press** events, showing high accuracy and F1 scores. **Write** and **hot_key** events have moderate performance, while **vertical_scroll** shows perfect accuracy but low precision. **Drag** events perform very poorly across all metrics, indicating a significant area for improvement. Overall, event identification is strong for common actions but inconsistent for complex interactions.",
+                "Mission Efficiency": "**Desktop Agent Performance Summary**\n\n**Overview:**  \nThe desktop agent was evaluated across 30 missions, each comprising multiple steps involving events such as double-click, mouse move, left/right click, etc. Key metrics analyzed include step efficiency (total steps/retries), mission success, and event identification accuracy.\n\n**Pros:**  \n- **High Step Efficiency & Success:** Missions 09, 013, 014, 015, 026, and 028 achieved perfect step efficiency (1.0 or >0.95) and were all successful, indicating robust performance in these domains. These missions likely involved straightforward event types (e.g., simple mouse moves or clicks) and well-defined step parameters.\n- **Consistent Success:** Missions with step efficiency above 0.8 (e.g., 01, 03, 08, 010, 017, 018, 019, 020, 021, 022, 025) also showed high success rates, suggesting the agent reliably identifies and completes steps when retries are minimal.\n\n**Cons:**  \n- **Low Step Efficiency & Failures:** Missions 02, 012, 030 had notably low step efficiency (<0.5) and were unsuccessful. These likely involved complex event sequences or ambiguous step parameters, leading to frequent retries and failures.\n- **High Retry Count:** Several missions (e.g., 04, 07, 023, 024, 027, 029) had high retry counts and lower efficiency (<0.75), with most ending in failure. This points to challenges in event identification or step completeness, possibly in domains requiring precise mouse movements or multi-step interactions.\n- **Inconsistent Performance:** Some missions with moderate efficiency (0.65\u20130.8) showed mixed success, indicating variability in agent reliability depending on event complexity or domain specifics.\n\n**Insights:**  \n- The agent excels in domains with simple, well-defined events and parameters, achieving high efficiency and success.\n- Performance drops in domains requiring complex event identification or precise step completion, leading to more retries and failures.\n- Improving event identification and step completeness, especially for complex domains, will enhance overall agent reliability.\n\n**Recommendation:**  \nFocus on refining event detection algorithms and step validation for complex domains to reduce retries and increase mission success rates.\n\n**Short Summary:**\nThe desktop agent performs best in domains with high step efficiency (\u22650.85) and full mission success, such as missions 9, 13\u201315, 17\u201319, 22, 25\u201326, and 28. Domains with low step efficiency (<0.7) and frequent failures, like missions 2, 4, 7, 12, 23, 24, 27, 29, and 30, indicate challenges in event identification or step completeness, requiring further optimization.",
+                "Event Efficiency": "**Desktop Agent Performance Summary**\n\n**Overall Insights:**  \nThe desktop agent demonstrates moderate efficiency, with an average step efficiency of **0.75** across all events. This indicates that, on average, the agent requires more than one attempt per step, suggesting room for improvement in reliability and accuracy.\n\n**Pros:**  \n- **Double Left Click** stands out with the highest step efficiency (**0.93**), indicating strong performance in accurately identifying and completing these events with minimal retries.\n- **Left Click** and **Mouse Move** also perform well, with efficiencies of **0.85** and **0.77** respectively, suggesting robust event identification and step completeness in domains requiring these actions.\n- **Vertical Scroll** achieves perfect efficiency (**1.0**), though with very limited data (only one step), indicating potential but not enough evidence for consistent performance.\n\n**Cons:**  \n- **Drag** events show significant weakness, with a low step efficiency (**0.25**), meaning the agent struggles to complete these steps without multiple retries. This could impact domains involving file or object movement.\n- **Write** and **Screenshot** events also underperform, with efficiencies of **0.56** and **0.59** respectively, suggesting challenges in text entry and screen capture tasks.\n- **Hot Key** and **Press** events have below-average efficiencies (**0.63** and **0.71**), indicating inconsistent performance in keyboard-related actions.\n\n**Domain-Specific Insights:**  \nDomains relying heavily on **clicking** and **mouse movement** (e.g., navigation, selection tasks) are well-supported. However, domains requiring **drag-and-drop**, **text input**, or **keyboard shortcuts** may experience higher failure rates and require more retries, impacting overall mission success.\n\n**Recommendations:**  \nFocus on improving the agent\u2019s handling of **drag**, **write**, and **screenshot** events to enhance reliability in complex workflows. Continued monitoring and targeted enhancements in these areas will help boost overall mission success rates and user satisfaction.\n\n**Short Summary:**\nThe desktop agent performs best on double left click and vertical scroll events, showing high step efficiency. Left click and mouse move also perform above average. However, drag, write, screenshot, and hot key events have lower efficiency, indicating challenges in accurate identification or execution. Focused improvements on these lower-performing events could enhance overall agent reliability across domains.",
+                "Pass K": "**Desktop Agent Performance Summary**\n\n**Overview:**  \nThe desktop agent was evaluated across multiple event types (e.g., mouse_move, left_click, write, drag) and domains, measuring its ability to correctly identify events and complete steps with retries. Key metrics include pass@k (event identification accuracy within k attempts) and pass_power_k (step completeness within k attempts).\n\n**Pros:**  \n- **High Accuracy Events:**  \n  - **Left Click & Double Left Click:** Outstanding performance, with pass@3 reaching 100% and pass_power_k above 85%. These events are reliably identified and completed, making them strengths for domains requiring frequent clicking actions.\n  - **Right Click:** Also performs well, with pass@3 at 100% and pass_power_k above 71%.\n  - **Mouse Move:** Consistently high accuracy (pass@3: ~91%, pass_power_k: ~88%), indicating robust tracking of pointer movements.\n  - **Press (Keyboard):** Strong results (pass@3: ~93%, pass_power_k: ~82%), suitable for domains involving keyboard interactions.\n  - **Vertical Scroll:** Perfect scores, though based on a single step, suggesting reliability but limited data.\n- **Improvement with Retries:** Most events show increased accuracy and completeness with up to 3 attempts, demonstrating effective retry logic.\n\n**Cons:**  \n- **Low Performing Events:**  \n  - **Drag:** Fails consistently (pass@k and pass_power_k at 0%), indicating a significant weakness in domains requiring drag-and-drop actions.\n  - **Write (Typing):** Moderate performance (pass@3: ~94%, but pass_power_k drops to ~65%), suggesting issues with step completeness, possibly due to coordinate or content mismatches.\n  - **Hot Key & Screenshot:** Lower accuracy and completeness (pass@3: ~80% and ~77%, respectively), which may impact domains relying on shortcuts or screen captures.\n  - **Get Current Cursor Coords:** No data, indicating either lack of testing or inability to perform this event.\n\n**Overall Insights:**  \nThe agent excels in click and pointer movement events, making it well-suited for domains with standard navigation and selection tasks. However, it struggles with drag-and-drop and complex input events, which could limit its effectiveness in more interactive or creative domains. Retry logic improves outcomes, but targeted improvements are needed for drag, write, and shortcut-related actions.\n\n**Short Summary:**\nThe desktop agent performs best on double left click, left click, and right click events, all showing high accuracy and completeness. Mouse move and press events also perform well. However, performance is lower for write, hot key, and screenshot events, while drag events consistently fail. Vertical scroll is perfect but based on minimal data. Overall, click-based actions are most reliable, while drag and keyboard-related actions need improvement.",
+                "overall": "**Desktop Agent Performance Summary**\n\n**Overall Insights:**\nThe desktop agent demonstrates solid performance across most missions and event types, with an average step efficiency of ~0.75 and high event identification accuracy (90.8%). Most missions (17/30) are successful, indicating reliable execution, though some domains require improvement.\n\n**Pros:**\n- **High Event Identification & Completeness:** Events like **mouse_move**, **left_click**, and **double_left_click** excel, with identification accuracy above 92% and step completeness above 85%. Pass@k metrics for these events are also strong, with pass@1 above 89% and pass@3 above 93%.\n- **Efficient Event Handling:** **Double_left_click** and **vertical_scroll** events have the highest step efficiency (0.93 and 1.0, respectively), with minimal retries required.\n- **Mission Success:** Missions with higher step efficiency (>0.8) are consistently successful, indicating robust agent performance in these domains.\n- **Precision & Recall:** Most click and move events show high precision and recall, ensuring both correct identification and execution.\n\n**Cons:**\n- **Low Performance Events:** **Drag**, **write**, and **screenshot** events underperform. Drag has very low step efficiency (0.25) and zero step completeness, indicating frequent failures. Write and screenshot events have lower step efficiency (0.56, 0.59) and moderate identification accuracy (~74% and ~77%).\n- **Retry Dependency:** Missions with low step efficiency (<0.7) often fail, especially those involving complex actions like drag or screenshot.\n- **Domain Variability:** Certain missions (e.g., mission_02, mission_04, mission_012, mission_030) have high retry counts and low efficiency, suggesting domain-specific challenges.\n- **Edge Cases:** Events like **get_current_cursor_coords** are not handled at all (0% accuracy and completeness).\n\n**Summary:**  \nThe agent is highly reliable for standard UI interactions (clicks, moves, double-clicks), but struggles with complex or less frequent actions (drag, screenshot, write). Improving robustness in these areas and reducing retries will enhance overall mission success, especially in challenging domains.\n\n**Short Summary:**\nThe desktop agent performs best on left_click, double_left_click, and mouse_move events, showing high identification and step completeness. Domains with these events achieve higher mission success and efficiency. Write, screenshot, and drag events underperform, with lower step efficiency and accuracy, leading to more retries and failed missions. Overall, improving handling of write and drag events will boost agent reliability across domains."
+            }
+        }
+    }
+]

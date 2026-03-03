@@ -1,0 +1,175 @@
+[
+  {
+    "id": "real_eval_OMNIZON",
+    "reward": 3.0,
+    "terminated": true,
+    "truncated": false,
+    "info": {
+      "action_exec_start": 1771964404.6056588,
+      "action_exec_timeout": 0,
+      "action_exec_stop": 1771964404.62396,
+      "wait_for_page_loading_start": 1771964404.623961,
+      "wait_for_page_loading_stop": 1771964405.131781,
+      "validation_start": 1771964405.1317818,
+      "task_info": {
+        "mission_name": "OMNIZON",
+        "turn_idx": 2,
+        "n_turns": 3,
+        "expected_empty": false,
+        "expected": "3",
+        "predicted": "3",
+        "correct": true,
+        "turn_history": [
+          {
+            "turn_idx": 0,
+            "expected_empty": true,
+            "expected": "",
+            "predicted": "__TURN_DONE__",
+            "correct": true,
+            "reward": 1.0,
+            "user": "search for headphones on omnizon - https://real-omnizon.vercel.app"
+          },
+          {
+            "turn_idx": 1,
+            "expected_empty": false,
+            "expected": "84",
+            "predicted": "84",
+            "correct": true,
+            "reward": 1.0,
+            "user": "how many approximate total listing are there ? Return single integer value. Do not include any other text."
+          },
+          {
+            "turn_idx": 2,
+            "expected_empty": false,
+            "expected": "3",
+            "predicted": "3",
+            "correct": true,
+            "reward": 1.0,
+            "user": "Of the listing where the primary product is headphone/earphone/earbud, for the very first listed product, get me total reviewers whose name starts with letter 'G' (Ignore case). Return single integer value. Do not include any other text."
+          }
+        ]
+      },
+      "validation_stop": 1771964405.131808,
+      "get_observation_start": 1771964405.131808,
+      "get_observation_stop": 1771964405.5234828
+    },
+    "step": 29
+  },
+  {
+    "id": "real_eval_STAYBNB",
+    "reward": 4.0,
+    "terminated": true,
+    "truncated": false,
+    "info": {
+      "action_exec_start": 1771972054.524696,
+      "action_exec_timeout": 0,
+      "action_exec_stop": 1771972054.544263,
+      "wait_for_page_loading_start": 1771972054.544263,
+      "wait_for_page_loading_stop": 1771972055.0575628,
+      "validation_start": 1771972055.0575628,
+      "task_info": {
+        "mission_name": "STAYBNB",
+        "turn_idx": 3,
+        "n_turns": 4,
+        "turn_max_steps": null,
+        "turn_steps_elapsed": 3,
+        "expected_empty": false,
+        "expected": "50",
+        "predicted": "50",
+        "correct": true,
+        "turn_history": [
+          {
+            "turn_idx": 0,
+            "expected_empty": true,
+            "expected": "",
+            "predicted": "__TURN_DONE__",
+            "correct": true,
+            "reward": 1.0,
+            "user": "add this stay in Europe to my wishlist.",
+            "turn_steps_elapsed": 5,
+            "turn_max_steps": null
+          },
+          {
+            "turn_idx": 1,
+            "expected_empty": false,
+            "expected": "1855",
+            "predicted": "1855",
+            "correct": true,
+            "reward": 1.0,
+            "user": "what is the total cost of that place for 4 from 8 March 2025 and 15 March 2025? Return only the cost as a number in USD. Do not include currency symbols, text, or explanations.",
+            "turn_steps_elapsed": 38,
+            "turn_max_steps": 40
+          },
+          {
+            "turn_idx": 2,
+            "expected_empty": true,
+            "expected": "",
+            "predicted": "__TURN_DONE__",
+            "correct": true,
+            "reward": 1.0,
+            "user": "checkout the place.",
+            "turn_steps_elapsed": 3,
+            "turn_max_steps": null
+          },
+          {
+            "turn_idx": 3,
+            "expected_empty": false,
+            "expected": "50",
+            "predicted": "50",
+            "correct": true,
+            "reward": 1.0,
+            "user": "If I cancel this stay just 3 days before check-in then how much percentage of refund would I get under Moderate policy?",
+            "turn_steps_elapsed": 3,
+            "turn_max_steps": null
+          }
+        ]
+      },
+      "validation_stop": 1771972055.057591,
+      "get_observation_start": 1771972055.057591,
+      "get_observation_stop": 1771972055.20541
+    },
+    "step": 49
+  },
+  {
+    "id": "real_eval_DASHDISH",
+    "reward": 0.0,
+    "terminated": true,
+    "truncated": false,
+    "info": {
+      "action_exec_start": 1771973207.947326,
+      "action_exec_timeout": 0,
+      "action_exec_stop": 1771973207.967221,
+      "wait_for_page_loading_start": 1771973207.967221,
+      "wait_for_page_loading_stop": 1771973208.4798012,
+      "validation_start": 1771973208.4798012,
+      "task_info": {
+        "mission_name": "DASHDISH",
+        "turn_idx": 0,
+        "n_turns": 3,
+        "turn_max_steps": null,
+        "turn_steps_elapsed": 22,
+        "expected_empty": false,
+        "expected": "yes",
+        "predicted": "unknown",
+        "correct": false,
+        "turn_history": [
+          {
+            "turn_idx": 0,
+            "expected_empty": false,
+            "expected": "yes",
+            "predicted": "unknown",
+            "correct": false,
+            "reward": 0.0,
+            "user": "I already have rice with me and I only want some gravy ordered from `Curry Up Now`. I am fine with veg or non-veg. I have only 18$ with me to pay for the food delivery. So can I get a some gravy ordered within this price? Answer only with a simple 'yes' or 'no'.",
+            "turn_steps_elapsed": 22,
+            "turn_max_steps": null
+          }
+        ]
+      },
+      "validation_stop": 1771973208.4798238,
+      "get_observation_start": 1771973208.4798238,
+      "get_observation_stop": 1771973208.683708
+    },
+    "step": 22
+  }
+]

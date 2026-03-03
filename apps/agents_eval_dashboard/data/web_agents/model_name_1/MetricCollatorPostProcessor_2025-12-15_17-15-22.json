@@ -1,0 +1,593 @@
+[
+    {
+        "evaluation_summary": {
+            "total_records": 412,
+            "processed_records": 412,
+            "skipped_records": 0,
+            "timestamp": "2025-12-15T17:22:20.126280",
+            "evaluation_type": "web_agent_metrics",
+            "status": "success"
+        },
+        "results": {
+            "overall": {
+                "event(tool)": {
+                    "average": {
+                        "accuracy": 0.8802588996763754,
+                        "precision": 0.8274153872071871,
+                        "recall": 0.6928962183753384,
+                        "f1": 0.7208412974735473
+                    },
+                    "click": {
+                        "accuracy": 0.9566982408660352,
+                        "precision": 0.9087403598971723,
+                        "recall": 0.9566982408660352,
+                        "f1": 0.932102834541859
+                    },
+                    "typing": {
+                        "accuracy": 0.8611111111111112,
+                        "precision": 0.9441624365482234,
+                        "recall": 0.8611111111111112,
+                        "f1": 0.900726392251816
+                    },
+                    "scroll": {
+                        "accuracy": 0.7395348837209302,
+                        "precision": 0.8594594594594595,
+                        "recall": 0.7395348837209302,
+                        "f1": 0.795
+                    },
+                    "HIL": {
+                        "accuracy": 0.5151515151515151,
+                        "precision": 0.7083333333333334,
+                        "recall": 0.5151515151515151,
+                        "f1": 0.5964912280701754
+                    },
+                    "waiting": {
+                        "accuracy": 0.6111111111111112,
+                        "precision": 0.9166666666666666,
+                        "recall": 0.6111111111111112,
+                        "f1": 0.7333333333333334
+                    },
+                    "slider-drag": {
+                        "accuracy": 0.3333333333333333,
+                        "precision": 1.0,
+                        "recall": 0.3333333333333333,
+                        "f1": 0.5
+                    },
+                    "clear-typing": {
+                        "accuracy": 0.8333333333333334,
+                        "precision": 0.45454545454545453,
+                        "recall": 0.8333333333333334,
+                        "f1": 0.5882352941176471
+                    }
+                },
+                "confusion_matrix(tool)": {
+                    "click": {
+                        "click": 707,
+                        "typing": 5,
+                        "HIL": 7,
+                        "scroll": 12,
+                        "screenshot": 4,
+                        "none": 4
+                    },
+                    "typing": {
+                        "typing": 186,
+                        "click": 14,
+                        "scroll": 9,
+                        "clear-typing": 6,
+                        "screenshot": 1
+                    },
+                    "scroll": {
+                        "click": 41,
+                        "scroll": 159,
+                        "screenshot": 11,
+                        "typing": 3,
+                        "waiting": 1
+                    },
+                    "waiting": {
+                        "click": 3,
+                        "screenshot": 2,
+                        "waiting": 11,
+                        "scroll": 2
+                    },
+                    "slider-drag": {
+                        "click": 4,
+                        "slider-drag": 3,
+                        "scroll": 1,
+                        "screenshot": 1
+                    },
+                    "HIL": {
+                        "HIL": 17,
+                        "click": 8,
+                        "scroll": 2,
+                        "none": 1,
+                        "typing": 3,
+                        "screenshot": 2
+                    },
+                    "clear-typing": {
+                        "clear-typing": 5,
+                        "click": 1
+                    }
+                },
+                "step(tool+params)": {
+                    "average": {
+                        "accuracy": 0.7760683760683761,
+                        "precision": 0.7871773111986206,
+                        "recall": 0.6537735367179619,
+                        "f1": 0.6812548271078293
+                    },
+                    "click": {
+                        "accuracy": 0.7943166441136671,
+                        "precision": 0.7544987146529563,
+                        "recall": 0.7943166441136671,
+                        "f1": 0.7738958470665787
+                    },
+                    "typing": {
+                        "accuracy": 0.8287037037037037,
+                        "precision": 0.9086294416243654,
+                        "recall": 0.8287037037037037,
+                        "f1": 0.8668280871670702
+                    },
+                    "scroll": {
+                        "accuracy": 0.6604651162790698,
+                        "precision": 0.7675675675675676,
+                        "recall": 0.6604651162790698,
+                        "f1": 0.71
+                    },
+                    "HIL": {
+                        "accuracy": 0.5151515151515151,
+                        "precision": 0.7083333333333334,
+                        "recall": 0.5151515151515151,
+                        "f1": 0.5964912280701754
+                    },
+                    "waiting": {
+                        "accuracy": 0.6111111111111112,
+                        "precision": 0.9166666666666666,
+                        "recall": 0.6111111111111112,
+                        "f1": 0.7333333333333334
+                    },
+                    "slider-drag": {
+                        "accuracy": 0.3333333333333333,
+                        "precision": 1.0,
+                        "recall": 0.3333333333333333,
+                        "f1": 0.5
+                    },
+                    "clear-typing": {
+                        "accuracy": 0.8333333333333334,
+                        "precision": 0.45454545454545453,
+                        "recall": 0.8333333333333334,
+                        "f1": 0.5882352941176471
+                    }
+                },
+                "confusion_matrix(step)": {
+                    "click": {
+                        "click": 587,
+                        "incorrect": 152
+                    },
+                    "typing": {
+                        "incorrect": 37,
+                        "typing": 179
+                    },
+                    "scroll": {
+                        "incorrect": 73,
+                        "scroll": 142
+                    }
+                },
+                "step_metrics": {
+                    "total_retry_accuracy": 0.7637540453074434,
+                    "total_retries": 1236,
+                    "successful_retries": 944,
+                    "events": {
+                        "average": {
+                            "total_steps": 2,
+                            "successful_steps": 2,
+                            "step_accuracy": 0.8446601941747572
+                        },
+                        "click": {
+                            "total_steps": 247,
+                            "successful_steps": 209,
+                            "step_accuracy": 0.8461538461538461
+                        },
+                        "scroll": {
+                            "total_steps": 71,
+                            "successful_steps": 58,
+                            "step_accuracy": 0.8169014084507042
+                        },
+                        "typing": {
+                            "total_steps": 72,
+                            "successful_steps": 67,
+                            "step_accuracy": 0.9305555555555556
+                        },
+                        "HIL": {
+                            "total_steps": 11,
+                            "successful_steps": 6,
+                            "step_accuracy": 0.5454545454545454
+                        },
+                        "waiting": {
+                            "total_steps": 6,
+                            "successful_steps": 4,
+                            "step_accuracy": 0.6666666666666666
+                        },
+                        "slider-drag": {
+                            "total_steps": 3,
+                            "successful_steps": 2,
+                            "step_accuracy": 0.6666666666666666
+                        },
+                        "clear-typing": {
+                            "total_steps": 2,
+                            "successful_steps": 2,
+                            "step_accuracy": 1.0
+                        }
+                    }
+                },
+                "pass_k": {
+                    "click": {
+                        "total_steps": 247,
+                        "1": {
+                            "pass_at_k": 0.7948717948717947,
+                            "pass_power_k": 0.7948717948717947
+                        },
+                        "2": {
+                            "pass_at_k": 0.8367071524966262,
+                            "pass_power_k": 0.7669815564552412
+                        },
+                        "3": {
+                            "pass_at_k": 0.8461538461538461,
+                            "pass_power_k": 0.7504873294346981
+                        }
+                    },
+                    "typing": {
+                        "total_steps": 72,
+                        "1": {
+                            "pass_at_k": 0.8287037037037035,
+                            "pass_power_k": 0.8287037037037035
+                        },
+                        "2": {
+                            "pass_at_k": 0.9120370370370369,
+                            "pass_power_k": 0.7731481481481481
+                        },
+                        "3": {
+                            "pass_at_k": 0.9305555555555556,
+                            "pass_power_k": 0.7402263374485598
+                        }
+                    },
+                    "scroll": {
+                        "total_steps": 71,
+                        "1": {
+                            "pass_at_k": 0.6572769953051641,
+                            "pass_power_k": 0.6572769953051641
+                        },
+                        "2": {
+                            "pass_at_k": 0.7793427230046948,
+                            "pass_power_k": 0.5758998435054771
+                        },
+                        "3": {
+                            "pass_at_k": 0.8169014084507042,
+                            "pass_power_k": 0.5299947835159105
+                        }
+                    },
+                    "HIL": {
+                        "total_steps": 11,
+                        "1": {
+                            "pass_at_k": 0.5151515151515151,
+                            "pass_power_k": 0.5151515151515151
+                        },
+                        "2": {
+                            "pass_at_k": 0.5454545454545454,
+                            "pass_power_k": 0.494949494949495
+                        },
+                        "3": {
+                            "pass_at_k": 0.5454545454545454,
+                            "pass_power_k": 0.48148148148148145
+                        }
+                    },
+                    "waiting": {
+                        "total_steps": 6,
+                        "1": {
+                            "pass_at_k": 0.6111111111111112,
+                            "pass_power_k": 0.611111111111111
+                        },
+                        "2": {
+                            "pass_at_k": 0.6666666666666666,
+                            "pass_power_k": 0.5740740740740741
+                        },
+                        "3": {
+                            "pass_at_k": 0.6666666666666666,
+                            "pass_power_k": 0.5493827160493827
+                        }
+                    },
+                    "slider-drag": {
+                        "total_steps": 3,
+                        "1": {
+                            "pass_at_k": 0.3333333333333333,
+                            "pass_power_k": 0.3333333333333333
+                        },
+                        "2": {
+                            "pass_at_k": 0.5555555555555556,
+                            "pass_power_k": 0.1851851851851852
+                        },
+                        "3": {
+                            "pass_at_k": 0.6666666666666666,
+                            "pass_power_k": 0.11111111111111109
+                        }
+                    },
+                    "clear-typing": {
+                        "total_steps": 2,
+                        "1": {
+                            "pass_at_k": 0.8333333333333334,
+                            "pass_power_k": 0.8333333333333333
+                        },
+                        "2": {
+                            "pass_at_k": 1.0,
+                            "pass_power_k": 0.7222222222222222
+                        },
+                        "3": {
+                            "pass_at_k": 1.0,
+                            "pass_power_k": 0.6481481481481481
+                        }
+                    },
+                    "average": {
+                        "total_steps": 412,
+                        "1": {
+                            "pass_at_k": 0.7637540453074438,
+                            "pass_power_k": 0.7637540453074438
+                        },
+                        "2": {
+                            "pass_at_k": 0.8284789644012943,
+                            "pass_power_k": 0.7206040992448771
+                        },
+                        "3": {
+                            "pass_at_k": 0.8446601941747572,
+                            "pass_power_k": 0.6954332973750457
+                        }
+                    }
+                }
+            },
+            "efficiency": {
+                "average": {
+                    "total_step_count": 412,
+                    "retry_step_count": 670,
+                    "step_efficiency": 0.6149253731343284
+                },
+                "click": {
+                    "total_step_count": 247,
+                    "retry_step_count": 386,
+                    "step_efficiency": 0.6398963730569949
+                },
+                "scroll": {
+                    "total_step_count": 71,
+                    "retry_step_count": 132,
+                    "step_efficiency": 0.5378787878787878
+                },
+                "typing": {
+                    "total_step_count": 72,
+                    "retry_step_count": 102,
+                    "step_efficiency": 0.7058823529411765
+                },
+                "HIL": {
+                    "total_step_count": 11,
+                    "retry_step_count": 26,
+                    "step_efficiency": 0.4230769230769231
+                },
+                "waiting": {
+                    "total_step_count": 6,
+                    "retry_step_count": 12,
+                    "step_efficiency": 0.5
+                },
+                "slider-drag": {
+                    "total_step_count": 3,
+                    "retry_step_count": 9,
+                    "step_efficiency": 0.3333333333333333
+                },
+                "clear-typing": {
+                    "total_step_count": 2,
+                    "retry_step_count": 3,
+                    "step_efficiency": 0.6666666666666666
+                }
+            },
+            "mission": {
+                "mission_03": {
+                    "mission_description": "find me 3d japanese movies in pune",
+                    "total_step_count": 10,
+                    "retry_step_count": 11,
+                    "step_efficiency": 0.9090909090909091,
+                    "successful": true
+                },
+                "mission_05": {
+                    "mission_description": "goto flipkart and find me the return policy of mobiles in general. If the modal asks for signing in, then ignore (dont interact with modal) and continue. When searching through google choose the first valid search result of flipkart.",
+                    "total_step_count": 11,
+                    "retry_step_count": 16,
+                    "step_efficiency": 0.6875,
+                    "successful": false
+                },
+                "mission_04": {
+                    "mission_description": "find me all concerts in hyd in ascending order of their price.",
+                    "total_step_count": 11,
+                    "retry_step_count": 21,
+                    "step_efficiency": 0.5238095238095238,
+                    "successful": false
+                },
+                "mission_02": {
+                    "mission_description": "search for a days stay in hyd on nov 1 2025. leave number of persons checking in to me. Only show results with budget of 5k and results ordered by closeness to city.",
+                    "total_step_count": 11,
+                    "retry_step_count": 16,
+                    "step_efficiency": 0.6875,
+                    "successful": false
+                },
+                "mission_01": {
+                    "mission_description": "search for one way flight from hyd to chennai on nov 1 2025",
+                    "total_step_count": 16,
+                    "retry_step_count": 18,
+                    "step_efficiency": 0.8888888888888888,
+                    "successful": true
+                },
+                "mission_07": {
+                    "mission_description": "Goto screener and check if cash conversion cycle for reliance industry has improved or decreased for mar2025 wrt mar 2024. While searching in google, take help of suggestions and type one character at a time.",
+                    "total_step_count": 19,
+                    "retry_step_count": 48,
+                    "step_efficiency": 0.3958333333333333,
+                    "successful": false
+                },
+                "mission_06": {
+                    "mission_description": "find me the most discounted mobile related products (includes mobiles and acessories), sorted by ascending order of their price",
+                    "total_step_count": 7,
+                    "retry_step_count": 9,
+                    "step_efficiency": 0.7777777777777778,
+                    "successful": true
+                },
+                "mission_08": {
+                    "mission_description": "goto airindia and book a flight to beijing. leaving from hyd on nov1, then from chennai on nov 2, then from delhi on nov 3. From there i plan to goto beijing.",
+                    "total_step_count": 29,
+                    "retry_step_count": 34,
+                    "step_efficiency": 0.8529411764705882,
+                    "successful": false
+                },
+                "mission_09": {
+                    "mission_description": "check for managerial jobs at servicenow. When typing, type one character at a time.",
+                    "total_step_count": 12,
+                    "retry_step_count": 12,
+                    "step_efficiency": 1.0,
+                    "successful": true
+                },
+                "mission_010": {
+                    "mission_description": "check out stock picks based on cofee can investing by saurabh mukherjee",
+                    "total_step_count": 2,
+                    "retry_step_count": 2,
+                    "step_efficiency": 1.0,
+                    "successful": true
+                },
+                "mission_012": {
+                    "mission_description": "goto tickertape homepage and screen stocks from nifty50 universe. Filter out stocks whose PE is between 60 to 100. Sort the stocks in ascending order of 1 month returns. If any button is not fully in view, scroll it to get it in view before performing action on it. Always type one character at a time.",
+                    "total_step_count": 27,
+                    "retry_step_count": 33,
+                    "step_efficiency": 0.8181818181818182,
+                    "successful": false
+                },
+                "mission_011": {
+                    "mission_description": "goto apple product page on amazon and get the most discounted apple product",
+                    "total_step_count": 10,
+                    "retry_step_count": 13,
+                    "step_efficiency": 0.7692307692307693,
+                    "successful": false
+                },
+                "mission_013": {
+                    "mission_description": "search tickertape and find market mood index score for today.",
+                    "total_step_count": 4,
+                    "retry_step_count": 4,
+                    "step_efficiency": 1.0,
+                    "successful": true
+                },
+                "mission_014": {
+                    "mission_description": "find how much market mood index has changed since last month.",
+                    "total_step_count": 4,
+                    "retry_step_count": 6,
+                    "step_efficiency": 0.6666666666666666,
+                    "successful": true
+                },
+                "mission_015": {
+                    "mission_description": "goto google calendar. wait for human to login. create an weekly recurring event on dec 2 2025 on 9:30am for 1 hr. subject is  \"casual meeting\" and location is quake arena kondapur (type character by character and select from suggestions) . open the map and copy the address and paste it in description box.",
+                    "total_step_count": 32,
+                    "retry_step_count": 47,
+                    "step_efficiency": 0.6808510638297872,
+                    "successful": false
+                },
+                "mission_016": {
+                    "mission_description": "goto rottentomatoes home page. get all the best action movies for year 2025. Sort in descending order of tomatometer. When typing click on appropriate autosuggestion only if its among top 3 suggestions. Before performing any action on modal, make sure the modal is fully visible (if not scroll to make it visble). Also, perform the actions in order in which they are mentioned in objective.",
+                    "total_step_count": 9,
+                    "retry_step_count": 14,
+                    "step_efficiency": 0.6428571428571429,
+                    "successful": false
+                },
+                "mission_025": {
+                    "mission_description": "Brief objective of this scenario",
+                    "total_step_count": 32,
+                    "retry_step_count": 86,
+                    "step_efficiency": 0.37209302325581395,
+                    "successful": false
+                },
+                "mission_019": {
+                    "mission_description": "i want to goto chikmagaluru with my family on nov 27 to dec3 2025. im only interested in famous attractions. lets create a trip using tripadvisor's ai powered trip planner.  If you are unsure of any details during planning, provide the control to me. Type till the clikable element is among top three suggestions when autosuggestion is in progress.",
+                    "total_step_count": 27,
+                    "retry_step_count": 40,
+                    "step_efficiency": 0.675,
+                    "successful": false
+                },
+                "mission_021": {
+                    "mission_description": "goto google maps and change language to hindi (in this order). im planning a 2 wheeler trip from hyderabad to bengaluru. find shortest distance  (in miles). Type in only whole words in hindi. if popus are not hindering actions from continuing then ignore them and continue with the steps.",
+                    "total_step_count": 17,
+                    "retry_step_count": 36,
+                    "step_efficiency": 0.4722222222222222,
+                    "successful": false
+                },
+                "mission_020": {
+                    "mission_description": "find me all remote jobs for work experience of less than 4 year. For salary range fallback to me. Sort the results by lsting date. Dont interact with any modals.",
+                    "total_step_count": 11,
+                    "retry_step_count": 24,
+                    "step_efficiency": 0.4583333333333333,
+                    "successful": false
+                },
+                "mission_022": {
+                    "mission_description": "goto wikipedia and find me current gini index of cambodia and which king signed first treaty of protection from france ? Only answer from context you get from this search. Dont answer from your memory. During google search, type character by charcater till the result in auto suggestion is at the top.",
+                    "total_step_count": 20,
+                    "retry_step_count": 23,
+                    "step_efficiency": 0.8695652173913043,
+                    "successful": true
+                },
+                "mission_023": {
+                    "mission_description": "find me a all dates for cruise in dec 2025 to LA,California. I want the cruise to last for a week.",
+                    "total_step_count": 16,
+                    "retry_step_count": 24,
+                    "step_efficiency": 0.6666666666666666,
+                    "successful": false
+                },
+                "mission_024": {
+                    "mission_description": "goto irctc ticketing platform and search for general first class train ticket from secunderabad jn to bengaluru on Dec 12 2025. When handling with modals or authentication or ambiguity, fallback to user. Show me all trains that depart before 1230 in the noon",
+                    "total_step_count": 28,
+                    "retry_step_count": 52,
+                    "step_efficiency": 0.5384615384615384,
+                    "successful": false
+                },
+                "mission_026": {
+                    "mission_description": "book a single seater ac sleeper bus ticket in redbus for 26 sept 2025 from kukatpally to bengaluru. Choose highest rated bus and book a lower seat closest to driver",
+                    "total_step_count": 12,
+                    "retry_step_count": 20,
+                    "step_efficiency": 0.6,
+                    "successful": false
+                },
+                "mission_027": {
+                    "mission_description": "Navigate to Stack Overflow and determine how many JavaScript-related questions were posted in the last 24 hours. Ignore cookie or login pop-ups unless they block interaction with required elements. Only pause and ask the user for guidance if a blocking modal prevents further progress.\u201d",
+                    "total_step_count": 15,
+                    "retry_step_count": 36,
+                    "step_efficiency": 0.4166666666666667,
+                    "successful": false
+                },
+                "mission_029": {
+                    "mission_description": "search for pendrive (exact word) on amazon and using filters choose pendrive having 64gb and brand as sandisk and support for usb3 (apply filters in exact order).",
+                    "total_step_count": 7,
+                    "retry_step_count": 10,
+                    "step_efficiency": 0.7,
+                    "successful": true
+                },
+                "mission_030": {
+                    "mission_description": "goto gmail and let the user login. draft a mail to abc@gmail.com with subject as \"invitation\". The content should be \"You are invited to the event !!\". Make the email confidential with no passcode and expiration in a week",
+                    "total_step_count": 13,
+                    "retry_step_count": 15,
+                    "step_efficiency": 0.8666666666666667,
+                    "successful": true
+                }
+            },
+            "summary": {
+                "total_records": 412,
+                "processed_records": 412,
+                "skipped_records": 0
+            },
+            "ai_summary": {
+                "Event Identification": "**Web Agent Performance Summary**\n\n**Overall Insights:**  \nThe web agent demonstrates strong performance in event identification and step completeness, with an average accuracy of **88%** and an F1 score of **0.72**. Precision is notably high (**0.83**), indicating the agent is good at correctly identifying events when it makes a prediction. However, recall (**0.69**) is lower, suggesting some missed events.\n\n**Event-Level Analysis:**  \n- **Click Events:** Outstanding performance (accuracy **96%**, F1 **0.93**), making click actions the most reliable across domains.  \n- **Typing Events:** Also strong (accuracy **86%**, F1 **0.90**), with high precision (**0.94**), indicating the agent rarely misidentifies typing actions.\n- **Scroll Events:** Moderate performance (accuracy **74%**, F1 **0.80**), suggesting occasional difficulties in correctly identifying or completing scroll steps.\n- **Waiting Events:** Lower accuracy (**61%**) but high precision (**0.92**), indicating the agent is cautious but sometimes fails to recognize all waiting steps.\n- **HIL (Human-in-the-Loop) Events:** Weakest among common events (accuracy **52%**, F1 **0.60**), showing significant room for improvement in complex or ambiguous tasks.\n- **Slider-Drag Events:** Very poor accuracy (**33%**) but perfect precision (**1.0**), meaning the agent only attempts slider-drag when very confident, but misses most opportunities.\n- **Clear-Typing Events:** Good accuracy (**83%**) but low precision (**0.45**), indicating frequent false positives.\n\n**Domain-Level Pros & Cons:**  \n- **Pros:** Domains with frequent click and typing actions (e.g., e-commerce, form filling) perform best, with high step completeness and efficiency.\n- **Cons:** Domains requiring complex interactions (e.g., sliders, HIL, waiting for dynamic content) see lower success rates and efficiency, often requiring retries and resulting in incomplete missions.\n\n**Summary:**  \nThe agent excels in straightforward, high-frequency actions but struggles with nuanced or less common events. Improving recall and handling of complex interactions will enhance overall mission success, especially in domains with advanced UI elements.\n\n**Short Summary:**\nClick and typing events perform best across domains, with high accuracy and F1 scores. Scroll and waiting events show moderate performance, while HIL and slider-drag events have low accuracy and recall, indicating challenges in those domains. Clear-typing is accurate but lacks precision. Overall, the agent excels in basic interactions but struggles with complex or less frequent events.",
+                "Step Completeness": "**Web Agent Performance Summary**\n\n**Overall Insights:**  \nThe web agent demonstrates solid overall performance, with an average accuracy of 77.6% and precision of 78.7%. However, recall (65.4%) and F1 score (68.1%) indicate room for improvement in consistently identifying and completing all required events.\n\n**Event-Level Analysis:**  \n- **Typing:** This event is the agent\u2019s strongest area, with the highest accuracy (82.9%), precision (90.9%), recall (82.9%), and F1 score (86.7%). The agent reliably identifies and completes typing actions across domains.\n- **Click:** Click events also perform well, with high accuracy (79.4%) and recall (79.4%), though precision (75.4%) and F1 (77.4%) suggest occasional misidentification or incomplete steps.\n- **Clear-Typing:** Shows high accuracy (83.3%) and recall (83.3%), but low precision (45.5%) and moderate F1 (58.8%), indicating frequent false positives.\n- **Scroll & Waiting:** These events have moderate accuracy (66.0% and 61.1%, respectively). Waiting events have high precision (91.7%) but low recall, suggesting the agent is cautious but sometimes misses valid waiting steps.\n- **HIL & Slider-Drag:** These are the weakest events. HIL has low accuracy (51.5%) and recall, while slider-drag is particularly poor (33.3% accuracy and recall), despite perfect precision (1.0), indicating the agent only acts when very confident but often fails to identify or complete these steps.\n\n**Domain-Level Pros & Cons:**  \n- **Pros:** Domains requiring typing, clicking, and clear-typing actions are handled well, with high step completeness and event identification.\n- **Cons:** Domains involving slider-drag, HIL, and waiting events are problematic, with low accuracy and recall, leading to incomplete missions and more retries.\n\n**Summary:**  \nThe agent excels in standard web interactions (typing, clicking) but struggles with complex or less frequent events (slider-drag, HIL). Improving recall and step completeness for these challenging events will enhance overall mission success and efficiency.\n\n**Short Summary:**\nTyping and click events show strong performance, with high accuracy and F1 scores. Scroll and waiting events are moderately reliable. Domains involving HIL and slider-drag actions perform poorly, with low accuracy and F1, indicating challenges in these areas. Clear-typing is accurate but lacks precision. Overall, the agent excels in basic interactions but struggles with complex or less common events.",
+                "Mission Efficiency": "**Web Agent Performance Summary**\n\n**Overall Insights:**\nThe web agent demonstrates moderate success across a variety of domains and event types. Out of 30 missions, only 10 were successful, indicating room for improvement in reliability and robustness. Step efficiency varies widely, with values ranging from 0.37 to 1.0, suggesting inconsistent performance in minimizing retries.\n\n**Pros:**\n- **High Success & Efficiency:** Missions involving straightforward search and filter tasks (e.g., finding market mood index, searching for pendrives on Amazon, checking managerial jobs at ServiceNow, and simple stock pick queries) show high step efficiency (\u22650.7) and consistent success. Domains such as e-commerce (Amazon, Flipkart), job search, and financial data retrieval (Tickertape, Screener) perform relatively well when the tasks are simple and require minimal interaction with complex UI elements.\n- **Event Identification:** The agent is generally effective at identifying basic events like clicks and typing, especially when the required actions are linear and do not involve modals or dynamic content.\n\n**Cons:**\n- **Low Success & Efficiency:** Missions involving multi-step workflows, complex filtering, or interaction with dynamic modals (e.g., booking travel on IRCTC, Redbus, Air India, or creating events in Google Calendar) have low step efficiency (<0.7) and high retry counts, often resulting in failure. Domains with authentication, pop-ups, or ambiguous UI elements (travel, ticketing, calendar, trip planning) are particularly challenging.\n- **Complex Event Handling:** The agent struggles with scenarios requiring precise tool usage (e.g., scrolling to make buttons visible, handling modals, or typing character-by-character with autosuggestions), leading to incomplete steps and increased retries.\n- **Modal & Pop-up Management:** Missions that require ignoring or interacting with modals/pop-ups frequently fail, indicating a need for improved event handling logic.\n\n**Summary:**  \nThe agent excels in simple, direct tasks on stable domains but falters in complex, multi-step missions involving dynamic UI elements, modals, or ambiguous workflows. Improving event handling and step completeness in these challenging domains will be key to enhancing overall performance.\n\n**Short Summary:**\nThe web agent performs best on domains like job search (Servicenow), stock screening (Tickertape), and simple e-commerce tasks (Amazon, Flipkart), with high step efficiency and success rates. Complex domains involving travel bookings (IRCTC, Redbus, AirIndia), event planning (Google Calendar), and multi-step filtering (Tripadvisor, Screener) show lower efficiency and frequent failures, indicating challenges with modals, multi-step navigation, and dynamic content.",
+                "Event Efficiency": "**Web Agent Performance Summary**\n\n**Overall Insights:**  \nThe web agent demonstrates moderate efficiency across missions, with an average step efficiency of **0.61** (total steps/retries). This indicates that, on average, the agent requires more than one attempt per step, suggesting room for improvement in reliability and precision.\n\n**Event Analysis:**  \n- **Typing** events show the highest step efficiency (**0.71**), indicating strong performance in identifying and completing typing actions with fewer retries.  \n- **Click** events also perform relatively well (**0.64**), suggesting the agent is generally effective at recognizing and executing clicks, though some retries are still needed.\n- **Scroll** and **waiting** events have lower efficiencies (**0.54** and **0.50**, respectively), implying the agent struggles more with these actions, possibly due to dynamic content or timing issues.\n- **HIL** (possibly a specialized or complex event) and **slider-drag** events have the lowest efficiencies (**0.42** and **0.33**), highlighting significant challenges in both event identification and tool accuracy for these types.\n- **Clear-typing** events, though infrequent, show decent efficiency (**0.67**), but the low sample size may limit the reliability of this metric.\n\n**Domain Performance:**  \nWhile specific domains are not listed in the metrics, the event breakdown suggests that domains requiring more complex interactions (e.g., sliders, HIL) are less reliably handled. Simpler domains with basic typing and clicking actions are managed more efficiently.\n\n**Pros:**  \n- Strong performance in typing and click events.\n- Reasonable efficiency in clear-typing actions.\n\n**Cons:**  \n- High retry rates for scroll, waiting, HIL, and slider-drag events.\n- Lower efficiency in domains with complex or dynamic interactions.\n\n**Recommendations:**  \nFocus on improving event identification and tool accuracy for complex actions and dynamic domains to reduce retries and enhance overall mission success.\n\n**Short Summary:**\nTyping and clear-typing events show the highest step efficiency, indicating strong agent performance. Click events also perform well, while scroll and waiting events lag behind. Slider-drag and HIL events have the lowest efficiency, suggesting these domains and actions are challenging for the agent and may need improvement. Overall, retries are frequent, highlighting opportunities to boost reliability across domains.",
+                "Pass K": "**Web Agent Performance Summary**\n\n**Overall Insights:**  \nThe web agent demonstrates strong performance in event identification and step completeness across most common events, with an average pass_at_k of 0.76 on the first attempt, improving to 0.84 by the third retry. This indicates that the agent reliably identifies and completes steps, especially when allowed multiple attempts.\n\n**Pros:**  \n- **Click and Typing Events:** These are the agent\u2019s strengths. Click events (247 steps) show high pass rates (0.79\u20130.85), and typing events (72 steps) perform even better (0.83\u20130.93). Both maintain high step completeness, suggesting robust handling of standard web interactions.\n- **Step Efficiency:** The agent\u2019s retry mechanism is effective, with significant improvements in pass rates by the third attempt, especially for typing and click events.\n- **Clear-Typing:** Although infrequent (2 steps), this event achieves perfect identification and high completeness by the second and third attempts.\n\n**Cons:**  \n- **Scroll Events:** While pass rates improve with retries (0.66 to 0.82), step completeness drops (0.66 to 0.53), indicating challenges in accurately executing scroll actions.\n- **Complex/Low-Frequency Events:** HIL (11 steps), waiting (6 steps), and slider-drag (3 steps) events have lower pass rates and step completeness, with slider-drag particularly weak (pass_power_k drops to 0.11 by the third attempt). These events may require more sophisticated handling or additional training.\n- **Domain Sensitivity:** Domains requiring advanced interactions (e.g., sliders, custom UI elements) are less reliably handled, as reflected in lower metrics for HIL and slider-drag.\n\n**Summary:**  \nThe agent excels in standard web actions (click, typing) and benefits from retries. However, it struggles with complex or less common events (scroll, slider-drag, HIL), suggesting a need for targeted improvements in these areas. Overall, the agent is well-suited for typical web automation tasks but may underperform in domains with specialized interactions.\n\n**Short Summary:**\nTyping and click events show the highest accuracy and reliability across domains, with pass@k rates above 0.79. Scroll and waiting events perform moderately, while HIL and slider-drag events lag behind, indicating challenges in complex or less frequent interactions. Overall, the agent demonstrates strong performance in common actions but needs improvement in specialized event handling.",
+                "overall": "**Web Agent Performance Summary**\n\n**Overall Insights:**\nThe web agent demonstrates moderate efficiency across missions, with an average step efficiency of 0.61 (total steps/retries). Out of 30 missions, only 9 were fully successful, indicating challenges in reliably completing complex tasks. Event identification is strong overall (accuracy: 88%), especially for click (96%) and typing (86%) events. Step completeness is lower (accuracy: 77%), suggesting that while events are recognized, executing them correctly is more difficult.\n\n**Pros:**\n- **Event Performance:** Click and typing events are the agent\u2019s strengths, with high identification accuracy (click: 96%, typing: 86%) and step completeness (typing: 83%). Pass@k metrics for these events are also robust, with pass@3 above 84% for click and 93% for typing.\n- **Domains Performing Well:** Missions involving straightforward search and filter tasks (e.g., finding Japanese movies, searching for flights, checking managerial jobs, and simple product searches on Amazon) tend to succeed. These domains are less reliant on complex UI interactions or multi-step reasoning.\n- **Typing Efficiency:** Typing events have the highest step efficiency (0.71), indicating fewer retries are needed compared to other event types.\n\n**Cons:**\n- **Challenging Domains:** Missions involving financial platforms (e.g., screener, tickertape), travel planning (tripadvisor, IRCTC, redbus), and multi-modal interactions (Google Maps, Gmail, calendar) show low efficiency and high retry rates. These domains often require handling pop-ups, modals, or complex sorting/filtering, which the agent struggles with.\n- **Event Weaknesses:** Scroll, HIL (Human-in-the-Loop), waiting, and slider-drag events have low identification and completeness scores (HIL accuracy: 51%, slider-drag: 33%). These events are error-prone and often require multiple retries.\n- **Complex Missions:** Missions with many steps and conditional logic (e.g., booking multi-city flights, creating calendar events, or filtering stocks) are rarely successful, with step efficiency dropping below 0.5 in several cases.\n\n**Summary:**  \nThe agent excels in simple, direct tasks and basic event types (click, typing) but faces significant challenges in complex, multi-step domains and less common event types. Improving handling of UI complexities and event execution accuracy will be key to broader mission success.\n\n**Short Summary:**\nThe web agent performs best on domains involving flights, jobs, and e-commerce (Amazon, Flipkart), with high success and step efficiency. Typing and click events show strong accuracy and completeness, while scroll, HIL, and slider-drag events lag behind. Missions on finance, travel planning, and complex filtering (Tickertape, IRCTC, Tripadvisor) are less efficient and often unsuccessful, indicating challenges with multi-step or modal-heavy workflows."
+            }
+        }
+    }
+]

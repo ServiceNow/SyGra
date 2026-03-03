@@ -1,0 +1,16 @@
+{
+    "efficiency": 0.62,
+    "mission_accuracy": 0.72,
+    "mean_steps": 3.83,
+    "pass_at_1": 0.712,
+    "pass_at_2": 0.76,
+    "pass_at_3": 0.784,
+    "pass_power_1": 0.712,
+    "pass_power_2": 0.696,
+    "pass_power_3": 0.648,
+    "total_records": 375,
+    "correct_records": 270,
+    "total_missions": 125,
+    "successful_missions": 98,
+    "mission_success_rate": 0.784
+}
