@@ -122,7 +122,7 @@ except ImportError:
     DATA_UTILS_AVAILABLE = False
 
 
-__version__ = "1.0.0"
+__version__ = "2.0.0.post1"
 __author__ = "SyGra Team"
 __description__ = "Graph-oriented Synthetic data generation Pipeline library"
 
