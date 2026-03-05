@@ -1,0 +1,17 @@
+[
+  {
+    "id": "concept_001",
+    "prompt": "A modern minimalist office space with floor-to-ceiling windows, natural wood desk, ergonomic black chair, indoor plants, soft natural lighting, clean and organized workspace",
+    "theme": "Modern Office Space"
+  },
+  {
+    "id": "concept_002",
+    "prompt": "A cozy coffee shop interior with exposed brick walls, vintage pendant lights, wooden tables and chairs, barista counter with espresso machine, warm ambient lighting, people enjoying coffee",
+    "theme": "Cozy Coffee Shop"
+  },
+  {
+    "id": "concept_003",
+    "prompt": "A futuristic cityscape at night with neon lights, flying vehicles, towering skyscrapers with holographic advertisements, advanced architecture, cyberpunk aesthetic, rain-slicked streets",
+    "theme": "Futuristic City"
+  }
+]

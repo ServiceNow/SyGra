@@ -1,0 +1,41 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: "tasks/examples/image_edit/multi_image_edits.json"
+    file_format: "json"
+
+graph_config:
+  nodes:
+    edit_image:
+      node_type: llm
+      output_keys: edited_image
+      prompt:
+        - user:
+            - type: image_url
+              image_url: "{images}"
+            - type: text
+              text: "{edit_instruction}"
+      model:
+        name: gemini_2_5_pro
+        output_type: image
+        parameters:
+          quality: medium
+
+  edges:
+    - from: START
+      to: edit_image
+    - from: edit_image
+      to: END
+
+output_config:
+  output_map:
+    id:
+      from: id
+    title:
+      from: title
+    original_image:
+      from: source_image
+    edit_instruction:
+      from: edit_instruction
+    edited_image:
+      from: edited_image

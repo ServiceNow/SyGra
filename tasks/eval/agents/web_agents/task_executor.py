@@ -416,7 +416,7 @@ class FetchNextActionPostProcessor(NodePostProcessorWithState):
             # tool_calls = resp_dict.get("tool_calls", [])
             response_text = content
             tool_calls = state.get("tool_calls", [])
-        except:
+        except Exception:
             response_text = str(content) if content else ""
             tool_calls = []
 
