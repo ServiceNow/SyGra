@@ -56,6 +56,7 @@ nav:
       - Adding Edges: getting_started/adding_edges.md
       - Create a Synthetic Datagen Pipeline: getting_started/create_new_pipeline.md
       - SyGra Studio: getting_started/create_task_ui.md
+      - Evaluation: eval/README.md
   - Concepts:
       - Data Handler:
           - Overview: concepts/data_handler/README.md
@@ -98,6 +99,14 @@ nav:
   - SyGra Library:
       - API Reference: library/sygra_library.md
       - Examples: library/sygra_library_examples.md
+  - Evaluation:
+      - Overview: eval/README.md
+      - Metric:
+          - Overview: eval/metrics/README.md
+          - Unit Metrics: eval/metrics/unit_metrics_summary.md
+          - Aggregator Metrics: eval/metrics/aggregator_metrics_summary.md
+      - Agents:
+          - Web Agents Evaluation: eval/agents/web_agents_eval.md
   - Contribute: development.md
 plugins:
   - search

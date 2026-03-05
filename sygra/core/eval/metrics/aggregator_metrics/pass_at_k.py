@@ -63,28 +63,33 @@ class PassAtKMetric(BaseAggregatorMetric):
         )
 
     def calculate(self, results: List[UnitMetricResult]) -> Dict[str, Any]:
-        """Calculate  Pass@k score.
+        """Calculate Pass@k scores for all k values from 1 to configured k.
 
         Args:
             results: List of UnitMetricResult
 
         Returns:
-            dict: {"pass@k": float (0.0 to 1.0)}
+            dict: {"pass@1": float, "pass@2": float, ..., "pass@k": float}
         """
         if not results:
             logger.warning(f"{self.__class__.__name__}: No results provided")
-            return {
-                "pass@k": 0.0,
-            }
+            return {f"pass@{i}": 0.0 for i in range(1, self.k + 1)}
+
         # Total number of attempts/samples
         n = len(results)
         # Number of correct solutions
         c = self._count_correct(results)
-        pass_at_k_value = self.pass_at_k(n, c, self.k)
 
-        return {
-            "pass@k": pass_at_k_value,
-        }
+        # Calculate pass@k for all values from 1 to k
+        result_dict = {}
+        for k_val in range(1, self.k + 1):
+            if k_val <= n:
+                result_dict[f"pass@{k_val}"] = self.pass_at_k(n, c, k_val)
+            else:
+                # If k_val > n, we can't calculate it
+                result_dict[f"pass@{k_val}"] = 0.0
+
+        return result_dict
 
     @staticmethod
     def pass_at_k(n: int, c: int, k: int) -> float:
