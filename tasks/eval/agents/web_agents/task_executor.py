@@ -76,13 +76,12 @@ LOG_MESSAGE_RESPONSE = "Response logged to {}"
 class RequestResponseLogger:
     """
     Comprehensive logging system for tracking exact request/response payloads.
-    Logs everything sent to Claude and received back for debugging.
+    Logs everything sent to the model and received back for debugging.
     """
 
     @staticmethod
     def setup_logger():
         """Set up logging directory and file structure."""
-        # Use the local logs directory within the web_agent_task_flow task
         current_dir = os.path.dirname(os.path.abspath(__file__))
         log_dir = os.path.join(current_dir, 'logs')
         os.makedirs(log_dir, exist_ok=True)
@@ -93,83 +92,70 @@ class RequestResponseLogger:
         return log_file
 
     @staticmethod
-    def log_request(request_payload: dict, step_number: int):
-        """Log the exact request payload sent to Claude."""
+    def _write_log_entry(log_entry: dict, log_type: str):
+        """Write a log entry to the log file.
+        
+        Args:
+            log_entry: Log entry dictionary to write
+            log_type: Type of log (REQUEST or RESPONSE) for logging message
+        """
         log_file = RequestResponseLogger.setup_logger()
+        
+        try:
+            logs = []
+            if os.path.exists(log_file):
+                with open(log_file, 'r') as f:
+                    logs = json.load(f)
 
+            logs.append(log_entry)
+
+            with open(log_file, 'w') as f:
+                json.dump(logs, f, indent=2, default=str)
+
+            log_message = LOG_MESSAGE_REQUEST if log_type == "REQUEST" else LOG_MESSAGE_RESPONSE
+            logger.info(log_message.format(log_file))
+        except Exception as e:
+            logger.error(f"Failed to log {log_type.lower()}: {e}")
+
+    @staticmethod
+    def log_request(request_payload: dict, step_number: int):
+        """Log the exact request payload sent to the model."""
         log_entry = {
             "type": "REQUEST",
             "timestamp": datetime.now().isoformat(),
             "retry_number": step_number,
             "payload": request_payload
         }
-
-        # Append to log file
-        try:
-            if os.path.exists(log_file):
-                with open(log_file, 'r') as f:
-                    logs = json.load(f)
-            else:
-                logs = []
-
-            logs.append(log_entry)
-
-            with open(log_file, 'w') as f:
-                json.dump(logs, f, indent=2, default=str)
-
-            logger.info(LOG_MESSAGE_REQUEST.format(log_file))
-        except Exception as e:
-            logger.error(f"Failed to log request: {e}")
+        RequestResponseLogger._write_log_entry(log_entry, "REQUEST")
 
     @staticmethod
     def log_response(response_data: dict, step_number: int):
-        """Log the exact response received from Claude."""
-        log_file = RequestResponseLogger.setup_logger()
-
+        """Log the exact response received from the model."""
         log_entry = {
             "type": "RESPONSE",
             "timestamp": datetime.now().isoformat(),
             "retry_number": step_number,
             "response": response_data
         }
-
-        # Append to log file
-        try:
-            if os.path.exists(log_file):
-                with open(log_file, 'r') as f:
-                    logs = json.load(f)
-            else:
-                logs = []
-
-            logs.append(log_entry)
-
-            with open(log_file, 'w') as f:
-                json.dump(logs, f, indent=2, default=str)
-
-            logger.info(LOG_MESSAGE_RESPONSE.format(log_file))
-        except Exception as e:
-            logger.error(f"Failed to log response: {e}")
+        RequestResponseLogger._write_log_entry(log_entry, "RESPONSE")
 
     @staticmethod
-    def is_server_error(response_text: str, tool_calls: List[Dict[str, Any]]) -> bool:
+    def is_server_error(response_text: str, tool_calls: List[Dict[str, Any]] = None) -> bool:
         """
         Detect if the response contains a server/infrastructure error.
         Server errors are transient issues that might be resolved in subsequent retries.
 
-        Examples:
-        - API timeouts
-        - Service unavailable
-        - Throttling exceptions
-        - Internal server errors
-
         Args:
             response_text: Model's text response
-            tool_calls: Model's tool calls
+            tool_calls: Model's tool calls (unused, kept for backward compatibility)
 
         Returns:
             bool: True if this is a server error, False otherwise
         """
-        response_lower = response_text.lower() if response_text else ""
+        if not response_text:
+            return False
+            
+        response_lower = response_text.lower()
         for marker in SERVER_ERROR_MARKERS:
             if marker.lower() in response_lower:
                 logger.warning(f"Server error detected: {marker}")
@@ -189,7 +175,8 @@ class FetchNextActionPreProcessor(NodePreProcessor):
     """
 
     @classmethod
-    def retry_failure_and_chat_injection(cls, state: SygraState, curr_retry: int, retry_prompt_injection: str) -> SygraState:
+    def retry_failure_and_chat_injection(cls, state: SygraState, curr_retry: int,
+                                         retry_prompt_injection: str) -> SygraState:
         """Handle retry failure and inject into chat history.
         
         Args:
@@ -207,12 +194,11 @@ class FetchNextActionPreProcessor(NodePreProcessor):
         prev_retry_key = f"{RETRY_KEY_PREFIX}{curr_retry - 1}"
         retry_responses = state.get(MODEL_RESPONSES_KEY, {})
 
-        # If previous retry detail is not present in retry_responses, it is some flow issue. Fallback to base chat_history
         if prev_retry_key not in retry_responses:
             logger.warning(f"{cls.__name__}: Previous retry data not found for {prev_retry_key}")
             state[CHAT_HISTORY_STATE_KEY] = copy(state[CHAT_HISTORY_BASE_KEY])
-            if ORIGINAL_USER_TEXT_KEY is not None:
-                state[CURRENT_USER_TEXT_KEY] = state.get(ORIGINAL_USER_TEXT_KEY, "")
+            if ORIGINAL_USER_TEXT_KEY in state:
+                state[CURRENT_USER_TEXT_KEY] = state[ORIGINAL_USER_TEXT_KEY]
             return state
 
         prev_retry_data = retry_responses[prev_retry_key]
@@ -281,15 +267,12 @@ class FetchNextActionPreProcessor(NodePreProcessor):
             "content": prev_response_text if prev_response_text else NO_TEXT_RESPONSE_PLACEHOLDER
         }
 
-        # Add tool calls if present (in format expected by chat history)
-        if prev_tool_calls and len(prev_tool_calls) > 0:
+        if prev_tool_calls:
             assistant_turn["tool_calls"] = prev_tool_calls
-        else:
-            logger.debug(f"No tool calls selected by the assistant.")
 
         modified_history.append(assistant_turn)
 
-        if prev_tool_calls and len(prev_tool_calls) > 0:
+        if prev_tool_calls:
             for tool_call in prev_tool_calls:
                 tool_turn = {
                     "role": CHAT_ROLE_TOOL,
@@ -298,9 +281,6 @@ class FetchNextActionPreProcessor(NodePreProcessor):
                 }
                 modified_history.append(tool_turn)
             logger.info(f"{cls.__name__}: Added {len(prev_tool_calls)} tool turn(s) after assistant")
-        else:
-            logger.debug(
-                f"{cls.__name__}: No tool turn after assistant since previous retry response had no tool calls")
 
         logger.info(
             f"{cls.__name__}: Appended valid failed retry context. History length: {len(modified_history)}")
@@ -313,39 +293,78 @@ class FetchNextActionPreProcessor(NodePreProcessor):
             step_match_results = state.get(EVALUATION_STEP_MATCH_KEY, {})
             tool_match_results = state.get(EVALUATION_TOOL_MATCH_KEY, {})
 
-            prev_step_eval = step_match_results.get(prev_retry_key)
             prev_tool_eval = tool_match_results.get(prev_retry_key)
 
             # Determine if tool was correct
             tool_correct = prev_tool_eval.get('correct', False) if prev_tool_eval else False
 
-            # Extract predicted tool from previous retry data
-            predicted_tool_raw = prev_tool_calls[0].get('function', {}).get('name',
-                                                                             'unknown') if prev_tool_calls else 'unknown'
-            predicted_base_tool = predicted_tool_raw.replace(TOOL_NAME_SUFFIX, '')
-            predicted_tool = TOOL_NAME_MAPPINGS.get(predicted_base_tool, predicted_base_tool)
+            predicted_tool = cls._extract_predicted_tool(prev_tool_calls)
 
-            if not tool_correct:
-                failure_hint = FAILURE_HINT_TOOL_INCORRECT.format(predicted_tool=predicted_tool)
-            else:
-                failure_hint = FAILURE_HINT_PARAMS_INCORRECT.format(predicted_tool=predicted_tool)
+            failure_hint = (FAILURE_HINT_TOOL_INCORRECT if not tool_correct 
+                          else FAILURE_HINT_PARAMS_INCORRECT).format(predicted_tool=predicted_tool)
 
-            if state.get(ORIGINAL_USER_TEXT_KEY) is None:
+            if ORIGINAL_USER_TEXT_KEY not in state:
                 state[ORIGINAL_USER_TEXT_KEY] = state.get(CURRENT_USER_TEXT_KEY, "")
 
-            failure_hint_user_text = FAILURE_HINT_RETRY_TEMPLATE.format(
+            state[CURRENT_USER_TEXT_KEY] = FAILURE_HINT_RETRY_TEMPLATE.format(
                 failure_hint=failure_hint,
                 retry_number=curr_retry
             )
-
-            state[CURRENT_USER_TEXT_KEY] = failure_hint_user_text
             logger.info(f"{cls.__name__}: Modified current_user_text with failure hint")
         else:
-            # Keep original current_user_text unchanged
             logger.info(
                 f"{cls.__name__}: retry_prompt_injection is '{retry_prompt_injection}', keeping original prompt")
 
         return state
+
+    @classmethod
+    def _extract_predicted_tool(cls, tool_calls: List[Dict[str, Any]]) -> str:
+        """Extract and normalize predicted tool name from tool calls.
+        
+        Args:
+            tool_calls: List of tool call dictionaries
+            
+        Returns:
+            Normalized tool name
+        """
+        if not tool_calls:
+            return 'unknown'
+            
+        predicted_tool_raw = tool_calls[0].get('function', {}).get('name', 'unknown')
+        predicted_base_tool = predicted_tool_raw.replace(TOOL_NAME_SUFFIX, '')
+        return TOOL_NAME_MAPPINGS.get(predicted_base_tool, predicted_base_tool)
+
+    @classmethod
+    def _setup_image_dimensions(cls, state: SygraState) -> None:
+        """Setup scaled image dimensions in state.
+        
+        Args:
+            state: Current state to update with image dimensions
+        """
+        img_width = state.get("img_width", 0)
+        img_height = state.get("img_height", 0)
+        
+        state["img_width_50"] = img_width * IMAGE_SCALE_FACTORS["50_percent"]
+        state["img_height_50"] = img_height * IMAGE_SCALE_FACTORS["50_percent"]
+        state["img_width_25"] = img_width * IMAGE_SCALE_FACTORS["25_percent"]
+        state["img_height_30"] = img_height * IMAGE_SCALE_FACTORS["30_percent"]
+
+    @classmethod
+    def _extract_screenshot(cls, state: SygraState) -> None:
+        """Extract screenshot from tool result and store in state.
+        
+        Args:
+            state: Current state to update with screenshot
+        """
+        current_tool_result = state.get(CURRENT_TOOL_RESULT_KEY, {})
+        content = current_tool_result.get("content", [])
+        
+        if len(content) == 1 and content[0].get("image"):
+            image_data = content[0]["image"]
+            img_fmt = image_data.get("format")
+            img_content = image_data.get("source", {}).get("bytes")
+            if img_fmt and img_content:
+                state[CURRENT_SCREENSHOT_KEY] = f"data:image/{img_fmt};base64,{img_content}"
 
     @classmethod
     def apply(cls, state: SygraState) -> SygraState:
@@ -354,29 +373,18 @@ class FetchNextActionPreProcessor(NodePreProcessor):
         state[CHAT_HISTORY_STATE_KEY] = copy(state[CHAT_HISTORY_BASE_KEY])
         curr_retry = state.get('curr_retries', 0)
 
-        state["img_width_50"] = state["img_width"] * IMAGE_SCALE_FACTORS["50_percent"]
-        state["img_height_50"] = state["img_height"] * IMAGE_SCALE_FACTORS["50_percent"]
-        state["img_width_25"] = state["img_width"] * IMAGE_SCALE_FACTORS["25_percent"]
-        state["img_height_30"] = state["img_height"] * IMAGE_SCALE_FACTORS["30_percent"]
-
-        current_tool_result = state.get(CURRENT_TOOL_RESULT_KEY, {})
-        if len(current_tool_result.get("content", [])) == 1 and current_tool_result.get("content")[0].get("image"):
-            img_fmt = current_tool_result.get("content")[0].get("image", {}).get("format")
-            img_content = current_tool_result.get("content")[0].get("image", {}).get("source", {}).get("bytes")
-            state[CURRENT_SCREENSHOT_KEY] = f"data:image/{img_fmt};base64,{img_content}"
+        cls._setup_image_dimensions(state)
+        cls._extract_screenshot(state)
 
         task_name = utils.current_task
         graph_properties = utils.get_graph_properties(task_name)
         retry_config = graph_properties.get(RETRY_CONFIG_KEY, {})
-
         retry_injection_required = retry_config.get(RETRY_CONFIG_REQUIRED, CONFIG_VALUE_NO)
 
         if retry_injection_required == CONFIG_VALUE_YES:
             retry_prompt_injection = retry_config.get(RETRY_CONFIG_PROMPT_INJECTION, CONFIG_VALUE_NO)
-            state = cls.retry_failure_and_chat_injection(state, curr_retry,
-                                                                                 retry_prompt_injection)
-            logger.info(
-                f"{cls.__name__}: Retry chat injection applied (prompt_injection={retry_prompt_injection})")
+            state = cls.retry_failure_and_chat_injection(state, curr_retry, retry_prompt_injection)
+            logger.info(f"{cls.__name__}: Retry chat injection applied (prompt_injection={retry_prompt_injection})")
         else:
             logger.info(f"{cls.__name__}: Retry chat injection disabled by graph_properties")
 
@@ -385,57 +393,34 @@ class FetchNextActionPreProcessor(NodePreProcessor):
 
 class FetchNextActionPostProcessor(NodePostProcessorWithState):
     """
-    Post-processor that handles Claude/GPT-4o response.
+    Post-processor that handles model response.
     Stores current retry's model response for use by next retry's PreProcessor.
     """
 
     @classmethod
     def apply(cls, resp: SygraMessage, state: SygraState) -> SygraState:
-        """Process and store Claude's response with evaluation."""
-        logger.info(f"{cls.__name__}: Processing Claude response")
+        """Process and store model's response."""
+        logger.info(f"{cls.__name__}: Processing model response")
 
-        # Log the raw response for debugging
         retry_number = state["curr_retries"]
         RequestResponseLogger.log_response(resp.message, retry_number)
 
-        # Extract response content
-        llm_response = resp.message
+        response_text = resp.message.content if hasattr(resp.message, 'content') else str(resp.message)
+        tool_calls = state.get("tool_calls", [])
 
-        # Handle the response based on type
-        if hasattr(llm_response, 'content'):
-            content = llm_response.content
-        else:
-            content = str(llm_response)
-
-        # Parse tool calls if any
-        tool_calls = []
-        # load json response
-        try:
-            # resp_dict = json.loads(content)
-            # response_text = resp_dict.get("resp_text", "")
-            # tool_calls = resp_dict.get("tool_calls", [])
-            response_text = content
-            tool_calls = state.get("tool_calls", [])
-        except Exception:
-            response_text = str(content) if content else ""
-            tool_calls = []
-
-        # Update state
-        response_dict = {}
-
-        response_dict['text_response'] = response_text
-        response_dict['tool_calls'] = tool_calls
+        response_dict = {
+            'text_response': response_text,
+            'tool_calls': tool_calls
+        }
 
         if MODEL_RESPONSES_KEY not in state:
             state[MODEL_RESPONSES_KEY] = {}
 
-        state[MODEL_RESPONSES_KEY][f"{RETRY_KEY_PREFIX}{retry_number}"] = response_dict
-        chat_history = state.get(CHAT_HISTORY_STATE_KEY, [])
-        logger.info(
-            f"{cls.__name__}: Retry number {retry_number}, chat history length: {len(chat_history)}")
-
-        logger.info(
-            f"{cls.__name__}: Stored {RETRY_KEY_PREFIX}{retry_number} response for inline evaluation at preprocessor in next retry")
+        retry_key = f"{RETRY_KEY_PREFIX}{retry_number}"
+        state[MODEL_RESPONSES_KEY][retry_key] = response_dict
+        
+        chat_history_len = len(state.get(CHAT_HISTORY_STATE_KEY, []))
+        logger.info(f"{cls.__name__}: Stored {retry_key} response (chat history length: {chat_history_len})")
 
         return state
 
@@ -486,20 +471,8 @@ class InlineEvaluationLambda(LambdaFunction):
             logger.warning(f"{cls.__name__}: Invalid tool call format: {tool_call}")
             return state
 
-        # Extract and normalize predicted tool
-        predicted_tool_raw = tool_call.get('function', {}).get('name', '')
-        predicted_base_tool = predicted_tool_raw.replace(TOOL_NAME_SUFFIX, '')
-        predicted_tool = TOOL_NAME_MAPPINGS.get(predicted_base_tool, predicted_base_tool)
-
-        # Parse predicted parameters
-        predicted_params = tool_call.get('function', {}).get('arguments', {})
-        if isinstance(predicted_params, str):
-            try:
-                predicted_params = json.loads(predicted_params)
-            except (json.JSONDecodeError, TypeError):
-                logger.warning(f"{cls.__name__}: Failed to parse predicted_params as JSON: {predicted_params}")
-                predicted_params = {}
-        predicted_params[PROPERTY_KEY_TOOL] = predicted_tool
+        predicted_tool = cls._extract_and_normalize_tool(tool_call)
+        predicted_params = cls._parse_tool_arguments(tool_call, predicted_tool)
 
         # Evaluate tool match (tool identification)
         validator = ExactMatchMetric(key=PROPERTY_KEY_TOOL)
@@ -543,8 +516,45 @@ class InlineEvaluationLambda(LambdaFunction):
 
         return state
 
+    @classmethod
+    def _extract_and_normalize_tool(cls, tool_call: Dict[str, Any]) -> str:
+        """Extract and normalize tool name from tool call.
+        
+        Args:
+            tool_call: Tool call dictionary
+            
+        Returns:
+            Normalized tool name
+        """
+        predicted_tool_raw = tool_call.get('function', {}).get('name', '')
+        predicted_base_tool = predicted_tool_raw.replace(TOOL_NAME_SUFFIX, '')
+        return TOOL_NAME_MAPPINGS.get(predicted_base_tool, predicted_base_tool)
 
-class RetryFlow:
+    @classmethod
+    def _parse_tool_arguments(cls, tool_call: Dict[str, Any], tool_name: str) -> Dict[str, Any]:
+        """Parse and prepare tool arguments.
+        
+        Args:
+            tool_call: Tool call dictionary
+            tool_name: Normalized tool name
+            
+        Returns:
+            Parsed arguments dictionary with tool name
+        """
+        predicted_params = tool_call.get('function', {}).get('arguments', {})
+        
+        if isinstance(predicted_params, str):
+            try:
+                predicted_params = json.loads(predicted_params)
+            except (json.JSONDecodeError, TypeError):
+                logger.warning(f"{cls.__name__}: Failed to parse arguments as JSON: {predicted_params}")
+                predicted_params = {}
+        
+        predicted_params[PROPERTY_KEY_TOOL] = tool_name
+        return predicted_params
+
+
+class RetryFlow(LambdaFunction):
     """
     Determines whether to continue the flow or end based on retry count.
     """
@@ -552,27 +562,17 @@ class RetryFlow:
     @classmethod
     def apply(cls, lambda_node_dict: dict, state: SygraState) -> SygraState:
         """Validate current state and determine next action."""
-        logger.info(f"{cls.__name__}: Checking retry count for current mission and deciding whether to continue or end")
-
-        curr_retry = state.get("curr_retries", 0)
+        curr_retry = state.get("curr_retries", 0) + 1
         max_retries = state.get("max_retries", DEFAULT_MAX_RETRIES)
         mission_id = state.get("id")
 
-        # Increment retry count
-        curr_retry += 1
         state["curr_retries"] = curr_retry
+        state["should_continue"] = curr_retry < max_retries
 
-        logger.info(f"{cls.__name__}: Mission {mission_id} has completed {curr_retry} retries.")
-
-        # Check if we should continue or end
-        if curr_retry < max_retries:
-            state["should_continue"] = True
-            logger.info(f"{cls.__name__}: Mission {mission_id} going into retry number {curr_retry + 1}")
+        if state["should_continue"]:
+            logger.info(f"{cls.__name__}: Mission {mission_id} completed retry {curr_retry}, continuing")
         else:
-            state["should_continue"] = False
-            logger.info(f"{cls.__name__}: Maximum retries reached {max_retries}")
-
-        # No longer need separate state dumping since outputs are handled by graph output_config
+            logger.info(f"{cls.__name__}: Mission {mission_id} reached max retries ({max_retries})")
 
         return state
 
