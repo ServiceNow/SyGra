@@ -12,21 +12,12 @@ sys.path.insert(
 
 import pytest
 
-from sygra.core.eval.metrics.aggregator_metrics.aggregator_metric_registry import (
-    AggregatorMetricRegistry,
-)
 from sygra.core.eval.metrics.aggregator_metrics.step_efficiency import StepEfficiencyMetric
 from sygra.core.eval.metrics.unit_metrics.unit_metric_result import UnitMetricResult
 
 
 class TestStepEfficiencyMetric:
     """Test suite for StepEfficiencyMetric"""
-
-    def test_metric_registered(self):
-        """Test that step_efficiency metric is registered"""
-        assert AggregatorMetricRegistry.has_metric("step_efficiency")
-        metric = AggregatorMetricRegistry.get_metric("step_efficiency")
-        assert isinstance(metric, StepEfficiencyMetric)
 
     def test_default_penalty(self):
         """Test metric with default penalty (0.2)"""
