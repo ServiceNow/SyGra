@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 """
 Utilities for evaluation tasks.
@@ -68,7 +69,7 @@ class UnitMetrics(LambdaFunction):
             validator = UnitMetricRegistry.get_metric(unit_metric_name, **unit_metric_params)
             results = validator.evaluate(golden=golden_topic, predicted=predicted_answer)
             if results:
-                state[unit_metric_name + "_result"] = results[0].to_dict()
+                state[unit_metric_name] = results[0].to_dict()
         return state
 
 
@@ -84,10 +85,9 @@ class MetricCollatorPostProcessor(GraphPostProcessor):
     def __init__(
             self,
             aggregator_metrics_map: Optional[list[dict[str, Any]]] = None,
-            unit_metrics_results: str = "text"
+            **kwargs: Any
     ):
         self.aggregator_metrics_map = aggregator_metrics_map or []
-        self.unit_metrics_results = unit_metrics_results
 
     def process(self, data: list, metadata: dict) -> list:
         """
@@ -119,10 +119,8 @@ class MetricCollatorPostProcessor(GraphPostProcessor):
             for aggregator_metric in self.aggregator_metrics_map:
                 aggregator_metric_name = aggregator_metric["name"]
                 aggregator_metric_params = aggregator_metric.get("params", {})
+                unit_metrics_field = aggregator_metric.get("unit_metrics_results", "")
 
-                unit_metrics_field = aggregator_metric.get(
-                    "unit_metrics_results", self.unit_metrics_results
-                )
                 if isinstance(unit_metrics_field, list):
                     unit_metrics_field = unit_metrics_field[0] if unit_metrics_field else ""
 
@@ -132,22 +130,39 @@ class MetricCollatorPostProcessor(GraphPostProcessor):
                         f"Available columns: {list(df.columns)}"
                     )
 
-                unit_metrics_results = (
-                    df[unit_metrics_field]
-                    .apply(lambda d: UnitMetricResult(**d) if isinstance(d, dict) else d)
-                    .tolist()
-                )
+                # Build unit metric results with enriched metadata
+                metadata_mapping = aggregator_metric.get("metadata", {})
+                
+                unit_metrics_results = []
+                for idx, row in df.iterrows():
+                    unit_result_data = row[unit_metrics_field]
+                    
+                    if isinstance(unit_result_data, dict):
+                        # Enrich metadata with fields specified in graph config
+                        if metadata_mapping:
+                            if "metadata" not in unit_result_data:
+                                unit_result_data["metadata"] = {}
+                            
+                            # Generic mapping: store source values with metadata keys
+                            for metadata_key, source_field in metadata_mapping.items():
+                                source_value = row.get(source_field, "unknown")
+                                unit_result_data["metadata"][metadata_key] = source_value
+                        
+                        unit_metrics_results.append(UnitMetricResult(**unit_result_data))
+                    elif isinstance(unit_result_data, UnitMetricResult):
+                        unit_metrics_results.append(unit_result_data)
 
                 metric = AggregatorMetricRegistry.get_metric(
                     aggregator_metric_name, **aggregator_metric_params
                 )
                 metric_result = metric.calculate(unit_metrics_results)
 
-                results[aggregator_metric_name] = metric_result
+                results[unit_metrics_field + "-" + aggregator_metric_name] = metric_result
 
             return [{
                 "evaluation_summary": {
                     "total_records": len(data),
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "status": "success"
                 },
                 "results": results

@@ -32,8 +32,10 @@ class TestPassPowerKMetric:
         results = []
         output = metric.calculate(results)
 
-        assert "pass^k" in output
-        assert output["pass^k"] == 0.0
+        assert "success_rate" in output
+        assert "pass^1" in output
+        assert output["success_rate"] == 0.0
+        assert output["pass^1"] == 0.0
 
     def test_calculate_all_correct(self):
         """Test calculate when all predictions are correct"""
@@ -60,8 +62,10 @@ class TestPassPowerKMetric:
         ]
         output = metric.calculate(results)
 
-        assert "pass^k" in output
-        assert output["pass^k"] == 1.0
+        assert "success_rate" in output
+        assert "pass^1" in output
+        assert output["success_rate"] == 1.0
+        assert output["pass^1"] == 1.0
 
     def test_calculate_all_incorrect(self):
         """Test calculate when all predictions are incorrect"""
@@ -88,8 +92,10 @@ class TestPassPowerKMetric:
         ]
         output = metric.calculate(results)
 
-        assert "pass^k" in output
-        assert output["pass^k"] == 0.0
+        assert "success_rate" in output
+        assert "pass^1" in output
+        assert output["success_rate"] == 0.0
+        assert output["pass^1"] == 0.0
 
     def test_calculate_mixed_results(self):
         """Test calculate with mixed correct/incorrect predictions"""
@@ -122,8 +128,10 @@ class TestPassPowerKMetric:
         ]
         output = metric.calculate(results)
 
-        assert "pass^k" in output
-        assert output["pass^k"] == 0.5  # 2 correct out of 4
+        assert "success_rate" in output
+        assert "pass^1" in output
+        assert output["success_rate"] == 0.5  # 2 correct out of 4
+        assert output["pass^1"] == 0.5
 
     def test_calculate_single_correct_result(self):
         """Test calculate with single correct result"""
@@ -138,8 +146,10 @@ class TestPassPowerKMetric:
         ]
         output = metric.calculate(results)
 
-        assert "pass^k" in output
-        assert output["pass^k"] == 1.0
+        assert "success_rate" in output
+        assert "pass^1" in output
+        assert output["success_rate"] == 1.0
+        assert output["pass^1"] == 1.0
 
     def test_calculate_single_incorrect_result(self):
         """Test calculate with single incorrect result"""
@@ -154,8 +164,10 @@ class TestPassPowerKMetric:
         ]
         output = metric.calculate(results)
 
-        assert "pass^k" in output
-        assert output["pass^k"] == 0.0
+        assert "success_rate" in output
+        assert "pass^1" in output
+        assert output["success_rate"] == 0.0
+        assert output["pass^1"] == 0.0
 
     def test_calculate_various_pass_at_k_values(self):
         """Test calculate with various pass^k percentages"""
@@ -168,13 +180,19 @@ class TestPassPowerKMetric:
             UnitMetricResult(correct=False, golden={}, predicted={}),
         ]
         output = PassPowerKMetric(k=1).calculate(results)
-        assert output["pass^k"] == 0.75
+        assert output["success_rate"] == 0.75
+        assert output["pass^1"] == 0.75
 
         output = PassPowerKMetric(k=2).calculate(results)
-        assert output["pass^k"] == 0.5625
+        assert output["success_rate"] == 0.75
+        assert output["pass^1"] == 0.75
+        assert output["pass^2"] == 0.5625
 
         output = PassPowerKMetric(k=3).calculate(results)
-        assert output["pass^k"] == 0.421875
+        assert output["success_rate"] == 0.75
+        assert output["pass^1"] == 0.75
+        assert output["pass^2"] == 0.5625
+        assert output["pass^3"] == 0.421875
 
         # 60% pass^k (3 out of 5)
         results = [
@@ -185,10 +203,13 @@ class TestPassPowerKMetric:
             UnitMetricResult(correct=False, golden={}, predicted={}),
         ]
         output = PassPowerKMetric(k=1).calculate(results)
-        assert output["pass^k"] == 0.6
+        assert output["success_rate"] == 0.6
+        assert output["pass^1"] == 0.6
 
         output = PassPowerKMetric(k=2).calculate(results)
-        assert output["pass^k"] == 0.36
+        assert output["success_rate"] == 0.6
+        assert output["pass^1"] == 0.6
+        assert output["pass^2"] == 0.36
 
         # 33.33% pass^k (1 out of 3)
         results = [
@@ -197,10 +218,13 @@ class TestPassPowerKMetric:
             UnitMetricResult(correct=False, golden={}, predicted={}),
         ]
         output = PassPowerKMetric(k=1).calculate(results)
-        assert output["pass^k"] == pytest.approx(0.333, rel=1e-2)
+        assert output["success_rate"] == pytest.approx(0.333, rel=1e-2)
+        assert output["pass^1"] == pytest.approx(0.333, rel=1e-2)
 
         output = PassPowerKMetric(k=2).calculate(results)
-        assert output["pass^k"] == pytest.approx(0.111, rel=1e-2)
+        assert output["success_rate"] == pytest.approx(0.333, rel=1e-2)
+        assert output["pass^1"] == pytest.approx(0.333, rel=1e-2)
+        assert output["pass^2"] == pytest.approx(0.111, rel=1e-2)
 
     def test_calculate_with_complex_metadata(self):
         """Test calculate with complex metadata in results"""
@@ -227,12 +251,18 @@ class TestPassPowerKMetric:
             ),
         ]
         output = PassPowerKMetric(k=1).calculate(results)
-        assert "pass^k" in output
-        assert output["pass^k"] == 0.5
+        assert "success_rate" in output
+        assert "pass^1" in output
+        assert output["success_rate"] == 0.5
+        assert output["pass^1"] == 0.5
 
         output = PassPowerKMetric(k=2).calculate(results)
-        assert "pass^k" in output
-        assert output["pass^k"] == 0.25
+        assert "success_rate" in output
+        assert "pass^1" in output
+        assert "pass^2" in output
+        assert output["success_rate"] == 0.5
+        assert output["pass^1"] == 0.5
+        assert output["pass^2"] == 0.25
 
     def test_calculate_with_different_data_types(self):
         """Test calculate with different data types in golden/predicted"""
@@ -244,9 +274,15 @@ class TestPassPowerKMetric:
             UnitMetricResult(correct=False, golden={"value": [1, 2]}, predicted={"value": [1, 3]}),
         ]
         output = PassPowerKMetric(k=1).calculate(results)
-        assert "pass^k" in output
-        assert output["pass^k"] == 0.75
+        assert "success_rate" in output
+        assert "pass^1" in output
+        assert output["success_rate"] == 0.75
+        assert output["pass^1"] == 0.75
 
         output = PassPowerKMetric(k=2).calculate(results)
-        assert "pass^k" in output
-        assert output["pass^k"] == 0.5625
+        assert "success_rate" in output
+        assert "pass^1" in output
+        assert "pass^2" in output
+        assert output["success_rate"] == 0.75
+        assert output["pass^1"] == 0.75
+        assert output["pass^2"] == 0.5625

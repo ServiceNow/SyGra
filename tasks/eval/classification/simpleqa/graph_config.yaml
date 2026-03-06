@@ -56,7 +56,7 @@ graph_config:
           params:
             key: "text"
       output_keys:
-        - exact_match_result
+        - exact_match
   edges:
     - from: START
       to: generate_taxonomy
@@ -75,8 +75,8 @@ output_config:
       from: "topic"
     predicted_topic:
       from: "predicted_topic"
-    exact_match_result:
-      from: "exact_match_result"
+    exact_match:
+      from: "exact_match"
 
 graph_post_process:
   - processor: tasks.eval.utils.MetricCollatorPostProcessor
@@ -86,20 +86,20 @@ graph_post_process:
           params:
             key: "text"
           unit_metrics_results:
-            - "exact_match_result"
+            - "exact_match"
         - name: "precision"
           params:
             predicted_key: "text"
           unit_metrics_results:
-            - "exact_match_result"
+            - "exact_match"
         - name: "recall"
           params:
             golden_key: "text"
           unit_metrics_results:
-            - "exact_match_result"
+            - "exact_match"
         - name: "f1_score"
           params:
             predicted_key: "text"
             golden_key: "text"
           unit_metrics_results:
-            - "exact_match_result"
+            - "exact_match"

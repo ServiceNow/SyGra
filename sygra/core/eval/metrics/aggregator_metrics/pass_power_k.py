@@ -46,21 +46,23 @@ class PassPowerKMetric(BaseAggregatorMetric):
         )
 
     def calculate(self, results: List[UnitMetricResult]) -> Dict[str, Any]:
-        """Calculate Pass^k score.
+        """Calculate Pass^k scores for all k values from 1 to configured k.
 
         Args:
             results: List of UnitMetricResult
 
         Returns:
-            dict: Dictionary containing metrics and related information
-                 {"success_rate": float (0.0 to 1.0), "pass^k": float (0.0 to 1.0)}
+            dict: {"success_rate": float, "pass^1": float, "pass^2": float, ..., "pass^k": float}
 
          Raises:
             ValueError: If invalid parameters are provided
         """
         if not results:
             logger.warning(f"{self.__class__.__name__}: No results provided")
-            return {"success_rate": 0.0, "pass^k": 0.0}
+            result_dict = {"success_rate": 0.0}
+            result_dict.update({f"pass^{i}": 0.0 for i in range(1, self.k + 1)})
+            return result_dict
+
         # Total number of attempts/samples
         n = len(results)
         # Number of correct solutions
@@ -74,9 +76,13 @@ class PassPowerKMetric(BaseAggregatorMetric):
             raise ValueError("Correct solutions (c) cannot exceed total attempts (n)")
 
         success_rate = self._safe_divide(c, n)
-        pass_power_k_value = self.pass_power_k(success_rate, self.k)
 
-        return {"success_rate": success_rate, "pass^k": pass_power_k_value}
+        # Calculate pass^k for all values from 1 to k
+        result_dict = {"success_rate": success_rate}
+        for k_val in range(1, self.k + 1):
+            result_dict[f"pass^{k_val}"] = self.pass_power_k(success_rate, k_val)
+
+        return result_dict
 
     @staticmethod
     def pass_power_k(success_rate: float, k: int) -> float:
