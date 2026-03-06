@@ -290,7 +290,6 @@ class FetchNextActionPreProcessor(NodePreProcessor):
 
         if retry_prompt_injection == CONFIG_VALUE_YES:
             # Get evaluation result to determine failure type
-            step_match_results = state.get(EVALUATION_STEP_MATCH_KEY, {})
             tool_match_results = state.get(EVALUATION_TOOL_MATCH_KEY, {})
 
             prev_tool_eval = tool_match_results.get(prev_retry_key)
