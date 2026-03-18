@@ -23,8 +23,7 @@ tasks/eval/agents/web_agents/
 ├── graph_config.yaml     # Workflow and evaluation config
 ├── chat_history_seed.json # Sample input data
 ├── logs/                 # Request/response logs
-├── metadata/             # Execution metadata
-└── README.md            # This file
+└── metadata/             # Execution metadata
 ```
 
 ---
@@ -412,22 +411,155 @@ python -m sygra.cli.run_graph \
 
 ### Input Data Format
 
+The input data is stored in `tasks/eval/agents/web_agents/chat_history_seed.json`. Currently, this file contains **sample data with only one mission** for testing and development purposes.
+
+#### Sample Data Structure
+
+Each record in the input file represents one step (turn) of a mission:
+
 ```json
 {
-  "id": "mission_1_step_1",
-  "mission_id": "mission_1",
-  "turn": 1,
-  "mission": "Book a flight from NYC to LAX",
-  "navigational_directions": "Click on the search button",
+  "id": "mission_01_2",
+  "mission_id": "mission_01",
+  "mission": "search for one way flight from hyd to chennai on nov 1 2025",
+  "date": "2025-11-11 15:12:56",
+  "navigational_directions": "",
+  "turn": 2,
+  "chat_history": [
+    {
+      "role": "system",
+      "content": [
+        {
+          "text": "You are a web automation agent...",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "text": "Help me now to complete the assigned mission...",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "content": "I'll help you search for a one-way flight...",
+      "role": "assistant",
+      "tool_calls": [
+        {
+          "id": "tooluse_O5Dr64r9RC-lW8BNsdHTng",
+          "type": "function",
+          "function": {
+            "name": "screenshot_tool",
+            "arguments": "{\"take_screenshot\": true}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "tooluse_O5Dr64r9RC-lW8BNsdHTng",
+      "name": "screenshot_tool",
+      "content": "success"
+    }
+  ],
+  "current_user_text": "You are now midway through the assigned mission...",
+  "current_tool_result": {
+    "role": "tool",
+    "tool_call_id": "tooluse_O5Dr64r9RC-lW8BNsdHTng",
+    "name": "screenshot_tool",
+    "content": [
+      {
+        "image": {
+          "format": "png",
+          "source": {
+            "bytes": "iVBORw0KGgoAAAANSUhEUgAAA+gAAAPoCAIAAADCwUOz..."
+          }
+        }
+      }
+    ]
+  },
   "golden_response": {
     "tool": "click",
-    "x": 500,
-    "y": 300,
-    "bbox": {"x": 480, "y": 280, "width": 40, "height": 40}
-  },
-  "chat_history": [...]
+    "properties": {
+      "x": 146.44,
+      "y": 94.44,
+      "width": 82.04,
+      "height": 61.11,
+      "offset_x": 0.0,
+      "offset_y": 0.0
+    }
+  }
 }
 ```
+
+#### Field Descriptions
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique identifier for this step (format: `mission_id_turn`) |
+| `mission_id` | string | Identifier for the mission this step belongs to |
+| `mission` | string | Description of the overall mission/task |
+| `date` | string | Timestamp of the mission |
+| `navigational_directions` | string | Optional hints or directions for this step |
+| `turn` | integer | Step number within the mission (1-indexed) |
+| `chat_history` | array | Complete conversation history up to this point |
+| `current_user_text` | string | The prompt text for the current step |
+| `current_tool_result` | object | Result from the previous tool execution (includes screenshot) |
+| `golden_response` | object | Expected correct response for evaluation |
+
+#### Golden Response Structure
+
+The `golden_response` contains the ground truth for evaluation:
+
+**For Click Actions:**
+```json
+{
+  "tool": "click",
+  "properties": {
+    "x": 146.44,
+    "y": 94.44,
+    "width": 82.04,
+    "height": 61.11,
+    "offset_x": 0.0,
+    "offset_y": 0.0
+  }
+}
+```
+
+**For Typing Actions:**
+```json
+{
+  "tool": "typing",
+  "properties": {
+    "text": "Hyderabad"
+  }
+}
+```
+
+**For Scroll Actions:**
+```json
+{
+  "tool": "scroll",
+  "properties": {
+    "direction": "down",
+    "amount": 200
+  }
+}
+```
+
+#### Current Sample Data
+
+The `chat_history_seed.json` file currently contains:
+- **1 mission** (`mission_01`)
+- **Multiple steps/turns** for that mission
+- Complete chat history for each step
+- Screenshots embedded as base64 in `current_tool_result`
+- Golden responses for evaluation
+
+> **Note:** This is sample data for testing purposes. A production dataset would contain multiple missions with various web automation scenarios.
 
 ### Output Format
 
