@@ -32,8 +32,8 @@ class TestPassAtKMetric:
         results = []
         output = metric.calculate(results)
 
-        assert "pass@k" in output
-        assert output["pass@k"] == 0.0
+        assert "pass@1" in output
+        assert output["pass@1"] == 0.0
 
     def test_calculate_all_correct(self):
         """Test calculate when all predictions are correct"""
@@ -60,8 +60,8 @@ class TestPassAtKMetric:
         ]
         output = metric.calculate(results)
 
-        assert "pass@k" in output
-        assert output["pass@k"] == 1.0
+        assert "pass@1" in output
+        assert output["pass@1"] == 1.0
 
     def test_calculate_all_incorrect(self):
         """Test calculate when all predictions are incorrect"""
@@ -88,8 +88,8 @@ class TestPassAtKMetric:
         ]
         output = metric.calculate(results)
 
-        assert "pass@k" in output
-        assert output["pass@k"] == 0.0
+        assert "pass@1" in output
+        assert output["pass@1"] == 0.0
 
     def test_calculate_mixed_results(self):
         """Test calculate with mixed correct/incorrect predictions"""
@@ -122,8 +122,8 @@ class TestPassAtKMetric:
         ]
         output = metric.calculate(results)
 
-        assert "pass@k" in output
-        assert output["pass@k"] == 0.5  # 2 correct out of 4
+        assert "pass@1" in output
+        assert output["pass@1"] == 0.5  # 2 correct out of 4
 
     def test_calculate_single_correct_result(self):
         """Test calculate with single correct result"""
@@ -138,8 +138,8 @@ class TestPassAtKMetric:
         ]
         output = metric.calculate(results)
 
-        assert "pass@k" in output
-        assert output["pass@k"] == 1.0
+        assert "pass@1" in output
+        assert output["pass@1"] == 1.0
 
     def test_calculate_single_incorrect_result(self):
         """Test calculate with single incorrect result"""
@@ -154,8 +154,8 @@ class TestPassAtKMetric:
         ]
         output = metric.calculate(results)
 
-        assert "pass@k" in output
-        assert output["pass@k"] == 0.0
+        assert "pass@1" in output
+        assert output["pass@1"] == 0.0
 
     def test_calculate_various_pass_at_k_values(self):
         """Test calculate with various pass@k percentages"""
@@ -168,10 +168,11 @@ class TestPassAtKMetric:
             UnitMetricResult(correct=False, golden={}, predicted={}),
         ]
         output = PassAtKMetric(k=1).calculate(results)
-        assert output["pass@k"] == 0.75
+        assert output["pass@1"] == 0.75
 
         output = PassAtKMetric(k=2).calculate(results)
-        assert output["pass@k"] == 1.0
+        assert output["pass@1"] == 0.75
+        assert output["pass@2"] == 1.0
 
         # 60% pass@k (3 out of 5)
         results = [
@@ -182,13 +183,16 @@ class TestPassAtKMetric:
             UnitMetricResult(correct=False, golden={}, predicted={}),
         ]
         output = PassAtKMetric(k=1).calculate(results)
-        assert output["pass@k"] == 0.6
+        assert output["pass@1"] == 0.6
 
         output = PassAtKMetric(k=2).calculate(results)
-        assert output["pass@k"] == 0.9
+        assert output["pass@1"] == 0.6
+        assert output["pass@2"] == 0.9
 
         output = PassAtKMetric(k=3).calculate(results)
-        assert output["pass@k"] == 1.0
+        assert output["pass@1"] == 0.6
+        assert output["pass@2"] == 0.9
+        assert output["pass@3"] == 1.0
 
         # 33.33% pass@k (1 out of 3)
         results = [
@@ -197,13 +201,16 @@ class TestPassAtKMetric:
             UnitMetricResult(correct=False, golden={}, predicted={}),
         ]
         output = PassAtKMetric(k=1).calculate(results)
-        assert output["pass@k"] == pytest.approx(0.333, rel=1e-2)
+        assert output["pass@1"] == pytest.approx(0.333, rel=1e-2)
 
         output = PassAtKMetric(k=2).calculate(results)
-        assert output["pass@k"] == pytest.approx(0.666, rel=1e-2)
+        assert output["pass@1"] == pytest.approx(0.333, rel=1e-2)
+        assert output["pass@2"] == pytest.approx(0.666, rel=1e-2)
 
         output = PassAtKMetric(k=3).calculate(results)
-        assert output["pass@k"] == 1.0
+        assert output["pass@1"] == pytest.approx(0.333, rel=1e-2)
+        assert output["pass@2"] == pytest.approx(0.666, rel=1e-2)
+        assert output["pass@3"] == 1.0
 
     def test_calculate_with_complex_metadata(self):
         """Test calculate with complex metadata in results"""
@@ -230,12 +237,14 @@ class TestPassAtKMetric:
             ),
         ]
         output = PassAtKMetric(k=1).calculate(results)
-        assert "pass@k" in output
-        assert output["pass@k"] == 0.5
+        assert "pass@1" in output
+        assert output["pass@1"] == 0.5
 
         output = PassAtKMetric(k=2).calculate(results)
-        assert "pass@k" in output
-        assert output["pass@k"] == 1.0
+        assert "pass@1" in output
+        assert "pass@2" in output
+        assert output["pass@1"] == 0.5
+        assert output["pass@2"] == 1.0
 
     def test_calculate_with_different_data_types(self):
         """Test calculate with different data types in golden/predicted"""
@@ -247,9 +256,11 @@ class TestPassAtKMetric:
             UnitMetricResult(correct=False, golden={"value": [1, 2]}, predicted={"value": [1, 3]}),
         ]
         output = PassAtKMetric(k=1).calculate(results)
-        assert "pass@k" in output
-        assert output["pass@k"] == 0.75
+        assert "pass@1" in output
+        assert output["pass@1"] == 0.75
 
         output = PassAtKMetric(k=2).calculate(results)
-        assert "pass@k" in output
-        assert output["pass@k"] == 1.0
+        assert "pass@1" in output
+        assert "pass@2" in output
+        assert output["pass@1"] == 0.75
+        assert output["pass@2"] == 1.0

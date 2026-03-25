@@ -176,14 +176,14 @@ As of now, LLM inference is supported for TGI, vLLM, OpenAI, Azure, Azure OpenAI
 
 SyGra can be used as a reusable platform to build different categories of tasks on top of the same graph execution engine, node types, processors, and metric infrastructure.
 
-### Eval
+### Evaluation
 
 Evaluation tasks live under `tasks/eval` and provide a standard pattern for:
 
 - Computing **unit metrics** per record during graph execution
 - Computing **aggregator metrics** after the run via graph post-processing
 
-See: [`tasks/eval/README.md`](https://github.com/ServiceNow/SyGra/blob/main/tasks/eval/README.md)
+See: [Read the full Evaluation documentation →](https://servicenow.github.io/evaluation/)
 
 <!-- ![SygraComponents](https://raw.githubusercontent.com/ServiceNow/SyGra/refs/heads/main/docs/resources/images/sygra_usecase2framework.png) -->
 
