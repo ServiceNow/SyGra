@@ -439,6 +439,7 @@ class DatasetProcessor:
                 output_data = []
                 with open(output_file, "r") as f:
                     output_data = json.load(f)
+                processed_output_data = output_data
                 for post_processor in post_processors:
                     processor_path = None
                     processor_params: dict[str, Any] = {}
@@ -458,9 +459,15 @@ class DatasetProcessor:
                     metadata = {"output_file": output_file, "params": processor_params}
                     processor_cls = utils.get_func_from_str(processor_path)
                     processor_name = processor_path.split(".")[-1]
-                    processed_output_data = processor_cls(**processor_params).process(
-                        output_data, metadata
-                    )
+                    use_previous_output = processor_params.get("use_previous_output", False)
+                    if use_previous_output:
+                        processed_output_data = processor_cls(**processor_params).process(
+                            processed_output_data, metadata
+                        )
+                    else:
+                        processed_output_data = processor_cls(**processor_params).process(
+                            output_data, metadata
+                        )
                     new_output_file = output_file[: output_file.rfind("/") + 1] + output_file[
                         output_file.rfind("/") + 1 :
                     ].replace("output", processor_name, 1)

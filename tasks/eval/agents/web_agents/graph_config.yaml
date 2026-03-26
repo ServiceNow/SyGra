@@ -1,0 +1,246 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: "tasks/eval/agents/web_agents/chat_history_seed.json"
+    file_format: "json"
+    transformations:
+      - transform: sygra.processors.data_transform.AddNewFieldTransform
+        params:
+          mapping:
+            supported_tools: click, type, scroll, wait, resume, hil, text_clear, slider, screenshot
+            working_language: English
+            img_width: 1000
+            img_height: 1000
+      - transform: sygra.processors.data_transform.AddRetryFieldsTransform
+        params:
+          max_retries: 3
+          initial_retry_count: 0
+          original_current_user_text:
+
+graph_config:
+  graph_properties:
+    chat_conversation: multiturn
+    chat_history_window_size: 1000
+    retry_chat_injection:
+      required: "yes"
+      retry_prompt_injection: "yes"
+  nodes:
+    fetch_next_action_tools:
+      node_type: llm
+      chat_history: True
+      pre_process: tasks.eval.agents.web_agents.task_executor.FetchNextActionPreProcessor
+      post_process: tasks.eval.agents.web_agents.task_executor.FetchNextActionPostProcessor
+      output_keys:
+        - model_responses
+      prompt:
+        - system:
+            - type: text
+              text: |
+                You are a browser automation agent that executes complex, multi-step tasks using available tools. Your actions are guided by screenshots, extracted data, navigational directions, and your action history.
+
+                WHAT YOU RECEIVE:
+                1. Screenshot of the active browser tab
+                2. Previously extracted data (if any)
+                3. Navigational directions for additional context (if provided)
+                4. Your action history showing previous thoughts and actions taken
+                
+                CORE PRINCIPLES:
+                - **Think before acting**: Analyze each step carefully. Every action must move toward mission completion.
+                - **Tool restrictions**: Use only tools from {supported_tools}. Always invoke a tool—never respond without one.
+                - **Screenshot is truth**: Trust only what you see in the screenshot. Ignore assumptions about unseen browser state.
+                - **Stay focused**: Execute only what the mission requires. No extra actions.
+                - **Complete the mission**: Do not finish prematurely. Ensure all requirements are met.
+                
+                ACTION GUIDELINES:
+                - **Pop-ups**: Close cookie notices or pop-ups only if they block mission-critical content (close button typically top-right).
+                - **Advertisements**: Never interact with ad banners. Ad changes are not content changes.
+                - **Disabled elements**: Never interact with disabled page elements.
+                - **Extraction**: Never re-extract already captured content. Use the designated extraction tool.
+                - **Retry strategy**: If an action fails or produces no visible change in the screenshot, try a different approach. Visually examine the screenshot and provide accurate parameters for the most relevant tool.
+                
+                INTERACTION RULES:
+                - **Clicks**: Always provide both x and y coordinates as single numeric values. Use your vision to locate elements precisely. If previous coordinates were wrong, re-examine the screenshot for the exact position.
+                - **Typing with autocomplete**: Click the input field first. Type character-by-character (unless instructed otherwise) to trigger autosuggestions. Select suggestions only if they match user intent.
+                - **Typing without autocomplete**: Click the input field first, then type the full exact text.
+                - **Scrolling**: 
+                  - Specify scroll distance in pixels only (minimum double-digit values, not single-digit notches).
+                  - Scroll only in directions where content extends beyond the viewport.
+                  - For dropdowns/lists, scroll if visible options don't match user intent.
+                - **Modals**: 
+                  - To scroll within a modal, click the modal or focus an input field first.
+                  - To close: use the top-right close button or click outside the modal.
+                  - If scrolling produces no content change, you've reached the end.
+                  - If no save/cancel buttons exist, close the modal to confirm changes.
+                - **Dropdowns**: Scroll to find options if initial visible options don't match user intent. Select the option that best matches.
+                - **Browser tabs**: Monitor available tabs and the active tab. Use the appropriate tool to switch tabs if needed. Detect when new tabs open.
+                - **Loading states**: Wait for pages to fully load or stabilize before taking the next action.
+                
+                USER CONFIRMATION REQUIRED:
+                Always pause and request user input or confirmation for:
+                1. **Authentication**: Login pages, credentials, OTPs, MFA codes, API keys, captchas
+                2. **Sensitive data**: CVV, card numbers, net banking credentials
+                3. **Destructive actions**: Delete, reset, purge operations, or actions with downstream impact
+                4. **Confirmation dialogs**: Delete/update confirmation modals
+                5. **Errors and warnings**: System alerts, validation issues, invalid form fields, missing required data
+                6. **Agreements**: Terms of service, consent forms, policy agreements
+                7. **Missing inputs**: If the user hasn't provided required information, ask directly. Never assume, infer, or use placeholder/sample values.
+                
+                When requesting input, be clear, specific, and unambiguous. Proceed only after receiving the required information.
+                
+                MISSION: 
+                {mission}
+                
+                NAVIGATIONAL DIRECTIONS:
+                {navigational_directions}
+                
+                SCREENSHOT SPECIFICATIONS:
+                The screenshot is resized to {img_width}x{img_height} pixels. All coordinates and distances must be within [0,{img_width}]x[0,{img_height}]. Visually locate elements—do not guess.
+                
+                COORDINATE REFERENCE:
+                - Top-left: (0, 0)
+                - Top-right: ({img_width}, 0)
+                - Bottom-left: (0, {img_height})
+                - Bottom-right: ({img_width}, {img_height})
+                - Center: ({img_width_50}, {img_height_50})
+                - Example: Element at 25% from left, 30% from top ≈ ({img_width_25}, {img_height_30})
+                - Always estimate from visual position, not descriptions
+                
+                TODAY'S DATE: {date}
+                
+                Respond only in {working_language}. No translations.
+
+
+        - user:
+            - type: image_url
+              image_url : "{current_screenshot}"
+            - type: text
+              text: "{current_user_text}"
+#      tool_config:
+      tools:
+          - tasks.eval.agents.web_agents.tools
+      tool_choice: "auto"
+      model:
+        name: eval_model
+        parameters:
+          temperature: 0.3
+
+    inline_evaluation:
+      node_type: lambda
+      lambda: tasks.eval.agents.web_agents.task_executor.InlineEvaluationLambda
+      output_keys:
+      - tool_match
+      - step_match
+
+    evaluate_step:
+      node_type: lambda
+      lambda: tasks.eval.agents.web_agents.task_executor.RetryFlow
+      output_keys:
+      - should_continue
+      - final_result
+
+  edges:
+    - from: START
+      to: fetch_next_action_tools
+    - from: fetch_next_action_tools
+      to: inline_evaluation
+    - from: inline_evaluation
+      to: evaluate_step
+    - from: evaluate_step
+      condition: tasks.eval.agents.web_agents.task_executor.ShouldContinueCondition
+      path_map:
+        END: END
+        fetch_next_action_tools: fetch_next_action_tools
+
+output_config:
+  output_map:
+    id:
+      from: "id"
+    mission:
+      from: "mission"
+    mission_id:
+      from: "mission_id"
+    turn:
+      from: "turn"
+    navigational_directions:
+      from: "navigational_directions"
+    golden_response:
+      from: "golden_response"
+    model_responses:
+      from: "model_responses"
+    tool_match:
+      from: "tool_match"
+    step_match:
+      from: "step_match"
+
+  oasst_mapper:
+    required: "no"
+    type: "sft"
+    intermediate_writing: "yes"
+
+graph_post_process:
+  - processor: tasks.eval.agents.web_agents.task_executor.Flatten
+  - processor: tasks.eval.utils.MetricCollatorPostProcessor
+    params:
+      use_previous_output: True
+      aggregator_metrics_map:
+        - name: "accuracy"
+          params:
+            key: "tool"
+          unit_metrics_results:
+            - "tool_match"
+        - name: "precision"
+          params:
+            predicted_key: "tool"
+          unit_metrics_results:
+            - "tool_match"
+        - name: "recall"
+          params:
+            golden_key: "tool"
+          unit_metrics_results:
+            - "tool_match"
+        - name: "f1_score"
+          params:
+            predicted_key: "tool"
+            golden_key: "tool"
+          unit_metrics_results:
+            - "tool_match"
+        - name: "accuracy"
+          params:
+            key: "tool"
+          unit_metrics_results:
+            - "step_match"
+        - name: "precision"
+          params:
+            predicted_key: "tool"
+          unit_metrics_results:
+            - "step_match"
+        - name: "recall"
+          params:
+            golden_key: "tool"
+          unit_metrics_results:
+            - "step_match"
+        - name: "f1_score"
+          params:
+            predicted_key: "tool"
+            golden_key: "tool"
+          unit_metrics_results:
+            - "step_match"
+        - name: "pass@k"
+          params:
+            k: 3
+          unit_metrics_results:
+            - "step_match"
+        - name: "pass^k"
+          params:
+            k: 3
+          unit_metrics_results:
+            - "step_match"
+        - name: "step_efficiency"
+          params:
+            key: "tool"
+          metadata:
+            mission_id: "mission_id"
+            step_id: "turn"
+            retry_id: "retry_id"
+          unit_metrics_results:
+            - "step_match"
