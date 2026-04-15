@@ -61,6 +61,13 @@ repos:
 
   - repo: local
     hooks:
+      - id: version-check
+        name: Validate __version__ is valid PEP 440
+        entry: python3 -c "import re, sys; content=open('sygra/__init__.py').read(); m=re.search(r'__version__\s*=\s*\"(\d+\.\d+\.\d+(?:\.(?:post|dev)\d+|(?:a|b|rc)\d+)?)\"', content); sys.exit(0) if m else (print('[ERROR] Invalid __version__ in sygra/__init__.py. Must be PEP 440 (e.g. X.Y.Z, X.Y.Z.postN)') or sys.exit(1))"
+        language: system
+        files: ^sygra/__init__\.py$
+        pass_filenames: false
+
       - id: pytest
         name: Run tests with pytest
         entry: uv run pytest -q tests
