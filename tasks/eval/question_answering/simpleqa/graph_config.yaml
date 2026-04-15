@@ -44,8 +44,13 @@ graph_config:
         - name: "exact_match"
           params:
             key: "text"
+        - name: "fuzzy_match"
+          params:
+            key: "text"
+            threshold: 0.8
       output_keys:
-        - exact_match_result
+        - exact_match
+        - fuzzy_match
   edges:
     - from: START
       to: predict_answer
@@ -64,8 +69,10 @@ output_config:
       from: "answer"
     predicted_answer:
       from: "predicted_answer"
-    exact_match_result:
-      from: "exact_match_result"
+    exact_match:
+      from: "exact_match"
+    fuzzy_match:
+      from: "fuzzy_match"
 
 
 graph_post_process:
@@ -76,4 +83,9 @@ graph_post_process:
           params:
             key: "text"
           unit_metrics_results:
-            - "exact_match_result"
+            - "exact_match"
+        - name: "accuracy"
+          params:
+            key: "text"
+          unit_metrics_results:
+            - "fuzzy_match"
