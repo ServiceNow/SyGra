@@ -1,0 +1,99 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: "tasks/examples/agentic_bfcl_query_rewrite/input_flat.jsonl"
+    file_format: "jsonl"
+
+graph_config:
+  nodes:
+    rewrite_query:
+      node_type: llm
+      pre_process: tasks.examples.agentic_bfcl_query_rewrite.task_executor.BuildRewritePromptPreProcessor
+      post_process: tasks.examples.agentic_bfcl_query_rewrite.task_executor.ExtractRewrittenQueriesPostProcessor
+      output_keys:
+        - query_medium
+        - query_hard
+        - rewrite_medium_status
+        - rewrite_hard_status
+        - llm_raw_output
+      prompt:
+        - user: |
+            You are an expert at reformulating agentic tool-calling benchmark queries.
+
+            Your task is to rewrite an original query into TWO difficulty variants.
+            The rewritten queries MUST lead to exactly the same tool calls as the original.
+            Do NOT change what needs to be done — only change how naturally/implicitly it is expressed.
+
+            ════════════════════════════════════════
+            ORIGINAL QUERY:
+            {user_message}
+
+            EXPECTED TOOL CALLS (ground truth — your rewrites must still require these exact tools and argument names):
+            {calls_section}
+
+            AVAILABLE TOOLS (for context on what each tool does):
+            {tools_section}
+            ════════════════════════════════════════
+
+            REWRITING RULES:
+
+            MEDIUM difficulty:
+            - Use natural, conversational language instead of technical jargon
+            - Do NOT spell out exact parameter names (no "claim_id=", "packet_size=", etc.)
+            - Values may still appear but described naturally ("my claim number is CLM-98765")
+            - The query must still contain enough information to determine the correct tool calls
+            - Same intent, same scope, just less formal
+
+            HARD difficulty:
+            - Use casual or vague language
+            - May combine multiple sub-goals into one sentence
+            - Should feel like something a real user would type, not a specification
+            - Still unambiguously requires the same set of tool calls to answer
+            - Do NOT make it so vague that the correct tools cannot be determined
+            - IMPORTANT: All numeric values that appear as required tool arguments MUST still
+              appear in the rewrite — they can be paraphrased (e.g. "1000 Mbps" → "gigabit"
+              or "1 Gbps") but must NOT be dropped or left implicit
+
+            IMPORTANT:
+            - Do NOT add new requirements or sub-tasks beyond what the original query asks
+            - Do NOT remove any sub-tasks from the original query
+            - Both variants must be answerable using the same expected tool calls
+            - Keep the domain context consistent (e.g. if it's about insurance, keep it about insurance)
+
+            Respond with ONLY valid JSON on a single line, no markdown fences:
+            {{"query_medium": "<medium difficulty rewrite>", "query_hard": "<hard difficulty rewrite>"}}
+      model:
+        name: claude_large
+
+  edges:
+    - from: START
+      to: rewrite_query
+    - from: rewrite_query
+      to: END
+
+output_config:
+  output_map:
+    id:
+      from: id
+    dag_type:
+      from: dag_type
+    user_message:
+      from: user_message
+    query_medium:
+      from: query_medium
+    query_hard:
+      from: query_hard
+    rewrite_medium_status:
+      from: rewrite_medium_status
+    rewrite_hard_status:
+      from: rewrite_hard_status
+    expected_tool_calls:
+      from: expected_tool_calls
+    available_tools:
+      from: available_tools
+    system_prompt:
+      from: system_prompt
+    expected_responses:
+      from: expected_responses
+    llm_raw_output:
+      from: llm_raw_output

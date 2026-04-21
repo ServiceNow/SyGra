@@ -1,0 +1,403 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: "tasks/examples/agentic_bfcl_judge_eval/input_easy.jsonl"
+    file_format: "jsonl"
+
+graph_config:
+  nodes:
+    generate_tool_calls:
+      output_keys: generated_tool_calls
+      node_type: llm
+      prompt:
+        - system: |
+            You are a tool-call generation model participating in a BENCHMARK EVALUATION.
+
+            This is a SIMULATION. The tools listed are HYPOTHETICAL. You are NOT being 
+            asked to actually execute anything. You are being evaluated on your ability 
+            to select and format the correct tool calls given a query and a tool schema.
+
+            ## Your ONLY job:
+            Given the user message and available tools, output the correct JSON array 
+            of tool calls. Nothing else.
+
+            ## Rules:
+            - Output ONLY a raw JSON array. No text, no markdown, no explanation.
+            - If no tools apply, output: []
+            - Use EXACTLY the format specified below.
+
+            {system_prompt}
+
+            ## Available Tools:
+            {available_tools}
+        - user: |
+            {user_message}
+      model:
+        name: llama_3_3_70b_instruct
+        parameters:
+          temperature: 0.01
+
+    judge_tool_calls:
+      output_keys: judge_response
+      node_type: llm
+      prompt:
+        - system: |
+            You are a STRICT STRUCTURAL EVALUATOR for AI agent tool-calling plans.
+    
+            IMPORTANT CONTEXT (NON-NEGOTIABLE):
+            - The evaluated model is SINGLE-SHOT and STATELESS.
+            - The model does NOT observe tool execution or tool outputs.
+            - The model ONLY plans tool calls.
+            - ALL evaluation MUST be STATIC and STRUCTURAL.
+            - **Assume the programmatic judge is the ground truth.**
+    
+            ❗ ABSOLUTELY DO NOT:
+            - Evaluate correctness of parameter VALUES
+            - Compare generated values to expected values
+            - Infer correctness from tool output logic
+            - Penalize placeholder, symbolic, or dummy values
+            - Penalize derived-value mismatches (e.g., 0.75 vs 0.005)
+    
+            ✔ ONLY evaluate:
+            - Tool presence
+            - Tool names
+            - Parameter NAMES
+            - Parameter STRUCTURE (dict shape)
+            - Logical ordering of calls
+            - Coverage of user intent
+    
+            If parameter NAMES match and the tool intent is satisfied,
+            the parameter structure MUST be treated as correct.
+    
+            ---
+            ## Evaluation Metrics (PROGRAMMATIC-ALIGNED)
+    
+            You must compute FOUR scores.
+            Scores should default to **1.0 unless a clear structural violation exists**.
+    
+            ---
+    
+            ## 1. TOOL SELECTION ACCURACY
+    
+            Evaluate ONLY:
+            - Are all required tools present?
+            - Are there extra tools that clearly do not belong?
+    
+            IGNORE:
+            - Tool call grouping
+            - Tool execution feasibility
+    
+            Scoring:
+            - 1.0 → Required tools present, no clearly irrelevant tools
+            - 0.5 → Missing OR clearly irrelevant tools
+            - 0.0 → Tool plan fundamentally incorrect
+    
+            ---
+    
+            ## 2. PARAMETER STRUCTURE ACCURACY (MOST IMPORTANT)
+    
+            Evaluate STRICTLY:
+            - Presence of required PARAMETER NAMES
+            - Arguments are a dictionary
+            - Parameter names logically belong to the tool
+    
+            DO NOT evaluate:
+            - Parameter VALUES
+            - Numeric ranges
+            - Threshold correctness
+            - Dependency resolution
+            - Output-derived values
+    
+            Rules:
+            - If required parameter names exist → STRUCTURALLY CORRECT
+            - Optional parameters NEVER reduce score
+            - Placeholder or symbolic values are ALWAYS valid
+    
+            Scoring:
+            - 1.0 → All tools have correct parameter NAMES
+            - 0.5 → Minor missing or extra parameter names
+            - 0.0 → Required parameter names missing for most tools
+    
+            ---
+    
+            ## 3. SEQUENCE & DEPENDENCY ACCURACY
+    
+            Evaluate:
+            - Does the order reflect logical planning?
+            - Are prerequisite tools placed earlier?
+    
+            Assume symbolic dependency handling is VALID.
+    
+            Scoring:
+            - 1.0 → Logical and dependency-respecting order
+            - 0.5 → Minor ordering issue, but intent preserved
+            - 0.0 → Illogical or contradictory ordering
+    
+            ---
+    
+            ## 4. QUERY COVERAGE ACCURACY
+    
+            Evaluate:
+            - Does the plan cover ALL parts of the user request?
+            - Are all sub-goals planned for?
+    
+            Scoring:
+            - 1.0 → Full coverage
+            - 0.5 → Partial coverage
+            - 0.0 → Major intent missed
+    
+            ---
+    
+            ## OUTPUT FORMAT (STRICT)
+    
+            Return EXACTLY one JSON object:
+    
+            {{
+              "tool_selection_accuracy": {{
+                "accuracy": <float>,
+                "justification": "<1 sentence>"
+              }},
+              "parameter_structure_accuracy": {{
+                "accuracy": <float>,
+                "justification": "<1 sentence>"
+              }},
+              "sequence_accuracy": {{
+                "accuracy": <float>,
+                "justification": "<1 sentence>"
+              }},
+              "query_coverage_accuracy": {{
+                "accuracy": <float>,
+                "justification": "<1 sentence>"
+              }},
+              "overall_assessment": "Single-sentence structural summary"
+            }}
+    
+            Be conservative.
+            Prefer 1.0 unless a **clear structural violation** exists.
+            Judge structure, not semantics.
+
+        - user: |
+            QUERY:
+            {user_message}
+            
+            AVAILABLE TOOLS:
+            {available_tools}
+            
+            GENERATED TOOL CALLS:
+            {generated_tool_calls}
+    
+            EXPECTED TOOL CALLS:
+            {expected_responses}
+
+      model:
+        name: reranker_gemini
+        parameters:
+          temperature: 1
+      post_process: tasks.examples.agentic_bfcl_judge_eval.task_executor.JudgeToolCallsPostProcessor
+
+    judge_tool_calls_answer_only:
+      output_keys: judge_response_no_gt
+      node_type: llm
+      prompt:
+        - system: |
+            You are a STRICT STRUCTURAL EVALUATOR for AI agent tool-calling plans.
+
+            IMPORTANT CONTEXT (NON-NEGOTIABLE):
+            - The evaluated model is SINGLE-SHOT and STATELESS.
+            - The model does NOT observe tool execution or tool outputs.
+            - The model ONLY plans tool calls.
+            - ALL evaluation MUST be STATIC and STRUCTURAL.
+            - There is NO expected tool plan available.
+
+            ❗ ABSOLUTELY DO NOT:
+            - Evaluate correctness of parameter VALUES
+            - Infer correctness from tool output logic
+            - Penalize placeholder, symbolic, or dummy values
+            - Penalize derived-value mismatches
+            - Penalize missing runtime-dependent values
+
+            ✔ ONLY evaluate using:
+            - The user QUERY
+            - AVAILABLE TOOLS schema
+            - GENERATED TOOL CALLS
+
+            Treat the AVAILABLE TOOLS as the ONLY source of truth.
+
+            ---
+            ## Evaluation Metrics (STRUCTURAL ONLY)
+
+            Compute FOUR scores.
+            Scores MUST default to **1.0 unless a clear structural violation exists**.
+
+            ---
+
+            ## 1. TOOL SELECTION ACCURACY
+
+            Evaluate:
+            - Are the selected tools relevant to the query?
+            - Are there tools that clearly do NOT belong?
+
+            Rules:
+            - If a tool plausibly helps answer the query → treat as valid
+            - Only penalize tools that are clearly irrelevant
+
+            Scoring:
+            - 1.0 → All tools are relevant
+            - 0.5 → One questionable or missing tool
+            - 0.0 → Tool selection clearly unrelated to the query
+
+            ---
+
+            ## 2. PARAMETER STRUCTURE ACCURACY (MOST IMPORTANT)
+
+            Evaluate STRICTLY:
+            - Arguments exist and are dictionaries
+            - Parameter NAMES exist in the tool schema
+            - Parameter names logically belong to the tool
+
+            DO NOT evaluate:
+            - Parameter values
+            - Types, ranges, thresholds
+            - Symbolic references
+
+            Rules:
+            - Matching parameter NAMES → correct
+            - Optional parameters NEVER reduce score
+            - Extra parameters only penalize if clearly invalid
+
+            Scoring:
+            - 1.0 → All tools have structurally valid parameters
+            - 0.5 → Minor naming or structural issues
+            - 0.0 → Most tools structurally incorrect
+
+            ---
+
+            ## 3. SEQUENCE & DEPENDENCY ACCURACY
+
+            Evaluate:
+            - Is the ordering logically consistent with the query?
+            - Are analysis steps before decision/recommendation steps?
+
+            Assume symbolic dependencies are valid.
+
+            Scoring:
+            - 1.0 → Logical order
+            - 0.5 → Minor ordering issue
+            - 0.0 → Illogical or contradictory order
+
+            ---
+
+            ## 4. QUERY COVERAGE ACCURACY
+
+            Evaluate:
+            - Does the tool plan attempt to address ALL parts of the query?
+            - Are key sub-goals represented?
+
+            Scoring:
+            - 1.0 → Full coverage
+            - 0.5 → Partial coverage
+            - 0.0 → Major intent missed
+
+            ---
+            ## OUTPUT FORMAT (STRICT)
+
+            Return EXACTLY one JSON object:
+
+            {{
+              "tool_selection_accuracy": {{
+                "accuracy": <float>,
+                "justification": "<1 sentence>"
+              }},
+              "parameter_structure_accuracy": {{
+                "accuracy": <float>,
+                "justification": "<1 sentence>"
+              }},
+              "sequence_accuracy": {{
+                "accuracy": <float>,
+                "justification": "<1 sentence>"
+              }},
+              "query_coverage_accuracy": {{
+                "accuracy": <float>,
+                "justification": "<1 sentence>"
+              }},
+              "overall_assessment": "Single-sentence structural summary"
+            }}
+
+            Be conservative.
+            Prefer 1.0 unless a **clear structural violation** exists.
+            Judge structure, not execution or correctness.
+        - user: |
+            QUERY:
+            {user_message}
+
+            AVAILABLE TOOLS:
+            {available_tools}
+
+            GENERATED TOOL CALLS:
+            {generated_tool_calls}
+      model:
+        name: reranker_gemini
+        parameters:
+          temperature: 1
+      post_process: tasks.examples.agentic_bfcl_judge_eval.task_executor.JudgeToolCallsAnswerOnlyPostProcessor
+
+    judge_programmatic:
+      node_type: lambda
+      lambda: tasks.examples.agentic_bfcl_judge_eval.task_executor.ProgrammaticJudge
+      output_keys:
+        - programmatic_judge_response
+
+    calculate_judge_accuracy:
+      node_type: lambda
+      lambda: tasks.examples.agentic_bfcl_judge_eval.task_executor.ComputeLLMVsProgrammaticAccuracy
+      output_keys:
+        - per_metric_comparison
+        - overall_llm_alignment_percentage
+
+    calculate_answer_only_judge_accuracy:
+      node_type: lambda
+      lambda: tasks.examples.agentic_bfcl_judge_eval.task_executor.ComputeLLMVsProgrammaticAccuracyAnswerOnly
+      output_keys:
+        - per_metric_comparison_no_gt
+        - overall_llm_alignment_percentage_no_gt
+
+  edges:
+    - from: START
+      to: generate_tool_calls
+    - from: generate_tool_calls
+      to: judge_tool_calls
+    - from: judge_tool_calls
+      to: judge_tool_calls_answer_only
+    - from: judge_tool_calls_answer_only
+      to: judge_programmatic
+    - from: judge_programmatic
+      to: calculate_judge_accuracy
+    - from: calculate_judge_accuracy
+      to: calculate_answer_only_judge_accuracy
+    - from: calculate_answer_only_judge_accuracy
+      to: END
+
+#output_config:
+#    output_map:
+#        user_message:
+#            from: user_message
+#        available_tools:
+#            from: available_tools
+#        expected_responses:
+#            from: expected_responses
+#        generated_tool_calls:
+#            from: generated_tool_calls
+#        judge_response:
+#            from: judge_response
+#        judge_response_no_gt:
+#            from: judge_response_no_gt
+#        programmatic_judge_response:
+#            from: programmatic_judge_response
+#        per_metric_comparison:
+#            from: per_metric_comparison
+#        overall_llm_alignment_percentage:
+#            from: overall_llm_alignment_percentage
+#        per_metric_comparison_no_gt:
+#            from: per_metric_comparison_no_gt
+#        overall_llm_alignment_percentage_no_gt:
+#            from: overall_llm_alignment_percentage_no_gt

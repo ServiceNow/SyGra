@@ -1,0 +1,61 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: "tasks/examples/agentic_bfcl_judge_eval/input_easy.jsonl"
+    file_format: "jsonl"
+
+graph_config:
+  nodes:
+    generate_tool_calls:
+      output_keys: generated_tool_calls
+      node_type: llm
+      prompt:
+        - system: |
+            You are a tool-call generation model participating in a BENCHMARK EVALUATION.
+
+            This is a SIMULATION. The tools listed are HYPOTHETICAL. You are NOT being
+            asked to actually execute anything. You are being evaluated on your ability
+            to select and format the correct tool calls given a query and a tool schema.
+
+            ## Your ONLY job:
+            Given the user message and available tools, output the correct JSON array
+            of tool calls. Nothing else.
+
+            ## Rules:
+            - Output ONLY a raw JSON array. No text, no markdown, no explanation.
+            - If no tools apply, output: []
+            - Use EXACTLY the format specified below.
+
+            {system_prompt}
+
+            ## Available Tools:
+            {available_tools}
+        - user: |
+            {user_message}
+      model:
+        name: smollm3_3b
+        parameters:
+          temperature: 0.01
+
+  edges:
+    - from: START
+      to: generate_tool_calls
+    - from: generate_tool_calls
+      to: END
+
+output_config:
+  output_map:
+    id:
+      from: id
+    dag_type:
+      from: dag_type
+    user_message:
+      from: user_message
+    available_tools:
+      from: available_tools
+    expected_responses:
+      from: expected_responses
+    system_prompt:
+      from: system_prompt
+    generated_tool_calls:
+      from: generated_tool_calls
