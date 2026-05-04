@@ -23,3 +23,34 @@ studio/.executions/*
 
 # Studio config
 studio/config/custom_models.yaml
+
+# Experiment artifacts — only push code, never logs/data/outputs
+*.log
+
+# Agentic BFCL experiments (generation/judge outputs, inputs, retries)
+tasks/examples/agentic_bfcl_judge_eval/*.json
+tasks/examples/agentic_bfcl_judge_eval/*.jsonl
+tasks/examples/agentic_bfcl_judge_eval/**/*.json
+tasks/examples/agentic_bfcl_judge_eval/**/*.jsonl
+tasks/examples/agentic_bfcl_query_rewrite/*.jsonl
+
+# Reranker / search_qna / visual / japanese / multimodal datasets and outputs
+tasks/examples/reranker_AIS_data_validation/**/*.json
+tasks/examples/reranker_AIS_data_validation/**/*.jsonl
+tasks/examples/reranker_AIS_v5_rel_labeling/**/*.json
+tasks/examples/reranker_AIS_v5_rel_labeling/**/*.jsonl
+tasks/examples/search_qna_router_query_rewrite/**/*.json
+tasks/examples/search_qna_router_query_rewrite/**/*.jsonl
+tasks/examples/search_qna_synthesis/**/*.json
+tasks/examples/search_qna_synthesis/**/*.jsonl
+tasks/examples/visual_perception_wiki/**/*.json
+tasks/examples/visual_perception_wiki/**/*.jsonl
+tasks/examples/visual_perception_wiki/seed_data/
+tasks/examples/multimodal_performance_analysis/datasets/
+tasks/examples/japanese_fluency/**/*.json
+tasks/examples/japanese_fluency/**/*.jsonl
+tasks/examples/japanese_quality_detection/**/*.json
+tasks/examples/japanese_quality_detection/**/*.jsonl
+
+# Task snapshot zips
+tasks/examples/*.zip

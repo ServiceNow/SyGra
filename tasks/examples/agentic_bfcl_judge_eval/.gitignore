@@ -1,0 +1,52 @@
+# Generated outputs — stored on HuggingFace, not in git
+llama_3_1_8b_instruct/
+llama_3_3_70b_instruct/
+qwen3_32b/
+smollm3_3b/
+gpt_5_4/
+
+# Sweep logs and run artifacts
+*.log
+c3_logs/
+rerun_v2_logs/
+logs/
+sweep_progress*.log
+sweep_stdout*.log
+
+# Retry / rerun scaffolding
+rerun_lists/
+resume_inputs/
+null_rerun_inputs/
+rerun_inputs_v2/
+retry_*.jsonl
+retry_*.json
+run_retry*.sh
+
+# Derived input files (regenerate with prepare_difficulty_inputs.py)
+input_easy.jsonl
+input_medium.jsonl
+input_hard.jsonl
+
+# Stale / one-off
+stale/
+rebuttal.md
+graph_config_backup.yaml
+
+# Aggregated results (regenerate with generate_metrics_excel.py)
+aggregated_results.json
+full_grid.json
+paper_stats_v2.json
+debug_test_output_*.json
+output_*.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Archives
+*.zip
+*.tar.gz
+
+# Metadata caches
+metadata/

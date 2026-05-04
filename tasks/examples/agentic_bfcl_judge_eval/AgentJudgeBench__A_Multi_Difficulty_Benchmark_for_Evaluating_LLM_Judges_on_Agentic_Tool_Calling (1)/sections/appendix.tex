@@ -1,0 +1,962 @@
+\section{Limitations}
+\label{app:limitations}
+
+\textbf{Generator scope.} Four of the five generators are open-weight models (3B-70B); GPT-5.4 is included as a frontier representative. The GPT-5.4 generator block (Table ~\ref{fig:full-results}) confirms that degradation patterns and the no-GT ceiling generalise to frontier-quality outputs: hard no-GT alignment averages $79.5\%$ across six judges, within the same band as the open-weight generators. Additional frontier generators (e.g., Claude Sonnet) remain deferred to future work.
+
+\textbf{GPT-5.4 reproducibility.} ``GPT-5.4'' refers to a GPT-5 preview variant deployed on Azure OpenAI as of April 2026 under the internal version string \texttt{gpt-5.4} (Appendix~\ref{app:judges}); this is not an officially published, independently re-queryable model identifier. Future researchers cannot directly replicate the GPT-5.4 cells by querying a stable public endpoint. We therefore treat these cells as a \emph{non-reproducible reference snapshot}: the raw per-record LLM-judge outputs for GPT-5.4 are included in the supplementary data release so that future work can audit or compare without re-querying. All primary claims in this paper - monotone difficulty degradation, the no-GT convergence ceiling, over-anchoring (Finding 2), judge ranking stability, and prompt-format dominance - replicate on the four open-weight generators independently of the GPT-5.4 results. GPT-5.4 is included solely to show frontier-quality outputs do not escape the benchmark's difficulty gradients.
+
+\textbf{Programmatic scorer.} The scorer measures structural correctness (argument keys present, ordering correct) but not semantic equivalence (argument-equivalent but syntactically different JSON). Analysis of metric-level mismatches for the best-aligned judge (QwQ-32B, 12-cell evaluation) reveals that 25.9\% fall on the parameter-structure dimension — the axis most susceptible to this gap. The remaining 74.1\% are on tool selection (24.9\%), sequence accuracy (39.2\%), and query coverage (10.0\%), where structural and semantic correctness largely coincide. This bounds the scope: the majority of misalignment is on dimensions unaffected by JSON-key aliasing. An independent human annotation study (Appendix~\ref{app:prog-judge-validation}) reports $92.7\%$ overall metric-level agreement, confirming that scorer-judge mismatches are structural rather than artefacts of scorer noise.
+
+\textbf{Synthetic data.} The dataset is entirely pipeline-generated across 15 enterprise domains. Comparison with real-world agentic execution traces is needed to rule out systematic domain drift. This is the primary open validity concern and is tracked as future work (REV-1 in our revision plan).
+
+\textbf{Difficulty rewriting.} The easy$\to$medium hardening is confirmed unanimously on only 58.1\% of records; a subset of medium records are better characterised as paraphrases than genuine hardenings. The easy$\to$medium degradation curves should therefore be interpreted as indicative rather than definitive (see Finding 1 scope note, Section~\ref{sec:exp:main}). The medium$\to$hard step is unanimously validated on 93.9\% of records and is the paper's primary difficulty-degradation evidence.
+
+\textbf{No-GT prompt prior.} The convergence ceiling on hard no-GT records is partly a consequence of the ``default to 1.0'' rubric in the no-GT prompt. A recalibrated 0.5-default ablation (Section~\ref{sec:exp:ceiling}, Table~\ref{tab:c2-ceiling}) confirms that the ceiling persists for capable generators (${\leq}{+1.0}$\,pp change), confirming structural task difficulty as the primary driver. For weaker generators, the 1.0-default over-credits incorrect outputs by up to $+5.6$\,pp; practitioners evaluating low-quality generators should consider the 0.5-default prompt.
+
+\textbf{Judge roster.} We evaluate seven judge configurations (six main judges plus Qwen3-1.7B in the scale ablation). Additional open judges and broader frontier configurations are deferred to future work.
+
+\textbf{Human-judge upper bound.} The $77$-$82\%$ no-GT ceiling may appear close to the floor of a random judge ($50\%$), but it is better interpreted against the human-agreement upper bound. In our 120-record annotation study (Appendix~\ref{app:prog-judge-validation}), independent human annotators agree with the programmatic scorer at $92.7\%$ overall metric-level agreement. A hypothetical \emph{ideal} human judge operating at this agreement level would achieve $\approx 92.7\%$ alignment regardless of difficulty tier. The hard no-GT ceiling ($77$-$82\%$) is therefore $11$-$16$\,pp below the human-agreement ceiling - a meaningful but not catastrophic gap. On easy no-GT queries, the best LLM judges ($\sim 92\%$) already approach human-level agreement; the gap opens as query difficulty increases and the judge must reason independently without a reference.
+
+\textbf{Single-cell ablations.} RQ4 (temperature), RQ6 (prompt format), and RQ7 (chain-of-thought reasoning) each use a single test-bed cell: Qwen3-32B judge on Llama-3.3-70B generator outputs. Three independent design choices being validated on the same judge-generator pair is a meaningful generalization risk; the findings for temperature and CoT are directionally consistent across all RQ7 generator conditions (24 cells), but the format ablation remains a single (judge, generator) observation and should be interpreted as suggestive rather than definitive for other judge-generator pairings.
+
+\textbf{Topology weighting.} All headline aggregate alignment figures are computed as \emph{unweighted} averages across the six DAG topologies. The corpus is intentionally imbalanced to mirror enterprise prevalence: fan-in accounts for $27.5\%$ of records, loop-like for only $5.9\%$ (Table~\ref{tab:dag-counts}). Under count-weighted averaging, the headline figures shift by $\leq 1.5$\,pp relative to the unweighted values reported throughout; judge rankings are unaffected. Practitioners whose deployment topology distribution differs from the corpus can recompute weighted averages from the per-topology breakdown in Appendix~\ref{app:pertopology-table}.
+
+\section{Practitioner Decision Guide}
+\label{app:decision-guide}
+
+In most deployment scenarios ground-truth tool-call sequences are unavailable at inference time; the no-GT judge is therefore the practical baseline. Table~\ref{tab:decision-guide} reports the best-performing judge for each deployment scenario, derived directly from Table~\ref{fig:full-results}. Rankings are computed as an \emph{unweighted} mean of per-cell alignment over all five generators per (condition, difficulty) combination; count-weighted averaging shifts results by $\leq 0.3$\,pp.
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.2}
+\caption{Best judge per deployment scenario. The no-GT rows reflect the common deployment setting where ground-truth tool calls are unavailable. GT = ground-truth tool calls available; no-GT = judge uses only query and tool schemas. Alignment (\%) is unweighted mean over five generators.}
+\label{tab:decision-guide}
+\begin{tabularx}{0.82\textwidth}{@{}llXX@{}}
+\toprule
+\textbf{Condition} & \textbf{Difficulty} & \textbf{Best judge} & \textbf{Runner-up} \\
+\midrule
+Without GT & Easy   & Gemini-2.5-Pro (92.1\%) & GPT-5.4 (92.0\%)      \\
+Without GT & Medium & GPT-5.4 (87.7\%)        & Gemini-2.5-Pro (87.4\%) \\
+Without GT & Hard   & GPT-5.4 (79.7\%)        & Gemini-2.5-Pro (78.8\%) \\
+\midrule
+With GT    & Easy   & QwQ-32B (94.0\%)        & GPT-OSS-120B (93.0\%) \\
+With GT    & Medium & QwQ-32B (90.0\%)        & GPT-OSS-120B (89.4\%) \\
+With GT    & Hard   & QwQ-32B (83.4\%)        & GPT-OSS-120B (83.2\%) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Takeaways.} (1)~\textbf{No ground truth} (the common case): Gemini-2.5-Pro and GPT-5.4 lead narrowly ($\leq 1$\,pp), but the no-GT convergence ceiling (\S\ref{sec:exp:ceiling}) makes judge choice less consequential on hard queries - the practical difference between any two judges is $\leq 2$\,pp. (2)~\textbf{Ground truth available}: QwQ-32B dominates all difficulty levels; GPT-OSS-120B is the best open-weight alternative without reasoning-model inference overhead. (3)~\textbf{Single judge across all conditions}: QwQ-32B offers the best mean GT alignment (89.1\%) with competitive no-GT performance (85.6\%). (4)~\textbf{Binary pass/fail pipelines}: Practitioners scoring verdicts on a binary pass/fail scale rather than $\{0, 0.5, 1\}$ should prefer GPT-OSS-20B over QwQ-32B. Under binary verdict collapse, judge rankings differ substantially from the three-point scale (Spearman $\rho = 0.03$; Table~\ref{tab:abl-binary}, Appendix~\ref{app:abl-binary}): judges with high 0.5-verdict rates (GPT-OSS-20B: $26.5\%$; GPT-5.4: $28.2\%$) gain a systematic advantage because every 0.5 verdict is remapped toward the programmatic direction, inflating their binary alignment. QwQ-32B's structural advantage over GPT-OSS-20B diminishes or reverses under binary scoring. (5)~\textbf{Human-intuition alignment}: Practitioners whose primary concern is agreement with human annotators rather than with the programmatic scorer should prefer GPT-OSS-120B, which tops both the programmatic and human-verdict orderings ($\Delta = -2.8$\,pp vs.\ human; Table~\ref{tab:judge-vs-human}, Appendix~\ref{app:prog-judge-validation}).
+
+\section{Dataset Statistics}
+\label{app:dataset-stats}
+
+\begin{wraptable}{r}{0.4\textwidth}
+\centering
+\small
+\vspace{-12pt}
+\setlength{\tabcolsep}{8pt}
+\renewcommand{\arraystretch}{1.2}
+\caption{Record counts by DAG topology. Counts reflect unique records; each record has three difficulty variants (easy / medium / hard), giving $3{,}808 \times 3 = 11{,}424$ total rows in the full dataset.}
+\label{tab:dag-counts}
+\begin{tabularx}{0.4\textwidth}{@{}Xrr@{}}
+\toprule
+\textbf{DAG Type} & \textbf{Records} & \textbf{\%} \\
+\midrule
+Linear              & \phantom{0}812  & 21.3 \\
+Fan-Out             & \phantom{0}399  & 10.5 \\
+Fan-In              & 1{,}049          & 27.5 \\
+Diamond             & \phantom{0}501  & 13.2 \\
+Optional Enrichment & \phantom{0}823  & 21.6 \\
+Loop-Like           & \phantom{0}224  &  5.9 \\
+\midrule
+\textbf{Total}      & \textbf{3{,}808} & \textbf{100.0} \\
+\bottomrule
+\end{tabularx}
+\vspace{-23pt}
+\end{wraptable}
+
+This appendix reports the structural composition of the 3,808 AgentJudgeBench records, covering topology distribution, tool inventory size, parameter depth, and expected call-sequence length. All statistics are computed over the unique-record pool (i.e., collapsing the three difficulty rewrites of each record into one, since they share the same tool schemas and ground-truth trace). Figures~\ref{fig:dag-distribution} and~\ref{fig:dataset-stats} visualise the distributions; Tables~\ref{tab:dag-counts} and~\ref{tab:dataset-stats} report the precise counts.
+
+\paragraph{Topology distribution (Table~\ref{tab:dag-counts}, Figure~\ref{fig:dag-distribution}).}
+
+Records are not uniformly distributed across topologies. Fan-in (27.5\%) and optional enrichment (21.6\%) are the most prevalent, reflecting the frequency of multi-source aggregation and conditional enrichment patterns in the 15 enterprise seed domains. Loop-like records are the rarest (5.9\%) because iterative workflows are less commonly expressed as single-turn tool-call sequences in the generation pipeline. Linear records (21.3\%) serve as the structural baseline — they require no dependency tracking and are included to anchor the difficulty gradient. The imbalance is intentional: it mirrors the relative prevalence of each pattern in enterprise agentic workloads rather than imposing artificial uniformity.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/dataset_dag_distribution.pdf}
+\caption{DAG topology distribution across the 3,808 unique records (left: proportional pie, right: absolute counts). Fan-in accounts for over a quarter of all records; loop-like is the rarest at 5.9\%.}
+\label{fig:dag-distribution}
+\end{figure}
+
+\paragraph{Tool inventory and parameter depth (Table~\ref{tab:dataset-stats}, Figure~\ref{fig:dataset-stats}).}
+Each record exposes a pool of 8-19 available tools (mean 12.9), of which the ground-truth trace invokes 2-5 (mean 3.3). The deliberate over-provision of tools — the ground truth uses on average only 25\% of the available pool — forces the generator and judge to perform genuine tool selection rather than selecting by elimination. Each tool carries 0-19 typed parameters (mean 2.4, median 2); the small median reflects the prevalence of single-argument utility functions in the inventory, while the long tail (up to 19 parameters) comes from complex configuration and validation tools. The parameter minimum of zero corresponds to no-argument sentinel tools used in optional-enrichment and loop-like patterns. These structural properties collectively ensure that each of the four evaluation metrics — tool selection, parameter structure, sequence accuracy, and query coverage — is non-trivially exercised across the record pool.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/dataset_statistics.pdf}
+\caption{Frequency distributions of (left) available tools per record, (centre) parameters per tool, and (right) expected tool calls per record. Dashed vertical lines mark the mean of each distribution. Tool inventory is tightly concentrated around 13 (range 8-19); parameter counts are right-skewed with a median of 2; expected call-sequence length ranges from 2 to 5.}
+\label{fig:dataset-stats}
+\end{figure}
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{8pt}
+\renewcommand{\arraystretch}{1.2}
+\caption{Structural statistics of the 3,808 AgentJudgeBench records. All quantities are computed over unique records (collapsing difficulty variants). \emph{Available tools} is the size of the tool inventory exposed to the generator per record. \emph{Parameters per tool} counts typed argument fields in each tool's JSON schema. \emph{Expected tool calls} is the length of the ground-truth execution trace.}
+\label{tab:dataset-stats}
+\begin{tabularx}{0.8\textwidth}{@{}Xrrrr@{}}
+\toprule
+\textbf{Quantity} & \textbf{Min} & \textbf{Max} & \textbf{Mean} & \textbf{Median} \\
+\midrule
+Available tools per record     &  8 & 19 & 12.9 & 13.0 \\
+Parameters per tool            &  0 & 19 &  2.4 &  2.0 \\
+Expected tool calls per record &  2 &  5 &  3.3 &  3.0 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+
+\section{Evaluation Corpus Statistics}
+\label{app:eval-stats}
+
+Table~\ref{tab:eval-stats} reports the exact number of records that received valid LLM-judge verdicts per (generator, difficulty) cell, after excluding records where the generator produced an unparseable or empty tool-call sequence. The base dataset contains $3{,}808$ unique records; each is rewritten into three difficulty variants, giving a theoretical maximum of $3{,}808 \times 3 = 11{,}424$ generator inputs per generator. The final column shows the success rate relative to this theoretical maximum.
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{8pt}
+\renewcommand{\arraystretch}{1.2}
+\caption{Number of records with valid LLM-judge verdicts per generator and difficulty tier. \emph{Theoretical max} per generator is $3{,}808 \times 3 = 11{,}424$ (three difficulty variants of each base record). Judged records are identical across all six LLM judges for a given (generator, difficulty) cell. Multiplying the \emph{Total} column by $6$~judges~$\times~2$~conditions yields the full evaluation instance count per generator.}
+\label{tab:eval-stats}
+\begin{tabularx}{0.82\textwidth}{@{}lrrrrrr@{}}
+\toprule
+\textbf{Generator} & \textbf{Easy} & \textbf{Medium} & \textbf{Hard} & \textbf{Total} & \textbf{Max} & \textbf{Rate} \\
+\midrule
+Llama-3.3-70B  & 3{,}765 & 3{,}771 & 3{,}764 & 11{,}300 & 11{,}424 & 98.9\% \\
+Llama-3.1-8B   & 3{,}707 & 3{,}698 & 3{,}606 & 11{,}011 & 11{,}424 & 96.4\% \\
+Qwen3-32B      & 3{,}271 & 3{,}421 & 3{,}548 & 10{,}240 & 11{,}424 & 89.6\% \\
+SmolLM3-3B     & 3{,}300 & 3{,}042 & 3{,}299 &  9{,}641 & 11{,}424 & 84.4\% \\
+GPT-5.4        & 3{,}807 & 3{,}802 & 3{,}807 & 11{,}416 & 11{,}424 & 99.9\% \\
+\midrule
+\textbf{Total} & \textbf{17{,}850} & \textbf{17{,}734} & \textbf{18{,}024} & \textbf{53{,}608} & \textbf{57{,}120} & \textbf{93.8\%} \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+{\small\textit{\\Total: $53{,}608 \times 6\ \mathrm{judges} \times 2\ \mathrm{conditions} = 643{,}296$ evaluation instances (theoretical max); $321{,}648$ unique (generator, judge, difficulty, record) tuples, each evaluated under both GT and no-GT conditions.}}
+\end{table}
+
+\textbf{Sources of attrition.} The overall success rate is $93.8\%$ ($53{,}608$ of $57{,}120$). Attrition arises from two distinct sources at different pipeline stages:
+
+\begin{itemize}
+  \item \textbf{Unparseable generator output} (${\approx}5.7\%$ of inputs, weighted average): the generator produces a response that cannot be decoded as a valid JSON tool-call list. This is the dominant source of attrition, concentrated on SmolLM3-3B ($-15.6\%$) and Qwen3-32B ($-10.4\%$), and more prevalent at medium difficulty for SmolLM3-3B (medium rate $79.8\%$ vs.\ $86.6\%$ on easy/hard). These failures reflect intrinsic model capability gaps on the structured output format; re-generating these records would produce the same failure pattern and was not pursued.
+  \item \textbf{Persistent LLM-judge null verdicts} (${\approx}3.3\%$ of main-grid judge calls): after the initial run, records with null \texttt{overall\_llm\_alignment\_percentage} were identified via \texttt{rerun\_nulls.py} and retried twice (two independent rerun rounds, logged in \texttt{rerun\_v2\_logs/}). Records that remained null after both retries - ${\approx}10{,}498$ (generator, judge, difficulty, record) tuples in the main grid - were permanently excluded. These persistent nulls are concentrated on the longest GPT-5.4 and Llama-3.3-70B generator outputs, which push near the context limits of certain judge endpoints (particularly Claude), causing consistent response truncation or malformed JSON. A third retry round was not run because (a) two retries had already demonstrated a ${<}5\%$ recovery rate for persistently null records, making further attempts cost-prohibitive, and (b) the persistent nulls are distributed uniformly across DAG topologies and difficulty levels, giving no reason to expect systematic bias in the excluded records.
+\end{itemize}
+
+\section{Bootstrap Confidence Intervals for Table~\ref{fig:full-results}}
+\label{app:bootstrap-ci}
+
+All alignment percentages in Table~\ref{fig:full-results} are means over $N_{g,d}$ per-record scores. To quantify uncertainty, we compute 95\% bootstrap confidence intervals ($n{=}2{,}000$ stratified resamples) for every (generator, judge, difficulty, condition) cell. Table~\ref{tab:ci-llama70b} reports the full CI matrix for the Llama-3.3-70B generator. The same bootstrap analysis applied to all five generators yields CIs $\leq 0.3$\,pp half-width throughout (the remaining matrices are in the supplementary code release), confirming that the point estimates in Table~\ref{fig:full-results} are reliable and that every monotone difficulty effect is statistically robust. CIs for the GT lift values (Eq.~\ref{eq:lift}) appear in Section~\ref{sec:exp:main}; all six lift CIs are non-overlapping across the positive-vs-negative divide.
+
+\begin{table}[!htbp]
+\centering
+\small
+\caption{Bootstrap 95\% confidence intervals for alignment (\%) on the Llama-3.3-70B-Instruct generator. Format: mean [lo, hi].}
+\label{tab:ci-llama70b}
+
+\resizebox{\linewidth}{!}{%
+\setlength{\tabcolsep}{3.5pt}
+\renewcommand{\arraystretch}{1.03}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+ & \multicolumn{2}{c}{\textbf{Easy}} & \multicolumn{2}{c}{\textbf{Medium}} & \multicolumn{2}{c}{\textbf{Hard}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+\textbf{Judge} & \textbf{GT} & \textbf{no-GT} & \textbf{GT} & \textbf{no-GT} & \textbf{GT} & \textbf{no-GT} \\
+\midrule
+GPT-5.4        & 91.4 [91.0,91.7] & 95.2 [94.8,95.6] & 87.4 [87.0,87.8] & 91.7 [91.2,92.2] & 83.0 [82.6,83.4] & 84.6 [83.9,85.2] \\
+Claude         & 93.3 [93.0,93.7] & 94.6 [94.3,95.0] & 89.9 [89.5,90.4] & 90.7 [90.2,91.2] & 83.7 [83.1,84.2] & 83.3 [82.6,83.9] \\
+Gemini-2.5-Pro & 90.5 [90.0,91.0] & 95.7 [95.4,96.1] & 86.5 [86.0,87.0] & 92.2 [91.7,92.7] & 82.2 [81.6,82.7] & 84.6 [83.9,85.2] \\
+QwQ-32B        & 96.6 [96.3,96.9] & 95.6 [95.2,95.9] & 93.6 [93.2,94.0] & 92.1 [91.6,92.5] & 87.5 [86.9,88.0] & 84.4 [83.7,85.1] \\
+GPT-OSS-20B    & 89.0 [88.7,89.3] & 94.5 [94.1,94.9] & 87.2 [86.9,87.5] & 91.2 [90.7,91.7] & 83.9 [83.5,84.2] & 84.0 [83.3,84.7] \\
+GPT-OSS-120B   & 96.0 [95.7,96.3] & 95.5 [95.2,95.9] & 93.0 [92.6,93.4] & 92.1 [91.7,92.6] & 87.2 [86.7,87.8] & 84.5 [83.8,85.2] \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\section{Difficulty Degradation and Generator Accuracy}
+\label{app:degradation}
+
+Figure~\ref{fig:degradation} shows mean judge alignment as a function of query difficulty, averaged across all six judges and five generators. Table~\ref{tab:generator-accuracy} reports generator programmatic accuracy $\bar{p}$ (\%) on AgentJudgeBench, averaged across the four metrics and six DAG topologies.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.65\linewidth]{figures/degradation}
+\caption{Mean judge alignment as a function of query difficulty, averaged across all six judges and five generators. The no-GT degradation slope is roughly $1.5\times$ steeper than the GT slope across all generators.}
+\label{fig:degradation}
+\end{figure}
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.1}
+\caption{Generator programmatic accuracy $\bar{p}$ (\%) on AgentJudgeBench, averaged across the four metrics and six DAG topologies. Generators are ranked by hard-difficulty accuracy.}
+\label{tab:generator-accuracy}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Generator} & \textbf{Easy} & \textbf{Med.} & \textbf{Hard} \\
+\midrule
+Llama-3.3-70B & 96.1 & 92.5 & 84.5 \\
+Qwen3-32B     & 93.7 & 88.5 & 80.0 \\
+Llama-3.1-8B  & 89.3 & 85.2 & 74.4 \\
+GPT-5.4       & 82.0 & 79.4 & 72.9 \\
+SmolLM3-3B    & 83.5 & 77.2 & 65.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Programmatic Judge Validation}
+\label{app:prog-judge-validation}
+
+This appendix reports a human annotation study validating the programmatic scorer against independent human judgement. We sampled 120 \emph{hard}-difficulty records stratified across all six DAG topologies (20 per topology). For each record, annotators were shown the user query, available tool schemas, generated tool calls, ground-truth expected tool calls, and the programmatic scores. For each of the four metrics they were asked to \emph{agree} or \emph{disagree} with the programmatic score and provide a brief justification, yielding $120 \times 4 = 480$ metric-level verdicts. Records were stratified to over-represent cases where at least one programmatic score is below $1.0$ (14 per topology) alongside perfect-score records (6 per topology), ensuring annotators encountered the full range of difficulty. Annotators were not shown the paper's hypotheses or the LLM judge outputs prior to annotation.
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\caption{Human annotator agreement with the programmatic scorer across 120 hard-difficulty records ($n{=}480$ metric-level verdicts), stratified at 20 records per DAG topology.}
+\label{tab:prog-judge-agree}
+\begin{tabularx}{0.75\textwidth}{@{}Xrrr@{}}
+\toprule
+\textbf{Metric} & \textbf{Agree} & \textbf{Disagree} & \textbf{Agreement \%} \\
+\midrule
+Tool Selection          & 111 &  9 & 92.5 \\
+Parameter Structure     &  99 & 21 & 82.5 \\
+Sequence Accuracy       & 117 &  3 & 97.5 \\
+Query Coverage          & 118 &  2 & 98.3 \\
+\midrule
+\textbf{Overall}        & \textbf{445} & \textbf{35} & \textbf{92.7} \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.5em}
+\begin{tabularx}{0.75\textwidth}{@{}Xrr@{}}
+\toprule
+\textbf{DAG Type} & \textbf{Agree / 80} & \textbf{\%} \\
+\midrule
+Linear              & 70 & 87.5 \\
+Fan-Out             & 77 & 96.2 \\
+Fan-In              & 75 & 93.8 \\
+Diamond             & 77 & 96.2 \\
+Optional Enrichment & 68 & 85.0 \\
+Loop-Like           & 78 & 97.5 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+The $92.7\%$ overall agreement across $480$ metric-level verdicts confirms the programmatic scorer as a reliable reference signal for the alignment metric of Section~\ref{sec:methodology:alignment}. Agreement is not uniform across metrics: \emph{parameter structure} is the weakest axis ($82.5\%$, $21$ disagreements), while \emph{sequence accuracy} and \emph{query coverage} are near-perfect ($97.5\%$ and $98.3\%$). Inspection of the $21$ parameter-structure disagreements reveals two error modes. The dominant one (${\approx}16$ of $21$ cases) is a \emph{schema-vs.-GT mismatch}: the model includes additional parameter keys that are valid per the available-tool JSON schema but absent from the specific ground-truth trace; the programmatic scorer penalises these extras (per Eq.~\ref{eq:prog-param-per-call}), whereas human annotators treat them as correct given the schema. The remaining $5$ disagreements involve structurally matching parameters that the scorer under-penalises due to partial-match rounding. This pattern is precisely the semantic-equivalence gap described in Appendix~\ref{app:limitations}, and it bounds the scope of any mis-alignment attributable to scorer noise: $74.1\%$ of metric-level mismatches between the programmatic and LLM judges fall on tool selection, sequence accuracy, and coverage - dimensions where structural and semantic correctness largely coincide.
+
+On the tool-selection axis ($9$ disagreements), two failure modes emerge: semantic equivalence between tools with different names (e.g., \texttt{validate\_jurisdictional\_limits} vs.\ \texttt{assess\_jurisdictional\_limits}), and reasonable extra tools that the scorer penalises as out-of-reference. The per-DAG pattern is consistent with known topology difficulty: \emph{optional\_enrichment} has the lowest agreement ($85.0\%$), reflecting the inherent ambiguity in judging whether optional branches were correctly included or omitted - the same ambiguity that makes this topology moderately hard in the main judge evaluation (Table~\ref{tab:e5-pertopology}).
+
+\paragraph{Judge alignment against human verdicts.}
+The 120 annotated records also allow measuring how closely each LLM judge's with-GT verdict matches human judgement, where records with annotator disagreement ($n{=}35$) are scored using the human-corrected value rather than the programmatic score. Table~\ref{tab:judge-vs-human} compares each judge's programmatic-reference alignment (primary metric) against their human-verdict alignment on the same 120 hard records.
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.10}
+\caption{Judge alignment (\%, with-GT) on the 120 annotated hard records: vs.\ programmatic reference and vs.\ human verdicts (35 corrected records). $\Delta$ = human alignment $-$ programmatic alignment. Smaller $|\Delta|$ indicates closer agreement with human judgement.}
+\label{tab:judge-vs-human}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+\textbf{Judge} & \textbf{vs.\ Prog.} & \textbf{vs.\ Human} & $\boldsymbol{\Delta}$ \\
+\midrule
+GPT-5.4         & 78.7 & 71.2 & $-7.5$ \\
+Claude          & 78.1 & 74.5 & $-3.7$ \\
+Gemini-2.5-Pro  & 78.3 & 68.0 & $-10.2$ \\
+QwQ-32B         & 82.9 & 74.3 & $-8.6$ \\
+GPT-OSS-20B     & 79.0 & 70.2 & $-8.8$ \\
+GPT-OSS-120B    & 82.2 & 79.4 & $-2.8$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+All six judges are systematically closer to the programmatic scorer than to human annotators (mean $\Delta = -6.9$\,pp). GPT-OSS-120B is the most human-aligned judge ($\Delta = -2.8$\,pp), while Gemini-2.5-Pro diverges most ($\Delta = -10.2$\,pp). The negative $\Delta$ reflects that human annotators are more lenient on hard examples (particularly on sequence accuracy and parameter structure), while both the programmatic scorer and LLM judges apply stricter structural matching. The judge rankings under human-verdict alignment differ meaningfully from programmatic-reference rankings (Spearman $\rho = 0.26$): QwQ-32B, which leads the programmatic leaderboard, drops to 4th under human alignment, while GPT-OSS-120B tops both orderings. This suggests that the programmatic scorer's strictness inflates QwQ's apparent advantage; GPT-OSS-120B is the most robust judge across both evaluation bases. Practitioners preferring alignment with human intuition should favour GPT-OSS-120B, regardless of whether programmatic or human verdicts are used as the reference.
+
+\section{Over-Anchoring Case Studies}
+\label{app:anchoring-cases}
+
+This appendix presents three representative records from the 1,322 over-anchoring instances identified on Gemini-2.5-Pro hard-difficulty outputs (records where $p^m_r < 1.0$, $\ell^m_{\text{GT}} > p^m_r$, and $\ell^m_{\text{no-GT}} \leq p^m_r + 0.1$ on at least one metric). Cases 1-2 document the dominant \emph{sequence-accuracy anchor} mechanism; Case 3 documents the secondary \emph{coverage anchor}. In each case the judge's with-GT justification contains explicit reference to the GT trace (``sequence is logical given the reference''), whereas the no-GT justification independently identifies the structural flaw the programmatic judge also penalises.
+
+\paragraph{Case 1 — Sequence anchor, microbial-growth linear DAG.}
+\textbf{Query:} \emph{``Got this cheese with 250 CFU/g initial bugs, left at 20°C for 6.5 hours~- need the growth rate, then a safe storage temperature for 120 hours, then the shelf life at that temp.''}
+\textbf{Generated calls:} \texttt{calculate\_microbial\_growth\_rate} $\to$ \texttt{estimate\_optimal\_storage\_temperature} (2 calls; ground truth requires a third: \texttt{predict\_shelf\_life}).
+\textbf{Programmatic:} seq $= 0.67$ (partial match; missing third call).
+\textbf{Gemini with GT:} seq $= 1.0$ - \emph{``The sequence of the selected tools is logical, with the growth rate calculation correctly preceding the temperature estimation.''} The judge evaluates the two-call prefix against the GT prefix and deems it correct, ignoring the missing third step.
+\textbf{Gemini no-GT:} seq $= 0.5$ - \emph{``The plan includes a redundant, identical tool call, which is a minor structural flaw in the sequence.''} The judge invents a different critique rather than catching the missing call, but does not award full credit.
+\textbf{Mechanism:} GT exposure causes the judge to evaluate only the presented steps against the reference rather than checking for completeness.
+
+\paragraph{Case 2 — Sequence anchor, cloud-budget linear DAG.}
+\textbf{Query:} \emph{``Cloud bill hit \$4,800 over 15 days vs.\ \$250/day normal. 10 days left, \$8,000 budget. What's going on and will we blow the budget?''}
+\textbf{Generated calls:} \texttt{calculate\_budget\_deviation\_risk}(\texttt{predicted\_trend=1.93}) $\to$ \texttt{forecast\_budget\_usage}. The first call consumes a \texttt{predicted\_trend} argument that has not been computed by any prior step.
+\textbf{Programmatic:} seq $= 0.33$.
+\textbf{Gemini with GT:} seq $= 1.0$ - \emph{``The two selected tools are independent and can be executed in any order.''} The GT reference shows two calls and the judge rationalises independence; it does not notice the unresolved input dependency.
+\textbf{Gemini no-GT:} seq $= 0.0$ - \emph{``The first tool call depends on a \texttt{predicted\_trend} input that is not available from the query or generated by a prior step.''} Without the GT to anchor to, the judge correctly identifies the data-dependency violation.
+\textbf{Mechanism:} GT anchoring suppresses dependency-checking; the judge substitutes a plausibility heuristic (``independent tools can run in any order'') for structural verification.
+
+\paragraph{Case 3 — Coverage anchor, power-grid linear DAG.}
+\textbf{Query:} \emph{``We're pulling 8,450 kW of 12,000 kW, expecting +1,200 kW, running hot for 5.3 h vs.\ 4 h threshold. Is everything okay?''}
+\textbf{Generated calls:} Three analysis tools (load-duration risk, grid-fatigue risk, capacity headroom). Ground truth uses two; the extra call is \texttt{estimate\_grid\_fatigue\_risk}.
+\textbf{Programmatic:} cov $= 0.67$ (extra call penalised).
+\textbf{Gemini with GT:} cov $= 1.0$ - \emph{``The plan selects tools that address all numerical data points provided in the user's query.''} Seeing the GT calls, the judge credits the prediction for covering the query rather than checking against the reference.
+\textbf{Gemini no-GT:} cov $= 0.5$ - \emph{``The plan analyzes all data points but lacks a final synthesis tool to answer whether to be worried.''} Without GT, the judge applies an independent completeness check and finds partial coverage.
+\textbf{Mechanism:} GT presence triggers credit-by-association; the judge attributes coverage to the prediction by observing that the GT is complete, rather than evaluating the prediction independently.
+
+\section{C3 Corrupted-GT Control: Full Results}
+\label{app:c3-table}
+
+Table~\ref{tab:c3-full} reports per-difficulty alignment for both judges under standard GT, no-GT, and the corrupted-GT (C3) condition on the Llama-3.3-70B generator. The C3 condition replaces the judge's reference with a randomly sampled GT from a different record of the same DAG topology. The key finding is the judge-level split: Gemini-2.5-Pro with corrupted GT matches its standard GT alignment within $0$-$1.8$\,pp across all difficulties, while QwQ-32B with corrupted GT matches its no-GT alignment within $0.2$\,pp. This confirms the mechanism described in Section~\ref{sec:exp:main}: Gemini anchors to any reference block regardless of content; QwQ exercises independent reasoning when the reference is incoherent.
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4.5pt}
+\renewcommand{\arraystretch}{1.1}
+\caption{Full C3 results on Llama-3.3-70B generator. All values are mean alignment (\%) over 3,764-3,771 records per cell.
+\textbf{cGT}: corrupted-GT condition. \textbf{$\Delta_{\text{cGT-GT}}$}: corrupted-GT minus standard GT.
+\textbf{$\Delta_{\text{cGT-noGT}}$}: corrupted-GT minus no-GT.}
+\label{tab:c3-full}
+\begin{tabular}{@{}llrrrrr@{}}
+\toprule
+\textbf{Judge} & \textbf{Diff} & \textbf{GT} & \textbf{no-GT} & \textbf{cGT} & \textbf{$\Delta_{\text{cGT-GT}}$} & \textbf{$\Delta_{\text{cGT-noGT}}$} \\
+\midrule
+\multirow{3}{*}{QwQ-32B}
+  & Easy   & 96.6 & 95.6 & 95.5 & $-1.1$ & $-0.1$ \\
+  & Medium & 92.3 & 92.0 & 92.0 & $-0.3$ & $\phantom{-}0.0$ \\
+  & Hard   & 84.6 & 84.4 & 84.6 & $\phantom{-}0.0$ & $+0.2$ \\
+\midrule
+\multirow{3}{*}{Gemini-2.5-Pro}
+  & Easy   & 90.7 & 95.7 & 92.5 & $+1.8$ & $-3.2$ \\
+  & Medium & 86.4 & 92.1 & 86.4 & $\phantom{-}0.0$ & $-5.7$ \\
+  & Hard   & 78.9 & 84.6 & 78.9 & $\phantom{-}0.0$ & $-5.7$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Notation}
+\label{app:notation}
+
+Table~\ref{tab:notation} summarises the symbols used throughout the paper, in the order in which they appear.
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Symbol} & \textbf{Definition} \\
+\midrule
+$\mathcal{G}$
+  & Set of generator models whose tool-call sequences are judged; $|\mathcal{G}| = 5$. \\
+$\mathcal{J}$
+  & Set of LLM judges evaluated; $|\mathcal{J}| = 6$. \\
+$\mathcal{D}$
+  & Difficulty levels of the query rewrites, $\mathcal{D} = \{\text{easy}, \text{medium}, \text{hard}\}$. \\
+$g,\ j,\ d$
+  & Individual generator, judge, and difficulty, with $g \in \mathcal{G}$, $j \in \mathcal{J}$, $d \in \mathcal{D}$. \\
+$c$
+  & Judge condition, $c \in \{\text{GT}, \text{no-GT}\}$: whether the prompt includes the ground-truth tool calls. \\
+$r$
+  & Individual record (one query, its tool schemas, ground-truth and predicted tool calls). \\
+$N_{g,d}$
+  & Record count in the $(g, d)$ configuration after filtering unparseable generator outputs. \\
+$p_r \in [0,1]$
+  & Deterministic programmatic scorer's verdict on record $r$ (reference signal for alignment). \\
+$\ell_{j,r,c} \in \{0, 0.5, 1\}$
+  & LLM judge $j$'s verdict on record $r$ under condition $c$. \\
+$\mathrm{align}(j, g, d, c)$
+  & Mean per-record alignment percentage (Eq.~\ref{eq:alignment}). \\
+$\overline{\mathrm{align}}_{c}(j)$
+  & Alignment of judge $j$ under condition $c$, averaged over all $(g, d)$ configurations. \\
+$\mathrm{lift}(j)$
+  & Ground-truth lift of judge $j$: $\overline{\mathrm{align}}_{\text{GT}}(j) - \overline{\mathrm{align}}_{\text{no-GT}}(j)$ (Eq.~\ref{eq:lift}). \\
+$\Delta$(hard$-$easy)
+  & Difficulty-induced degradation: $\mathrm{align}(\cdot,\cdot,\text{hard},\cdot) - \mathrm{align}(\cdot,\cdot,\text{easy},\cdot)$, in percentage points (pp). \\
+\bottomrule
+\end{tabular}
+\vspace{0.2cm}
+\caption{Notation used in the paper.}
+\label{tab:notation}
+\end{table}
+
+\section{Judge LLMs Comparison}
+\label{app:judge-comparison}
+
+Table~\ref{tab:comparison} compares AgentJudgeBench against the seven existing
+systems that deploy LLM judges for agentic tool-calling evaluation, across four
+dimensions: per-metric decomposition, difficulty variation, ground-truth
+ablation, and use of a deterministic programmatic reference. No prior system
+addresses more than one of these dimensions; AgentJudgeBench is the first to
+provide all four.
+\begin{table}[!htbp]
+\centering
+\caption{
+Comparison of systems that deploy LLM judges for agentic tool-calling evaluation. \textbf{Judge Model}: LLM used as judge. \textbf{Per-Metric}: whether evaluation is decomposed into fine-grained dimensions. \textbf{Difficulty}: whether tasks span multiple difficulty tiers. \textbf{GT Ablation}: whether the effect of ground-truth availability is studied. \textbf{Prog.\ Ref.}: whether a deterministic evaluator is used as a bias-free baseline.
+}
+\label{tab:comparison}
+
+\footnotesize
+\renewcommand{\arraystretch}{1.0}
+\setlength{\tabcolsep}{4pt}
+
+\begin{tabularx}{\textwidth}{l X c c c c}
+\toprule
+\textbf{System} & \textbf{Judge Model} & \textbf{Per-Metric} & \textbf{Difficulty} & \textbf{GT Ablation} & \textbf{Prog.\ Ref.} \\
+\midrule
+ToolEval \cite{qin2023toolllm} & ChatGPT & \xmark & \xmark & \xmark & \xmark \\
+StableToolBench \cite{guo2024stabletoolbench} & GPT-4-turbo & \xmark & \xmark & \xmark & \xmark \\
+MCP-AgentBench \cite{mcpagentbench2025} & LLM + Rules & \xmark & \xmark & \xmark & \xmark \\
+GeoBenchX \cite{krechetova2025geobenchx} & 3-Judge Panel & \xmark & \xmark & \xmark & \xmark \\
+Agent-as-a-Judge \cite{zhuge2024agentjudge} & Agent & \xmark & \xmark & \xmark & \xmark \\
+Auto-Eval Judge \cite{bhonsle2025autoeval} & GPT-4o & \xmark & \xmark & \xmark & \xmark \\
+ToolSandbox \cite{lu2024toolsandbox} & \textit{Replaced} & N/A & \xmark & N/A & \cmark \\
+\midrule
+\textbf{AgentJudgeBench (Ours)} & \textbf{Multi-scale LLMs (3B $\rightarrow$ Frontier)} & \cmark & \cmark & \cmark & \cmark \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Prompts}
+\label{app:prompts}
+\label{app:judge-prompts}
+
+This appendix reproduces, verbatim, every prompt used in the evaluation pipeline: (i)~the \emph{generator} prompt (Appendix~\ref{app:prompt-generator}) that instructs each generator $g \in \mathcal{G}$ to emit a tool-call sequence, (ii)~the \emph{with-GT judge} prompt (Appendix~\ref{app:prompt-gt}) sent to every LLM judge $j \in \mathcal{J}$ under the GT condition, and (iii)~the \emph{no-GT judge} prompt (Appendix~\ref{app:prompt-no-gt}), identical to (ii) save for the omission of the \textsc{Expected Tool Calls} block. Decoding parameters are held constant across all prompts and all $(g, j, d, c)$ configurations.
+
+\subsection{Generator prompt.}
+\label{app:prompt-generator}
+
+\begin{promptbox}[\textsc{System}]
+\ttfamily\small
+You are a tool-call generation model participating in a BENCHMARK EVALUATION.\\[2pt]
+This is a SIMULATION. The tools listed are HYPOTHETICAL. You are NOT being asked to actually execute anything. You are being evaluated on your ability to select and format the correct tool calls given a query and a tool schema.\\[4pt]
+\textbf{Your ONLY job:}\\
+Given the user message and available tools, output the correct JSON array of tool calls. Nothing else.\\[4pt]
+\textbf{Rules:}\\
+- Output ONLY a raw JSON array. No text, no markdown, no explanation.\\
+- If no tools apply, output: \texttt{[]}\\
+- Use EXACTLY the format specified below.\\[4pt]
+\textit{\{system\_prompt\}}\\[4pt]
+\textbf{Available Tools:}\\
+\textit{\{available\_tools\}}
+\end{promptbox}
+
+\begin{promptbox}[\textsc{User}]
+\ttfamily\small
+\textit{\{user\_message\}}
+\end{promptbox}
+
+\subsection{Judge prompt - with ground truth (GT condition).}
+\label{app:prompt-gt}
+
+\begin{promptbox}[\textsc{User}]
+\ttfamily\small
+You are a STRICT STRUCTURAL EVALUATOR for AI agent tool-calling plans.\\[2pt]
+IMPORTANT CONTEXT (NON-NEGOTIABLE):\\
+- The evaluated model is SINGLE-SHOT and STATELESS.\\
+- The model does NOT observe tool execution or tool outputs.\\
+- The model ONLY plans tool calls.\\
+- ALL evaluation MUST be STATIC and STRUCTURAL.\\
+- \textbf{Assume the programmatic judge is the ground truth.}\\[2pt]
+ABSOLUTELY DO NOT:\\
+- Evaluate correctness of parameter VALUES\\
+- Compare generated values to expected values\\
+- Infer correctness from tool output logic\\
+- Penalize placeholder, symbolic, or dummy values\\
+- Penalize derived-value mismatches (e.g., 0.75 vs 0.005)\\[2pt]
+ONLY evaluate:\\
+- Tool presence\\
+- Tool names\\
+- Parameter NAMES\\
+- Parameter STRUCTURE (dict shape)\\
+- Logical ordering of calls\\
+- Coverage of user intent\\[2pt]
+If parameter NAMES match and the tool intent is satisfied, the parameter structure MUST be treated as correct.\\[4pt]
+-\\
+\textbf{Evaluation Metrics (PROGRAMMATIC-ALIGNED)}\\
+You must compute FOUR scores. Scores should default to \textbf{1.0 unless a clear structural violation exists}.\\[4pt]
+\textbf{1. TOOL SELECTION ACCURACY.} Evaluate only: required tools present, no clearly irrelevant tools. Ignore tool grouping and execution feasibility. Scoring: 1.0 all required/no irrelevant; 0.5 missing or clearly irrelevant; 0.0 plan fundamentally incorrect.\\[3pt]
+\textbf{2. PARAMETER STRUCTURE ACCURACY (MOST IMPORTANT).} Evaluate strictly: presence of required parameter names; arguments are a dictionary; parameter names logically belong to the tool. Do NOT evaluate parameter values, numeric ranges, threshold correctness, dependency resolution, or output-derived values. Rules: required parameter names present $\Rightarrow$ structurally correct; optional parameters never reduce score; placeholder or symbolic values are always valid. Scoring: 1.0 correct names on all tools; 0.5 minor missing/extra; 0.0 required names missing for most tools.\\[3pt]
+\textbf{3. SEQUENCE \& DEPENDENCY ACCURACY.} Does the order reflect logical planning? Are prerequisites placed earlier? Assume symbolic dependency handling is valid. Scoring: 1.0 logical; 0.5 minor ordering issue, intent preserved; 0.0 illogical or contradictory.\\[3pt]
+\textbf{4. QUERY COVERAGE ACCURACY.} Does the plan cover all parts of the user request? Are all sub-goals planned for? Scoring: 1.0 full coverage; 0.5 partial; 0.0 major intent missed.\\[4pt]
+-\\
+\textbf{OUTPUT FORMAT (STRICT).} Return exactly one JSON object with the four metric fields, each containing \texttt{\{"accuracy": <float>, "justification": "<1 sentence>"\}}, plus an \texttt{"overall\_assessment"} single-sentence summary.\\[4pt]
+Be conservative. Prefer 1.0 unless a \textbf{clear structural violation} exists. Judge structure, not semantics.\\[6pt]
+QUERY:\\
+\textit{\{user\_message\}}\\[4pt]
+AVAILABLE TOOLS:\\
+\textit{\{available\_tools\}}\\[4pt]
+GENERATED TOOL CALLS:\\
+\textit{\{generated\_tool\_calls\}}\\[4pt]
+EXPECTED TOOL CALLS:\\
+\textit{\{expected\_responses\}}
+\end{promptbox}
+
+\subsection{Judge prompt - without ground truth (no-GT condition).}
+\label{app:prompt-no-gt}
+
+\begin{promptbox}[\textsc{User}]
+\ttfamily\small
+You are a STRICT STRUCTURAL EVALUATOR for AI agent tool-calling plans.\\[2pt]
+IMPORTANT CONTEXT (NON-NEGOTIABLE):\\
+- The evaluated model is SINGLE-SHOT and STATELESS.\\
+- The model does NOT observe tool execution or tool outputs.\\
+- The model ONLY plans tool calls.\\
+- ALL evaluation MUST be STATIC and STRUCTURAL.\\
+- There is NO expected tool plan available.\\[2pt]
+ABSOLUTELY DO NOT:\\
+- Evaluate correctness of parameter VALUES\\
+- Infer correctness from tool output logic\\
+- Penalize placeholder, symbolic, or dummy values\\
+- Penalize derived-value mismatches\\
+- Penalize missing runtime-dependent values\\[2pt]
+ONLY evaluate using:\\
+- The user QUERY\\
+- AVAILABLE TOOLS schema\\
+- GENERATED TOOL CALLS\\[2pt]
+Treat the AVAILABLE TOOLS as the ONLY source of truth.\\[4pt]
+-\\
+\textbf{Evaluation Metrics (STRUCTURAL ONLY)}\\
+Compute FOUR scores. Scores MUST default to \textbf{1.0 unless a clear structural violation exists}.\\[4pt]
+\textbf{1. TOOL SELECTION ACCURACY.} Are selected tools relevant to the query? Tools that clearly do not belong? Rules: if a tool plausibly helps answer the query, treat as valid; only penalize clearly irrelevant tools. Scoring: 1.0 all relevant; 0.5 one questionable/missing; 0.0 selection unrelated.\\[3pt]
+\textbf{2. PARAMETER STRUCTURE ACCURACY (MOST IMPORTANT).} Evaluate strictly: arguments exist and are dictionaries; parameter names exist in the tool schema; parameter names logically belong to the tool. Do NOT evaluate parameter values, types, ranges, thresholds, or symbolic references. Rules: matching names $\Rightarrow$ correct; optional parameters never reduce score; extra parameters only penalize if clearly invalid. Scoring: 1.0 valid across all tools; 0.5 minor issues; 0.0 most tools incorrect.\\[3pt]
+\textbf{3. SEQUENCE \& DEPENDENCY ACCURACY.} Is ordering logically consistent with the query? Are analysis steps before decision/recommendation steps? Assume symbolic dependencies are valid. Scoring: 1.0 logical; 0.5 minor issue; 0.0 illogical.\\[3pt]
+\textbf{4. QUERY COVERAGE ACCURACY.} Does the plan attempt to address all parts of the query? Are key sub-goals represented? Scoring: 1.0 full; 0.5 partial; 0.0 major intent missed.\\[4pt]
+-\\
+\textbf{OUTPUT FORMAT (STRICT).} Return exactly one JSON object with the four metric fields, each containing \texttt{\{"accuracy": <float>, "justification": "<1 sentence>"\}}, plus an \texttt{"overall\_assessment"} single-sentence summary.\\[4pt]
+Be conservative. Prefer 1.0 unless a \textbf{clear structural violation} exists. Judge structure, not execution or correctness.\\[6pt]
+QUERY:\\
+\textit{\{user\_message\}}\\[4pt]
+AVAILABLE TOOLS:\\
+\textit{\{available\_tools\}}\\[4pt]
+GENERATED TOOL CALLS:\\
+\textit{\{generated\_tool\_calls\}}
+\end{promptbox}
+
+\section{Generator Models}
+\label{app:generators}
+
+Table~\ref{tab:generators} lists the five generator models used to produce tool-calling outputs. Models span four capability tiers - small open-source (3B), mid-scale open (8B), large open (32B-70B), and frontier closed (GPT-5.4) - ensuring the judge evaluation covers a representative range of output quality. All generators are decoded at temperature $0$ with the model's native function-calling prompt.
+
+\begin{table}[!htbp]
+\centering
+\caption{Generator models used to produce tool-calling outputs. All generators use temperature $=0$ with their native function-calling prompt.}
+\label{tab:generators}
+\small
+\renewcommand{\arraystretch}{1.1}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Short name} & \textbf{HF / Server identifier} & \textbf{Size} \\
+\midrule
+Llama-3.3-70B-Instruct & \texttt{meta-llama/Llama-3.3-70B-Instruct} & 70B \\
+Qwen3-32B              & \texttt{Qwen/Qwen3-32B}                   & 32B \\
+Llama-3.1-8B-Instruct  & \texttt{meta-llama/Llama-3.1-8B-Instruct} & 8B  \\
+SmolLM3-3B             & \texttt{HuggingFaceTB/SmolLM3-3B}         & 3B  \\
+GPT-5.4$^{\dagger}$    & Azure OpenAI / \texttt{gpt-5.4}, api-ver \texttt{2025-04-01-preview}, accessed Apr 2026 & - \\
+\bottomrule
+\end{tabular}
+\begin{flushleft}
+\footnotesize $^{\dagger}$``GPT-5.4'' is the internal designation for the GPT-5 preview variant deployed on Azure OpenAI as of April 2026; not an officially published model version string. Raw per-record outputs are included in the supplementary data release.
+\end{flushleft}
+\end{table}
+
+\section{Rewriting-Preservation Validation Study}
+\label{app:rewrite-validation}
+
+This appendix reports the full results of the meta-judge validation study summarised in \S\ref{sec:methodology:data}. \emph{Goal:} verify, independently of the programmatic judge, that our difficulty-controlled rewrites (a)~preserve the ground-truth tool-call sequence and (b)~are strictly harder (less explicit) than their predecessor.
+
+\paragraph{Protocol.} We stratify-sampled $198$ triplets ($33$ per DAG topology) from the $3{,}808$ record pool and asked each of three frontier LLM meta-judges (Claude, GPT-5.4, Gemini-2.5-Pro) to emit a single JSON verdict per triplet, answering four Boolean questions: (i)~does the medium query admit the same ground-truth tool calls as the easy query?; (ii)~same for hard?; (iii)~is the medium rewrite strictly harder than easy (less explicit in at least one of parameter names, numeric values, or tool intents)?; (iv)~is hard strictly harder than medium? All three meta-judges receive identical prompt scaffolding and decoding parameters. The meta-judges are \emph{not} shown any generator's tool-call prediction - they reason only over the three query variants, the shared available-tools schema, and the shared ground-truth tool-call sequence.
+
+\paragraph{Per-judge verdict rates.}
+Table~\ref{tab:rewrite-validation-per-judge} reports the fraction of triplets for which each meta-judge answered ``yes'' to each question. Task-preservation rates are uniformly high ($77.8\%$-$100\%$ across all judges and both rewrite pairs); the strict-hardening rates are also high for hard-versus-medium ($\geq 95.5\%$) but lower and more judge-dependent for medium-versus-easy, driven by GPT-5.4's stricter interpretation of what constitutes a genuine loss of explicitness.
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.1}
+\caption{Per-judge ``yes''-rate on the rewrite-validation criteria over $n = 198$ stratified triplets.}
+\label{tab:rewrite-validation-per-judge}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Criterion} & \textbf{Claude} & \textbf{GPT-5.4} & \textbf{Gemini-2.5-Pro} \\
+\midrule
+Medium preserves ground-truth tool calls        & 100.0\% & 94.9\% & 100.0\% \\
+Hard preserves ground-truth tool calls          & 100.0\% & 77.8\% & 97.5\% \\
+Medium strictly harder than easy                & 99.5\%  & 62.1\% & 84.8\%  \\
+Hard strictly harder than medium                & 100.0\% & 97.5\% & 95.5\%  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Unanimous agreement.}
+Table~\ref{tab:rewrite-validation-unanimity} reports, per criterion, the number of triplets on which the three meta-judges unanimously agreed (all-yes or all-no) versus gave mixed verdicts. Crucially, \emph{no triplet receives a unanimous ``no'' verdict} on either task-preservation question, and every single triplet is unanimously judged as hard-strictly-harder-than-medium. The only criterion with sub-$60\%$ unanimity is medium-strictly-harder-than-easy, consistent with the per-judge analysis above: annotators disagree at the margin on whether medium constitutes a genuine hardening as opposed to a paraphrase.
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.1}
+\caption{Unanimity of the three meta-judges on each criterion ($n = 198$).}
+\label{tab:rewrite-validation-unanimity}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Criterion} & \textbf{All-yes} & \textbf{All-no} & \textbf{Mixed} & \textbf{Unanimity\%} \\
+\midrule
+Medium preserves ground-truth tool calls        & 188 & 0 & 10 & 94.9\% \\
+Hard preserves ground-truth tool calls          & 152 & 0 & 46 & 76.8\% \\
+Medium strictly harder than easy                & 114 & 1 & 83 & 58.1\% \\
+Hard strictly harder than medium                & 186 & 0 & 12 & 93.9\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Interpretation.}
+The validation supports the stronger of our two design claims (task preservation) and partially supports the weaker one (strict hardening). The task-preservation result means that any alignment degradation observed in Section~\ref{sec:experiments} between easy and hard difficulty conditions is \emph{not} attributable to the rewrites silently changing the underlying task: even the most conservative meta-judge (GPT-5.4, which tends to reject rewrites for minor interpretative drift) finds task-preservation intact on $77.8\%$ of hard rewrites, and the unanimous-no rate is zero. The strict-hardening result for medium-vs-easy is a weaker claim; on that axis our rewriting process achieves a hardening GPT-5.4 would accept only about two-thirds of the time, suggesting that a subset of our medium rewrites are better characterised as paraphrases than as genuine hardenings. This is an informative finding on its own - it suggests the paper's ``easy $\rightarrow$ medium $\rightarrow$ hard'' degradation curves may partially conflate paraphrase-robustness with genuine difficulty-robustness - and is a natural target for a follow-up rewriting-pipeline revision.
+
+\section{LLM Judge Configurations}
+\label{app:judges}
+
+Table~\ref{tab:judges} lists the six LLM judge configurations evaluated in this paper. The set includes large open models (20B-120B), a reasoning-enabled open model (QwQ-32B), and frontier closed models (GPT-5.4, Claude, Gemini-2.5-Pro). QwQ-32B is invoked with \texttt{enable\_thinking=true} (chain-of-thought enabled); all other judges use greedy or near-greedy decoding.
+
+\textbf{Decoding temperature.} vLLM-hosted open judges (QwQ-32B, GPT-OSS-20B, GPT-OSS-120B) use temperature $=0.15$. Frontier judges (GPT-5.4, Claude, Gemini-2.5-Pro) were accessed via provider APIs that did not support temperature $=0$ at time of evaluation; they use the provider's recommended default ($\leq 1.0$). This asymmetry is an implementation constraint, not a design choice. To assess its impact: our temperature sensitivity study (\S\ref{sec:abl:temperature}) shows alignment varies by at most $0.6$\,pp across $T \in \{0.3, 0.7, 1.0\}$, indicating that the inter-condition temperature gap is unlikely to materially confound the cross-judge comparisons. A broader evaluation with harmonised temperatures across all judges is planned for a future revision.
+
+\begin{table}[!htbp]
+\centering
+\caption{LLM judge configurations evaluated in this paper. All judges consume the same prompt scaffold (Appendix~\ref{app:prompts}) and produce the same JSON output schema.}
+\label{tab:judges}
+\small
+\renewcommand{\arraystretch}{1.1}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Short name} & \textbf{Provider / Identifier} & \textbf{Size} \\
+\midrule
+GPT-5.4$^{\dagger}$ & Azure OpenAI / \texttt{gpt-5.4}, api-ver \texttt{2025-04-01-preview}, accessed Apr 2026 \\
+Claude~Sonnet~4.5  & Anthropic proxy / \texttt{claude-sonnet-4-5-20250929-v1:0}, accessed Apr 2026         \\
+Gemini-2.5-Pro     & Vertex AI proxy / \texttt{gemini-2.5-pro-preview-05-06}, accessed Apr 2026            \\
+QwQ-32B            & vLLM / \texttt{Qwen/QwQ-32B}, \texttt{enable\_thinking=true}                         \\
+GPT-OSS-20B        & vLLM / \texttt{openai/gpt-oss-20b}                                                   \\
+GPT-OSS-120B       & vLLM / \texttt{openai/gpt-oss-120b}                                                  \\
+\bottomrule
+\end{tabular}
+\begin{flushleft}
+\footnotesize $^{\dagger}$``GPT-5.4'' is the internal designation for the GPT-5 preview variant deployed on Azure OpenAI as of April 2026; it is not an officially published model version string.
+\end{flushleft}
+\end{table}
+
+\section{Per-Metric Breakdown}
+\label{app:permetric-table}
+
+Table~\ref{tab:e4-permetric} reports per-metric alignment under both
+conditions, averaged across all 12 $(g, d)$ configurations. Under with-GT,
+sequence accuracy shows the widest inter-judge spread: Gemini-2.5-Pro
+scores $64.2\%$ while GPT-OSS-20B reaches $86.4\%$, a gap of over 22\,pp.
+Tool selection reveals a scale effect: GPT-OSS-20B drops to $70.7\%$,
+nearly 18\,pp below GPT-OSS-120B ($88.7\%$). Parameter structure and query
+coverage are uniformly high ($86$-$94\%$). Under without-GT, all variation
+collapses: the widest spread on any metric is $3.0$\,pp, confirming that
+the ``default to $1.0$'' rubric erases capability differences.
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.05}
+\caption{Per-metric match score $\mu^{m}_{j,r,c} \times 100$, averaged
+across all $(g,d)$ configurations. Bold marks the best value per column.}
+\label{tab:e4-permetric}
+\begin{tabular}{@{}lcccc|cccc@{}}
+\toprule
+ & \multicolumn{4}{c}{\textbf{With-GT}} & \multicolumn{4}{c}{\textbf{Without-GT}} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}
+\textbf{Judge}
+  & \textbf{tool} & \textbf{param} & \textbf{seq} & \textbf{cov}
+  & \textbf{tool} & \textbf{param} & \textbf{seq} & \textbf{cov} \\
+\midrule
+GPT-5.4         & 83.8          & \textbf{90.0} & 72.3          & \textbf{94.0} & \textbf{84.7} & 89.8 & \textbf{80.7} & 91.0          \\
+Claude          & 86.4          & 86.5          & 78.0          & 92.7          & 83.2          & 88.2 & 80.1          & 91.3          \\
+Gemini-2.5-Pro  & 82.6          & 89.4          & 64.2          & 93.3          & 82.9          & 89.5 & 80.4          & \textbf{92.3} \\
+QwQ-32B         & 88.5          & 89.8          & 84.8          & 93.9          & 82.0          & \textbf{89.9} & 79.9 & 91.5          \\
+GPT-OSS-20B     & 70.7          & 89.0          & \textbf{86.4} & 92.5          & 81.7          & 89.2 & 79.5          & 89.5          \\
+GPT-OSS-120B    & \textbf{88.7} & 89.7          & 82.9          & 93.5          & 82.1          & \textbf{89.9} & 79.4 & 91.6          \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{Free-Form Judge Prompt (A5)}
+\label{app:prompt-freeform}
+
+The following prompt is used in the A5 prompt-format ablation (\S\ref{sec:abl:format}). It omits explicit per-metric definitions and scoring rubrics, asking the judge to reason freely and return a single holistic verdict per metric without anchoring instructions.
+
+\begin{promptbox}[\textsc{User}]
+\ttfamily\small
+You are evaluating an AI agent's tool-calling plan.\\[4pt]
+Given the user query, the available tools, and the generated tool calls, assess how well the agent performed. Consider whether it selected appropriate tools, structured parameters correctly, ordered calls logically, and covered the user's intent.\\[4pt]
+Return a JSON object with four keys: \texttt{tool\_selection\_accuracy}, \texttt{parameter\_structure\_accuracy}, \texttt{sequence\_accuracy}, and \texttt{query\_coverage\_accuracy}. Each key should map to an object with \texttt{"accuracy"} (a float between 0 and 1) and \texttt{"justification"} (one sentence). Also include an \texttt{"overall\_assessment"} field.\\[6pt]
+QUERY:\\
+\textit{\{user\_message\}}\\[4pt]
+AVAILABLE TOOLS:\\
+\textit{\{available\_tools\}}\\[4pt]
+GENERATED TOOL CALLS:\\
+\textit{\{generated\_tool\_calls\}}\\[4pt]
+EXPECTED TOOL CALLS:\\
+\textit{\{expected\_responses\}}
+\end{promptbox}
+
+\section{Supplementary Numerical Tables}
+\label{app:ablations}
+
+\subsection*{Judge Temperature: Per-Difficulty Results}
+
+Table~\ref{tab:app-abl-temp} provides the full per-difficulty numerical results for the temperature sensitivity study (Section~\ref{sec:abl:temperature}). Alignment variance across temperatures is $\leq 0.6$\,pp on every (difficulty, condition) slice, confirming that Qwen3-32B judge behaviour is insensitive to sampling stochasticity.
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4.5pt}
+\renewcommand{\arraystretch}{1.05}
+\caption{Judge temperature sensitivity: full per-difficulty alignment (\%) for Qwen3-32B on Llama-3.3-70B generator.}
+\label{tab:app-abl-temp}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+ & \multicolumn{2}{c}{\textbf{Easy}} & \multicolumn{2}{c}{\textbf{Medium}} & \multicolumn{2}{c}{\textbf{Hard}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+\textbf{Temperature} & \textbf{GT} & \textbf{no-GT} & \textbf{GT} & \textbf{no-GT} & \textbf{GT} & \textbf{no-GT} \\
+\midrule
+$T = 0.3$ & \textbf{96.4} & \textbf{95.1} & \textbf{93.5} & \textbf{91.8} & \textbf{87.5} & \textbf{84.0} \\
+$T = 0.7$ & \textbf{96.4} & 95.2          & 93.4          & 91.7          & 87.2          & 84.0          \\
+$T = 1.0$ & 96.1          & 95.2          & 92.9          & 91.2          & 87.0          & 83.9          \\
+\midrule
+Max spread & 0.3 & 0.1 & 0.6 & 0.6 & 0.5 & 0.1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection*{Chain-of-Thought Reasoning: Full Per-Generator Grid}
+
+Table~\ref{tab:app-abl-e6} reports the full $4 \times 3 \times 2$ grid for the QwQ-32B reasoning study (Section~\ref{sec:abl:reasoning}). No cell shows a difference exceeding $0.3$\,pp. The pattern is uniform across generator quality tiers: even on SmolLM3-3B, where generator errors are most frequent and reasoning might be expected to help the judge distinguish correct from incorrect calls, the thinking trace adds nothing.
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.05}
+\caption{Chain-of-thought reasoning study: full per-generator alignment (\%) for QwQ-32B with thinking on vs.\ off. $\Delta$ rows show thinking-on minus thinking-off in percentage points.}
+\label{tab:app-abl-e6}
+\begin{tabular}{@{}llcccccc@{}}
+\toprule
+ & & \multicolumn{2}{c}{\textbf{Easy}} & \multicolumn{2}{c}{\textbf{Medium}} & \multicolumn{2}{c}{\textbf{Hard}} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}
+\textbf{Generator} & \textbf{Judge} & \textbf{GT} & \textbf{no-GT} & \textbf{GT} & \textbf{no-GT} & \textbf{GT} & \textbf{no-GT} \\
+\midrule
+\multirow{3}{*}{Llama-3.3-70B}
+  & Thinking on  & 96.6 & 95.6 & 93.6 & 92.1 & 87.5 & 84.4 \\
+  & Thinking off & 96.5 & 95.6 & 93.6 & 92.0 & 87.3 & 84.4 \\
+  & $\Delta$     & $+0.1$ & $0.0$ & $0.0$ & $+0.1$ & $+0.2$ & $0.0$ \\
+\midrule
+\multirow{3}{*}{Llama-3.1-8B}
+  & Thinking on  & 94.2 & 91.2 & 90.8 & 86.8 & 84.1 & 76.6 \\
+  & Thinking off & 94.3 & 91.4 & 90.8 & 86.8 & 83.9 & 76.7 \\
+  & $\Delta$     & $-0.1$ & $-0.2$ & $0.0$ & $0.0$ & $+0.2$ & $-0.1$ \\
+\midrule
+\multirow{3}{*}{Qwen3-32B}
+  & Thinking on  & 95.0 & 93.9 & 90.9 & 89.1 & 84.7 & 81.1 \\
+  & Thinking off & 94.9 & 94.0 & 90.8 & 89.0 & 84.7 & 81.1 \\
+  & $\Delta$     & $+0.1$ & $-0.1$ & $+0.1$ & $+0.1$ & $0.0$ & $0.0$ \\
+\midrule
+\multirow{3}{*}{SmolLM3-3B}
+  & Thinking on  & 90.0 & 86.7 & 84.8 & 80.3 & 77.2 & 69.7 \\
+  & Thinking off & 89.8 & 86.7 & 84.6 & 80.4 & 76.9 & 69.7 \\
+  & $\Delta$     & $+0.2$ & $0.0$ & $+0.2$ & $-0.1$ & $+0.3$ & $0.0$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Per-Topology Breakdown}
+\label{app:pertopology-table}
+
+Table~\ref{tab:e5-pertopology} reports per-topology alignment under
+with-GT. QwQ-32B leads on five of six topologies; GPT-OSS-120B leads on
+fan\_out ($93.9\%$) and is a close second elsewhere. Gemini-2.5-Pro is
+consistently weakest, trailing QwQ-32B by $5$-$8$\,pp. The gap between
+the easiest (fan\_out, $\sim$93\%) and hardest (fan\_in, $\sim$83\%)
+topologies is roughly 10\,pp, comparable to the easy-to-hard difficulty
+degradation in Table~\ref{fig:full-results}. Fan-out's advantage is
+intuitive: each parallel branch can be verified independently, whereas
+fan-in and loop-like topologies require tracking cross-branch dependencies.
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.05}
+\caption{Judge alignment (with-GT, \%) by DAG topology. Bold marks the
+best judge per topology.}
+\label{tab:e5-pertopology}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+\textbf{Judge} & \textbf{linear} & \textbf{fan\_out} & \textbf{fan\_in} & \textbf{diamond} & \textbf{opt.\ enrich} & \textbf{loop\_like} \\
+\midrule
+GPT-5.4         & 84.3          & 92.6          & 83.5          & 83.1          & 85.5          & 83.0          \\
+Claude          & 84.4          & 92.4          & 83.7          & 86.9          & 86.5          & 85.2          \\
+Gemini-2.5-Pro  & 80.8          & 91.7          & 80.0          & 82.0          & 82.9          & 81.1          \\
+QwQ-32B         & \textbf{88.1} & 93.3          & \textbf{87.8} & \textbf{90.2} & \textbf{90.1} & \textbf{87.7} \\
+GPT-OSS-20B     & 83.5          & 92.7          & 82.5          & 84.0          & 85.2          & 83.0          \\
+GPT-OSS-120B    & 87.5          & \textbf{93.9} & 87.0          & 89.4          & 89.4          & 87.1          \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.75\linewidth]{figures/topo_heatmap.png}
+\caption{Judge alignment (\%) by DAG topology (with-GT), visualised as a heatmap. Fan-out consistently achieves the highest alignment across all judges; fan-in and loop-like are the hardest. The ordering is judge-independent, indicating that DAG structural complexity is an intrinsic difficulty signal.}
+\label{fig:topo-heatmap}
+\end{figure}
+
+\section{Inter-Judge Confusion Matrices}
+\label{app:confusion}
+
+Table~\ref{tab:confusion-full} reports per-verdict counts for the highest-agreement pair (QwQ-32B$\times$GPT-OSS-120B, $\kappa=0.606$) and the lowest-agreement pair (Claude$\times$GPT-OSS-20B, $\kappa=0.225$) under with-GT. Disagreement concentrates almost entirely at the partial-credit boundary: $94.7\%$ and $96.8\%$ of off-diagonal entries involve at least one $0.5$ verdict. The dominant off-diagonal cell for the low-agreement pair is Claude$=1$ / GPT-OSS-20B$=0.5$ ($18.2\%$ of verdicts), indicating GPT-OSS-20B is systematically more conservative. Under no-GT, both pairs converge as both judges default to $1.0$: Claude$\times$OSS-20B agreement rises from $70.3\%$ to $90.1\%$.
+
+\begin{figure}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.1}
+
+\caption{Verdict-level confusion matrices (\% of $N$). Rows = judge 1, columns = judge 2. Diagonal entries are shaded.}
+\label{tab:confusion-full}
+
+\begin{minipage}[t]{0.45\linewidth}
+\centering
+\textbf{QwQ-32B $\times$ GPT-OSS-120B}\\
+{\scriptsize ($\kappa=0.61$, Agreement 87.9\%)}
+
+\vspace{4pt}
+
+\begin{tabular}{c|ccc}
+\toprule
+ & \textbf{0} & \textbf{0.5} & \textbf{1} \\
+\midrule
+\textbf{0}   & \cellcolor{gray!15}\textbf{1.3} & 0.8 & 0.3 \\
+\textbf{0.5} & 1.3 & \cellcolor{gray!15}\textbf{10.3} & 4.9 \\
+\textbf{1}   & 0.4 & 4.4 & \cellcolor{gray!15}\textbf{76.3} \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.45\linewidth}
+\centering
+\textbf{Claude $\times$ GPT-OSS-20B}\\
+{\scriptsize ($\kappa=0.23$, Agreement 70.3\%)}
+
+\vspace{4pt}
+
+\begin{tabular}{c|ccc}
+\toprule
+ & \textbf{0} & \textbf{0.5} & \textbf{1} \\
+\midrule
+\textbf{0}   & \cellcolor{gray!15}\textbf{0.7} & 0.4 & 0.2 \\
+\textbf{0.5} & 1.9 & \cellcolor{gray!15}\textbf{9.7} & 8.3 \\
+\textbf{1}   & 0.7 & 18.2 & \cellcolor{gray!15}\textbf{60.0} \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+
+\end{figure}
+
+\subsection*{Binary vs.\ \{0, 0.5, 1\} Verdict Scale}
+\label{app:abl-binary}
+
+Table~\ref{tab:abl-binary} compares judge rankings under the original three-level $\{0, 0.5, 1\}$ verdict scale vs.\ a binary collapse in which each $0.5$ verdict is remapped to $0$ if the programmatic reference is below $0.5$, and $1$ otherwise. Columns report mean GT alignment across all 15 (generator, difficulty) cells per judge, and the per-judge rate of issuing $0.5$ verdicts.
+
+\begin{table}[!htbp]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.1}
+\caption{Binary vs.\ $\{0, 0.5, 1\}$ verdict scale: mean GT alignment (\%) and judge rankings averaged over 15 (generator, difficulty) cells. $\Delta$ = Binary $-$ Standard. $0.5$ rate = fraction of per-metric verdicts issued as partial credit. Spearman $\rho$ between standard and binary ranking: $0.03$ ($p = 0.96$).}
+\label{tab:abl-binary}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+\textbf{Judge} & \textbf{Standard (\%)} & \textbf{Binary (\%)} & \textbf{$\Delta$} & \textbf{0.5 rate} \\
+\midrule
+QwQ-32B        & \textbf{87.6} & 94.7 & $+7.1$ & 15.2\% \\
+GPT-OSS-120B   & 87.5          & 95.4 & $+7.9$ & 14.0\% \\
+Claude         & 85.4          & 94.7 & $+9.2$ & 18.6\% \\
+GPT-5.4        & 84.8          & \textbf{96.6} & $+11.9$ & 28.2\% \\
+GPT-OSS-20B    & 84.0          & \textbf{97.0} & $+13.0$ & 26.5\% \\
+Gemini-2.5-Pro & 81.7          & 90.0 & $+8.3$ & 12.2\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The binary collapse does not inflate all scores uniformly: judges with high $0.5$ rates (GPT-5.4: $28.2\%$, GPT-OSS-20B: $26.5\%$) gain disproportionately ($+11.9$\,pp and $+13.0$\,pp respectively). Under binary remapping, the $0.5$ verdict is always counted as correct because it is mapped to the programmatic direction by construction. Judges that hedge on uncertain records therefore receive artificially inflated binary alignment, reshuffling the ranking from QwQ-32B $>$ GPT-OSS-120B to GPT-OSS-20B $>$ GPT-5.4. The Spearman rank correlation between standard and binary ranking is $\rho = 0.03$ ($p = 0.96$), indicating the rankings are essentially uncorrelated. This confirms that the $0.5$ verdict is not random noise: it encodes directional uncertainty that is systematically correlated with judge capacity and lost under binary collapse. We recommend retaining the three-level scale.
+
+\section{Related Work Survey}
+\label{app:relwork-table}
+
+\begin{table}[!htbp]
+\centering
+\caption{Representative works across agentic benchmarks, LLM-as-judge methods, and LLM judges for tool-calling evaluation.}
+\label{tab:overview}
+\small
+\renewcommand{\arraystretch}{0.95}
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\textwidth}{l l X}
+\toprule
+\textbf{Name} & \textbf{Year} & \textbf{Description} \\
+\midrule
+\multicolumn{3}{l}{\textit{Agentic Data \& Tool-Calling Benchmarks}} \\
+\midrule
+Self-Instruct \cite{wang2022selfinstruct} & 2022 & LLM-only instruction synthesis; seed for synthetic data pipelines. \\
+Mind2Web \cite{deng2023mind2web} & 2023 & Human-annotated user trajectories over real websites. \\
+AgentBench \cite{liu2023agentbench} & 2023 & Multi-domain agentic benchmark across reasoning and interaction settings. \\
+WebArena \cite{zhou2024webarena} & 2024 & Realistic web environment with functional sites and long-horizon tasks. \\
+WorkArena \cite{drouin2024workarena} & 2024 & Evaluation on production websites for task-solving agents. \\
+AppWorld \cite{trivedi2024appworld} & 2024 & Multi-app environment for interactive code-based agent workflows. \\
+TaskBench \cite{shen2024taskbench} & 2024 & Tool-graph-based benchmark for task decomposition and tool selection. \\
+AgentTrek \cite{xu2025agenttrek} & 2025 & Converts web tutorials into executable agent trajectories. \\
+BFCL \cite{patil2025bfcl} & 2025 & Leaderboard for single-turn function-calling accuracy; AST-based scoring. \\
+FuncBenchGen \cite{funcbenchgen2025} & 2025 & DAG-based synthetic function-calling with controllable complexity. \\
+\midrule
+\multicolumn{3}{l}{\textit{LLM-as-Judge}} \\
+\midrule
+Zheng et al. \cite{zheng2023judging} & 2023 & MT-Bench; identified positional, verbosity, and self-enhancement biases. \\
+JudgeBench \cite{tan2024judgebench} & 2024 & Judge evaluation on hard pairs with verifiable ground truth. \\
+Arena-Hard-Auto \cite{li2024arenahard} & 2024 & Automated pairwise judge evaluation; high human agreement. \\
+PandaLM \cite{wang2024pandalm} & 2024 & Dedicated judge model trained for pairwise comparison. \\
+Auto-J \cite{li2024autoj} & 2024 & Generalist judge model trained on diverse evaluation criteria. \\
+\midrule
+\multicolumn{3}{l}{\textit{LLM Judges for Tool-Calling Evaluation}} \\
+\midrule
+ToolEval \cite{qin2023toolllm} & 2023 & ChatGPT as judge for pass rate on API trajectories. \\
+StableToolBench \cite{guo2024stabletoolbench} & 2024 & GPT-4-turbo as evaluator in a virtualized API environment. \\
+ToolSandbox \cite{lu2024toolsandbox} & 2024 & Questioned LLM judge reliability; replaced with milestone-based programmatic scoring. \\
+MCP-AgentBench \cite{mcpagentbench2025} & 2025 & Hybrid rule-based and LLM judge for task-completion scoring. \\
+GeoBenchX \cite{krechetova2025geobenchx} & 2025 & Three-judge panel for geospatial tool-use evaluation. \\
+Agent-as-a-Judge \cite{zhuge2024agentjudge} & 2024 & Agent evaluates another agent on DAG-structured development tasks. \\
+Auto-Eval Judge \cite{bhonsle2025autoeval} & 2025 & Modular framework decomposing evaluation into checklist questions. \\
+\bottomrule
+
+\end{tabularx}
+\end{table}

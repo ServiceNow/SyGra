@@ -30,6 +30,7 @@ if __name__ == "__main__":
     parser.add_argument("--generator", required=True, help="Generator model whose outputs to judge")
     parser.add_argument("--judge_model", required=True, help="Model config key for judging")
     parser.add_argument("--difficulty", required=True, choices=["easy", "medium", "hard"])
+    parser.add_argument("--config", type=str, default="graph_config.yaml", help="Graph config filename (relative to task dir)")
     parser.add_argument("--input", type=str, default=None, help="Override input file path")
     parser.add_argument("--num_records",        "-n",   type=int,              default=0)
     parser.add_argument("--batch_size",         "-b",   type=int,              default=25)
@@ -54,7 +55,7 @@ if __name__ == "__main__":
     configure_logger(args.debug, args.clear_logs, run_name)
     from sygra.logger.logger_config import logger
 
-    config = utils.load_yaml_file(filepath=str(DIR / "graph_config.yaml"))
+    config = utils.load_yaml_file(filepath=str(DIR / args.config))
 
     # Patch input file (use JSONL — clean records only, generation_error filtered)
     config["data_config"]["source"]["file_path"] = (

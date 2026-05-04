@@ -21,7 +21,7 @@ class SerializeFieldsPreProcessor(NodePreProcessor):
     """Ensures list/dict fields in state are serialized to JSON strings for prompt templates."""
 
     def apply(self, state: SygraState) -> SygraState:
-        for key in ["generated_tool_calls", "available_tools", "expected_responses"]:
+        for key in ["generated_tool_calls", "available_tools", "expected_responses", "corrupted_expected_responses"]:
             val = state.get(key)
             if val is not None and not isinstance(val, str):
                 state[key] = json.dumps(val, indent=2)

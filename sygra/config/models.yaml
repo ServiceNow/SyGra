@@ -23,14 +23,14 @@ mistralai:
     max_tokens: 500
     temperature: 1.0
 
-gpt4:
+gpt_5_4:
   model_type: azure_openai
-  model: gpt-4-32k
-  # URL and auth_token should be defined at .env file as SYGRA_GPT4_URL and SYGRA_GPT4_TOKEN
-  api_version: 2024-05-01-preview
+  model: gpt-5.4
+  # URL and auth_token should be defined at .env file as SYGRA_GPT_5_4_URL and SYGRA_GPT_5_4_TOKEN
+  api_version: 2025-04-01-preview
   parameters:
-    max_tokens: 500
     temperature: 1.0
+    max_completion_tokens: 128000
 
 gpt-4o:
   model_type: azure_openai
@@ -66,21 +66,21 @@ qwen3_32b:
   hf_chat_template_model_id: Qwen/Qwen3-32B
   model_type: vllm
   parameters:
-    max_tokens: 2048
+    max_tokens: 30000
     temperature: 0
 #    extra_body:
 #      chat_template_kwargs:
 #        enable_thinking: false
 
-#qwen3_1.7b
-qwen3_1.7b:
-  model_type: ollama
-  # URL should be defined at .env file as SYGRA_QWEN3_1.7B_URL. auth_token is not needed
-  # Default URL for ollama is http://localhost:11434
+qwen3_1_7b:
+  model_type: vllm
+  # URL and auth_token should be defined at .env file as SYGRA_QWEN3_1_7B_URL and SYGRA_QWEN3_1_7B_TOKEN
+  model_serving_name: qwen3_1_7b
   hf_chat_template_model_id: Qwen/Qwen3-1.7B
   post_process: sygra.core.models.model_postprocessor.RemoveThinkData
   parameters:
-    temperature: 0.8
+    temperature: 0
+    max_tokens: 8192
 
 gpt-audio:
   model_type: azure_openai
@@ -150,15 +150,141 @@ bedrock_model:
 #      type: enabled
 #      budget_tokens: 2048
 
-qwq_32b:
+# A1 temperature ablation variants (judge = qwen3_32b at 3 non-zero temps)
+qwen3_32b_t0.3:
   model_type: vllm
-  hf_chat_template_model_id: Qwen/QwQ-32B
+  model_serving_name: qwen3_32b
+  hf_chat_template_model_id: Qwen/Qwen3-32B
+  parameters:
+    max_tokens: 30000
+    temperature: 0.3
+
+qwen3_32b_t0.7:
+  model_type: vllm
+  model_serving_name: qwen3_32b
+  hf_chat_template_model_id: Qwen/Qwen3-32B
+  parameters:
+    max_tokens: 30000
+    temperature: 0.7
+
+qwen3_32b_t1.0:
+  model_type: vllm
+  model_serving_name: qwen3_32b
+  hf_chat_template_model_id: Qwen/Qwen3-32B
+  parameters:
+    max_tokens: 30000
+    temperature: 1.0
+
+# R2 no-GT recalibrated prompt ablation — GPT-5.4 with 0.5-default no-GT config
+gpt_5_4_nogt_05:
+  model_type: azure_openai
+  model: gpt-5.4
+  api_version: 2025-04-01-preview
+  parameters:
+    temperature: 1.0
+    max_completion_tokens: 128000
+
+# R2 no-GT recalibrated prompt ablation (same model, 0.5-default no-GT config)
+qwen3_32b_nogt_05:
+  model_type: vllm
+  model_serving_name: qwen3_32b
+  hf_chat_template_model_id: Qwen/Qwen3-32B
+  parameters:
+    max_tokens: 30000
+    temperature: 0
+
+claude_large_nogt_05:
+  model_type: claude_proxy
+  client_type: http
+  backend: proxy
+  ssl_verify: false
+  extra_headers:
+    x-now-request-metadata: '{"x_allow_routing": "global", "solution_name": "SyGra", "instance_name": "sygra"}'
+    X-SNC-INTEGRATION-SOURCE: sygra
+    trace_id: sygra-bfcl-eval
+  parameters:
+    maxOutputTokens: 8000
+    temperature: 0
+
+reranker_gemini_nogt_05:
+  model_type: gemini_proxy
+  client_type: http
+  backend: proxy
+  ssl_verify: false
+  extra_headers:
+    x-now-request-metadata: '{"x_allow_routing": "global", "solution_name": "SyGra", "instance_name": "sygra"}'
+    X-SNC-INTEGRATION-SOURCE: sygra
+    trace_id: sygra-bfcl-eval
+  parameters:
+    maxOutputTokens: 8000
+    temperature: 0
+
+qwq_32b_nogt_05:
+  model_type: vllm
+  model_serving_name: qwq_32b
+  hf_chat_template_model_id: qwq_32b
   multi_modal: false
   parameters:
-   temperature: 0.15
-   max_tokens: 128000
-   stop: ["<|endoftext|>", "<|im_end|>", "<|eod_id|>"]
-   reasoning_effort: high
+    temperature: 0.6
+    top_p: 0.95
+    max_tokens: 12800
+    stop: ["<|endoftext|>", "<|im_end|>", "<|eod_id|>"]
+    extra_body:
+      chat_template_kwargs:
+        enable_thinking: true
+
+gpt_oss_20b_nogt_05:
+  model_type: vllm
+  model_serving_name: gpt-oss-20b
+  hf_chat_template_model_id: openai/gpt-oss-20b
+  parameters:
+    temperature: 0.15
+    max_tokens: 12800
+
+gpt_oss_120b_nogt_05:
+  model_type: vllm
+  model_serving_name: gpt-oss-120b
+  hf_chat_template_model_id: openai/gpt-oss-120b
+  parameters:
+    temperature: 0.15
+    max_tokens: 12800
+
+# A5 prompt-format ablation (same model, different config key → separate output dir)
+qwen3_32b_freeform:
+  model_type: vllm
+  model_serving_name: qwen3_32b
+  hf_chat_template_model_id: Qwen/Qwen3-32B
+  parameters:
+    max_tokens: 30000
+    temperature: 0
+
+qwq_32b:
+  model_type: vllm
+  model_serving_name: qwq_32b
+  hf_chat_template_model_id: qwq_32b
+  multi_modal: false
+  parameters:
+    temperature: 0.6
+    top_p: 0.95
+    max_tokens: 12800
+    stop: ["<|endoftext|>", "<|im_end|>", "<|eod_id|>"]
+    extra_body:
+      chat_template_kwargs:
+        enable_thinking: true
+
+qwq_32b_no_thinking:
+  model_type: vllm
+  model_serving_name: qwq_32b
+  hf_chat_template_model_id: qwq_32b
+  multi_modal: false
+  parameters:
+    temperature: 0.7
+    top_p: 0.8
+    max_tokens: 12800
+    stop: ["<|endoftext|>", "<|im_end|>", "<|eod_id|>"]
+    extra_body:
+      chat_template_kwargs:
+        enable_thinking: false
 
 
 openai_gpt41:
@@ -196,13 +322,6 @@ qwen_2.5_32b_vl:
     max_tokens: 5000
     stop: ["<|endoftext|>", "<|im_end|>", "<|eod_id|>"]
 
-gpt-oss-120b:
-  model_type: vllm
-  hf_chat_template_model_id: openai/gpt-oss-120b
-  parameters:
-    temperature: 0.15
-    max_tokens: 128000
-
 apriel_1p6_15b_thinker:
   model_serving_name: Apriel-1p6-15B-Thinker
   model_type: vllm
@@ -211,12 +330,46 @@ apriel_1p6_15b_thinker:
     max_tokens: 150000
     "stop": ["<|end|>", "[END FINAL RESPONSE]"]
 
-gpt-oss-20b:
+smollm3_3b:
   model_type: vllm
+  # URL should be defined at .env file as SYGRA_SMOLLM3_3B_URL
+  model_serving_name: HuggingFaceTB/SmolLM3-3B
+  backend: custom
+  parameters:
+    max_tokens: 10000
+    temperature: 0
+
+llama_3_1_8b_instruct:
+  model_type: vllm
+  # URL should be defined at .env file as SYGRA_LLAMA_3_1_8B_INSTRUCT_URL
+  model_serving_name: llama_3_1_8b_instruct
+  parameters:
+    max_tokens: 10000
+    temperature: 0
+
+llama_3_3_70b_instruct:
+  model_type: vllm
+  # URL should be defined at .env file as SYGRA_LLAMA_3_3_70B_INSTRUCT_URL
+  model_serving_name: llama_3_3_70b_instruct
+  parameters:
+    max_tokens: 30000
+    temperature: 0
+
+gpt_oss_20b:
+  model_type: vllm
+  model_serving_name: gpt-oss-20b
   hf_chat_template_model_id: openai/gpt-oss-20b
   parameters:
     temperature: 0.15
-    max_tokens: 128000
+    max_tokens: 12800
+
+gpt_oss_120b:
+  model_type: vllm
+  model_serving_name: gpt-oss-120b
+  hf_chat_template_model_id: openai/gpt-oss-120b
+  parameters:
+    temperature: 0.15
+    max_tokens: 12800
 
 eval_model:
   model_type: bedrock
@@ -229,19 +382,24 @@ claude_large:
   model_type: claude_proxy
   client_type: http
   backend: proxy
-  additional_params:
-    thinking:
-      type: disabled
-    anthropic_beta:
-      - computer-use-2025-01-24
+  ssl_verify: false
+  extra_headers:
+    x-now-request-metadata: '{"x_allow_routing": "global", "solution_name": "SyGra", "instance_name": "sygra"}'
+    X-SNC-INTEGRATION-SOURCE: sygra
+    trace_id: sygra-bfcl-eval
   parameters:
-    maxTokens: 2500
+    maxOutputTokens: 8000
     temperature: 0
 
-gemini_2.5_proxy:
+reranker_gemini:
   model_type: gemini_proxy
   client_type: http
   backend: proxy
+  ssl_verify: false
+  extra_headers:
+    x-now-request-metadata: '{"x_allow_routing": "global", "solution_name": "SyGra", "instance_name": "sygra"}'
+    X-SNC-INTEGRATION-SOURCE: sygra
+    trace_id: sygra-bfcl-eval
   parameters:
-    maxOutputTokens: 2500
+    maxOutputTokens: 8000
     temperature: 0

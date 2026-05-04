@@ -1,0 +1,32 @@
+# Ablation: Freeform minimal prompt
+# Used to test whether detailed structural instructions contribute to alignment,
+# or whether a minimal prompt achieves comparable results.
+
+Evaluate the AI agent's tool-calling plan and return a JSON object with four accuracy scores.
+
+Score each metric as 0.0 (wrong), 0.5 (partial), or 1.0 (correct):
+- tool_selection_accuracy: are the right tools selected?
+- parameter_structure_accuracy: are parameter names and structure correct?
+- sequence_accuracy: is the tool ordering logical?
+- query_coverage_accuracy: does the plan cover all query intents?
+
+Return ONLY this JSON object:
+{
+  "tool_selection_accuracy": {"accuracy": <float>, "justification": "<sentence>"},
+  "parameter_structure_accuracy": {"accuracy": <float>, "justification": "<sentence>"},
+  "sequence_accuracy": {"accuracy": <float>, "justification": "<sentence>"},
+  "query_coverage_accuracy": {"accuracy": <float>, "justification": "<sentence>"},
+  "overall_assessment": "<sentence>"
+}
+
+QUERY:
+{user_message}
+
+AVAILABLE TOOLS:
+{available_tools}
+
+GENERATED TOOL CALLS:
+{generated_tool_calls}
+
+EXPECTED TOOL CALLS:
+{expected_responses}

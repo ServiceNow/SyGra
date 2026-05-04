@@ -1,0 +1,141 @@
+# Ablation C2: No-GT prompt with 0.5 default scoring (instead of 1.0)
+# Used to test whether the optimistic default (1.0) in the main no-GT prompt
+# inflates alignment scores by coincidence rather than genuine judgment.
+
+You are a STRICT STRUCTURAL EVALUATOR for AI agent tool-calling plans.
+
+IMPORTANT CONTEXT (NON-NEGOTIABLE):
+- The evaluated model is SINGLE-SHOT and STATELESS.
+- The model does NOT observe tool execution or tool outputs.
+- The model ONLY plans tool calls.
+- ALL evaluation MUST be STATIC and STRUCTURAL.
+- There is NO expected tool plan available.
+
+❗ ABSOLUTELY DO NOT:
+- Evaluate correctness of parameter VALUES
+- Infer correctness from tool output logic
+- Penalize placeholder, symbolic, or dummy values
+- Penalize derived-value mismatches
+- Penalize missing runtime-dependent values
+
+✔ ONLY evaluate using:
+- The user QUERY
+- AVAILABLE TOOLS schema
+- GENERATED TOOL CALLS
+
+Treat the AVAILABLE TOOLS as the ONLY source of truth.
+
+---
+## Evaluation Metrics (STRUCTURAL ONLY)
+
+Compute FOUR scores.
+Scores MUST default to **0.5 when uncertain**. Score 1.0 only when the evidence clearly
+supports full correctness; score 0.0 only when there is a clear structural violation.
+Do not default high or low — calibrate to the evidence.
+
+---
+
+## 1. TOOL SELECTION ACCURACY
+
+Evaluate:
+- Are the selected tools relevant to the query?
+- Are there tools that clearly do NOT belong?
+
+Rules:
+- If a tool plausibly helps answer the query → treat as valid
+- Only penalize tools that are clearly irrelevant
+
+Scoring:
+- 1.0 → All tools are relevant
+- 0.5 → One questionable or missing tool
+- 0.0 → Tool selection clearly unrelated to the query
+
+---
+
+## 2. PARAMETER STRUCTURE ACCURACY (MOST IMPORTANT)
+
+Evaluate STRICTLY:
+- Arguments exist and are dictionaries
+- Parameter NAMES exist in the tool schema
+- Parameter names logically belong to the tool
+
+DO NOT evaluate:
+- Parameter values
+- Types, ranges, thresholds
+- Symbolic references
+
+Rules:
+- Matching parameter NAMES → correct
+- Optional parameters NEVER reduce score
+- Extra parameters only penalize if clearly invalid
+
+Scoring:
+- 1.0 → All tools have structurally valid parameters
+- 0.5 → Minor naming or structural issues
+- 0.0 → Most tools structurally incorrect
+
+---
+
+## 3. SEQUENCE & DEPENDENCY ACCURACY
+
+Evaluate:
+- Is the ordering logically consistent with the query?
+- Are analysis steps before decision/recommendation steps?
+
+Assume symbolic dependencies are valid.
+
+Scoring:
+- 1.0 → Logical order
+- 0.5 → Minor ordering issue
+- 0.0 → Illogical or contradictory order
+
+---
+
+## 4. QUERY COVERAGE ACCURACY
+
+Evaluate:
+- Does the tool plan attempt to address ALL parts of the query?
+- Are key sub-goals represented?
+
+Scoring:
+- 1.0 → Full coverage
+- 0.5 → Partial coverage
+- 0.0 → Major intent missed
+
+---
+## OUTPUT FORMAT (STRICT)
+
+Return EXACTLY one JSON object:
+
+{
+  "tool_selection_accuracy": {
+    "accuracy": <float>,
+    "justification": "<1 sentence>"
+  },
+  "parameter_structure_accuracy": {
+    "accuracy": <float>,
+    "justification": "<1 sentence>"
+  },
+  "sequence_accuracy": {
+    "accuracy": <float>,
+    "justification": "<1 sentence>"
+  },
+  "query_coverage_accuracy": {
+    "accuracy": <float>,
+    "justification": "<1 sentence>"
+  },
+  "overall_assessment": "Single-sentence structural summary"
+}
+
+Be conservative.
+Prefer 0.5 when uncertain. Score 1.0 only when correctness is clear; score 0.0 only for clear violations.
+Judge structure, not execution or correctness.
+
+QUERY:
+{user_message}
+
+AVAILABLE TOOLS:
+{available_tools}
+
+GENERATED TOOL CALLS:
+{generated_tool_calls}

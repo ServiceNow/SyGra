@@ -64,6 +64,11 @@ if __name__ == "__main__":
         args.input or f"tasks/examples/agentic_bfcl_judge_eval/input_{args.difficulty}.jsonl"
     )
 
+    # GPT-5 family only supports temperature=1; drop the hardcoded override
+    node_params = config["graph_config"]["nodes"]["generate_tool_calls"]["model"].get("parameters", {})
+    if "gpt_5" in args.model or "gpt-5" in args.model:
+        node_params.pop("temperature", None)
+
     # Output to model-specific dir
     out_dir = str(DIR / args.model)
     os.makedirs(out_dir, exist_ok=True)
