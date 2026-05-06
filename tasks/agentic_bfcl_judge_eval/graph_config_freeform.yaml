@@ -1,0 +1,141 @@
+data_config:
+  source:
+    type: "disk"
+    file_path: # input file to evaluate
+    file_format: "jsonl"
+
+graph_config:
+  nodes:
+    judge_tool_calls:
+      output_keys: judge_response
+      node_type: llm
+      pre_process: tasks.agentic_bfcl_judge_eval.task_executor.SerializeFieldsPreProcessor
+      prompt:
+        - user: |
+            Evaluate the AI agent's tool-calling plan and return a JSON object with four accuracy scores.
+
+            Score each metric as 0.0 (wrong), 0.5 (partial), or 1.0 (correct):
+            - tool_selection_accuracy: are the right tools selected?
+            - parameter_structure_accuracy: are parameter names and structure correct?
+            - sequence_accuracy: is the tool ordering logical?
+            - query_coverage_accuracy: does the plan cover all query intents?
+
+            Return ONLY this JSON object:
+            {{
+              "tool_selection_accuracy": {{"accuracy": <float>, "justification": "<sentence>"}},
+              "parameter_structure_accuracy": {{"accuracy": <float>, "justification": "<sentence>"}},
+              "sequence_accuracy": {{"accuracy": <float>, "justification": "<sentence>"}},
+              "query_coverage_accuracy": {{"accuracy": <float>, "justification": "<sentence>"}},
+              "overall_assessment": "<sentence>"
+            }}
+
+            QUERY:
+            {user_message}
+
+            AVAILABLE TOOLS:
+            {available_tools}
+
+            GENERATED TOOL CALLS:
+            {generated_tool_calls}
+
+            EXPECTED TOOL CALLS:
+            {expected_responses}
+
+      model:
+        name: smollm3
+      post_process: tasks.agentic_bfcl_judge_eval.task_executor.JudgeToolCallsPostProcessor
+
+    judge_tool_calls_answer_only:
+      output_keys: judge_response_no_gt
+      node_type: llm
+      pre_process: tasks.agentic_bfcl_judge_eval.task_executor.SerializeFieldsPreProcessor
+      prompt:
+        - user: |
+            Evaluate the AI agent's tool-calling plan and return a JSON object with four accuracy scores.
+
+            Score each metric as 0.0 (wrong), 0.5 (partial), or 1.0 (correct):
+            - tool_selection_accuracy: are the right tools selected for the query?
+            - parameter_structure_accuracy: are parameter names and structure correct per the tool schema?
+            - sequence_accuracy: is the tool ordering logical?
+            - query_coverage_accuracy: does the plan cover all query intents?
+
+            Return ONLY this JSON object:
+            {{
+              "tool_selection_accuracy": {{"accuracy": <float>, "justification": "<sentence>"}},
+              "parameter_structure_accuracy": {{"accuracy": <float>, "justification": "<sentence>"}},
+              "sequence_accuracy": {{"accuracy": <float>, "justification": "<sentence>"}},
+              "query_coverage_accuracy": {{"accuracy": <float>, "justification": "<sentence>"}},
+              "overall_assessment": "<sentence>"
+            }}
+
+            QUERY:
+            {user_message}
+
+            AVAILABLE TOOLS:
+            {available_tools}
+
+            GENERATED TOOL CALLS:
+            {generated_tool_calls}
+
+      model:
+        name: smollm3
+      post_process: tasks.agentic_bfcl_judge_eval.task_executor.JudgeToolCallsAnswerOnlyPostProcessor
+
+    judge_programmatic:
+      node_type: lambda
+      lambda: tasks.agentic_bfcl_judge_eval.task_executor.ProgrammaticJudge
+      output_keys:
+        - programmatic_judge_response
+
+    calculate_judge_accuracy:
+      node_type: lambda
+      lambda: tasks.agentic_bfcl_judge_eval.task_executor.ComputeLLMVsProgrammaticAccuracy
+      output_keys:
+        - per_metric_comparison
+        - overall_llm_alignment_percentage
+
+    calculate_answer_only_judge_accuracy:
+      node_type: lambda
+      lambda: tasks.agentic_bfcl_judge_eval.task_executor.ComputeLLMVsProgrammaticAccuracyAnswerOnly
+      output_keys:
+        - per_metric_comparison_no_gt
+        - overall_llm_alignment_percentage_no_gt
+
+  edges:
+    - from: START
+      to: judge_tool_calls
+    - from: judge_tool_calls
+      to: judge_tool_calls_answer_only
+    - from: judge_tool_calls_answer_only
+      to: judge_programmatic
+    - from: judge_programmatic
+      to: calculate_judge_accuracy
+    - from: calculate_judge_accuracy
+      to: calculate_answer_only_judge_accuracy
+    - from: calculate_answer_only_judge_accuracy
+      to: END
+
+output_config:
+    output_map:
+        id:
+            from: id
+        dag_type:
+            from: dag_type
+        user_message:
+            from: user_message
+        generated_tool_calls:
+            from: generated_tool_calls
+        judge_response:
+            from: judge_response
+        judge_response_no_gt:
+            from: judge_response_no_gt
+        programmatic_judge_response:
+            from: programmatic_judge_response
+        per_metric_comparison:
+            from: per_metric_comparison
+        overall_llm_alignment_percentage:
+            from: overall_llm_alignment_percentage
+        per_metric_comparison_no_gt:
+            from: per_metric_comparison_no_gt
+        overall_llm_alignment_percentage_no_gt:
+            from: overall_llm_alignment_percentage_no_gt
