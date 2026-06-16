@@ -326,7 +326,8 @@ class BaseTaskExecutor(ABC):
         # Configure and load source data
         data = self._load_source_data(data_config)
         # get select fields if defined
-        select_fields = data_config.get("source", {}).get("fields", [])
+        source = data_config.get("source", {})
+        select_fields = source.get("fields", []) if isinstance(source, dict) else []
         # select only required fields
         data = self._process_feilds(data, select_fields)
 

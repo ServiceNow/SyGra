@@ -6,7 +6,6 @@ import json
 import os
 import random
 import re
-import sys
 import time
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
@@ -680,10 +679,12 @@ class BaseCustomModel(ABC):
                 )
                 # last n(MAX_FAILED_ERROR) failures within t(MODEL_FAILURE_WINDOW_IN_SEC) seconds
                 if time_gap_in_sec < constants.MODEL_FAILURE_WINDOW_IN_SEC:
-                    logger.error(
-                        f"SYSTEM EXITING as the dependant model({self.name()}) is down for longer period."
+                    raise RuntimeError(
+                        f"Model server is down: {self.name()} failed "
+                        f"{constants.MAX_FAILED_ERROR} times in "
+                        f"{constants.MODEL_FAILURE_WINDOW_IN_SEC}s. "
+                        f"Investigate model health before retrying."
                     )
-                    sys.exit()
 
     def _get_status_from_body(self, response: Any) -> Optional[int]:
         """

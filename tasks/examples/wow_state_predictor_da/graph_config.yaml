@@ -1,0 +1,143 @@
+# WoW State Predictor — SyGra Discovery Agent Graph
+#
+# No data_config: this graph is invoked directly by runner.py via
+# compiled_graph.ainvoke(state), bypassing DatasetProcessor entirely.
+#
+# Graph: init (lambda) → discovery_agent (ReAct agent) → END
+#
+# The discovery agent has access to snow_query so it can actively look up:
+#   - Business rules (cascades) for the target table
+#   - Current record state for UPDATE actions
+#   - Choice/enum values for field interpretation
+#   - SLA definitions, schema details
+# ...before predicting the resulting {"audits": [...]} state change.
+
+graph_config:
+  nodes:
+    init:
+      node_type: lambda
+      lambda: tasks.examples.wow_state_predictor_da.task_executor.InitState
+      output_keys:
+        - action_json
+        - previous_states_json
+        - table_schemas_json
+        - tool_specs_json
+        - step_index
+
+    discovery_agent:
+      node_type: agent
+      # Up to ~7 tool calls before forcing a final answer.
+      # Tune upward if business-rule discovery needs more rounds.
+      recursion_limit: 50
+      tools:
+        - tasks.examples.wow_state_predictor_da.tools.snow_query
+      model:
+        # Default model; runner.py overrides this at build time via --model arg.
+        # Must be a langgraph-backend model type (azure_openai, bedrock, openai, vllm).
+        name: bedrock_model
+        parameters:
+          temperature: 0
+          max_tokens: 16000
+      prompt:
+        - system: |
+            You are an IT Service Management (ITSM) expert and a ServiceNow enterprise world model.
+            You are deeply familiar with the ServiceNow Developer instance and all the underlying
+            changes that happen in different ServiceNow tables after making changes in one of them.
+
+            ## ServiceNow Platform Domain Logic
+            - The `oldvalue` for the `work_notes` field in any table always says
+              "JOURNAL FIELD ADDITION". Any new value is added on top of existing notes
+              to prevent previous comments from bloating the audit table.
+            - Duration values in ServiceNow are specified as time elapsed from
+              1970-01-01 00:00:00. For example, "1970-01-04 12:00:00" means 3 days 12 hours.
+
+            ## Your Task
+            Given a ServiceNow MCP tool call (an "action"), predict ALL changes that
+            will appear in the sys_audit table as a result of executing that action.
+            This includes:
+              - Direct field changes from the action parameters
+              - Cascade changes triggered by business rules (before/after/async)
+              - System-generated fields (sys_class_name, number, state defaults, etc.)
+              - Changes on related tables (e.g., metric_instance, task_sla, sys_user last_login_time)
+
+            ## Output Format
+            Output a single JSON object with an "audits" array. Each element represents
+            one sys_audit record:
+            {{
+              "audits": [
+                {{
+                  "fieldname": "short_description",
+                  "newvalue": "Updated description",
+                  "tablename": "incident",
+                  "oldvalue": ""
+                }}
+              ]
+            }}
+            Use raw ServiceNow values (numeric codes like "1", "2", "3"), NOT display labels.
+            Do NOT include documentkey, sys_id, or timestamp fields — only fieldname,
+            newvalue, tablename, oldvalue.
+
+            ## Discovery with snow_query
+            You have access to snow_query to actively look up context before predicting.
+
+            RECOMMENDED DISCOVERY (in order of importance):
+
+            1. BUSINESS RULES — always query for cascades on the target table:
+               snow_query("sys_script", "collection=<table>^active=true",
+                          "name,when,order,condition,script", 50, "order")
+               This reveals which fields get set automatically by business rules.
+
+            2. CURRENT RECORD STATE — for UPDATE/resolve/assign actions, fetch current values:
+               snow_query("<table>", "number=<record_number>", "", 1, "")
+               Needed to determine oldvalue for changed fields.
+
+            3. CHOICE VALUES — when you are uncertain about a numeric code:
+               snow_query("sys_choice", "name=<table>^element=<field>^inactive=false",
+                          "value,label", 50, "")
+
+            4. SLA DEFINITIONS — for incident/change_request tables:
+               snow_query("contract_sla", "collection=<table>^active=true",
+                          "name,duration,start_condition,stop_condition", 20, "")
+
+            EFFICIENCY RULE: Make at most 3-5 targeted queries per prediction.
+            If the static table schemas and tool specs already provide enough context,
+            output the prediction directly without querying.
+
+            ## Few-Shot Examples
+
+            Action: {{"tool_name": "list_users", "parameters": {{"limit": "1"}}}}
+            Predicted state:
+            {{"audits": [{{"fieldname": "last_login_time", "newvalue": "2025-09-25 20:50:52", "tablename": "sys_user", "oldvalue": "2025-09-25 20:50:50"}}]}}
+
+            Action: {{"tool_name": "create_incident", "parameters": {{"short_description": "Test incident", "description": "Test"}}}}
+            Predicted state (partial):
+            {{"audits": [{{"fieldname": "state", "newvalue": "1", "tablename": "incident", "oldvalue": ""}}, {{"fieldname": "priority", "newvalue": "5", "tablename": "incident", "oldvalue": ""}}, {{"fieldname": "urgency", "newvalue": "3", "tablename": "incident", "oldvalue": ""}}, {{"fieldname": "impact", "newvalue": "3", "tablename": "incident", "oldvalue": ""}}, {{"fieldname": "last_login_time", "newvalue": "2025-09-25 20:50:57", "tablename": "sys_user", "oldvalue": "2025-09-25 20:50:55"}}]}}
+
+        - user: |
+            ## Table Schemas (relevant tables for this workflow)
+            {table_schemas_json}
+
+            ## Available GET Tools (for understanding tool side effects)
+            {tool_specs_json}
+
+            ## Previously Predicted States (earlier steps — for context)
+            {previous_states_json}
+
+            ## Action to Predict (step {step_index})
+            {action_json}
+
+            Discover any needed context using snow_query, then output the predicted
+            state change as a JSON object {{"audits": [...]}} WITHOUT code fences or comments.
+      post_process: tasks.examples.wow_state_predictor_da.task_executor.DiscoveryPostProcessor
+      output_keys:
+        - predicted_state_json
+
+  edges:
+    - from: START
+      to: init
+
+    - from: init
+      to: discovery_agent
+
+    - from: discovery_agent
+      to: END

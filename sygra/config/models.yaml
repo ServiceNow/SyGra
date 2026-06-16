@@ -128,14 +128,27 @@ gpt_image_1:
     size: "1024x1024"
     quality: "high"
 
-# Vertex AI model
-gemini_2_5_pro:
+# Vertex AI models
+gemini_3.0:
+  model_type: vertex_ai
+  model: gemini/gemini-3-pro-preview
+  backend: litellm
+  # "gemini/" prefix triggers LiteLLM's Google AI Studio path (uses GEMINI_API_KEY),
+  # bypassing the vertex_ai/ prefix and handling thought_signatures natively.
+  # Vertex env vars (SYGRA_GEMINI_3.0_VERTEX_*) still satisfy CustomVertexAI validation.
+  # temperature=1 required: temperature=0 activates Gemini 3 thinking mode which breaks tool calls
+  parameters:
+    max_tokens: 16000
+    temperature: 1
+
+gemini_2.5:
   model_type: vertex_ai
   model: gemini-2.5-pro
-  # Vertex project, location and credentials should be defined at .env file as SYGRA_GEMINI_2_5_PRO_VERTEX_PROJECT, SYGRA_GEMINI_2_5_PRO_VERTEX_LOCATION, SYGRA_GEMINI_2_5_PRO_VERTEX_CREDENTIALS
+  backend: litellm
+  # Env vars: SYGRA_GEMINI_2.5_VERTEX_PROJECT, SYGRA_GEMINI_2.5_VERTEX_LOCATION, SYGRA_GEMINI_2.5_VERTEX_CREDENTIALS
   parameters:
-    max_tokens: 5000
-    temperature: 0.5
+    max_tokens: 16000
+    temperature: 0
 
 # Bedrock model
 bedrock_model:
@@ -143,12 +156,32 @@ bedrock_model:
   model: us.anthropic.claude-sonnet-4-5-20250929-v1:0
   # aws_access_key_id, aws_secret_access_key, aws_region_name should be defined at .env file as SYGRA_BEDROCK_MODEL_AWS_ACCESS_KEY_ID, SYGRA_BEDROCK_MODEL_AWS_SECRET_ACCESS_KEY, SYGRA_BEDROCK_MODEL_AWS_REGION_NAME
   parameters:
-    max_tokens: 5000
+    max_tokens: 16000
 #    temperature: 1
 #    reasoning_effort: high
 #    thinking:
 #      type: enabled
 #      budget_tokens: 2048
+
+claude-opus-4.6:
+  model_type: bedrock
+  model: us.anthropic.claude-opus-4-6-v1
+  # Uses same Bedrock creds as bedrock_model: SYGRA_CLAUDE_OPUS_4.6_AWS_ACCESS_KEY_ID etc.
+  parameters:
+    max_tokens: 16000
+
+claude-opus-4.7:
+  model_type: bedrock
+  model: us.anthropic.claude-opus-4-7
+  # Uses same Bedrock creds as bedrock_model: SYGRA_CLAUDE_OPUS_4.7_AWS_ACCESS_KEY_ID etc.
+  parameters:
+    max_tokens: 16000
+
+claude-sonnet-4.6:
+  model_type: bedrock
+  model: us.anthropic.claude-sonnet-4-6
+  parameters:
+    max_tokens: 16000
 
 qwq_32b:
   model_type: vllm
@@ -164,7 +197,7 @@ qwq_32b:
 openai_gpt41:
   model_type: azure_openai
   model: gpt-4.1
-  api_version: 2024-02-15-preview
+  api_version: 2025-01-01-preview
   parameters:
     max_tokens: 16000
     temperature: 0.1
@@ -173,11 +206,29 @@ gpt-5:
   model_type: azure_openai
   model: gpt-5
   # URL and auth_token should be defined at .env file as SYGRA_GPT-5_URL and SYGRA_GPT-5_TOKEN
-  api_version: 2024-02-15-preview
+  api_version: 2025-01-01-preview
   parameters:
     max_completion_tokens: 5000
     temperature: 1
     reasoning_effort: high
+
+gpt-5.2-2:
+  model_type: azure_openai
+  model: gpt-5.2-2
+  # URL and auth_token should be defined at .env file as SYGRA_GPT-5.2-2_URL and SYGRA_GPT-5.2-2_TOKEN
+  api_version: 2025-04-01-preview
+  parameters:
+    max_completion_tokens: 16000
+    temperature: 0.1
+
+gpt-5-mini:
+  model_type: azure_openai
+  model: gpt-5-mini
+  # URL and auth_token should be defined at .env file as SYGRA_GPT-5-MINI_URL and SYGRA_GPT-5-MINI_TOKEN
+  api_version: 2025-01-01-preview
+  parameters:
+    max_completion_tokens: 5000
+    temperature: 1
 
 llama_3_1_405b_instruct:
   model_type: azure
@@ -245,3 +296,22 @@ gemini_2.5_proxy:
   parameters:
     maxOutputTokens: 2500
     temperature: 0
+
+# OpenAI direct models (non-Azure, using sk-proj-* keys)
+gpt41_openai:
+  model_type: openai
+  model: gpt-4.1
+  # URL and auth_token should be defined at .env file as SYGRA_GPT41_OPENAI_URL and SYGRA_GPT41_OPENAI_TOKEN
+  parameters:
+    max_tokens: 5000
+    temperature: 0.0001
+
+tts_openai_direct:
+  model: gpt-4o-mini-tts
+  output_type: audio
+  model_type: openai
+  # URL and auth_token should be defined at .env file as SYGRA_TTS_OPENAI_DIRECT_URL and SYGRA_TTS_OPENAI_DIRECT_TOKEN
+  parameters:
+    audio:
+      voice: "alloy"
+      response_format: "wav"

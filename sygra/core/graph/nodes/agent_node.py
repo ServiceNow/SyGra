@@ -1,14 +1,18 @@
+import asyncio
+import json
 import time
 from inspect import isclass, signature
-from typing import Any
+from typing import Any, Optional, Type
 
 from langchain_core.messages import AIMessage, SystemMessage
 from langgraph.prebuilt import create_react_agent
+from pydantic import BaseModel
 
 from sygra.core.graph.langgraph.langchain_callback import MetadataTrackingCallback
 from sygra.core.graph.nodes.llm_node import LLMNode
 from sygra.core.graph.sygra_message import SygraMessage
 from sygra.core.models.model_factory import ModelFactory
+from sygra.core.models.structured_output.structured_output_config import StructuredOutputConfig
 from sygra.logger.logger_config import logger
 from sygra.utils import constants, utils
 
@@ -25,6 +29,19 @@ class AgentNode(LLMNode):
         super().__init__(node_name, config)
 
         self.inject_system_messages = self.node_config.get("inject_system_messages", [])
+
+        # Initialize structured output for agent response format
+        self._response_format: Optional[Type[BaseModel]] = None
+        structured_output_raw = self.node_config.get("model", {}).get("structured_output")
+        if structured_output_raw is not None:
+            so_config = StructuredOutputConfig(structured_output_raw, key_present=True)
+            if so_config.enabled:
+                self._response_format = so_config.get_pydantic_model()
+                if self._response_format:
+                    logger.info(
+                        f"[{node_name}] Structured output enabled for agent with schema: "
+                        f"{self._response_format.__name__}"
+                    )
 
     def _initialize_model(self):
         """
@@ -73,30 +90,82 @@ class AgentNode(LLMNode):
             )
 
             # Create the ReAct agent
-            agent = create_react_agent(
-                model=self.model,
-                tools=self.tools,
-                prompt=full_agent_prompt,
-                name=state.get("_agent_name"),
-            )
+            agent_kwargs: dict[str, Any] = {
+                "model": self.model,
+                "tools": self.tools,
+                "prompt": full_agent_prompt,
+                "name": state.get("_agent_name"),
+            }
+            if self._response_format is not None:
+                agent_kwargs["response_format"] = self._response_format
+            agent = create_react_agent(**agent_kwargs)
 
             # Remove redundant system message at the beginning
             if isinstance(prompt.messages[0], SystemMessage):
                 prompt.messages = prompt.messages[1:]
 
             # Run the agent with callback to track LLM calls
-            response = await agent.ainvoke(
-                {"messages": prompt.to_messages()}, config={"callbacks": [callback]}  # type: ignore
+            agent_recursion_limit = self.node_config.get("recursion_limit", 200)
+            agent_timeout = self.node_config.get("timeout", None)
+            coro = agent.ainvoke(
+                {"messages": prompt.to_messages()},
+                config={"callbacks": [callback], "recursion_limit": agent_recursion_limit},  # type: ignore
             )
+            try:
+                response = (
+                    await asyncio.wait_for(coro, timeout=agent_timeout)
+                    if agent_timeout
+                    else await coro
+                )
+            except asyncio.TimeoutError:
+                raise RuntimeError(
+                    f"Agent node timed out after {agent_timeout}s "
+                    f"(recursion_limit={agent_recursion_limit})"
+                )
 
             # Capture tokens after agent execution
             captured_tokens = self._capture_token_usage(self.model)
 
             ai_response = None
-            # pick the last AIMessage
+            # Log tool call summary
+            tool_calls_summary = []
             for m in response["messages"]:
                 if isinstance(m, AIMessage):
+                    if hasattr(m, "tool_calls") and m.tool_calls:
+                        for tc in m.tool_calls:
+                            tool_calls_summary.append(tc.get("name", "unknown"))
+            if tool_calls_summary:
+                logger.info(f"Agent {self.name}: tool calls made: {tool_calls_summary}")
+
+            # Pick the last AIMessage with content (fallback for empty final message)
+            last_ai_with_content = None
+            for m in response["messages"]:
+                if isinstance(m, AIMessage):
+                    clen = (
+                        len(m.content)
+                        if isinstance(m.content, str)
+                        else len(str(m.content)) if m.content else 0
+                    )
+                    if clen > 0 and not getattr(m, "tool_calls", None):
+                        last_ai_with_content = m
                     ai_response = m
+
+            # If the last AIMessage is empty, use the last one that had content
+            if ai_response and not ai_response.content and last_ai_with_content:
+                logger.info(
+                    f"Agent {self.name}: last AIMessage empty, using earlier one with content"
+                )
+                ai_response = last_ai_with_content
+
+            # If structured output is enabled and response contains parsed data,
+            # replace AIMessage content with the validated JSON serialization
+            structured_response = response.get("structured_response")
+            if structured_response is not None and ai_response is not None:
+                if isinstance(structured_response, BaseModel):
+                    ai_response = AIMessage(content=structured_response.model_dump_json())
+                elif isinstance(structured_response, dict):
+                    ai_response = AIMessage(content=json.dumps(structured_response))
+
             responseMsg = SygraMessage(ai_response)
 
             # Post-processing

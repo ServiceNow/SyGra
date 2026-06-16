@@ -54,7 +54,7 @@ def load_tools(tool_paths: List[str]) -> List[BaseTool]:
                         tools.append(tool_func)
                         valid = True
                         continue
-                except (ImportError, AttributeError):
+                except (ImportError, AttributeError, TypeError):
                     # If it fails, it might be a module or class instead
                     pass
 

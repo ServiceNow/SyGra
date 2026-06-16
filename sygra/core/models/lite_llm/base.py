@@ -91,6 +91,7 @@ class LiteLLMBase(BaseCustomModel):
         common: dict[str, Any] = {
             "model": self._get_lite_llm_model_name(),
             base_url_key: model_params.url,
+            "timeout": constants.DEFAULT_TIMEOUT,
         }
         if self._requires_api_key():
             common["api_key"] = model_params.auth_token

@@ -1,19 +1,17 @@
 data_config:
   source:
-    type: "disk"
-    file_path: "tasks/examples/gpt_4o_audio/test.json"
-
+    type: disk
+    file_path: tasks/examples/gpt_4o_audio/test.json
 graph_config:
   nodes:
     text_to_audio:
       output_keys: audio
       node_type: llm
       prompt:
-        - user: |
-            {text}
+      - user: |
+          {text}
       model:
-        name: gpt-audio
-        output_type: audio
+        name: tts_openai_direct
         parameters:
           audio:
             voice: nova
@@ -22,46 +20,42 @@ graph_config:
       output_keys: transcription
       node_type: llm
       prompt:
-        - user:
-            - type: text
-              text: "Transcribe the following audio."
-            - type: audio_url
-              audio_url: "{audio}"
+      - user:
+        - type: text
+          text: Transcribe the following audio.
+        - type: audio_url
+          audio_url: '{audio}'
       model:
-        name: gpt-audio
+        name: tts_openai_direct
         parameters:
-            max_tokens: 1000
-            temperature: 0.3
-
+          max_tokens: 1000
+          temperature: 0.3
     audio_to_audio:
       output_keys: transformed_audio
       node_type: llm
       prompt:
-        - user:
-            - type: audio_url
-              audio_url: "{audio}"
-            - type: text
-              text: "Translate this audio to Hindi language."
+      - user:
+        - type: audio_url
+          audio_url: '{audio}'
+        - type: text
+          text: Translate this audio to Hindi language.
       model:
-        name: gpt-audio
-        output_type: audio
+        name: tts_openai_direct
         parameters:
           max_tokens: 1000
           temperature: 0.5
           audio:
-            voice: "alloy"
-            format: "mp3"
-
+            voice: alloy
+            format: mp3
   edges:
-    - from: START
-      to: text_to_audio
-    - from: text_to_audio
-      to: audio_to_text
-    - from: audio_to_text
-      to: audio_to_audio
-    - from: audio_to_audio
-      to: END
-
+  - from: START
+    to: text_to_audio
+  - from: text_to_audio
+    to: audio_to_text
+  - from: audio_to_text
+    to: audio_to_audio
+  - from: audio_to_audio
+    to: END
 output_config:
   output_map:
     id:

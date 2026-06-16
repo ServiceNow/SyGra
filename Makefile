@@ -47,7 +47,7 @@ studio: studio-build ## Launch SyGra Studio (builds frontend if needed, starts s
 	@echo "🚀 Starting SyGra Studio..."
 	@echo "   Tasks: $(TASKS_DIR)"
 	@echo "   Port:  $(PORT)"
-	$(UV) run $(PYTHON) -m studio.server --svelte --tasks-dir $(TASKS_DIR) --port $(PORT)
+	PYENV_VERSION=3.11.12 DYLD_LIBRARY_PATH=/opt/homebrew/lib poetry run $(PYTHON) -m studio.server --svelte --tasks-dir $(TASKS_DIR) --port $(PORT)
 
 .PHONY: studio-build
 studio-build: ## Build the Studio frontend (only if not already built)

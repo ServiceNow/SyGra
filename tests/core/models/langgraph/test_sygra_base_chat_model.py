@@ -489,12 +489,9 @@ class TestBaseChatModel(unittest.TestCase):
         mock_exit.assert_not_called()
 
     @patch("sygra.core.models.langgraph.sygra_base_chat_model.time")
-    @patch("sygra.core.models.langgraph.sygra_base_chat_model.sys.exit")
     @patch("sygra.core.models.langgraph.sygra_base_chat_model.logger")
     @patch("sygra.core.models.langgraph.sygra_base_chat_model.ClientFactory")
-    def test_handle_server_down_critical(
-        self, mock_client_factory, mock_logger, mock_exit, mock_time
-    ):
+    def test_handle_server_down_critical(self, mock_client_factory, mock_logger, mock_time):
         """Test _handle_server_down with critical server down detection"""
         constants.HANDLE_SERVER_DOWN = True
         constants.SERVER_DOWN_ERROR_CODE = [404, 500, 501, 502, 503]
@@ -514,13 +511,13 @@ class TestBaseChatModel(unittest.TestCase):
             start_time + 8.0,
         ]
 
-        # Trigger MAX_FAILED_ERROR server down errors
-        for i in range(constants.MAX_FAILED_ERROR):
+        # Call MAX_FAILED_ERROR - 1 times without raising
+        for i in range(constants.MAX_FAILED_ERROR - 1):
             model._handle_server_down(500)
 
-        # Verify that exit was called since we had enough errors in a short window
-        mock_exit.assert_called_once()
-        mock_logger.error.assert_called_once()
+        # The Nth call crosses the threshold and calls sys.exit()
+        with self.assertRaises(SystemExit):
+            model._handle_server_down(500)
 
         # Verify warning message was logged
         warning_message = mock_logger.warning.call_args[0][0]

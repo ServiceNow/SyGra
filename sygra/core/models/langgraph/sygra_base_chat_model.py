@@ -3,8 +3,8 @@ import collections
 import json
 import os
 import random
-import sys
 import time
+import warnings
 from abc import abstractmethod
 from typing import Any, Callable, DefaultDict, Dict, List, Literal, Optional, Sequence, Tuple, Union
 
@@ -61,6 +61,7 @@ class SygraBaseChatModel(BaseChatModel):
         # max_wait for 8 attempts = 2^(8-1) = 128 secs
         self._retry_attempts = model_config.get("retry_attempts", 8)
         self._generation_params = model_config.get("parameters")
+        self._sanitize_generation_params()
         self._hf_chat_template_model_id = model_config.get("hf_chat_template_model_id")
         if self._hf_chat_template_model_id:
             self._tokenizer = AutoTokenizer.from_pretrained(
@@ -106,6 +107,33 @@ class SygraBaseChatModel(BaseChatModel):
             The name of the model.
         """
         return str(self._config["name"])
+
+    def _sanitize_generation_params(self) -> None:
+        """
+        Remove or fix parameters that are unsupported by certain model families.
+
+        GPT-5 family and Claude Opus 4.7+ deprecate the temperature parameter.
+        If a graph_config node overrides temperature to a different value, this
+        silently removes it to avoid API errors.
+        """
+        if not self._generation_params:
+            return
+        model_id = str(self._config.get("model", "")).lower()
+        if "gpt-5" in model_id or "gpt5" in model_id:
+            temp = self._generation_params.get("temperature")
+            if temp is not None and temp != 1:
+                logger.warning(
+                    f"[{self._get_name()}] GPT-5 family only supports temperature=1, "
+                    f"but got temperature={temp}. Overriding to 1."
+                )
+                self._generation_params["temperature"] = 1
+        if "claude-opus-4-7" in model_id:
+            if "temperature" in self._generation_params:
+                logger.warning(
+                    f"[{self._get_name()}] Claude Opus 4.7 does not support temperature. "
+                    f"Removing temperature={self._generation_params['temperature']}."
+                )
+                del self._generation_params["temperature"]
 
     def _set_chat_template(self):
         """
@@ -195,9 +223,14 @@ class SygraBaseChatModel(BaseChatModel):
             None
         """
         resp_text = ""
-        content = response.choices[0].model_dump()["message"]["content"]
-        if content:
-            resp_text = content.strip()
+        if isinstance(response, str):
+            resp_text = response.strip()
+        elif hasattr(response, "choices") and response.choices:
+            choice = response.choices[0]
+            message = getattr(choice, "message", None)
+            content = getattr(message, "content", None) if message else None
+            if content:
+                resp_text = content.strip()
         code_count = self._model_stats["resp_code_dist"].get(resp_status, 0)
         self._model_stats["resp_code_dist"][resp_status] = code_count + 1
         if resp_status != 200:
@@ -268,10 +301,12 @@ class SygraBaseChatModel(BaseChatModel):
                 )
                 # last n(MAX_FAILED_ERROR) failures within t(MODEL_FAILURE_WINDOW_IN_SEC) seconds
                 if time_gap_in_sec < constants.MODEL_FAILURE_WINDOW_IN_SEC:
-                    logger.error(
-                        f"SYSTEM EXITING as the dependant model({self._get_name()}) is down for longer period."
+                    raise RuntimeError(
+                        f"Model server is down: {self._get_name()} failed "
+                        f"{constants.MAX_FAILED_ERROR} times in "
+                        f"{constants.MODEL_FAILURE_WINDOW_IN_SEC}s. "
+                        f"Investigate model health before retrying."
                     )
-                    sys.exit()
 
     def _is_retryable_error(self, result: tuple[Any, int]) -> bool:
         """
@@ -667,7 +702,17 @@ class SygraBaseChatModel(BaseChatModel):
         """
         generations = []
 
-        response_dict = response if isinstance(response, dict) else response.model_dump()
+        if isinstance(response, str):
+            raise ValueError(
+                f"Model returned an error string instead of ChatCompletion: {response[:500]}"
+            )
+
+        if isinstance(response, dict):
+            response_dict = response
+        else:
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
+                response_dict = response.model_dump()
         # Sometimes the AI Model calling will get error, we should raise it.
         # Otherwise, the next code 'choices.extend(response["choices"])'
         # will throw a "TypeError: 'NoneType' object is not iterable" error

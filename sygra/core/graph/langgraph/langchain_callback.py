@@ -98,6 +98,22 @@ class MetadataTrackingCallback(AsyncCallbackHandler):
         self.model_name = model_name
         self.call_start_times: Dict[UUID, float] = {}
 
+    async def on_chat_model_start(
+        self,
+        serialized: Dict[str, Any],
+        messages: List[List[Any]],
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        tags: Optional[List[str]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Track when a chat model call starts."""
+        import time
+
+        self.call_start_times[run_id] = time.time()
+
     async def on_llm_start(
         self,
         serialized: Dict[str, Any],

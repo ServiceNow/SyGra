@@ -11,7 +11,9 @@ from sygra.core.models.custom_models import (
     CustomTriton,
     CustomVLLM,
 )
+from sygra.core.models.langgraph.bedrock_chat_model import CustomBedrockChatModel
 from sygra.core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
+from sygra.core.models.langgraph.vertex_ai_chat_model import CustomVertexAIChatModel
 from sygra.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
 from sygra.core.models.lite_llm.azure_model import CustomAzure as CustomLiteLLMAzure
 from sygra.core.models.lite_llm.azure_openai_model import (
@@ -71,6 +73,8 @@ class ModelFactory:
             "vllm": CustomVLLMChatModel,
             "openai": CustomOpenAIChatModel,
             "azure_openai": CustomOpenAIChatModel,
+            "bedrock": CustomBedrockChatModel,
+            "vertex_ai": CustomVertexAIChatModel,
         },
     }
 
@@ -103,12 +107,25 @@ class ModelFactory:
 
         model_type = model_config["model_type"]
 
-        # Override backend if provided in model config
-        backend = model_config.get("backend", backend)
+        # Override backend if provided in model config, but never downgrade an explicit
+        # MODEL_BACKEND_LANGGRAPH request — agent nodes need BaseChatModel subclasses.
+        if backend != MODEL_BACKEND_LANGGRAPH:
+            backend = model_config.get("backend", backend)
 
         # Resolve model class: prefer requested backend, then fall back to default
         backend_map = cls.MODEL_TYPE_MAP.get(backend, {})
         model_cls = backend_map.get(model_type)
+
+        # If langgraph backend was requested but no entry exists, fall back to litellm
+        # (preserves backward-compat for model types that only have litellm implementations).
+        if model_cls is None and backend == MODEL_BACKEND_LANGGRAPH:
+            litellm_backend = model_config.get("backend", MODEL_BACKEND_LITELLM)
+            model_cls = cls.MODEL_TYPE_MAP.get(litellm_backend, {}).get(model_type)
+            if model_cls:
+                logger.info(
+                    f"No langgraph implementation for {model_type}; "
+                    f"falling back to {litellm_backend} backend."
+                )
 
         if model_cls is None and backend == MODEL_BACKEND_LITELLM:
             model_cls = cls.MODEL_TYPE_MAP.get(MODEL_BACKEND_CUSTOM, {}).get(model_type)
