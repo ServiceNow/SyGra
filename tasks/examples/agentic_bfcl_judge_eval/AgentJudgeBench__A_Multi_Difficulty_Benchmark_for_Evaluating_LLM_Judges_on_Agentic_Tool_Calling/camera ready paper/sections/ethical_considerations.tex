@@ -1,0 +1,8 @@
+\section*{Ethical Considerations}
+
+\textbf{Over-reliance on automated evaluation.}
+Our findings reveal systematic failure modes in LLM judges, including the 77--82\% without-GT ceiling and over-anchoring in frontier models; practitioners unaware of these limitations risk certifying incorrect tool-calling outputs as correct, particularly in safety-critical domains (e.g., energy grid, healthcare) represented in our dataset. We mitigate this via deployment guidance (Appendix~\ref{app:decision-guide}) and by recommending against sole reliance on any single judge.
+
+\textbf{Evaluation monoculture.} All six judges converge to similar failure patterns on hard queries, suggesting shared training-distribution biases; over-reliance on our rankings could reinforce a monoculture where the same blind spots propagate across pipelines, so we encourage complementing LLM judges with programmatic scoring and human review.
+
+\textbf{Dual use, synthetic data, and compute.} The detailed failure-mode analysis (over-anchoring, the 1.0-default bias, prompt-format sensitivity) could be exploited to game judge-based evaluation; we release all prompts, scorer code, and raw outputs to enable countermeasures. All records are synthetically generated -- avoiding real-user privacy concerns but inheriting the generation pipeline's biases and possibly under-representing non-English or marginalised workflows. The full evaluation (321,648 paired judge calls) is compute-intensive; our decision guide (Appendix~\ref{app:decision-guide}) reduces unnecessary evaluation by recommending specific judges per scenario.

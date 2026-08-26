@@ -1,0 +1,136 @@
+% This must be in the first 5 lines to tell arXiv to use pdfLaTeX, which is strongly recommended.
+\pdfoutput=1
+% In particular, the hyperref package requires pdfLaTeX in order to break URLs across lines.
+
+% xcolor is loaded without options inside emnlp2023.sty; pre-declare the
+% [table] option here so the later \usepackage[table]{xcolor} below does not
+% raise an "Option clash for package xcolor" error.
+\PassOptionsToPackage{table}{xcolor}
+
+\documentclass[11pt]{article}
+
+% Camera-ready (final) version: the "review" option is omitted, which also
+% removes line numbers and page numbers, per EMNLP 2023 style instructions.
+\usepackage{emnlp2023}
+
+% Standard package includes
+\usepackage{times}
+\usepackage{latexsym}
+
+% For proper rendering and hyphenation of words containing Latin characters (including in bib files)
+\usepackage[T1]{fontenc}
+
+% This assumes your files are encoded as UTF8
+\usepackage[utf8]{inputenc}
+
+% This is not strictly necessary and may be commented out.
+% However, it will improve the layout of the manuscript,
+% and will typically save some space.
+\usepackage{microtype}
+
+% This is also not strictly necessary and may be commented out.
+% However, it will improve the aesthetics of text in
+% the typewriter font.
+\usepackage{inconsolata}
+
+\usepackage{graphicx}
+\usepackage{tabularx}
+\newcommand{\numsz}{\fontsize{6.8}{7.4}\selectfont}
+\usepackage[most]{tcolorbox}
+\newtcolorbox{promptbox}[1][]{
+  colback=gray!5,
+  colframe=gray!50,
+  fonttitle=\bfseries\small,
+  title={#1},
+  boxrule=0.5pt,
+  arc=2pt,
+  left=6pt,
+  right=6pt,
+  top=4pt,
+  bottom=4pt,
+  breakable
+}
+% --- Case-study / worked-example boxes (Appendices F, G) ---------------------
+\definecolor{mygreen}{RGB}{34,120,50}
+\definecolor{myred}{RGB}{178,34,52}
+\newtcolorbox{querybox}[1][]{
+  colback=gray!4, colframe=gray!45,
+  fonttitle=\bfseries\small, coltitle=white, colbacktitle=gray!60,
+  title={#1}, boxrule=0.4pt, arc=2pt,
+  left=6pt, right=6pt, top=3pt, bottom=3pt, breakable
+}
+\newtcolorbox{gtbox}[1][]{
+  colback=blue!3, colframe=blue!35,
+  fonttitle=\bfseries\small, coltitle=white, colbacktitle=blue!55,
+  title={#1}, boxrule=0.4pt, arc=2pt,
+  left=6pt, right=6pt, top=3pt, bottom=3pt, breakable
+}
+\newtcolorbox{correctbox}[1][]{
+  colback=mygreen!7, colframe=mygreen!55,
+  fonttitle=\bfseries\small, coltitle=white, colbacktitle=mygreen!70,
+  title={#1}, boxrule=0.4pt, arc=2pt,
+  left=6pt, right=6pt, top=3pt, bottom=3pt, breakable
+}
+\newtcolorbox{wrongbox}[1][]{
+  colback=myred!6, colframe=myred!50,
+  fonttitle=\bfseries\small, coltitle=white, colbacktitle=myred!65,
+  title={#1}, boxrule=0.4pt, arc=2pt,
+  left=6pt, right=6pt, top=3pt, bottom=3pt, breakable
+}
+\newtcolorbox{neutralbox}[1][]{
+  colback=purple!4, colframe=purple!35,
+  fonttitle=\bfseries\small, coltitle=white, colbacktitle=purple!55,
+  title={#1}, boxrule=0.4pt, arc=2pt,
+  left=6pt, right=6pt, top=3pt, bottom=3pt, breakable
+}
+\newcommand{\good}[1]{\textcolor{mygreen}{\textbf{#1}}}
+\newcommand{\bad}[1]{\textcolor{myred}{\textbf{#1}}}
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}
+\newcommand{\xmark}{\ding{55}}
+% hyperref is already loaded (with breaklinks + colorlinks) by emnlp2023.sty; do not reload it.
+\usepackage{url}
+\usepackage{caption}  % in preamble
+\usepackage{booktabs} % in preamble
+\usepackage{wrapfig}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage[table]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+% The default 5cm title box (from emnlp2023.sty) comfortably fits this
+% title + 4-author block with no overlap -- verified by compilation: see
+% notes in the delivery summary. No override needed.
+
+\title{AgentJudgeBench: A Multi-Difficulty Benchmark for Evaluating LLM Judges on Agentic Tool-Calling}
+
+\author{Abhigya Verma \\ {\bf Amit Kumar Saha} \\ {\bf Seganrasan Subramanian} \\ {\bf Sai Harshitha Aluru} \\
+        ServiceNow AI \\ Hyderabad, India}
+
+\begin{document}
+
+\maketitle
+
+\input{sections/abstract}
+\input{sections/introduction}
+\input{sections/related_works}
+\input{sections/methodology}
+\input{sections/experiments}
+\input{sections/conclusions}
+\input{sections/supplementary_material}
+\input{sections/limitations}
+\input{sections/ethical_considerations}
+\input{sections/acknowledgements}
+
+\bibliographystyle{acl_natbib}
+\bibliography{references}
+
+\appendix
+
+\input{sections/appendix}
+\end{document}

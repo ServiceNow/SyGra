@@ -1,0 +1,44 @@
+\section*{Ethical Considerations}
+
+\textbf{Over-reliance on automated evaluation.}
+Our findings reveal systematic failure modes in LLM judges,
+including the 77--82\% without-GT ceiling and over-anchoring
+in frontier models. If practitioners adopt judge-based
+pipelines without awareness of these limitations, incorrect
+tool-calling outputs may be certified as correct, particularly
+in the safety-critical enterprise domains (e.g., energy grid
+operations, healthcare workflows) represented in our dataset.
+We mitigate this by providing explicit deployment guidance
+(Appendix~\ref{app:decision-guide}) and recommending
+against sole reliance on any single LLM judge.
+
+\textbf{Evaluation monoculture.} All six judges converge to
+similar failure patterns on hard queries, suggesting shared
+training-distribution biases. Over-reliance on our benchmark
+rankings could reinforce a monoculture where the same blind
+spots propagate across evaluation pipelines. We encourage
+practitioners to complement LLM judges with programmatic
+scoring and human review where feasible.
+
+\textbf{Dual use and gaming.} The detailed analysis of judge
+failure modes (over-anchoring, the 1.0-default bias, and
+prompt-format sensitivity) could be exploited to game
+judge-based evaluation systems, for instance by crafting
+outputs that exploit known judge blind spots to inflate
+scores. We release all prompts, scorer code, and raw
+outputs to enable the community to develop countermeasures.
+
+\textbf{Synthetic data.} All benchmark records are
+synthetically generated. While this avoids privacy concerns
+associated with real user data, the 15 enterprise domains
+reflect the biases of the generation pipeline and may not
+represent underrepresented industries, non-English workflows,
+or workflows from historically marginalised communities.
+
+\textbf{Compute cost.} The full evaluation comprises 321,648
+paired judge calls across six LLMs, five generators, and
+three difficulty tiers. While we do not report precise energy
+estimates, the inference-time compute is non-trivial. Our
+practitioner decision guide (Appendix~\ref{app:decision-guide})
+is designed to reduce unnecessary exhaustive evaluation by
+recommending specific judges per deployment scenario.
