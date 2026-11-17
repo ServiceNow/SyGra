@@ -62,6 +62,32 @@ print(f"Generated {len(results)} responses")
 Generated 2 responses
 ```
 
+### Self-Contained Example: a Pipeline Defined Outside `tasks/`
+
+[`tasks/examples/library_pipeline/pipeline.py`](https://github.com/ServiceNow/SyGra/blob/main/tasks/examples/library_pipeline/pipeline.py)
+turns three synthetic help articles into FAQ entries. It runs from plain Python with
+`FakeProvider`, so it needs no API keys or network access, and it writes nothing to the
+working directory:
+
+```bash
+python tasks/examples/library_pipeline/pipeline.py
+```
+
+It shows the library features for pipelines that live in your own code:
+
+- **Config dict:** `Workflow.from_config(config, base_dir=HERE)`, with prompts loaded from
+  `prompts/*.txt` next to the script.
+- **Hooks as objects:** a configured `ParseJson("question", "answer")` post-processor and a
+  `ShortAnswersNeedReview(min_words=8)` edge condition.
+- **In-memory data:** a memory source, `arun(write_output=False)`, and joining results by
+  `id`, including `sygra.record_id()` for the article without one.
+- **Model roles:** nodes use `{"role": "generator"}` and `{"role": "reviewer"}`. A second
+  run swaps the reviewer with `model_roles=...`, with no change to the config.
+- **Usage and cost:** `result.usage_by_model` and `result.cost_usd` with a toy `cost_fn`.
+
+To use real models, map the roles to models from `models.yaml`, or keep
+`model_type: external` and register your own `LLMProvider`.
+
 ---
 
 ## Basic Workflows

@@ -1,0 +1,4 @@
+Review this FAQ entry against the article. Reply with JSON: {{"verdict": "approve" or "revise"}}.
+Article: {body}
+Question: {question}
+Answer: {answer}
