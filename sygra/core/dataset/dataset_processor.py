@@ -487,6 +487,14 @@ class DatasetProcessor:
                         signal.signal(handled_sig, handler)
             # Close the progress bar
             self.pbar.close()
+            # Write results no checkpoint picked up, e.g. when the last record to finish
+            # failed. Resumable runs do this below, after saving their state.
+            if self.graph_results and not (self.resumable and self.resume_manager):
+                logger.info(f"Writing {len(self.graph_results)} remaining results")
+                await self._write_checkpoint(
+                    isinstance(self.graph_config.oasst_mapper, dict)
+                    and self.graph_config.oasst_mapper.get("required") == "yes"
+                )
             # Run Graph post Processors
             post_processors = self.graph_config.config.get("graph_post_process", [])
             if post_processors and not aborted:

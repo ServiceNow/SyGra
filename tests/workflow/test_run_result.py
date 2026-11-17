@@ -78,9 +78,8 @@ def test_result_is_a_list_with_usage_and_cost(tmp_path):
 
 
 def test_failed_records_are_reported(tmp_path):
-    # The failing record comes first: if the last record to finish fails, records since
-    # the last checkpoint aren't written (existing DatasetProcessor behavior).
-    rows = [{"id": "nope", "text": "bad"}, {"id": "ok", "text": "fine"}]
+    # The failing record finishes last; earlier successes must still be written.
+    rows = [{"id": "ok", "text": "fine"}, {"id": "nope", "text": "bad"}]
 
     result = _workflow("rr_failed", rows, _Provider()).run(num_records=2, output_dir=str(tmp_path))
 
