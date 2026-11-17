@@ -7,7 +7,7 @@ name = "sygra"
 version = "1.0.0"
 description = "Graph-oriented Synthetic data generation Pipeline library"
 readme = "README.md"
-requires-python = ">=3.9,<3.12,!=3.9.7"
+requires-python = ">=3.9,<3.14,!=3.9.7"
 authors = [{ name = "Bidyapati Pradhan, Surajit Dasgupta, Amit Kumar Saha, Sriram Puttagunta, Omkar Anustoop, Vipul Mittal, Gopal Sarda", email = "sygra_team@servicenow.com" }]
 maintainers = [
   { name = "SyGra Team", email = "sygra_team@servicenow.com" }
@@ -23,6 +23,8 @@ classifiers = [
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Operating System :: OS Independent",
 ]
 keywords = ["llm", "fine-tuning", "data generation", "synthetic data", "nlp", "sft", "dpo", "data quality", "metadata tagging", "graph",]
@@ -53,6 +55,7 @@ dependencies = [
   "torch>=2.8,<3.0",
   "mlxtend>=0.23,<1.0",
   "pandarallel>=1.6,<2.0",
+  "pandas>=2.2,<4.0",
   "sentence-transformers>=5.1,<6.0",
   "soundfile>=0.13,<1.0",
   "types-pyyaml>=6.0,<7.0",
@@ -62,8 +65,8 @@ dependencies = [
   "boto3>=1.40.71,<2.0.0",
   "google-auth>=2.43.0,<3.0.0",
   "google-cloud-aiplatform>=1.128.0,<2.0.0",
-  "fastapi (>=0.124.4,<0.125.0)",
-  "uvicorn (>=0.38.0,<0.39.0)",
+  "fastapi (>=0.124.4,<1.0.0)",
+  "uvicorn (>=0.38.0,<1.0.0)",
   "debugpy (>=1.8.19,<2.0.0)",
 ]
 
@@ -106,7 +109,7 @@ include = [
 # --- Tool configurations ---
 [tool.black]
 line-length = 100
-target-version = ["py39", "py310", "py311"]
+target-version = ["py39", "py310", "py311", "py312", "py313"]
 include = '\.pyi?$'
 exclude = '''
 /(
