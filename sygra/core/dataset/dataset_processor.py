@@ -177,6 +177,10 @@ class DatasetProcessor:
         """Main entry point to process the dataset and store results."""
         asyncio.run(self._process_and_store_results())
 
+    async def aprocess_and_store_results(self):
+        """Async entry point: process the dataset and store results on the running event loop."""
+        await self._process_and_store_results()
+
     @staticmethod
     def is_error_code_in_output(output_record: dict[str, Any]) -> bool:
         """

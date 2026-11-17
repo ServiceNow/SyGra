@@ -73,7 +73,7 @@ model:
 
 | API | Scope |
 |---|---|
-| `Workflow.llm_provider(provider, name="default")` | Only for that workflow's `run()`, in the calling context. |
+| `Workflow.llm_provider(provider, name="default")` | Only for that workflow's `run()` / `arun()`, in the calling context. |
 | `with use_llm_providers({"name": provider}): ...` | Code (and asyncio tasks) started inside the block. Shadows global registrations. |
 | `register_llm_provider(provider, name="default")` | Process-wide. |
 

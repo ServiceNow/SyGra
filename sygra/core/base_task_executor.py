@@ -1,4 +1,5 @@
 import ast
+import asyncio
 import copy
 import hashlib
 import json
@@ -991,6 +992,31 @@ class BaseTaskExecutor(ABC):
         Args:
             execution_callbacks: Optional ExecutionCallbacks for real-time node tracking.
         """
+        dataset_processor, out_file, out_file_type = self._prepare_execution(execution_callbacks)
+        dataset_processor.process_and_store_results()
+        self._finalize_execution(dataset_processor, out_file, out_file_type)
+
+    async def aexecute(self, execution_callbacks=None):
+        """
+        Async variant of :meth:`execute`, for use inside a running event loop.
+
+        Records are processed on the caller's event loop. Setup (graph build, output
+        file resolution) and post-processing (data quality, sinks, metadata) are
+        blocking, so they run in a worker thread.
+
+        Args:
+            execution_callbacks: Optional ExecutionCallbacks for real-time node tracking.
+        """
+        dataset_processor, out_file, out_file_type = await asyncio.to_thread(
+            self._prepare_execution, execution_callbacks
+        )
+        await dataset_processor.aprocess_and_store_results()
+        await asyncio.to_thread(
+            self._finalize_execution, dataset_processor, out_file, out_file_type
+        )
+
+    def _prepare_execution(self, execution_callbacks=None) -> tuple[DatasetProcessor, str, str]:
+        """Build the graph, resolve the output file and create the DatasetProcessor."""
         graph = self.init_graph()
         compiled_graph = graph.compile()
         logger.info("Graph compiled successfully")
@@ -1082,8 +1108,12 @@ class BaseTaskExecutor(ABC):
             task_name=self.task_name,
             execution_callbacks=execution_callbacks,
         )
-        dataset_processor.process_and_store_results()
+        return dataset_processor, out_file, out_file_type
 
+    def _finalize_execution(
+        self, dataset_processor: DatasetProcessor, out_file: str, out_file_type: str
+    ) -> None:
+        """Run post-generation steps: data quality, sink upload, final state and metadata."""
         if "data_quality" in self.graph_config.config.get("output_config", {}):
             logger.info("Performing data quality checks")
             data_quality_processor = DataQuality(

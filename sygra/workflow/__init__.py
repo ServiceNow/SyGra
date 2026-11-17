@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import shutil
@@ -806,7 +807,31 @@ class Workflow:
         output_dir: Optional[str] = None,
         **kwargs,
     ) -> Any:
-        """Execute workflow with full framework feature support."""
+        """Execute workflow with full framework feature support.
+
+        Synchronous wrapper around :meth:`arun`. It starts its own event loop, so it
+        can't be called from code that is already running in one (async web apps,
+        job workers, notebooks): use ``await workflow.arun(...)`` there.
+        """
+        return asyncio.run(self.arun(num_records, start_index, output_dir, **kwargs))
+
+    async def arun(
+        self,
+        num_records: Optional[int] = None,
+        start_index: int = 0,
+        output_dir: Optional[str] = None,
+        **kwargs,
+    ) -> Any:
+        """Execute the workflow on the running event loop.
+
+        Takes the same arguments and returns the same result as :meth:`run`. Records
+        are processed as tasks on the caller's loop, so LLM providers can use
+        loop-bound clients. Blocking setup (dataset loading, graph build) and
+        post-processing run in worker threads.
+
+        Example:
+            >>> records = await Workflow("demo").source([...]).llm(...).arun(num_records=10)
+        """
         if not CORE_AVAILABLE:
             raise GraSPError("Core framework not available")
 
@@ -820,9 +845,11 @@ class Workflow:
 
         with use_llm_providers(self._llm_providers), server_down_action("raise"):
             if self._is_existing_task:
-                return self._execute_existing_task(num_records, start_index, output_dir, **kwargs)
+                return await self._execute_existing_task(
+                    num_records, start_index, output_dir, **kwargs
+                )
             elif has_nodes:
-                return self._execute_programmatic_workflow(
+                return await self._execute_programmatic_workflow(
                     num_records, start_index, output_dir, **kwargs
                 )
             else:
@@ -831,10 +858,10 @@ class Workflow:
     def llm_provider(self, provider: LLMProvider, name: str = "default") -> "Workflow":
         """Serve this workflow's ``model_type: external`` models with ``provider``.
 
-        The provider is registered only for the duration of :meth:`run` and only in
-        the calling context, so different workflows (or threads) can use different
-        providers. Models select a provider by name via the ``provider`` key of their
-        model config (default ``"default"``).
+        The provider is registered only for the duration of :meth:`run` / :meth:`arun`
+        and only in the calling context, so different workflows (or threads) can use
+        different providers. Models select a provider by name via the ``provider`` key
+        of their model config (default ``"default"``).
 
         Args:
             provider: Object with an async ``generate(LLMRequest) -> ModelResponse`` method.
@@ -859,7 +886,7 @@ class Workflow:
         with open(path, "w") as f:
             yaml.dump(self._config.to_dict(), f, default_flow_style=False)
 
-    def _execute_existing_task(
+    async def _execute_existing_task(
         self,
         num_records: Optional[int],
         start_index: int,
@@ -889,15 +916,18 @@ class Workflow:
             quality=kwargs.get("quality", False),
         )
 
-        try:
+        def create_executor() -> BaseTaskExecutor:
             executor: BaseTaskExecutor
             if kwargs.get("quality_only", False):
                 executor = JudgeQualityTaskExecutor(args, kwargs.get("quality_config"))
             else:
                 executor = DefaultTaskExecutor(args)
                 BaseTaskExecutor.__init__(executor, args, modified_config)
+            return executor
 
-            result = executor.execute()
+        try:
+            executor = await asyncio.to_thread(create_executor)
+            result = await executor.aexecute()
             logger.info(f"Successfully executed task: {task_name}")
             return result
         except ModelServerDownError:
@@ -909,7 +939,7 @@ class Workflow:
                 logger.error(f"Task context initialization failed for '{task_name}'")
             raise ExecutionError(f"Failed to execute task '{task_name}': {e}")
 
-    def _execute_programmatic_workflow(
+    async def _execute_programmatic_workflow(
         self,
         num_records: Optional[int],
         start_index: int,
@@ -959,13 +989,13 @@ class Workflow:
                 ),
             )
 
-            executor: BaseTaskExecutor
-            if kwargs.get("quality_only", False):
-                executor = JudgeQualityTaskExecutor(args, kwargs.get("quality_config"))
-            else:
-                executor = DefaultTaskExecutor(args, config_dict)
+            def create_executor() -> BaseTaskExecutor:
+                if kwargs.get("quality_only", False):
+                    return JudgeQualityTaskExecutor(args, kwargs.get("quality_config"))
+                return DefaultTaskExecutor(args, config_dict)
 
-            result = executor.execute()
+            executor = await asyncio.to_thread(create_executor)
+            result = await executor.aexecute()
 
             output_file = None
             if self._config.get("data_config", {}).get("sink", {}).get("file_path"):
