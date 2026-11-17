@@ -271,8 +271,12 @@ class BaseTaskExecutor(ABC):
             return None
 
         try:
-            generator_cls = utils.get_func_from_str(gen_class_str)
-            output_generator = cast(BaseOutputGenerator, generator_cls(output_config))
+            generator_cls = utils.resolve_hook(gen_class_str)
+            # A generator instance is used as is; a class is built with the output config
+            output_generator = cast(
+                BaseOutputGenerator,
+                generator_cls(output_config) if callable(generator_cls) else generator_cls,
+            )
             logger.info(f"Initialized output generator: {gen_class_str}")
             return output_generator
         except Exception as e:
@@ -878,7 +882,8 @@ class BaseTaskExecutor(ABC):
         for cfg in transform_cfgs:
             if "transform" not in cfg:
                 raise ValueError(f"Missing 'transform' key in transformation config: {cfg}")
-            transform_fn = utils.get_func_from_str(cfg["transform"])()
+            transform = utils.resolve_hook(cfg["transform"])
+            transform_fn = transform() if callable(transform) else transform
             params = cfg.get("params", {})
             instances.append((transform_fn, params))
         return instances

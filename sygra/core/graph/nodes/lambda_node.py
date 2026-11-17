@@ -1,6 +1,5 @@
 import asyncio
 import time
-from inspect import isclass
 from typing import Any
 
 from sygra.core.graph.nodes.base_node import BaseNode
@@ -21,9 +20,7 @@ class LambdaNode(BaseNode):
         super().__init__(node_name, config)
 
         # specific variable for this node type
-        self.func_to_execute = utils.get_func_from_str(self.node_config["lambda"])
-        if isclass(self.func_to_execute):
-            self.func_to_execute = self.func_to_execute.apply
+        self.func_to_execute = utils.hook_apply(utils.resolve_hook(self.node_config["lambda"]))
         # deduce if the function type is sync or async
         if asyncio.iscoroutinefunction(self.func_to_execute):
             self.func_type = "async"

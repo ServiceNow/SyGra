@@ -48,6 +48,18 @@ try:
     from .core.graph.sygra_state import SygraState  # noqa: F401
     from .core.judge_task_executor import JudgeQualityTaskExecutor  # noqa: F401
     from .core.resumable_execution import ResumableExecutionManager  # noqa: F401
+    from .hooks import (  # noqa: F401
+        HOOKS_API_VERSION,
+        AsyncLambdaFunction,
+        BaseOutputGenerator,
+        DataTransform,
+        EdgeCondition,
+        GraphPostProcessor,
+        LambdaFunction,
+        NodePostProcessor,
+        NodePostProcessorWithState,
+        NodePreProcessor,
+    )
 
     CORE_AVAILABLE = True
 except ImportError as e:
@@ -392,6 +404,16 @@ if CORE_AVAILABLE:
             "ExecutionCallbacks",
             "NodeExecutionTracker",
             "create_execution_tracker",
+            "HOOKS_API_VERSION",
+            "AsyncLambdaFunction",
+            "BaseOutputGenerator",
+            "DataTransform",
+            "EdgeCondition",
+            "GraphPostProcessor",
+            "LambdaFunction",
+            "NodePostProcessor",
+            "NodePostProcessorWithState",
+            "NodePreProcessor",
         ]
     )
 

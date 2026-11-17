@@ -1,5 +1,4 @@
 import time
-from inspect import isclass
 from typing import Any
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
@@ -54,11 +53,11 @@ class LLMNode(BaseNode):
 
         self.pre_process = self._default_llm_pre_process
         if "pre_process" in self.node_config:
-            self.pre_process = utils.get_func_from_str(self.node_config["pre_process"])
+            self.pre_process = utils.resolve_hook(self.node_config["pre_process"])
 
         self.post_process = self._default_llm_post_process
         if "post_process" in self.node_config:
-            self.post_process = utils.get_func_from_str(self.node_config["post_process"])
+            self.post_process = utils.resolve_hook(self.node_config["post_process"])
 
         self._initialize_model()
 
@@ -276,11 +275,10 @@ class LLMNode(BaseNode):
 
         try:
             graph_factory = utils.get_graph_factory(constants.BACKEND)
-            # preprocessor - if it is a class, call apply method
+            # preprocessor - if it is a class or hook instance, call apply method
+            pre_processor = utils.hook_processor(self.pre_process)
             state = (
-                self.pre_process().apply(state)
-                if isclass(self.pre_process)
-                else self.pre_process(state)
+                pre_processor.apply(state) if pre_processor is not None else self.pre_process(state)
             )
             chat_history_enabled = self.node_config.get("chat_history", False)
             prompt_tmpl = self._generate_prompt(state)
@@ -326,15 +324,17 @@ class LLMNode(BaseNode):
 
             # Call post-processor with the best effort: try (resp, state) then fallback to (resp)
             try:
+                post_processor = utils.hook_processor(self.post_process)
                 updated_state = (
-                    self.post_process().apply(responseMsg, state)
-                    if isclass(self.post_process)
+                    post_processor.apply(responseMsg, state)
+                    if post_processor is not None
                     else self.post_process(ai_message, state)
                 )
             except TypeError:
+                post_processor = utils.hook_processor(self.post_process)
                 updated_state = (
-                    self.post_process().apply(responseMsg)
-                    if isclass(self.post_process)
+                    post_processor.apply(responseMsg)
+                    if post_processor is not None
                     else self.post_process(ai_message)  # type: ignore
                 )
 

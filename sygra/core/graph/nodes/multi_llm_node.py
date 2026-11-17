@@ -1,5 +1,4 @@
 import time
-from inspect import isclass
 from typing import Any
 
 from sygra.core.graph.nodes.base_node import BaseNode
@@ -32,12 +31,13 @@ class MultiLLMNode(BaseNode):
 
         self.multi_llm_post_process = self._default_multi_llm_post_process
         if "multi_llm_post_process" in self.node_config:
-            self.multi_llm_post_process = utils.get_func_from_str(
+            self.multi_llm_post_process = utils.resolve_hook(
                 self.node_config["multi_llm_post_process"]
             )
-            # it can be a method or a class with apply method
-            if isclass(self.multi_llm_post_process):
-                self.multi_llm_post_process = self.multi_llm_post_process().apply
+            # it can be a method, a class with apply method, or an instance of such a class
+            processor = utils.hook_processor(self.multi_llm_post_process)
+            if processor is not None:
+                self.multi_llm_post_process = processor.apply
 
     def _default_multi_llm_post_process(self, model_outputs: dict[str, Any]) -> dict[str, Any]:
         updated_model_outputs = {}

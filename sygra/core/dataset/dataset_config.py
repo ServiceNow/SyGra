@@ -29,11 +29,12 @@ class TransformConfig(BaseModel):
     """Configuration for data transformations.
 
     Attributes:
-        transform (str): Fully qualified path to transformation class
+        transform (Union[str, Any]): Fully qualified path to transformation class, or
+            (in library use) the DataTransform class or instance itself
         params (dict[str, Any]): Parameters for the transformation
     """
 
-    transform: str
+    transform: Union[str, Any]
     params: Optional[dict[str, Any]] = None
 
 

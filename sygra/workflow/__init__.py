@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import copy
 import json
 import os
 import shutil
@@ -276,7 +275,7 @@ class Workflow:
         loader = ConfigLoader()
         config_dir: Optional[Path] = None
         if isinstance(config, dict):
-            loaded = copy.deepcopy(config)
+            loaded = utils.copy_config(config)
         else:
             config_dir = loader.resolve_path(config).resolve().parent
             loaded = loader.load(config)
@@ -415,28 +414,12 @@ class Workflow:
         if kwargs.get("chat_history"):
             node_config["chat_history"] = True
 
-        # Handle pre-processors
+        # Processors: dotted path, function, class or configured instance
         if pre_process:
-            if isinstance(pre_process, type) and issubclass(pre_process, NodePreProcessor):
-                # Class reference - convert to string path
-                node_config["pre_process"] = f"{pre_process.__module__}.{pre_process.__name__}"
-            elif callable(pre_process):
-                node_config["pre_process"] = self._callable_to_string_path(pre_process)
-            else:
-                node_config["pre_process"] = pre_process
+            node_config["pre_process"] = utils.hook_reference(pre_process)
 
-        # Handle post-processors
         if post_process:
-            if isinstance(post_process, type) and (
-                issubclass(post_process, NodePostProcessor)
-                or issubclass(post_process, NodePostProcessorWithState)
-            ):
-                # Class reference - convert to string path
-                node_config["post_process"] = f"{post_process.__module__}.{post_process.__name__}"
-            elif callable(post_process):
-                node_config["post_process"] = self._callable_to_string_path(post_process)
-            else:
-                node_config["post_process"] = post_process
+            node_config["post_process"] = utils.hook_reference(post_process)
 
         if kwargs.get("structured_output"):
             node_config["structured_output"] = kwargs["structured_output"]
@@ -475,7 +458,9 @@ class Workflow:
             node_config["output_keys"] = kwargs["output_keys"]
 
         if kwargs.get("multi_llm_post_process"):
-            node_config["multi_llm_post_process"] = kwargs["multi_llm_post_process"]
+            node_config["multi_llm_post_process"] = utils.hook_reference(
+                kwargs["multi_llm_post_process"]
+            )
 
         self._add_node_with_edge(node_name, node_config)
         return self
@@ -517,18 +502,9 @@ class Workflow:
         """Add lambda function node supporting direct function/class references."""
         node_name = self._generate_node_name("lambda")
 
-        # Handle different types of function references
-        if isinstance(func, type):
-            # Class reference
-            func_path = f"{func.__module__}.{func.__name__}"
-        elif callable(func):
-            func_path = self._callable_to_string_path(func)
-        else:
-            func_path = func
-
         node_config = {
             "node_type": "lambda",
-            "lambda": func_path,
+            "lambda": utils.hook_reference(func),
             "output_keys": output,
         }
 
@@ -627,14 +603,9 @@ class Workflow:
         self, from_node: str, condition: Union[str, Callable], path_map: dict[str, str]
     ) -> "Workflow":
         """Add conditional edge with path mapping."""
-        if callable(condition):
-            condition_path = self._callable_to_string_path(condition)
-        else:
-            condition_path = condition
-
         edge_config = {
             "from": from_node,
-            "condition": condition_path,
+            "condition": utils.hook_reference(condition),
             "path_map": path_map,
         }
         self._config["graph_config"]["edges"].append(edge_config)
@@ -729,13 +700,16 @@ class Workflow:
         if "source" not in self._config["data_config"]:
             self._config["data_config"]["source"] = {}
 
-        transformations_list: list[Union[dict[str, Any], str]] = []  # <-- CORRECT TYPE
+        transformations_list: list[dict[str, Any]] = []
 
         for transform in transforms:
-            if callable(transform):
-                transformations_list.append(self._callable_to_string_path(transform))
+            if isinstance(transform, dict):
+                transformations_list.append(
+                    {**transform, "transform": utils.hook_reference(transform["transform"])}
+                )
             else:
-                transformations_list.append(transform)
+                # DataTransform class or instance, without params
+                transformations_list.append({"transform": utils.hook_reference(transform)})
 
         self._config["data_config"]["source"]["transformations"] = transformations_list
         return self
@@ -822,13 +796,7 @@ class Workflow:
         if "output_config" not in self._config:
             self._config["output_config"] = {}
 
-        if isinstance(generator, str):
-            self._config["output_config"]["generator"] = generator
-        elif isinstance(generator, type):
-            self._config["output_config"][
-                "generator"
-            ] = f"{generator.__module__}.{generator.__name__}"
-
+        self._config["output_config"]["generator"] = utils.hook_reference(generator)
         return self
 
     def preserve_fields(self, *field_names: str) -> "Workflow":
@@ -1141,8 +1109,14 @@ class Workflow:
             else:
                 os.makedirs(output_dir, exist_ok=True)
 
-            # Config-built workflows keep the transformations their config declares.
-            if not self._from_config and not kwargs.get("enable_default_transforms", False):
+            # Keep transformations the workflow declares (config or .transformations()).
+            source = self._config.to_dict().get("data_config", {}).get("source")
+            declares_transforms = isinstance(source, dict) and bool(source.get("transformations"))
+            if (
+                not self._from_config
+                and not declares_transforms
+                and not kwargs.get("enable_default_transforms", False)
+            ):
                 self.disable_default_transforms()
 
             config_dict = self._config.to_dict()
@@ -1248,18 +1222,6 @@ class Workflow:
             current[final_key_index] = value
         else:
             current[final_key] = value
-
-    def _callable_to_string_path(self, func: Union[str, Callable]) -> str:
-        """Convert callable to string path for YAML serialization."""
-        if callable(func):
-            if hasattr(func, "__module__") and hasattr(func, "__name__"):
-                return f"{func.__module__}.{func.__name__}"
-            elif hasattr(func, "__class__"):
-                return f"{func.__class__.__module__}.{func.__class__.__name__}"
-            else:
-                class_name = func.__class__.__name__
-                return f"__main__.{class_name}"
-        return func
 
     def _detect_file_format(self, file_path: str) -> str:
         """Detect file format from extension."""

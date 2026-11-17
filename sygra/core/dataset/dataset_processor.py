@@ -507,11 +507,12 @@ class DatasetProcessor:
                 for post_processor in post_processors:
                     processor_path = None
                     processor_params: dict[str, Any] = {}
-                    if isinstance(post_processor, str):
-                        processor_path = post_processor
-                    elif isinstance(post_processor, dict):
+                    if isinstance(post_processor, dict):
                         processor_path = post_processor.get("processor")
                         processor_params = post_processor.get("params", {}) or {}
+                    elif isinstance(post_processor, str) or hasattr(post_processor, "process"):
+                        # dotted path, GraphPostProcessor class or instance
+                        processor_path = post_processor
                     else:
                         raise ValueError(
                             "Invalid graph_post_process entry. Must be a string or dict with 'processor'."
@@ -521,17 +522,24 @@ class DatasetProcessor:
                         raise ValueError("graph_post_process processor path is missing")
 
                     metadata = {"output_file": output_file, "params": processor_params}
-                    processor_cls = utils.get_func_from_str(processor_path)
-                    processor_name = processor_path.split(".")[-1]
+                    processor_cls = utils.resolve_hook(processor_path)
+                    if isinstance(processor_path, str):
+                        processor_name = processor_path.split(".")[-1]
+                    else:
+                        processor_name = getattr(
+                            processor_cls, "__name__", type(processor_cls).__name__
+                        )
+                    # an instance is used as is; a class is built with the params
+                    processor = (
+                        processor_cls(**processor_params)
+                        if callable(processor_cls)
+                        else processor_cls
+                    )
                     use_previous_output = processor_params.get("use_previous_output", False)
                     if use_previous_output:
-                        processed_output_data = processor_cls(**processor_params).process(
-                            processed_output_data, metadata
-                        )
+                        processed_output_data = processor.process(processed_output_data, metadata)
                     else:
-                        processed_output_data = processor_cls(**processor_params).process(
-                            output_data, metadata
-                        )
+                        processed_output_data = processor.process(output_data, metadata)
                     new_output_file = output_file[: output_file.rfind("/") + 1] + output_file[
                         output_file.rfind("/") + 1 :
                     ].replace("output", processor_name, 1)

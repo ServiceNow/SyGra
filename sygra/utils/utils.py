@@ -5,6 +5,7 @@ import json
 import os
 import re
 import threading
+from inspect import isclass
 from pathlib import Path
 from typing import Any, Callable, Optional, Sequence, Union, cast
 
@@ -413,6 +414,86 @@ def get_func_from_str(func_str: str) -> Callable[..., Any]:
     if not callable(obj):
         raise TypeError(f"Resolved object '{func_str}' is not callable")
     return cast(Callable[..., Any], obj)
+
+
+def resolve_hook(hook: Any) -> Any:
+    """Return the code that a hook config value refers to.
+
+    Hooks are pre-processors, post-processors, lambdas, edge conditions, data
+    transforms, output generators and graph post-processors. A dotted-path string
+    (as written in YAML) is imported. A Python object (function, class or instance)
+    is returned unchanged, so library users can pass hooks directly.
+    """
+    if isinstance(hook, str):
+        return get_func_from_str(hook)
+    return hook
+
+
+def hook_reference(hook: Any) -> Any:
+    """Return the value to store in a config for ``hook``.
+
+    Strings are kept. A module-level function or class that its dotted path imports
+    back to is stored as that path, so the config can still be saved as YAML. Any
+    other object (a local function or class, a lambda, a configured instance) is
+    stored as the object itself.
+    """
+    if isinstance(hook, str):
+        return hook
+    module = getattr(hook, "__module__", None)
+    name = getattr(hook, "__name__", None)
+    if module and name:
+        path = f"{module}.{name}"
+        try:
+            if get_func_from_str(path) is hook:
+                return path
+        except Exception:
+            pass
+    return hook
+
+
+def copy_config(value: Any) -> Any:
+    """Copy a config's dicts and lists; share every other value.
+
+    For YAML configs (immutable scalars only) this equals ``copy.deepcopy``. Hook
+    objects in library configs stay the same objects, so a configured instance keeps
+    its state and doesn't need to be deep-copyable (it may hold a lock or a client).
+    """
+    if isinstance(value, dict):
+        return {key: copy_config(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [copy_config(item) for item in value]
+    return value
+
+
+def _is_hook_instance(hook: Any) -> bool:
+    """True for instances of hook classes: objects with ``apply`` that aren't callable.
+
+    Dotted paths always resolve to callables, so they never count as instances and
+    keep their YAML behavior. A callable object is called directly.
+    """
+    return not isclass(hook) and not callable(hook) and hasattr(hook, "apply")
+
+
+def hook_processor(hook: Any) -> Any:
+    """Return the object to call ``apply`` on, or ``None`` if ``hook`` is a plain callable.
+
+    A class is instantiated (a new instance on each call, as for YAML tasks). A hook
+    instance, such as a configured ``NodePostProcessorWithState``, is returned as is.
+    """
+    if isclass(hook):
+        return hook()
+    return hook if _is_hook_instance(hook) else None
+
+
+def hook_apply(hook: Any) -> Any:
+    """Return the callable for hooks whose class form has a static ``apply``.
+
+    Used for lambdas and edge conditions: classes and hook instances give their
+    ``apply``; plain callables are returned unchanged.
+    """
+    if isclass(hook) or _is_hook_instance(hook):
+        return hook.apply
+    return hook
 
 
 def flatten_dict(d, parent_key="", sep="_"):

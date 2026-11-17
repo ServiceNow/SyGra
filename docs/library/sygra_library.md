@@ -222,7 +222,7 @@ Custom processing functions and classes.
 #### Using Classes
 
 ```python
-from sygra.core.graph.functions.lambda_function import LambdaFunction
+from sygra.hooks import LambdaFunction
 
 class TextProcessor(LambdaFunction):
     @staticmethod
@@ -384,7 +384,7 @@ result = graph.set_source("documents.json")
 Modify state before node execution.
 
 ```python
-from sygra.core.graph.functions.node_processor import NodePreProcessor
+from sygra.hooks import NodePreProcessor
 
 class InputValidator(NodePreProcessor):
     def apply(self, state: SygraState) -> SygraState:
@@ -411,7 +411,7 @@ workflow.llm(
 Process responses after node execution.
 
 ```python
-from sygra.core.graph.functions.node_processor import NodePostProcessor
+from sygra.hooks import NodePostProcessor
 
 class ResponseFormatter(NodePostProcessor):
     def apply(self, response: SygraMessage) -> SygraState:
@@ -437,7 +437,7 @@ workflow.llm(
 Access both response and original state.
 
 ```python
-from sygra.core.graph.functions.node_processor import NodePostProcessorWithState
+from sygra.hooks import NodePostProcessorWithState
 
 class QualityAnalyzer(NodePostProcessorWithState):
     def apply(self, response: SygraMessage, state: SygraState) -> SygraState:
@@ -458,6 +458,78 @@ class QualityAnalyzer(NodePostProcessorWithState):
         # Your quality calculation logic
         return 0.85
 ```
+
+### Hooks as Python Objects
+
+A hook is code that a graph calls: a pre-processor, post-processor, lambda, edge
+condition, data transform, output generator or graph post-processor. YAML tasks name
+hooks by dotted import path. In library use you can also pass the Python object, in
+the builder or in a `Workflow.from_config()` dict:
+
+| You pass | SyGra uses it as |
+|---|---|
+| Dotted path string | Imported, as in YAML tasks |
+| Function or other callable | Called directly |
+| Hook class | Instantiated (a new instance per call for processors); lambdas and edge conditions call its static `apply` |
+| Hook instance (for example `Tag("v1")`) | Used as is; its constructor state is kept |
+
+```python
+from sygra.hooks import EdgeCondition, NodePostProcessorWithState
+from sygra.utils import constants
+
+class Tag(NodePostProcessorWithState):
+    def __init__(self, label):
+        self.label = label
+
+    def apply(self, resp, state):
+        state["answer"] = f"{self.label}: {resp.message.content}"
+        return state
+
+class Route(EdgeCondition):
+    def __init__(self, skip_word):
+        self.skip_word = skip_word
+
+    def apply(self, state):
+        return constants.SYGRA_END if state["text"] == self.skip_word else "gen"
+
+workflow.llm(model, "{question}", post_process=Tag("v1"))
+
+config["graph_config"]["edges"].append(
+    {"from": "start", "condition": Route("skip"), "path_map": {"END": "END", "gen": "gen"}}
+)
+config["data_config"]["source"]["transformations"] = [
+    {"transform": MyTransform(), "params": {"to": "text"}}
+]
+config["output_config"]["generator"] = MyGenerator(config["output_config"])
+config["graph_post_process"] = [MyGraphPostProcessor(field="text")]
+```
+
+Notes:
+
+- **Objects are shared, not copied.** SyGra copies the config's dicts and lists, but
+  hook objects stay the same objects. An instance may hold a lock or a client. If
+  records run concurrently, the instance must be safe to call concurrently.
+- **Saving configs.** The builder stores a module-level function or class as its
+  dotted path, so `save_config()` still writes plain YAML. Local functions and
+  classes, lambdas and instances are stored as objects and can't be written as YAML.
+- **Not covered yet:** model-level `post_process` (in a model config) and `tools`
+  take dotted paths only. A `structured_output` schema takes a dotted path or a
+  schema dict, not a class object.
+
+### Public Hook API
+
+Import hook base classes from `sygra.hooks` (also exported from `sygra`):
+`NodePreProcessor`, `NodePostProcessor`, `NodePostProcessorWithState`,
+`LambdaFunction`, `AsyncLambdaFunction`, `EdgeCondition`, `DataTransform`,
+`BaseOutputGenerator`, `GraphPostProcessor`, `SygraState` and `SygraMessage`.
+
+This is public, versioned API (`sygra.hooks.HOOKS_API_VERSION`, now `1`):
+
+- Within one version, the abstract methods and their signatures don't change.
+- A breaking change raises `HOOKS_API_VERSION`. The old form keeps working, with a
+  `DeprecationWarning`, for at least one minor release before it's removed.
+- The internal modules these classes are defined in (`sygra.core...`,
+  `sygra.processors...`) may move. Import from `sygra.hooks`.
 
 ---
 

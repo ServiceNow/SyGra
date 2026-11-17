@@ -1,5 +1,7 @@
 from typing import Any, Callable, Optional, Union
 
+from sygra.utils.utils import hook_reference
+
 from ..models import ModelConfigBuilder
 
 
@@ -17,20 +19,6 @@ class BaseNodeBuilder:
         if self._messages:
             self._config["prompt"] = self._messages
         return self._config.copy()
-
-    def _callable_to_string_path(self, func: Callable) -> str:
-        """Convert a callable to its string path."""
-        if hasattr(func, "__module__") and hasattr(func, "__name__"):
-            return f"{func.__module__}.{func.__name__}"
-
-        elif hasattr(func, "__class__"):
-            return f"{func.__class__.__module__}.{func.__class__.__name__}"
-
-        elif hasattr(func, "__module__") and hasattr(func, "__qualname__"):
-            return f"{func.__module__}.{func.__qualname__}"
-
-        else:
-            raise ValueError(f"Cannot determine string path for callable: {func}")
 
 
 class LLMNodeBuilder(BaseNodeBuilder):
@@ -133,7 +121,7 @@ class LLMNodeBuilder(BaseNodeBuilder):
     def pre_process(self, processor: Union[str, Callable]) -> "LLMNodeBuilder":
         """Set pre-processor."""
         if callable(processor):
-            self._config["pre_process"] = self._callable_to_string_path(processor)
+            self._config["pre_process"] = hook_reference(processor)
         else:
             self._config["pre_process"] = processor
         return self
@@ -141,7 +129,7 @@ class LLMNodeBuilder(BaseNodeBuilder):
     def post_process(self, processor: Union[str, Callable]) -> "LLMNodeBuilder":
         """Set post-processor."""
         if callable(processor):
-            self._config["post_process"] = self._callable_to_string_path(processor)
+            self._config["post_process"] = hook_reference(processor)
         else:
             self._config["post_process"] = processor
         return self
@@ -219,7 +207,7 @@ class AgentNodeBuilder(BaseNodeBuilder):
     def pre_process(self, processor: Union[str, Callable]) -> "AgentNodeBuilder":
         """Set pre-processor."""
         if callable(processor):
-            self._config["pre_process"] = self._callable_to_string_path(processor)
+            self._config["pre_process"] = hook_reference(processor)
         else:
             self._config["pre_process"] = processor
         return self
@@ -227,7 +215,7 @@ class AgentNodeBuilder(BaseNodeBuilder):
     def post_process(self, processor: Union[str, Callable]) -> "AgentNodeBuilder":
         """Set post-processor."""
         if callable(processor):
-            self._config["post_process"] = self._callable_to_string_path(processor)
+            self._config["post_process"] = hook_reference(processor)
         else:
             self._config["post_process"] = processor
         return self
@@ -282,7 +270,7 @@ class MultiLLMNodeBuilder(BaseNodeBuilder):
     def multi_llm_post_process(self, processor: Union[str, Callable]) -> "MultiLLMNodeBuilder":
         """Set multi-LLM post-processor."""
         if callable(processor):
-            self._config["multi_llm_post_process"] = self._callable_to_string_path(processor)
+            self._config["multi_llm_post_process"] = hook_reference(processor)
         else:
             self._config["multi_llm_post_process"] = processor
         return self
@@ -295,7 +283,7 @@ class LambdaNodeBuilder(BaseNodeBuilder):
         super().__init__(name, "lambda")
 
         if callable(func):
-            self._config["lambda"] = self._callable_to_string_path(func)
+            self._config["lambda"] = hook_reference(func)
         else:
             self._config["lambda"] = func
 
