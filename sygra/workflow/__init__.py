@@ -205,6 +205,7 @@ class Workflow:
         self._is_existing_task: bool = False
         self._from_config: bool = False
         self._llm_providers: dict[str, LLMProvider] = {}
+        self._model_roles: dict[str, Any] = {}
 
         # Feature support flags
         self._supports_subgraphs = True
@@ -286,6 +287,9 @@ class Workflow:
             resolve_data_paths(loaded, base)
 
         workflow = cls(name or loaded.get("task_name") or (config_dir.name if config_dir else None))
+        roles = loaded.pop("model_roles", None)
+        if roles:
+            workflow.model_roles(roles)
         workflow._config = AutoNestedDict.convert_dict(loaded)
         workflow._is_existing_task = False
         workflow._from_config = True
@@ -867,6 +871,7 @@ class Workflow:
         env_file: Optional[Union[str, Path]] = None,
         cost_fn: Optional[CostFn] = None,
         write_output: bool = True,
+        model_roles: Optional[dict[str, Any]] = None,
         **kwargs,
     ) -> RunResult:
         """Execute workflow with full framework feature support.
@@ -886,6 +891,9 @@ class Workflow:
                 :class:`RunResult`; no output file is written. Sinks, data quality,
                 ``graph_post_process`` and resumable runs need the output file, so
                 they raise :class:`ConfigurationError` with ``write_output=False``.
+            model_roles: Role name -> model name or model config dict for this run.
+                Nodes whose model is ``{"role": ...}`` use it. Entries override
+                those set with :meth:`model_roles`.
 
         Returns:
             A :class:`RunResult`: the list of output records, plus failed records,
@@ -900,6 +908,7 @@ class Workflow:
                 env_file=env_file,
                 cost_fn=cost_fn,
                 write_output=write_output,
+                model_roles=model_roles,
                 **kwargs,
             )
         )
@@ -912,6 +921,7 @@ class Workflow:
         env_file: Optional[Union[str, Path]] = None,
         cost_fn: Optional[CostFn] = None,
         write_output: bool = True,
+        model_roles: Optional[dict[str, Any]] = None,
         **kwargs,
     ) -> RunResult:
         """Execute the workflow on the running event loop.
@@ -936,6 +946,7 @@ class Workflow:
             env_file=env_file,
             cost_fn=cost_fn,
             write_output=write_output,
+            model_roles=model_roles,
             **kwargs,
         )
 
@@ -972,6 +983,7 @@ class Workflow:
         env_file: Optional[Union[str, Path]] = None,
         cost_fn: Optional[CostFn] = None,
         write_output: bool = True,
+        model_roles: Optional[dict[str, Any]] = None,
         **kwargs,
     ) -> RunResult:
         if not CORE_AVAILABLE:
@@ -1006,6 +1018,7 @@ class Workflow:
                 self._config.to_dict().get("graph_config", {}).get("graph_properties") or {}
             ),
             write_output=write_output,
+            model_roles={**self._model_roles, **(model_roles or {})},
         )
 
         try:
@@ -1062,6 +1075,26 @@ class Workflow:
         from sygra.core.models.external.provider import _validate
 
         self._llm_providers[name] = _validate(provider)
+        return self
+
+    def model_roles(self, roles: dict[str, Any]) -> "Workflow":
+        """Set the default model for each role used by this workflow's nodes.
+
+        A node can name a role instead of a model: ``{"role": "generator"}``. Each
+        run maps the role to a model, so one graph can run against different model
+        mixes without edits. SyGra only resolves names; it enforces no policy.
+
+        Args:
+            roles: Role name -> model name (``"gpt-4o"``) or model config dict (with
+                ``name``). The node's own keys, such as ``parameters``, are applied
+                on top. ``run(model_roles=...)`` overrides entries for one run.
+
+        Example:
+            >>> workflow.llm({"role": "generator"}, "{question}", output="answer")
+            >>> workflow.model_roles({"generator": "gpt-4o"}).run(
+            ...     model_roles={"generator": "claude-sonnet"})  # doctest: +SKIP
+        """
+        self._model_roles.update(roles)
         return self
 
     def save_config(self, path: Union[str, Path]) -> None:

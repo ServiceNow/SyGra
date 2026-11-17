@@ -45,6 +45,8 @@ class RunContext:
         write_output: Whether output records are written to the output file. When
             ``False``, they're only kept in ``output_records``.
         output_records: Output records of this run, in the order they were written.
+        model_roles: Role name -> model (a model name or a model config dict). Nodes
+            whose model config has ``role`` instead of ``name`` use this map.
     """
 
     task_name: Optional[str] = None
@@ -57,6 +59,7 @@ class RunContext:
     graph_properties: Optional[dict[str, Any]] = None
     write_output: bool = True
     output_records: list[Any] = field(default_factory=list)
+    model_roles: dict[str, Any] = field(default_factory=dict)
 
 
 _RUN_CONTEXT: contextvars.ContextVar[Optional[RunContext]] = contextvars.ContextVar(

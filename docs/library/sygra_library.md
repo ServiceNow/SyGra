@@ -178,6 +178,35 @@ workflow.llm(
 )
 ```
 
+#### Model Roles
+
+A node can name a **role** instead of a model: `{"role": "generator"}`. Each run maps
+roles to models, so the same graph can run against different model mixes, for example
+to cross-check one model family with another, without editing the graph. SyGra only
+resolves names; it enforces no policy.
+
+```python
+workflow = (
+    sygra.Workflow("qa")
+    .source(rows)
+    .llm({"role": "generator"}, "{question}", output="answer")
+    .llm({"role": "reviewer", "parameters": {"temperature": 0.1}}, "{answer}", output="review")
+    .model_roles({"generator": "gpt-4o", "reviewer": "claude-sonnet"})  # defaults
+)
+
+workflow.run()                                         # gpt-4o + claude-sonnet
+workflow.run(model_roles={"generator": "gemini-pro"})  # override one role for this run
+```
+
+- **Role values:** a model name from `models.yaml`, or a model config dict with `name`
+  (for example `{"name": "gen", "model_type": "external", "provider": "mosaic"}`).
+- **Merging:** the node's own keys, such as `parameters`, are applied on top of the
+  role's model config.
+- **`from_config()`:** a dict config can set defaults with a top-level `model_roles` key.
+- **Errors:** an unmapped role, or a model config with both `name` and `role`, raises
+  `ConfigurationError`. Roles work in library runs (`run()` / `arun()`), not in the CLI.
+- **Usage:** `RunResult.usage_by_model` is keyed by the resolved model names.
+
 ### Multi-LLM Nodes
 
 Compare responses from multiple models simultaneously.

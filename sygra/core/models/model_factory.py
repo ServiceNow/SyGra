@@ -24,6 +24,8 @@ from sygra.core.models.lite_llm.openai_model import CustomOpenAI as CustomLiteLL
 from sygra.core.models.lite_llm.triton_model import CustomTriton as CustomLiteLLMTriton
 from sygra.core.models.lite_llm.vertex_ai_model import CustomVertexAI as CustomLiteLLMVertexAI
 from sygra.core.models.lite_llm.vllm_model import CustomVLLM as CustomLiteLLMVLLM
+from sygra.core.run_context import get_run_context
+from sygra.exceptions import ConfigurationError
 from sygra.logger.logger_config import logger
 from sygra.utils import utils
 from sygra.utils.constants import (
@@ -124,6 +126,9 @@ class ModelFactory:
             ValueError: If required configuration keys are missing
             NotImplementedError: If the specified model type is not supported
         """
+        # Library runs: a node may name a role instead of a model
+        model_config = cls._resolve_model_role(model_config)
+
         # Validate required keys
         utils.validate_required_keys(["name"], model_config, "model")
 
@@ -160,6 +165,45 @@ class ModelFactory:
             )
 
         return model_cls(model_config)
+
+    @staticmethod
+    def _resolve_model_role(model_config: Dict[str, Any]) -> Dict[str, Any]:
+        """Replace ``role`` in a node's model config with the run's model for that role.
+
+        The run's ``model_roles`` maps a role to a model name or a model config dict.
+        The node's other keys are applied on top, so node ``parameters`` override the
+        role's. Without a library run context (the CLI), the config is unchanged.
+        """
+        role = model_config.get("role")
+        ctx = get_run_context()
+        if role is None or ctx is None:
+            return model_config
+        if "name" in model_config:
+            raise ConfigurationError(
+                f"Model config sets both 'name' and 'role' ('{role}'); use one of them"
+            )
+        if role not in ctx.model_roles:
+            known = ", ".join(sorted(ctx.model_roles)) or "none"
+            raise ConfigurationError(
+                f"No model for role '{role}'. Pass model_roles={{'{role}': <model>}} to "
+                f"run()/arun() or Workflow.model_roles(). Known roles: {known}"
+            )
+        target = ctx.model_roles[role]
+        resolved: Dict[str, Any] = (
+            {"name": target} if isinstance(target, str) else utils.copy_config(target)
+        )
+        if not isinstance(resolved, dict) or not resolved.get("name"):
+            raise ConfigurationError(
+                f"Model for role '{role}' must be a model name or a config dict with 'name'"
+            )
+        for key, value in model_config.items():
+            if key == "role":
+                continue
+            if isinstance(value, dict) and isinstance(resolved.get(key), dict):
+                resolved[key] = {**resolved[key], **value}
+            else:
+                resolved[key] = value
+        return resolved
 
     @staticmethod
     def _update_model_config(model_config: Dict[str, Any]) -> Dict[str, Any]:

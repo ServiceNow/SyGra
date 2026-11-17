@@ -63,7 +63,8 @@ class ModelConfigBuilder:
         """Validate and ensure model config has required fields."""
         config = model_config.copy()
 
-        if "name" not in config:
+        # {"role": ...} is resolved per run from model_roles
+        if "name" not in config and "role" not in config:
             if "model" in config:
                 config["name"] = config["model"]
             else:
