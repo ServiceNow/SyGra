@@ -455,9 +455,11 @@ class DatasetProcessor:
             logger.error(f"Error in main processing loop: {e}")
 
         finally:
-            for handled_sig, handler in previous_handlers.items():
-                if handler is not None:
-                    signal.signal(handled_sig, handler)
+            # Library runs hand signals back to the host; the CLI keeps its handlers.
+            if get_run_context() is not None:
+                for handled_sig, handler in previous_handlers.items():
+                    if handler is not None:
+                        signal.signal(handled_sig, handler)
             # Close the progress bar
             self.pbar.close()
             # Run Graph post Processors

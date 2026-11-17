@@ -55,6 +55,51 @@ def test_signal_handlers_only_on_main_thread_and_when_allowed():
     assert seen == [False]
 
 
+@pytest.mark.parametrize("library_run", [False, True])
+def test_signal_handlers_kept_for_cli_and_restored_for_library(tmp_path, monkeypatch, library_run):
+    import signal
+
+    monkeypatch.chdir(tmp_path)
+    graph_config = MagicMock()
+    graph_config.config = {}
+
+    def host_handler(signum, frame):
+        pass
+
+    def run_processor():
+        processor = DatasetProcessor(
+            [],
+            MagicMock(),
+            graph_config,
+            str(tmp_path / "output.json"),
+            num_records_total=0,
+            batch_size=10,
+            checkpoint_interval=10,
+            resumable=True,
+            task_name="signal_test",
+        )
+        asyncio.run(processor._process_and_store_results())
+
+    original = {
+        sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)
+    }
+    signal.signal(signal.SIGTERM, host_handler)
+    try:
+        if library_run:
+            with run_context(RunContext(install_signal_handlers=True)):
+                run_processor()
+        else:
+            run_processor()
+
+        if library_run:
+            assert signal.getsignal(signal.SIGTERM) is host_handler
+        else:
+            assert signal.getsignal(signal.SIGTERM) is not host_handler
+    finally:
+        for sig, handler in original.items():
+            signal.signal(sig, handler)
+
+
 @pytest.mark.asyncio
 async def test_concurrent_aruns_are_isolated(tmp_path):
     def make_provider(tag: str, delay: float):
