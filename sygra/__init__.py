@@ -15,6 +15,7 @@ from .exceptions import (
     ExecutionError,
     GraSPError,
     ModelError,
+    ModelServerDownError,
     NodeError,
     TimeoutError,
     ValidationError,
@@ -27,6 +28,7 @@ from .models import (
     ModelResponse,
     TokenUsage,
     register_llm_provider,
+    server_down_action,
     unregister_llm_provider,
     use_llm_providers,
 )
@@ -334,6 +336,7 @@ __all__ = [
     "register_llm_provider",
     "unregister_llm_provider",
     "use_llm_providers",
+    "server_down_action",
     # Quick functions
     "quick_llm",
     "quick_agent",
@@ -365,6 +368,7 @@ __all__ = [
     "NodeError",
     "DataError",
     "ModelError",
+    "ModelServerDownError",
     "TimeoutError",
 ]
 

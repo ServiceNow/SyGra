@@ -105,6 +105,8 @@ Return a `ModelResponse`:
 
 **Exceptions:** an exception raised by `generate` is caught. It becomes an error response that uses the exception's `status_code` attribute when present, and `999` otherwise.
 
+**Server-down detection:** codes 404, 500, 501, 502 and 503 count toward SyGra's [server-down check](../getting_started/model_configuration.md#server-down-handling), like they do for built-in models. Set `server_down_action: ignore` if your provider handles outages itself.
+
 ## Testing with `FakeProvider`
 
 `FakeProvider` returns a fixed string, or the result of a callable, and records every request it receives:

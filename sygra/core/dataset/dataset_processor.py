@@ -14,6 +14,7 @@ from langgraph.graph.state import CompiledStateGraph
 from sygra.core.graph.graph_config import GraphConfig
 from sygra.core.resumable_execution import ResumableExecutionManager
 from sygra.data_mapper.mapper import DataMapper
+from sygra.exceptions import ModelServerDownError
 from sygra.logger.logger_config import logger
 from sygra.metadata.metadata_collector import get_metadata_collector
 from sygra.utils import constants, graph_utils, multimodal_processor, utils
@@ -386,6 +387,7 @@ class DatasetProcessor:
         pending_tasks: set[asyncio.Task] = set()
         # Track how many records we've started processing to limit total for streaming datasets
         records_started = 0
+        aborted = False
 
         try:
             while True:
@@ -422,8 +424,17 @@ class DatasetProcessor:
                     try:
                         task.result()  # This will raise any exceptions from the task
                         self.pbar.update(1)
+                    except ModelServerDownError:
+                        raise
                     except Exception as e:
                         logger.error(f"Task failed with error: {e}")
+
+        except ModelServerDownError:
+            aborted = True
+            for pending in pending_tasks:
+                pending.cancel()
+            await asyncio.gather(*pending_tasks, return_exceptions=True)
+            raise
 
         except Exception as e:
             logger.error(f"Error in main processing loop: {e}")
@@ -433,7 +444,7 @@ class DatasetProcessor:
             self.pbar.close()
             # Run Graph post Processors
             post_processors = self.graph_config.config.get("graph_post_process", [])
-            if post_processors:
+            if post_processors and not aborted:
                 output_file = self.output_file
                 logger.info(f"Doing post processing on {output_file} to generate metrics")
                 output_data = []
@@ -518,6 +529,8 @@ class DatasetProcessor:
             if self.num_records_processed < self.num_records_total:
                 await self._add_graph_result(graph_result, record)
 
+        except ModelServerDownError:
+            raise
         except Exception as e:
             rec_id_str = "unknown"
             if isinstance(record, dict):

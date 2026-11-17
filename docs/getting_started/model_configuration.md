@@ -78,9 +78,32 @@ SYGRA_MIXTRAL_8X7B_CHAT_TEMPLATE={% for m in messages %} ... {% endfor %}
 | `ssl_cert`                  | *(Optional)* Path to SSL certificate file                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `json_payload`              | *(Optional)* Boolean: use JSON payload instead of JSON string for `http client` based models (default: false)                                                                                                                                                                                                                                                                                                                                                                        |
 | `headers`                   | *(Optional)* Dictionary of headers to be sent with the request for `http client` based models                                                                                                                                                                                                                                                                                                                                                                                        |
+| `server_down_action`        | *(Optional)* What to do when the model looks down (see [Server-down handling](#server-down-handling)): `exit`, `raise` or `ignore`. Default: `exit` for CLI runs, `raise` for `Workflow.run()`                                                                                                                                                                                                                                                                                      |
 ![Note](https://img.shields.io/badge/Note-important-yellow)  
 > - Do **not** include `url`, `auth_token`, or `api_key` in your YAML config. These are sourced from environment variables as described above.<br>
 > - If you want to set **ssl_verify** to **false** globally, you can set `ssl_verify:false` under `model_config` section in config/configuration.yaml
+
+#### Server-down handling
+
+SyGra treats a model as down when it returns 10 server-down responses (404, 500, 501, 502 or 503) within 30 seconds. What happens next depends on the action:
+
+| Action | Behavior |
+|---|---|
+| `exit` | Log an error and exit the process. This is the default for CLI runs (`main.py`). |
+| `raise` | Stop the run and raise `sygra.ModelServerDownError`. In-flight records are cancelled, and the process keeps running. This is the default inside `Workflow.run()`. |
+| `ignore` | Don't track server-down responses for this model. Failed calls are still recorded as failed records. |
+
+The model's `server_down_action` key wins. Otherwise the action set for the current context applies, then `exit`. To get `raise` behavior outside `Workflow.run()`, for example when you drive a task executor yourself, use the context manager:
+
+```python
+from sygra import ModelServerDownError, server_down_action
+
+with server_down_action("raise"):
+    try:
+        executor.execute()
+    except ModelServerDownError as err:
+        print(err.model_name, err.failures, err.window_seconds)
+```
 
 #### Customizable Model Parameters
 
@@ -234,4 +257,3 @@ gemini_2.5_proxy:
     temperature: 0
 ```
 ---
-

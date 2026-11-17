@@ -10,6 +10,7 @@ from sygra.core.models.external import (
     use_llm_providers,
 )
 from sygra.core.models.model_response import ModelResponse, TokenUsage
+from sygra.core.models.server_down import server_down_action
 
 try:
     from sygra.core.models.custom_models import CustomAzure  # noqa: F401
@@ -83,4 +84,6 @@ __all__ = [
     "unregister_llm_provider",
     "get_llm_provider",
     "use_llm_providers",
+    # Server-down handling
+    "server_down_action",
 ]

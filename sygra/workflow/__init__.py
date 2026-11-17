@@ -37,7 +37,7 @@ except ImportError:
     CORE_AVAILABLE = False
     from sygra.logger.logger_config import logger
 
-from sygra.exceptions import ConfigurationError, ExecutionError, GraSPError
+from sygra.exceptions import ConfigurationError, ExecutionError, GraSPError, ModelServerDownError
 from sygra.models import ModelConfigBuilder
 
 if TYPE_CHECKING:
@@ -816,8 +816,9 @@ class Workflow:
         has_nodes = len(self._config["graph_config"]["nodes"]) > 0
 
         from sygra.core.models.external.provider import use_llm_providers
+        from sygra.core.models.server_down import server_down_action
 
-        with use_llm_providers(self._llm_providers):
+        with use_llm_providers(self._llm_providers), server_down_action("raise"):
             if self._is_existing_task:
                 return self._execute_existing_task(num_records, start_index, output_dir, **kwargs)
             elif has_nodes:
@@ -899,6 +900,8 @@ class Workflow:
             result = executor.execute()
             logger.info(f"Successfully executed task: {task_name}")
             return result
+        except ModelServerDownError:
+            raise
         except Exception as e:
             if "model_type" in str(e).lower() or "model" in str(e).lower():
                 logger.error("Model configuration error")
@@ -987,6 +990,8 @@ class Workflow:
 
             return result
 
+        except ModelServerDownError:
+            raise
         except Exception as e:
             raise ExecutionError(f"Programmatic workflow execution failed: {e}")
         finally:

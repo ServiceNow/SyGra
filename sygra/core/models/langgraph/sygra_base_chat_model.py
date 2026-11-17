@@ -35,6 +35,8 @@ from transformers import AutoTokenizer
 from sygra.core.models.client.base_client import BaseClient
 from sygra.core.models.client.client_factory import ClientFactory
 from sygra.core.models.custom_models import ModelParams
+from sygra.core.models.server_down import resolve_server_down_action, validate_server_down_action
+from sygra.exceptions import ModelServerDownError
 from sygra.logger.logger_config import logger
 from sygra.utils import constants, utils
 
@@ -76,6 +78,9 @@ class SygraBaseChatModel(BaseChatModel):
         self._url_reqs_count: DefaultDict[str, int] = collections.defaultdict(int)
         # store the timestamps to check if server is down
         self._model_failed_response_timestamp: list[float] = []
+        self._server_down_action = validate_server_down_action(
+            model_config.get("server_down_action")
+        )
         if self._get_name() in constants.COMPLETION_ONLY_MODELS:
             self._config["completions_api"] = True
         self._validate_completions_api_support()
@@ -242,7 +247,8 @@ class SygraBaseChatModel(BaseChatModel):
         Returns:
             None
         """
-        if not constants.HANDLE_SERVER_DOWN:
+        action = resolve_server_down_action(self._server_down_action)
+        if not constants.HANDLE_SERVER_DOWN or action == "ignore":
             # no need to handle this, user has disabled the feature
             return
         if resp_status in constants.SERVER_DOWN_ERROR_CODE:
@@ -268,6 +274,13 @@ class SygraBaseChatModel(BaseChatModel):
                 )
                 # last n(MAX_FAILED_ERROR) failures within t(MODEL_FAILURE_WINDOW_IN_SEC) seconds
                 if time_gap_in_sec < constants.MODEL_FAILURE_WINDOW_IN_SEC:
+                    if action == "raise":
+                        logger.error(
+                            f"Dependant model({self._get_name()}) is down for longer period."
+                        )
+                        raise ModelServerDownError(
+                            self._get_name(), constants.MAX_FAILED_ERROR, time_gap_in_sec
+                        )
                     logger.error(
                         f"SYSTEM EXITING as the dependant model({self._get_name()}) is down for longer period."
                     )
