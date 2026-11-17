@@ -553,6 +553,9 @@ def get_graph_factory(backend: str):
 
 def get_graph_properties(task_name: Optional[str] = None) -> Any:
     task = task_name or get_current_task()
+    ctx = get_run_context()
+    if ctx is not None and ctx.graph_properties is not None and task == ctx.task_name:
+        return ctx.graph_properties
     if not task:
         logger.error("Current task name is not initialized.")
         return {}

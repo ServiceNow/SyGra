@@ -69,6 +69,50 @@ workflow = sygra.Workflow("my_existing_task") \
     .run(num_records=100)
 ```
 
+### Build a Workflow from a Config
+
+`Workflow.from_config()` builds a workflow from a dictionary (or a YAML file) with the
+same shape as a task's `graph_config.yaml`. The config doesn't need to be in the
+`tasks/` directory, so you can keep workflows in your own project.
+
+```python
+config = {
+    "data_config": {"source": {"type": "disk", "file_path": "data/input.json"}},
+    "graph_config": {
+        "nodes": {
+            "answer": {
+                "node_type": "llm",
+                "model": {"name": "gpt-4o"},
+                "prompt": [
+                    {"system": {"file": "prompts/system.txt"}},  # read from a file
+                    {"user": "{question}"},                       # inline text
+                ],
+                "output_keys": "answer",
+            }
+        },
+        "edges": [{"from": "START", "to": "answer"}, {"from": "answer", "to": "END"}],
+    },
+}
+
+workflow = sygra.Workflow.from_config(config, base_dir="/srv/my_project")
+result = workflow.run(num_records=10)
+```
+
+- **Prompts:** a message is inline text or `{"file": path}`. The file's text replaces
+  the reference when the workflow is built. Relative files resolve against `base_dir`,
+  or the YAML file's directory when you pass a path. They never resolve against the
+  working directory: a relative file with no `base_dir` raises `ConfigurationError`.
+- **Data paths:** when you give `base_dir`, relative `file_path` values of data sources
+  and sinks resolve against it. Without `base_dir` they stay as written.
+- **Output:** like other programmatic workflows, output goes to a temporary directory
+  unless you pass `run(output_dir=...)`. Nothing is written to a task directory.
+- **Config fidelity:** source `transformations` and `graph_properties` in the config
+  are applied. The input dictionary is not modified.
+- **Name:** `name=` sets the workflow name. The default is the config's `task_name`,
+  then the YAML file's directory name.
+
+`ConfigLoader().load_and_create(config)` is the same as `Workflow.from_config(config)`.
+
 ---
 
 ## API Reference
@@ -85,6 +129,10 @@ sygra.Workflow(name: Optional[str] = None)
 
 **Parameters:**
 - `name` (str, optional): Workflow name. Auto-generated if not provided.
+
+To build a workflow from a config dictionary or YAML file, use
+`sygra.Workflow.from_config(config, base_dir=None, name=None)`. See
+[Build a Workflow from a Config](#build-a-workflow-from-a-config).
 
 #### Core Methods
 

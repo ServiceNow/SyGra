@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import json
 import os
 import shutil
@@ -203,6 +204,7 @@ class Workflow:
         self._node_builders: dict[str, Any] = {}
         self._messages: list[str] = []
         self._is_existing_task: bool = False
+        self._from_config: bool = False
         self._llm_providers: dict[str, LLMProvider] = {}
 
         # Feature support flags
@@ -213,6 +215,83 @@ class Workflow:
         self._supports_oasst = True
 
         self._load_existing_config_if_present()
+
+    @classmethod
+    def from_config(
+        cls,
+        config: Union[str, Path, dict[str, Any]],
+        *,
+        base_dir: Optional[Union[str, Path]] = None,
+        name: Optional[str] = None,
+    ) -> "Workflow":
+        """Create a Workflow from a config dictionary or a YAML file.
+
+        The config has the same shape as a task's ``graph_config.yaml``. It doesn't need
+        to live in a task directory: like other programmatic workflows, output goes to a
+        temporary directory unless ``run(output_dir=...)`` is given.
+
+        A prompt message can be inline text or ``{"file": path}``, which is replaced by
+        the file's text. Relative prompt files are resolved against ``base_dir`` or, for
+        a YAML file, the file's directory. They are never resolved against the working
+        directory.
+
+        When ``base_dir`` is given, relative ``file_path`` values of data sources and
+        sinks are resolved against it too. Without it they are left unchanged.
+
+        Args:
+            config: Config dictionary, or path to a YAML config file. The dictionary is
+                not modified.
+            base_dir: Directory for relative prompt files and data paths.
+            name: Workflow name. Defaults to the config's ``task_name``, then the YAML
+                file's directory name.
+
+        Returns:
+            Workflow: A workflow ready to ``run()``.
+
+        Example:
+            >>> config = {
+            ...     "data_config": {"source": {"type": "disk", "file_path": "data.json"}},
+            ...     "graph_config": {
+            ...         "nodes": {
+            ...             "gen": {
+            ...                 "node_type": "llm",
+            ...                 "model": {"name": "gpt-4o"},
+            ...                 "prompt": [
+            ...                     {"system": {"file": "prompts/system.txt"}},
+            ...                     {"user": "{text}"},
+            ...                 ],
+            ...             }
+            ...         },
+            ...         "edges": [{"from": "START", "to": "gen"}, {"from": "gen", "to": "END"}],
+            ...     },
+            ... }
+            >>> workflow = Workflow.from_config(config, base_dir="/srv/my_flow")
+        """
+        from sygra.configuration.loader import (
+            ConfigLoader,
+            resolve_data_paths,
+            resolve_prompt_files,
+        )
+
+        loader = ConfigLoader()
+        config_dir: Optional[Path] = None
+        if isinstance(config, dict):
+            loaded = copy.deepcopy(config)
+        else:
+            config_dir = loader.resolve_path(config).resolve().parent
+            loaded = loader.load(config)
+
+        base = Path(base_dir).expanduser().resolve() if base_dir is not None else None
+        resolve_prompt_files(loaded, base or config_dir)
+        if base is not None:
+            resolve_data_paths(loaded, base)
+
+        workflow = cls(name or loaded.get("task_name") or (config_dir.name if config_dir else None))
+        workflow._config = AutoNestedDict.convert_dict(loaded)
+        workflow._is_existing_task = False
+        workflow._from_config = True
+        workflow._node_counter = len((loaded.get("graph_config") or {}).get("nodes") or {})
+        return workflow
 
     def _load_existing_config_if_present(self):
         """Load existing task configuration if this appears to be a task path."""
@@ -926,6 +1005,9 @@ class Workflow:
             task_name=self.name,
             metadata_collector=collector,
             install_signal_handlers=install_signal_handlers,
+            graph_properties=dict(
+                self._config.to_dict().get("graph_config", {}).get("graph_properties") or {}
+            ),
         )
 
         try:
@@ -1023,8 +1105,7 @@ class Workflow:
             if kwargs.get("quality_only", False):
                 executor = JudgeQualityTaskExecutor(args, kwargs.get("quality_config"))
             else:
-                executor = DefaultTaskExecutor(args)
-                BaseTaskExecutor.__init__(executor, args, modified_config)
+                executor = DefaultTaskExecutor(args, modified_config)
             return executor
 
         try:
@@ -1060,7 +1141,8 @@ class Workflow:
             else:
                 os.makedirs(output_dir, exist_ok=True)
 
-            if not kwargs.get("enable_default_transforms", False):
+            # Config-built workflows keep the transformations their config declares.
+            if not self._from_config and not kwargs.get("enable_default_transforms", False):
                 self.disable_default_transforms()
 
             config_dict = self._config.to_dict()
