@@ -11,6 +11,7 @@ from sygra.core.models.custom_models import (
     CustomTriton,
     CustomVLLM,
 )
+from sygra.core.models.external.external_model import ExternalModel
 from sygra.core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
 from sygra.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
 from sygra.core.models.lite_llm.azure_model import CustomAzure as CustomLiteLLMAzure
@@ -51,6 +52,8 @@ class ModelFactory:
             "azure_openai": CustomOpenAI,
             "ollama": CustomOllama,
             "triton": CustomTriton,
+            # calls are served by a host-registered LLMProvider (see sygra.core.models.external)
+            "external": ExternalModel,
         },
         MODEL_BACKEND_PROXY: {
             # list of supported models through proxy layer in enterprise network
@@ -73,6 +76,35 @@ class ModelFactory:
             "azure_openai": CustomOpenAIChatModel,
         },
     }
+
+    @classmethod
+    def register_model_type(
+        cls,
+        model_type: str,
+        model_cls: Type[Any],
+        backend: str = MODEL_BACKEND_CUSTOM,
+        override: bool = False,
+    ) -> None:
+        """
+        Register a model class for a ``model_type`` under a backend.
+
+        Args:
+            model_type: Value used as ``model_type`` in model configs.
+            model_cls: Class constructed as ``model_cls(model_config)``.
+            backend: Backend to register under (default: ``custom``, which the default
+                ``litellm`` backend also falls back to).
+            override: Allow replacing an existing registration.
+
+        Raises:
+            ValueError: If the type is already registered and ``override`` is False.
+        """
+        backend_map = cls.MODEL_TYPE_MAP.setdefault(backend, {})
+        if model_type in backend_map and not override:
+            raise ValueError(
+                f"Model type '{model_type}' is already registered for backend '{backend}'. "
+                f"Pass override=True to replace it."
+            )
+        backend_map[model_type] = model_cls
 
     @classmethod
     def create_model(

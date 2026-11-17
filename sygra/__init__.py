@@ -19,7 +19,17 @@ from .exceptions import (
     TimeoutError,
     ValidationError,
 )
-from .models import ModelConfigBuilder
+from .models import (
+    FakeProvider,
+    LLMProvider,
+    LLMRequest,
+    ModelConfigBuilder,
+    ModelResponse,
+    TokenUsage,
+    register_llm_provider,
+    unregister_llm_provider,
+    use_llm_providers,
+)
 from .workflow import Workflow, create_graph
 
 try:
@@ -315,6 +325,15 @@ __all__ = [
     "ConfigLoader",
     # Model utilities
     "ModelConfigBuilder",
+    # Pluggable LLM providers
+    "LLMProvider",
+    "LLMRequest",
+    "ModelResponse",
+    "TokenUsage",
+    "FakeProvider",
+    "register_llm_provider",
+    "unregister_llm_provider",
+    "use_llm_providers",
     # Quick functions
     "quick_llm",
     "quick_agent",

@@ -6,7 +6,7 @@ import shutil
 import tempfile
 import uuid
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import yaml
 
@@ -39,6 +39,9 @@ except ImportError:
 
 from sygra.exceptions import ConfigurationError, ExecutionError, GraSPError
 from sygra.models import ModelConfigBuilder
+
+if TYPE_CHECKING:
+    from sygra.core.models.external import LLMProvider
 
 # Import node builders with conditional availability
 try:
@@ -182,6 +185,7 @@ class Workflow:
         self._node_builders: dict[str, Any] = {}
         self._messages: list[str] = []
         self._is_existing_task: bool = False
+        self._llm_providers: dict[str, LLMProvider] = {}
 
         # Feature support flags
         self._supports_subgraphs = True
@@ -811,14 +815,40 @@ class Workflow:
 
         has_nodes = len(self._config["graph_config"]["nodes"]) > 0
 
-        if self._is_existing_task:
-            return self._execute_existing_task(num_records, start_index, output_dir, **kwargs)
-        elif has_nodes:
-            return self._execute_programmatic_workflow(
-                num_records, start_index, output_dir, **kwargs
-            )
-        else:
-            raise ConfigurationError("Incomplete workflow. Add processing nodes.")
+        from sygra.core.models.external.provider import use_llm_providers
+
+        with use_llm_providers(self._llm_providers):
+            if self._is_existing_task:
+                return self._execute_existing_task(num_records, start_index, output_dir, **kwargs)
+            elif has_nodes:
+                return self._execute_programmatic_workflow(
+                    num_records, start_index, output_dir, **kwargs
+                )
+            else:
+                raise ConfigurationError("Incomplete workflow. Add processing nodes.")
+
+    def llm_provider(self, provider: LLMProvider, name: str = "default") -> "Workflow":
+        """Serve this workflow's ``model_type: external`` models with ``provider``.
+
+        The provider is registered only for the duration of :meth:`run` and only in
+        the calling context, so different workflows (or threads) can use different
+        providers. Models select a provider by name via the ``provider`` key of their
+        model config (default ``"default"``).
+
+        Args:
+            provider: Object with an async ``generate(LLMRequest) -> ModelResponse`` method.
+            name: Name that model configs refer to.
+
+        Example:
+            >>> workflow = Workflow("demo") \\
+            ...     .source([{"text": "hi"}]) \\
+            ...     .llm({"name": "gen", "model_type": "external"}, "Echo: {text}") \\
+            ...     .llm_provider(FakeProvider("hello"))
+        """
+        from sygra.core.models.external.provider import _validate
+
+        self._llm_providers[name] = _validate(provider)
+        return self
 
     def save_config(self, path: Union[str, Path]) -> None:
         """Save workflow configuration as YAML file."""
