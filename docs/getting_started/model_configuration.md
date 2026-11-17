@@ -42,6 +42,16 @@ For `mixtral_8x7b` and `gpt4`, set:
 
 You should use a `.env` file at the project root or set these in your shell environment.
 
+**Where `.env` is loaded:**
+- **CLI:** `main.py` loads `.env` from the working directory at startup, as before.
+- **Library** (`Workflow.run()` / `arun()`): SyGra doesn't load `.env` on its own, and it never overrides variables already set in `os.environ`. To load one, pass it to the run:
+
+```python
+workflow.run(num_records=10, env_file=".env")   # existing variables win
+```
+
+Alternatively, put connection settings straight into the model config instead of using `SYGRA_*` variables: `{"name": ..., "model_type": ..., "url": ..., "auth_token": ...}`. Values in the model config take precedence over environment variables.
+
 **Note:**
 If you want to define a list of URLs for any model, you can use pipe (`|`) as a separator. For example, if you have a model called `mixtral_8x7b` with URLs `https://myserver/models/mixtral-8x7b` and `https://myserver/models/mixtral-8x7b-2`, you can set the following environment variables as shown in examples below.
 

@@ -49,14 +49,13 @@ def load_model_config(config_path: Optional[str] = None, include_custom: bool = 
         include_custom: If True, automatically load custom models from CUSTOM_MODELS_CONFIG_YAML.
                        Set to False to only load builtin models.
 
+    Environment variables are read from ``os.environ`` only. This function doesn't
+    load a ``.env`` file: the CLI (``main.py``) loads ``.env`` at startup, and library
+    runs load one only when asked (``Workflow.run(env_file=...)``).
+
     Returns:
         Dict containing combined model configurations
     """
-    from sygra.utils.dotenv import load_dotenv
-
-    # Load environment variables from .env file
-    load_dotenv(dotenv_path=".env", override=True)
-
     # Load base configurations from models.yaml (builtin SyGra models)
     base_configs = load_yaml_file(constants.MODEL_CONFIG_YAML)
 

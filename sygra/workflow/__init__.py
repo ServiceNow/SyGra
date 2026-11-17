@@ -805,6 +805,7 @@ class Workflow:
         num_records: Optional[int] = None,
         start_index: int = 0,
         output_dir: Optional[str] = None,
+        env_file: Optional[Union[str, Path]] = None,
         **kwargs,
     ) -> Any:
         """Execute workflow with full framework feature support.
@@ -812,14 +813,29 @@ class Workflow:
         Synchronous wrapper around :meth:`arun`. It starts its own event loop, so it
         can't be called from code that is already running in one (async web apps,
         job workers, notebooks): use ``await workflow.arun(...)`` there.
+
+        Args:
+            env_file: Optional ``.env`` file to load before the run (for example
+                ``".env"``). Variables that are already set are not overridden.
+                Without it, the run reads only the existing environment.
         """
-        return asyncio.run(self._arun(num_records, start_index, output_dir, True, **kwargs))
+        return asyncio.run(
+            self._arun(
+                num_records,
+                start_index,
+                output_dir,
+                install_signal_handlers=True,
+                env_file=env_file,
+                **kwargs,
+            )
+        )
 
     async def arun(
         self,
         num_records: Optional[int] = None,
         start_index: int = 0,
         output_dir: Optional[str] = None,
+        env_file: Optional[Union[str, Path]] = None,
         **kwargs,
     ) -> Any:
         """Execute the workflow on the running event loop.
@@ -836,18 +852,33 @@ class Workflow:
         Example:
             >>> records = await Workflow("demo").source([...]).llm(...).arun(num_records=10)
         """
-        return await self._arun(num_records, start_index, output_dir, False, **kwargs)
+        return await self._arun(
+            num_records,
+            start_index,
+            output_dir,
+            install_signal_handlers=False,
+            env_file=env_file,
+            **kwargs,
+        )
 
     async def _arun(
         self,
         num_records: Optional[int],
         start_index: int,
         output_dir: Optional[str],
+        *,
         install_signal_handlers: bool,
+        env_file: Optional[Union[str, Path]] = None,
         **kwargs,
     ) -> Any:
         if not CORE_AVAILABLE:
             raise GraSPError("Core framework not available")
+
+        if env_file is not None:
+            from sygra.utils.dotenv import load_dotenv
+
+            if not load_dotenv(dotenv_path=str(env_file), override=False):
+                raise ConfigurationError(f"env_file not found: {env_file}")
 
         # Apply node builders before execution
         self.build()
