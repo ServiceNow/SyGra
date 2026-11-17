@@ -38,11 +38,28 @@ except ImportError:
     CORE_AVAILABLE = False
     from sygra.logger.logger_config import logger
 
+from sygra.core.run_result import CostFn, RunResult
 from sygra.exceptions import ConfigurationError, ExecutionError, GraSPError, ModelServerDownError
 from sygra.models import ModelConfigBuilder
 
 if TYPE_CHECKING:
     from sygra.core.models.external import LLMProvider
+
+
+def _read_records(output_file: Optional[str]) -> list[Any]:
+    """Read output records from a ``.json`` / ``.jsonl`` file; empty if unavailable."""
+    if not output_file or not os.path.exists(output_file):
+        return []
+    try:
+        with open(output_file, "r") as f:
+            if output_file.endswith(".jsonl"):
+                return [json.loads(line) for line in f if line.strip()]
+            data = json.load(f)
+    except Exception as e:
+        logger.warning(f"Could not read output file {output_file}: {e}")
+        return []
+    return data if isinstance(data, list) else [data]
+
 
 # Import node builders with conditional availability
 try:
@@ -806,8 +823,9 @@ class Workflow:
         start_index: int = 0,
         output_dir: Optional[str] = None,
         env_file: Optional[Union[str, Path]] = None,
+        cost_fn: Optional[CostFn] = None,
         **kwargs,
-    ) -> Any:
+    ) -> RunResult:
         """Execute workflow with full framework feature support.
 
         Synchronous wrapper around :meth:`arun`. It starts its own event loop, so it
@@ -818,6 +836,13 @@ class Workflow:
             env_file: Optional ``.env`` file to load before the run (for example
                 ``".env"``). Variables that are already set are not overridden.
                 Without it, the run reads only the existing environment.
+            cost_fn: Optional ``cost_fn(model_name, usage) -> float`` used to price
+                each model's usage in the returned :class:`RunResult`. SyGra ships
+                no prices.
+
+        Returns:
+            A :class:`RunResult`: the list of output records, plus failed records,
+            usage per model, node and record, and cost.
         """
         return asyncio.run(
             self._arun(
@@ -826,6 +851,7 @@ class Workflow:
                 output_dir,
                 install_signal_handlers=True,
                 env_file=env_file,
+                cost_fn=cost_fn,
                 **kwargs,
             )
         )
@@ -836,8 +862,9 @@ class Workflow:
         start_index: int = 0,
         output_dir: Optional[str] = None,
         env_file: Optional[Union[str, Path]] = None,
+        cost_fn: Optional[CostFn] = None,
         **kwargs,
-    ) -> Any:
+    ) -> RunResult:
         """Execute the workflow on the running event loop.
 
         Takes the same arguments and returns the same result as :meth:`run`. Records
@@ -858,6 +885,7 @@ class Workflow:
             output_dir,
             install_signal_handlers=False,
             env_file=env_file,
+            cost_fn=cost_fn,
             **kwargs,
         )
 
@@ -869,8 +897,9 @@ class Workflow:
         *,
         install_signal_handlers: bool,
         env_file: Optional[Union[str, Path]] = None,
+        cost_fn: Optional[CostFn] = None,
         **kwargs,
-    ) -> Any:
+    ) -> RunResult:
         if not CORE_AVAILABLE:
             raise GraSPError("Core framework not available")
 
@@ -903,11 +932,11 @@ class Workflow:
             with use_llm_providers(self._llm_providers), server_down_action("raise"):
                 with run_context(context):
                     if self._is_existing_task:
-                        return await self._execute_existing_task(
+                        output = await self._execute_existing_task(
                             num_records, start_index, output_dir, **kwargs
                         )
                     elif has_nodes:
-                        return await self._execute_programmatic_workflow(
+                        output = await self._execute_programmatic_workflow(
                             num_records, start_index, output_dir, **kwargs
                         )
                     else:
@@ -915,6 +944,18 @@ class Workflow:
         finally:
             # Keep get_metadata_collector() after a run returning that run's metadata.
             get_metadata_collector().load_from(collector)
+
+        output_file = context.output_file
+        if output_file and not os.path.exists(output_file):
+            output_file = None  # temporary output directory, already removed
+        records = output if isinstance(output, list) else _read_records(output_file)
+        return RunResult(
+            records,
+            failed_records=context.failed_records,
+            usage=context.usage,
+            output_file=output_file,
+            cost_fn=cost_fn,
+        )
 
     def llm_provider(self, provider: LLMProvider, name: str = "default") -> "Workflow":
         """Serve this workflow's ``model_type: external`` models with ``provider``.

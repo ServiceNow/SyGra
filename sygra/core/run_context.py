@@ -18,6 +18,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Optional
 
+from sygra.core.run_result import FailedRecord, RunUsage
+
 if TYPE_CHECKING:
     from sygra.metadata.metadata_collector import MetadataCollector
 
@@ -34,16 +36,27 @@ class RunContext:
         install_signal_handlers: Whether resumable runs may install SIGINT/SIGTERM
             handlers. Hosts that own signal handling (web servers, workers) should
             leave this ``False``.
+        usage: Model and node usage collected during the run.
+        failed_records: Records that failed during the run.
+        output_file: Output file of the run, once known.
     """
 
     task_name: Optional[str] = None
     metadata_collector: Optional["MetadataCollector"] = None
     sampler_cache: dict[str, tuple[Any, int]] = field(default_factory=dict)
     install_signal_handlers: bool = True
+    usage: RunUsage = field(default_factory=RunUsage)
+    failed_records: list[FailedRecord] = field(default_factory=list)
+    output_file: Optional[str] = None
 
 
 _RUN_CONTEXT: contextvars.ContextVar[Optional[RunContext]] = contextvars.ContextVar(
     "sygra_run_context", default=None
+)
+
+# ``id`` of the record being processed; each record runs in its own asyncio task.
+current_record_id: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
+    "sygra_current_record_id", default=None
 )
 
 

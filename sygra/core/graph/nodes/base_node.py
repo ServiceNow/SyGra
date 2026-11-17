@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any, List, Optional
 
 from sygra.core.models.model_response import TokenUsage
+from sygra.core.run_context import get_run_context
 from sygra.metadata.metadata_collector import get_metadata_collector
 from sygra.utils import utils
 
@@ -288,6 +289,19 @@ class BaseNode(ABC):
             total_tokens=tokens["total"],
             cost_usd=cost_usd,
         )
+
+        ctx = get_run_context()
+        if ctx is not None:
+            ctx.usage.record_node_execution(
+                node_name=self.name,
+                usage=TokenUsage(
+                    prompt_tokens=tokens["prompt"],
+                    completion_tokens=tokens["completion"],
+                    total_tokens=tokens["total"],
+                ),
+                latency=latency,
+                success=success,
+            )
 
     @abstractmethod
     def to_backend(self) -> Any:

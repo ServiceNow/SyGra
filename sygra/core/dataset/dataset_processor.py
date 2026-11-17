@@ -14,7 +14,8 @@ from langgraph.graph.state import CompiledStateGraph
 
 from sygra.core.graph.graph_config import GraphConfig
 from sygra.core.resumable_execution import ResumableExecutionManager
-from sygra.core.run_context import get_run_context
+from sygra.core.run_context import current_record_id, get_run_context
+from sygra.core.run_result import FailedRecord
 from sygra.data_mapper.mapper import DataMapper
 from sygra.exceptions import ModelServerDownError
 from sygra.logger.logger_config import logger
@@ -199,6 +200,17 @@ class DatasetProcessor:
                 return True
         return False
 
+    @staticmethod
+    def _record_failure(record: Any, kind: str, error: str) -> None:
+        """Add a failed record to the active run's result (library runs only)."""
+        ctx = get_run_context()
+        if ctx is None:
+            return
+        rec_id = record.get("id") if isinstance(record, dict) else None
+        ctx.failed_records.append(
+            FailedRecord(id=None if rec_id is None else str(rec_id), kind=kind, error=error)
+        )
+
     async def _add_graph_result(self, output: dict[str, Any], record: dict[str, Any]) -> None:
         """
         Add a result from graph execution to the results list and handle resumable state.
@@ -210,6 +222,15 @@ class DatasetProcessor:
         # Check if execution had an error - don't mark as processed if it did
         if self.is_error_code_in_output(output):
             self.failed_records += 1
+            self._record_failure(
+                record,
+                "model_error",
+                "; ".join(
+                    value
+                    for value in output.values()
+                    if isinstance(value, str) and value.startswith(constants.ERROR_PREFIX)
+                ),
+            )
             # Record failed record in metadata collector
             collector = get_metadata_collector()
             collector.record_processed_record(success=False)
@@ -244,6 +265,10 @@ class DatasetProcessor:
             self.is_valid_schema = schema_validator.validate(output)
             if not self.is_valid_schema:
                 logger.error("Output data validation failed, skipping record")
+                if output.get("execution_error") is not True:
+                    self._record_failure(
+                        record, "schema_validation", "Output failed schema validation"
+                    )
                 if self.resumable and self.resume_manager:
                     record_id = self.resume_manager.get_record_id(record)
                     self.resume_manager.in_process_records.discard(record_id)
@@ -537,6 +562,9 @@ class DatasetProcessor:
                 )
                 return
 
+            if get_run_context() is not None:
+                current_record_id.set(str(record.get("id")))
+
             graph_result = await graph_utils.execute_graph(
                 record,
                 self.graph,
@@ -556,6 +584,7 @@ class DatasetProcessor:
             if isinstance(record, dict):
                 rec_id_str = str(record.get("id", "unknown"))
             logger.error(f"Error processing record {rec_id_str}: {e}")
+            self._record_failure(record, "exception", str(e))
 
             if self.resumable and self.resume_manager:
                 safe_record: dict[str, Any] = record if isinstance(record, dict) else {}

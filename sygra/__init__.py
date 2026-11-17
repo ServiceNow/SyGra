@@ -9,6 +9,7 @@ import logging
 from typing import Any, Callable, Union
 
 from .configuration import ConfigLoader, load_config
+from .core.run_result import FailedRecord, RunResult, UsageStats
 from .exceptions import (
     ConfigurationError,
     DataError,
@@ -337,6 +338,10 @@ __all__ = [
     "unregister_llm_provider",
     "use_llm_providers",
     "server_down_action",
+    # Run results
+    "RunResult",
+    "UsageStats",
+    "FailedRecord",
     # Quick functions
     "quick_llm",
     "quick_agent",

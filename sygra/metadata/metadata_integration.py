@@ -1,12 +1,30 @@
 import copy
 import time
 from functools import wraps
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 from sygra.core.graph.langgraph.langchain_callback import calculate_cost
 from sygra.core.models.call_state import ModelCallState, model_call
 from sygra.core.models.model_response import ModelResponse, TokenUsage
+from sygra.core.run_context import current_record_id, get_run_context
 from sygra.metadata.metadata_collector import get_metadata_collector
+
+
+def _record_run_usage(
+    model_name: str, usage: Optional[TokenUsage], latency: float, model_response: Any = None
+) -> None:
+    """Add one request to the active run's usage (library runs only)."""
+    ctx = get_run_context()
+    if ctx is None:
+        return
+    ctx.usage.record_model_request(
+        model_name=model_name,
+        usage=usage,
+        latency=latency,
+        success=getattr(model_response, "response_code", 999) == 200,
+        served_model=getattr(model_response, "served_model", None),
+        record_id=current_record_id.get(),
+    )
 
 
 def _resolve_usage(
@@ -109,6 +127,7 @@ def track_model_request(func: Callable) -> Callable:
                 model_config=model_config,
                 cost_usd=cost_usd,
             )
+            _record_run_usage(model_name, usage, latency, model_response)
 
             return model_response
 
@@ -123,6 +142,7 @@ def track_model_request(func: Callable) -> Callable:
                 latency=latency,
                 response_code=999,  # Error code
             )
+            _record_run_usage(model_name, None, latency)
 
             raise
 
@@ -183,6 +203,7 @@ def track_model_request(func: Callable) -> Callable:
                 model_config=model_config,
                 cost_usd=cost_usd,
             )
+            _record_run_usage(model_name, usage, latency, model_response)
 
             return model_response
 
@@ -197,6 +218,7 @@ def track_model_request(func: Callable) -> Callable:
                 latency=latency,
                 response_code=999,
             )
+            _record_run_usage(model_name, None, latency)
 
             raise
 

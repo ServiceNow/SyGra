@@ -95,8 +95,8 @@ sygra.Workflow(name: Optional[str] = None)
 | `llm(model, prompt, **kwargs)` | Add LLM node | `Workflow` |
 | `agent(model, tools, prompt, **kwargs)` | Add agent node | `Workflow` |
 | `lambda_func(func, output, **kwargs)` | Add lambda node | `Workflow` |
-| `run(**kwargs)` | Execute workflow | `Any` |
-| `await arun(**kwargs)` | Execute workflow inside a running event loop (see [Async Execution](#async-execution)) | `Any` |
+| `run(**kwargs)` | Execute workflow | `RunResult` |
+| `await arun(**kwargs)` | Execute workflow inside a running event loop (see [Async Execution](#async-execution)) | `RunResult` |
 
 ---
 
@@ -478,6 +478,33 @@ workflow.resumable(True).run(
 )
 ```
 
+### Run Results
+
+`run()` and `arun()` return a `RunResult`. It **is** the list of output records, with the same content as the output file, so you can use it like a list. It also carries details of the run:
+
+```python
+result = workflow.run(num_records=100, cost_fn=lambda model, usage: usage.total_tokens * 1e-6)
+
+len(result), result[0]                 # output records
+result.failed_records                  # [FailedRecord(id, kind, error), ...]
+result.usage_by_model["gpt-4o"]        # UsageStats(requests, failed_requests, *_tokens, ...)
+result.usage_by_node, result.usage_by_record
+result.total_usage, result.cost_usd    # cost_usd is None without cost_fn
+result.output_file                     # None if the output directory was temporary
+```
+
+- **`FailedRecord.kind`** is one of:
+  - `model_error`: a node got an error response;
+  - `exception`: graph execution raised;
+  - `schema_validation`: the output was rejected.
+- **`UsageStats`** holds:
+  - request and failure counts;
+  - prompt, completion and total tokens;
+  - `estimated`: true if any request reported estimated usage;
+  - summed latency;
+  - `served_models`: which model actually served each request, when the backend reports it.
+- **`cost_fn(model_name, usage) -> float`** prices each model's usage. SyGra ships no price list.
+
 ### Async Execution
 
 `run()` starts its own event loop with `asyncio.run()`, so it can't be called from code that already runs in one: async web apps, job workers or notebooks. Use `await workflow.arun(...)` there. It takes the same arguments and returns the same result as `run()`.
@@ -580,7 +607,7 @@ workflow = sygra.Workflow("research_assistant") \
 
 | Method | Return Type | Description |
 |--------|-------------|-------------|
-| `workflow.run()` | `List[Dict]` or `Any` | Processed results |
-| `await workflow.arun()` | `List[Dict]` or `Any` | Same as `run()`, inside a running event loop |
+| `workflow.run()` | `RunResult` (a `list` of records) | Processed results, failures, usage and cost (see [Run Results](#run-results)) |
+| `await workflow.arun()` | `RunResult` | Same as `run()`, inside a running event loop |
 | `graph.build()` | `ExecutableGraph` | Built graph object |
 | `graph.run()` | `List[Dict]` or `Any` | Execution results |

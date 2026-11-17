@@ -27,6 +27,7 @@ from sygra.core.dataset.servicenow_handler import ServiceNowHandler
 from sygra.core.graph.graph_config import GraphConfig
 from sygra.core.graph.langgraph.graph_builder import LangGraphBuilder
 from sygra.core.graph.sygra_state import SygraState
+from sygra.core.run_context import get_run_context
 from sygra.logger.logger_config import logger
 from sygra.metadata.metadata_collector import get_metadata_collector
 from sygra.processors.output_record_generator import BaseOutputGenerator
@@ -1108,6 +1109,9 @@ class BaseTaskExecutor(ABC):
             task_name=self.task_name,
             execution_callbacks=execution_callbacks,
         )
+        ctx = get_run_context()
+        if ctx is not None:
+            ctx.output_file = out_file
         return dataset_processor, out_file, out_file_type
 
     def _finalize_execution(
