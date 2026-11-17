@@ -14,7 +14,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 from sygra.core.graph.graph_config import GraphConfig
 from sygra.core.resumable_execution import ResumableExecutionManager
-from sygra.core.run_context import current_record_id, get_run_context
+from sygra.core.run_context import RunContext, current_record_id, get_run_context
 from sygra.core.run_result import FailedRecord
 from sygra.data_mapper.mapper import DataMapper
 from sygra.exceptions import ModelServerDownError
@@ -22,6 +22,27 @@ from sygra.logger.logger_config import logger
 from sygra.metadata.metadata_collector import get_metadata_collector
 from sygra.utils import constants, graph_utils, multimodal_processor, utils
 from sygra.validators.schema_validator_base import SchemaValidator
+
+
+def _keep_input_id(generator: Optional[Callable]) -> Callable[[Any], Any]:
+    """Wrap an output generator so records keep the input ``id`` (library runs).
+
+    If the generated record is a dict without ``id``, the graph state's ``id`` is
+    added. Records that already have an ``id`` are unchanged.
+    """
+
+    def generate(state: Any) -> Any:
+        record = generator(state) if generator is not None else state
+        if (
+            isinstance(record, dict)
+            and "id" not in record
+            and isinstance(state, dict)
+            and state.get("id") is not None
+        ):
+            record["id"] = state["id"]
+        return record
+
+    return generate
 
 
 class DatasetProcessor:
@@ -325,18 +346,25 @@ class DatasetProcessor:
             is_oasst_mapper_required: Whether OASST mapping is required
         """
         file_write_start = time.time()
+        ctx = get_run_context()
+        write_files = ctx is None or ctx.write_output
 
-        # Convert graph outputs to records
+        # Convert graph outputs to records. Library runs keep the input id on each
+        # record, so callers can join output to input.
+        record_generator = self.output_record_generator
+        if ctx is not None:
+            record_generator = _keep_input_id(record_generator)
         output_records = graph_utils.convert_graph_output_to_records(
-            self.graph_results, self.output_record_generator
+            self.graph_results, record_generator
         )
 
         # Process multimodal data: save base64 data URLs to files and replace with file paths
         try:
-            multimodal_output_dir = ".".join(self.output_file.split(".")[:-1])
-            output_records = multimodal_processor.process_batch_multimodal_data(
-                output_records, Path(multimodal_output_dir)
-            )
+            if write_files:
+                multimodal_output_dir = ".".join(self.output_file.split(".")[:-1])
+                output_records = multimodal_processor.process_batch_multimodal_data(
+                    output_records, Path(multimodal_output_dir)
+                )
         except Exception as e:
             logger.warning(
                 f"Failed to process multimodal data: {e}. Continuing with original records."
@@ -344,7 +372,8 @@ class DatasetProcessor:
 
         # Handle intermediate writing if needed
         if (
-            is_oasst_mapper_required
+            write_files
+            and is_oasst_mapper_required
             and isinstance(self.graph_config.oasst_mapper, dict)
             and self.graph_config.oasst_mapper.get("intermediate_writing") == "yes"
         ):
@@ -372,16 +401,20 @@ class DatasetProcessor:
             logger.info("OASST Mapping has been disabled. Skipping OASST mapping.")
             oasst_mapped_output = output_records
 
-        # Write to output file
-        if ".jsonl" in self.output_file:
-            utils.append_to_jsonl_file(self.output_file, oasst_mapped_output)
-        else:
-            utils.append_to_json_file(self.output_file, oasst_mapped_output)
+        if not write_files:
+            cast(RunContext, ctx).output_records.extend(oasst_mapped_output)
 
-        logger.info(
-            f"Updated {self.output_file} with the latest {len(self.graph_results)} records "
-            f"in {(time.time() - file_write_start):0.2f} secs"
-        )
+        # Write to output file
+        if write_files:
+            if ".jsonl" in self.output_file:
+                utils.append_to_jsonl_file(self.output_file, oasst_mapped_output)
+            else:
+                utils.append_to_json_file(self.output_file, oasst_mapped_output)
+
+            logger.info(
+                f"Updated {self.output_file} with the latest {len(self.graph_results)} records "
+                f"in {(time.time() - file_write_start):0.2f} secs"
+            )
 
         # Clear the processed results after writing to the file
         self.graph_results = []

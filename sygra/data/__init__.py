@@ -2,9 +2,7 @@
 Data handling API for SyGra workflows with full framework integration.
 """
 
-import json
 import os
-import tempfile
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -36,19 +34,8 @@ class DataSource:
 
     @classmethod
     def memory(cls, data: list[dict[str, Any]]) -> "DataSource":
-        """Create in-memory data source from list."""
-        temp_file = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
-        with temp_file as f:
-            json.dump(data, f, indent=2)
-
-        return cls(
-            {
-                "type": "disk",
-                "file_path": temp_file.name,
-                "file_format": "json",
-                "_temp_file": True,
-            }
-        )
+        """Create in-memory data source from list; the records never touch disk."""
+        return cls({"type": "memory", "records": data})
 
     @classmethod
     def disk(cls, path: Union[str, Path], **kwargs) -> "DataSource":

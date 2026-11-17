@@ -324,7 +324,12 @@ class Workflow:
     def source(
         self, source: Union[str, Path, dict[str, Any], list[dict[str, Any]], DataSource]
     ) -> "Workflow":
-        """Add data source with full framework support."""
+        """Add data source with full framework support.
+
+        A list of dicts (or ``{"data": [...]}``) is an in-memory source: the records
+        are read from memory and never written to disk.
+        """
+        source_config: dict[str, Any]
         if isinstance(source, (str, Path)):
             source_config = {
                 "type": "disk",
@@ -332,20 +337,10 @@ class Workflow:
                 "file_format": self._detect_file_format(str(source)),
             }
         elif isinstance(source, list):
-            temp_file = self._create_temp_file(source)
-            source_config = {
-                "type": "disk",
-                "file_path": temp_file,
-                "file_format": "json",
-            }
+            source_config = {"type": "memory", "records": source}
         elif isinstance(source, dict):
             if "data" in source:
-                temp_file = self._create_temp_file(source["data"])
-                source_config = {
-                    "type": "disk",
-                    "file_path": temp_file,
-                    "file_format": "json",
-                }
+                source_config = {"type": "memory", "records": source["data"]}
             else:
                 source_config = source
         elif DATA_UTILS_AVAILABLE and isinstance(source, DataSource):
@@ -871,6 +866,7 @@ class Workflow:
         output_dir: Optional[str] = None,
         env_file: Optional[Union[str, Path]] = None,
         cost_fn: Optional[CostFn] = None,
+        write_output: bool = True,
         **kwargs,
     ) -> RunResult:
         """Execute workflow with full framework feature support.
@@ -886,6 +882,10 @@ class Workflow:
             cost_fn: Optional ``cost_fn(model_name, usage) -> float`` used to price
                 each model's usage in the returned :class:`RunResult`. SyGra ships
                 no prices.
+            write_output: If ``False``, output records are kept only in the returned
+                :class:`RunResult`; no output file is written. Sinks, data quality,
+                ``graph_post_process`` and resumable runs need the output file, so
+                they raise :class:`ConfigurationError` with ``write_output=False``.
 
         Returns:
             A :class:`RunResult`: the list of output records, plus failed records,
@@ -899,6 +899,7 @@ class Workflow:
                 install_signal_handlers=True,
                 env_file=env_file,
                 cost_fn=cost_fn,
+                write_output=write_output,
                 **kwargs,
             )
         )
@@ -910,6 +911,7 @@ class Workflow:
         output_dir: Optional[str] = None,
         env_file: Optional[Union[str, Path]] = None,
         cost_fn: Optional[CostFn] = None,
+        write_output: bool = True,
         **kwargs,
     ) -> RunResult:
         """Execute the workflow on the running event loop.
@@ -933,8 +935,32 @@ class Workflow:
             install_signal_handlers=False,
             env_file=env_file,
             cost_fn=cost_fn,
+            write_output=write_output,
             **kwargs,
         )
+
+    def _check_no_output_file_needed(self, kwargs: dict[str, Any]) -> None:
+        """Raise if a configured feature reads the output file (``write_output=False``)."""
+        config = self._config.to_dict()
+        data_config = config.get("data_config") or {}
+        output_config = config.get("output_config") or {}
+        needs_file = {
+            "a sink (data_config.sink)": bool(data_config.get("sink")),
+            "data quality": bool(
+                output_config.get("data_quality")
+                or kwargs.get("quality")
+                or kwargs.get("quality_only")
+            ),
+            "graph_post_process": bool(config.get("graph_post_process")),
+            "resumable execution": bool(kwargs.get("resume", data_config.get("resumable"))),
+        }
+        blocking = [name for name, used in needs_file.items() if used]
+        if blocking:
+            raise ConfigurationError(
+                "write_output=False can't be used with "
+                + ", ".join(blocking)
+                + ": these read the output file"
+            )
 
     async def _arun(
         self,
@@ -945,6 +971,7 @@ class Workflow:
         install_signal_handlers: bool,
         env_file: Optional[Union[str, Path]] = None,
         cost_fn: Optional[CostFn] = None,
+        write_output: bool = True,
         **kwargs,
     ) -> RunResult:
         if not CORE_AVAILABLE:
@@ -958,6 +985,8 @@ class Workflow:
 
         # Apply node builders before execution
         self.build()
+        if not write_output:
+            self._check_no_output_file_needed(kwargs)
 
         has_nodes = len(self._config["graph_config"]["nodes"]) > 0
 
@@ -976,6 +1005,7 @@ class Workflow:
             graph_properties=dict(
                 self._config.to_dict().get("graph_config", {}).get("graph_properties") or {}
             ),
+            write_output=write_output,
         )
 
         try:
@@ -995,10 +1025,14 @@ class Workflow:
             # Keep get_metadata_collector() after a run returning that run's metadata.
             get_metadata_collector().load_from(collector)
 
-        output_file = context.output_file
-        if output_file and not os.path.exists(output_file):
-            output_file = None  # temporary output directory, already removed
-        records = output if isinstance(output, list) else _read_records(output_file)
+        if not write_output:
+            output_file = None
+            records = context.output_records
+        else:
+            output_file = context.output_file
+            if output_file and not os.path.exists(output_file):
+                output_file = None  # temporary output directory, already removed
+            records = output if isinstance(output, list) else _read_records(output_file)
         return RunResult(
             records,
             failed_records=context.failed_records,
@@ -1178,7 +1212,7 @@ class Workflow:
 
             return result
 
-        except ModelServerDownError:
+        except (ModelServerDownError, ConfigurationError):
             raise
         except Exception as e:
             raise ExecutionError(f"Programmatic workflow execution failed: {e}")
@@ -1227,14 +1261,6 @@ class Workflow:
         """Detect file format from extension."""
         ext = Path(file_path).suffix.lower()
         return ext[1:] if ext in [".json", ".jsonl", ".csv", ".parquet"] else "json"
-
-    def _create_temp_file(self, data: list[dict[str, Any]]) -> str:
-        """Create temporary file for data."""
-        temp_file = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
-        with temp_file as f:
-            json.dump(data, f, indent=2)
-        self._temp_files.append(temp_file.name)
-        return temp_file.name
 
     def _generate_node_name(self, node_type: str) -> str:
         """Generate unique node name."""

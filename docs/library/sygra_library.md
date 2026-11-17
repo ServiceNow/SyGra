@@ -540,8 +540,33 @@ This is public, versioned API (`sygra.hooks.HOOKS_API_VERSION`, now `1`):
 | Type | Example | Description |
 |------|---------|-------------|
 | File | `workflow.source("data.json")` | Local files (JSON, JSONL, CSV) |
-| Memory | `workflow.source([{"text": "sample"}])` | In-memory data |
+| Memory | `workflow.source([{"text": "sample"}])` | In-memory data (`type: memory`); never written to disk |
 | HuggingFace | `workflow.source({"type": "hf", "repo_id": "dataset/name"})` | HF datasets |
+
+### In-Memory Sources and Record IDs
+
+A list of dicts (or `DataSource.memory(rows)`, or `{"type": "memory", "records": rows}` in a
+`from_config()` dict) is read from memory. The records aren't written to a temporary
+file, and the run doesn't change your dicts. A memory source can't be resumed: a
+resumable run raises `ConfigurationError`.
+
+Every record has an `id` that output records keep, so you can join output to input:
+
+- An `id` field (or the `id_column` field) is used as is.
+- A record without one gets `sygra.record_id(record)`: a SHA-256 of the record's
+  content after source transformations. Identical records get the same id; give
+  records your own `id` if they can repeat or if you use transformations.
+- In library runs, each output record keeps its input `id`, even if the
+  `output_map` or output generator doesn't map it.
+
+```python
+import sygra
+
+rows = [{"id": "kb-1", "text": "..."}, {"text": "..."}]
+result = workflow.source(rows).run()
+by_id = {r["id"]: r for r in result}
+by_id[sygra.record_id({"text": "..."})]   # the second row's output
+```
 
 ### Advanced Data Sources
 
@@ -624,6 +649,17 @@ result.output_file                     # None if the output directory was tempor
   - summed latency;
   - `served_models`: which model actually served each request, when the backend reports it.
 - **`cost_fn(model_name, usage) -> float`** prices each model's usage. SyGra ships no price list.
+
+#### Runs Without an Output File
+
+`run(write_output=False)` (or `arun(...)`) keeps output records only in the
+`RunResult`: no output file is written, and `result.output_file` is `None`. Features
+that read the output file raise `ConfigurationError` before the run: a sink
+(`data_config.sink`), data quality, `graph_post_process` and resumable runs.
+
+```python
+result = await workflow.source(rows).arun(write_output=False)
+```
 
 ### Async Execution
 

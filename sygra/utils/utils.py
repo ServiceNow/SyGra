@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import importlib
 import json
 import os
@@ -414,6 +415,17 @@ def get_func_from_str(func_str: str) -> Callable[..., Any]:
     if not callable(obj):
         raise TypeError(f"Resolved object '{func_str}' is not callable")
     return cast(Callable[..., Any], obj)
+
+
+def record_id(record: dict[str, Any], *, strict: bool = False) -> str:
+    """Return the id SyGra gives a record that has no ``id``: a SHA-256 of its content.
+
+    The hash is over the record after source transformations, as sorted-key JSON.
+    Values that aren't JSON types use ``str()``, unless ``strict`` is set (the CLI),
+    which raises ``TypeError`` for them as before. Identical records get the same id.
+    """
+    record_str = json.dumps(record, sort_keys=True, default=None if strict else str)
+    return hashlib.sha256(record_str.encode()).hexdigest()
 
 
 def resolve_hook(hook: Any) -> Any:

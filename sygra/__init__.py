@@ -60,6 +60,7 @@ try:
         NodePostProcessorWithState,
         NodePreProcessor,
     )
+    from .utils.utils import record_id  # noqa: F401
 
     CORE_AVAILABLE = True
 except ImportError as e:
@@ -414,6 +415,7 @@ if CORE_AVAILABLE:
             "NodePostProcessor",
             "NodePostProcessorWithState",
             "NodePreProcessor",
+            "record_id",
         ]
     )
 

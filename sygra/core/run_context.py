@@ -42,6 +42,9 @@ class RunContext:
         graph_properties: The workflow's ``graph_properties``. Read by
             ``utils.get_graph_properties()`` instead of the task's YAML file, so
             workflows that have no task directory still get them.
+        write_output: Whether output records are written to the output file. When
+            ``False``, they're only kept in ``output_records``.
+        output_records: Output records of this run, in the order they were written.
     """
 
     task_name: Optional[str] = None
@@ -52,6 +55,8 @@ class RunContext:
     failed_records: list[FailedRecord] = field(default_factory=list)
     output_file: Optional[str] = None
     graph_properties: Optional[dict[str, Any]] = None
+    write_output: bool = True
+    output_records: list[Any] = field(default_factory=list)
 
 
 _RUN_CONTEXT: contextvars.ContextVar[Optional[RunContext]] = contextvars.ContextVar(

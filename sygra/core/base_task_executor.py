@@ -1,7 +1,6 @@
 import ast
 import asyncio
 import copy
-import hashlib
 import json
 import os
 from abc import ABC
@@ -23,11 +22,13 @@ from sygra.core.dataset.dataset_config import (
 from sygra.core.dataset.dataset_processor import DatasetProcessor
 from sygra.core.dataset.file_handler import FileHandler
 from sygra.core.dataset.huggingface_handler import HuggingFaceHandler
+from sygra.core.dataset.memory_handler import MemoryHandler
 from sygra.core.dataset.servicenow_handler import ServiceNowHandler
 from sygra.core.graph.graph_config import GraphConfig
 from sygra.core.graph.langgraph.graph_builder import LangGraphBuilder
 from sygra.core.graph.sygra_state import SygraState
 from sygra.core.run_context import get_run_context
+from sygra.exceptions import ConfigurationError
 from sygra.logger.logger_config import logger
 from sygra.metadata.metadata_collector import get_metadata_collector
 from sygra.processors.output_record_generator import BaseOutputGenerator
@@ -55,6 +56,15 @@ class BaseTaskExecutor(ABC):
         self.id_column = data_config.get("id_column") or None
 
         self.resumable = self._configure_resume_behavior(args, config_resumable)
+        source = data_config.get("source")
+        if (
+            self.resumable
+            and isinstance(source, dict)
+            and source.get("type") == DataSourceType.MEMORY.value
+        ):
+            raise ConfigurationError(
+                "Resumable runs need a file or dataset source; a memory source can't be resumed"
+            )
 
         self.dataset = self.init_dataset()
         output_transform_args = {"oasst": args.oasst, "quality": args.quality}
@@ -805,7 +815,7 @@ class BaseTaskExecutor(ABC):
 
     def _get_data_reader(
         self, source_config: DataSourceConfig
-    ) -> Union[HuggingFaceHandler, FileHandler, ServiceNowHandler]:
+    ) -> Union[HuggingFaceHandler, FileHandler, ServiceNowHandler, MemoryHandler]:
         """Get appropriate data reader based on source type"""
         if source_config is None:
             raise ValueError("source_config must be set to get a data reader")
@@ -816,6 +826,8 @@ class BaseTaskExecutor(ABC):
             return FileHandler(source_config)
         elif source_config.type == DataSourceType.SERVICENOW:
             return ServiceNowHandler(source_config)
+        elif source_config.type == DataSourceType.MEMORY:
+            return MemoryHandler(source_config)
         else:
             raise ValueError(f"Unsupported data source type: {source_config.type}")
 
@@ -935,10 +947,7 @@ class BaseTaskExecutor(ABC):
         elif "id" in record and record["id"] is not None:
             return record
         else:
-            record_for_hash = record.copy()
-            record_str = json.dumps(record_for_hash, sort_keys=True)
-            content_hash = hashlib.sha256(record_str.encode()).hexdigest()
-            record["id"] = content_hash
+            record["id"] = utils.record_id(record, strict=get_run_context() is None)
             return record
 
     # Function to assign "id" to every record of full_data
@@ -954,8 +963,9 @@ class BaseTaskExecutor(ABC):
 
             return full_data.map(self.add_id, features=features)
 
-        # Handle list/dict data
-        if full_data and full_data[0].get("id"):
+        # Handle list/dict data. Library runs give every record an id, so output can be
+        # joined back to input; the CLI keeps checking only the first record.
+        if full_data and full_data[0].get("id") and get_run_context() is None:
             return full_data
 
         for i in range(len(full_data)):
@@ -1076,7 +1086,9 @@ class BaseTaskExecutor(ABC):
                     self.args.task,
                     f"{run_name_prefix}output{ts_suffix}.{out_file_type}",
                 )
-        if not self.resumable and os.path.exists(out_file):
+        ctx = get_run_context()
+        writes_output = ctx is None or ctx.write_output
+        if writes_output and not self.resumable and os.path.exists(out_file):
             logger.info(f"Deleting existing output file since resumable=False: {out_file}")
             utils.delete_file(out_file)
 

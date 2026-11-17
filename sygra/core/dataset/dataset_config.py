@@ -18,11 +18,13 @@ class DataSourceType(Enum):
         HUGGINGFACE: HuggingFace dataset source
         DISK_FILE: Local file system source
         SERVICENOW: ServiceNow table source
+        MEMORY: In-memory list of records (library use)
     """
 
     HUGGINGFACE = "hf"
     DISK_FILE = "disk"
     SERVICENOW = "servicenow"
+    MEMORY = "memory"
 
 
 class TransformConfig(BaseModel):
@@ -101,6 +103,7 @@ class DataSourceConfig(BaseModel):
         table (Optional[str]): ServiceNow table name for queries
         filters (Optional[dict]): Filters for ServiceNow queries
         fields (Optional[list[str]]): Fields to retrieve from ServiceNow
+        records (Optional[list[dict]]): Records of an in-memory source (type ``memory``)
         transformations (Optional[list[TransformConfig]]): List of transformations to apply
     """
 
@@ -144,6 +147,9 @@ class DataSourceConfig(BaseModel):
     verify_ssl: Optional[bool] = None
     cert: Optional[str] = None
     auto_retry: bool = True
+
+    # For in-memory sources (library use); never written to files or metadata
+    records: Optional[list[Any]] = None
 
     # Transformation functions
     transformations: Optional[list[TransformConfig]] = None
