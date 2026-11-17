@@ -62,7 +62,7 @@ class LLMNode(BaseNode):
 
         self._initialize_model()
 
-        self.task_name = utils.current_task
+        self.task_name = utils.get_current_task()
         self.graph_properties = utils.get_graph_properties(self.task_name)
 
         # Currently we support direct passing of tools which have decorator @tool and of type Langgraph's BaseTool Class.
@@ -301,7 +301,7 @@ class LLMNode(BaseNode):
             response: ModelResponse = await self.model.ainvoke(prompt, **kwargs)
 
             # Capture tokens after model call
-            captured_tokens = self._capture_token_usage(self.model)
+            captured_tokens = self._capture_token_usage(self.model, response)
 
             # Extract AIMessage from ModelResponse
             ai_message = (

@@ -11,6 +11,7 @@ from openai import APIError, BadRequestError, RateLimitError
 from pydantic import BaseModel
 
 import sygra.utils.constants as constants
+from sygra.core.models.call_state import current_model_call
 from sygra.core.models.custom_models import BaseCustomModel, ModelParams
 from sygra.core.models.model_response import ModelResponse
 from sygra.logger.logger_config import logger
@@ -84,7 +85,20 @@ class LiteLLMBase(BaseCustomModel):
             # Azure AI needs allow-list for tool_choice propagation
             if self._get_model_prefix() == "azure_ai":
                 update["allowed_openai_params"] = ["tool_choice"]
+        else:
+            update = {}
+        state = current_model_call()
+        if state is not None:
+            # Per request: don't leak this request's tools into the shared params
+            state.tool_params = update
+        elif update:
             self.generation_params.update(update)
+
+    def _call_params(self) -> dict[str, Any]:
+        """Generation parameters for the request in progress (model params + its tools)."""
+        state = current_model_call()
+        tool_params = state.tool_params if state is not None else {}
+        return {**(self.generation_params or {}), **tool_params}
 
     def _build_common_kwargs(self, model_params: ModelParams) -> dict[str, Any]:
         base_url_key = self._base_url_param()
@@ -157,14 +171,14 @@ class LiteLLMBase(BaseCustomModel):
                     input.messages, **(self.chat_template_params or {})
                 )
                 completion = await self._fn_atext_completion()(
-                    prompt=prompt, **common, **self.generation_params
+                    prompt=prompt, **common, **self._call_params()
                 )
                 self._extract_token_usage(completion)
                 resp_text, tool_calls = self._parse_completions_choice(completion)
             else:
                 messages = self._get_messages(input)
                 completion = await self._fn_acompletion()(
-                    messages=messages, **common, **self.generation_params
+                    messages=messages, **common, **self._call_params()
                 )
                 self._extract_token_usage(completion)
                 resp_text, tool_calls = self._parse_chat_choice(completion)
@@ -220,7 +234,7 @@ class LiteLLMBase(BaseCustomModel):
             else:
                 extra[param_name] = pydantic_model.model_json_schema()
 
-            all_params = {**(self.generation_params or {}), **extra}
+            all_params = {**self._call_params(), **extra}
 
             if self.model_config.get("completions_api", False):
                 prompt = self.get_chat_formatted_text(
@@ -441,7 +455,7 @@ class LiteLLMBase(BaseCustomModel):
                     self.generation_params["audio"] = audio_params
 
             common = self._build_common_kwargs(model_params)
-            all_params = {**self.generation_params}
+            all_params = self._call_params()
             if "audio" in modalities:
                 all_params["modalities"] = modalities
 

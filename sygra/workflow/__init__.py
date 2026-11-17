@@ -813,7 +813,7 @@ class Workflow:
         can't be called from code that is already running in one (async web apps,
         job workers, notebooks): use ``await workflow.arun(...)`` there.
         """
-        return asyncio.run(self.arun(num_records, start_index, output_dir, **kwargs))
+        return asyncio.run(self._arun(num_records, start_index, output_dir, True, **kwargs))
 
     async def arun(
         self,
@@ -829,9 +829,23 @@ class Workflow:
         loop-bound clients. Blocking setup (dataset loading, graph build) and
         post-processing run in worker threads.
 
+        Each run has its own state (task name, metadata collector, sampler cache), so
+        several ``arun()`` calls can run concurrently in one process. Unlike
+        :meth:`run`, ``arun()`` never installs signal handlers; the host owns them.
+
         Example:
             >>> records = await Workflow("demo").source([...]).llm(...).arun(num_records=10)
         """
+        return await self._arun(num_records, start_index, output_dir, False, **kwargs)
+
+    async def _arun(
+        self,
+        num_records: Optional[int],
+        start_index: int,
+        output_dir: Optional[str],
+        install_signal_handlers: bool,
+        **kwargs,
+    ) -> Any:
         if not CORE_AVAILABLE:
             raise GraSPError("Core framework not available")
 
@@ -842,18 +856,34 @@ class Workflow:
 
         from sygra.core.models.external.provider import use_llm_providers
         from sygra.core.models.server_down import server_down_action
+        from sygra.core.run_context import RunContext, run_context
+        from sygra.metadata.metadata_collector import MetadataCollector, get_metadata_collector
 
-        with use_llm_providers(self._llm_providers), server_down_action("raise"):
-            if self._is_existing_task:
-                return await self._execute_existing_task(
-                    num_records, start_index, output_dir, **kwargs
-                )
-            elif has_nodes:
-                return await self._execute_programmatic_workflow(
-                    num_records, start_index, output_dir, **kwargs
-                )
-            else:
-                raise ConfigurationError("Incomplete workflow. Add processing nodes.")
+        collector = MetadataCollector.create_isolated()
+        if not get_metadata_collector().is_enabled():
+            collector.set_enabled(False)
+        context = RunContext(
+            task_name=self.name,
+            metadata_collector=collector,
+            install_signal_handlers=install_signal_handlers,
+        )
+
+        try:
+            with use_llm_providers(self._llm_providers), server_down_action("raise"):
+                with run_context(context):
+                    if self._is_existing_task:
+                        return await self._execute_existing_task(
+                            num_records, start_index, output_dir, **kwargs
+                        )
+                    elif has_nodes:
+                        return await self._execute_programmatic_workflow(
+                            num_records, start_index, output_dir, **kwargs
+                        )
+                    else:
+                        raise ConfigurationError("Incomplete workflow. Add processing nodes.")
+        finally:
+            # Keep get_metadata_collector() after a run returning that run's metadata.
+            get_metadata_collector().load_from(collector)
 
     def llm_provider(self, provider: LLMProvider, name: str = "default") -> "Workflow":
         """Serve this workflow's ``model_type: external`` models with ``provider``.

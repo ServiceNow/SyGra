@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import signal
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -13,6 +14,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 from sygra.core.graph.graph_config import GraphConfig
 from sygra.core.resumable_execution import ResumableExecutionManager
+from sygra.core.run_context import get_run_context
 from sygra.data_mapper.mapper import DataMapper
 from sygra.exceptions import ModelServerDownError
 from sygra.logger.logger_config import logger
@@ -380,12 +382,21 @@ class DatasetProcessor:
         signal.signal(signum, signal.SIG_DFL)
         os.kill(os.getpid(), signum)
 
+    @staticmethod
+    def _may_install_signal_handlers() -> bool:
+        """Signal handlers can only be set on the main thread, and not when the host owns them."""
+        ctx = get_run_context()
+        if ctx is not None and not ctx.install_signal_handlers:
+            return False
+        return threading.current_thread() is threading.main_thread()
+
     async def _process_and_store_results(self):
         """Main processing loop for dataset records."""
         # Register signal handlers for graceful shutdown if resumable
-        if self.resumable and self.resume_manager:
+        previous_handlers: dict[signal.Signals, Any] = {}
+        if self.resumable and self.resume_manager and self._may_install_signal_handlers():
             for sig in [signal.SIGTERM, signal.SIGINT]:
-                signal.signal(sig, lambda s, f: self._handle_signal(s, f))
+                previous_handlers[sig] = signal.signal(sig, lambda s, f: self._handle_signal(s, f))
 
         # Use asyncio tasks to process records in parallel up to batch_size
         pending_tasks: set[asyncio.Task] = set()
@@ -444,6 +455,9 @@ class DatasetProcessor:
             logger.error(f"Error in main processing loop: {e}")
 
         finally:
+            for handled_sig, handler in previous_handlers.items():
+                if handler is not None:
+                    signal.signal(handled_sig, handler)
             # Close the progress bar
             self.pbar.close()
             # Run Graph post Processors

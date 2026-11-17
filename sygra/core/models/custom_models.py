@@ -31,6 +31,7 @@ from tenacity import (
 from transformers import AutoTokenizer
 
 import sygra.utils.constants as constants
+from sygra.core.models.call_state import current_model_call
 from sygra.core.models.client.base_client import BaseClient
 from sygra.core.models.client.client_factory import ClientFactory
 from sygra.core.models.client.http_client import HttpClient
@@ -80,7 +81,7 @@ class BaseCustomModel(ABC):
         self.delay = model_config.get("delay", 100)
         # max_wait for 8 attempts = 2^(8-1) = 128 secs
         self.retry_attempts = model_config.get("retry_attempts", 8)
-        self.generation_params: dict[Any, Any] = model_config.get("parameters") or {}
+        self.generation_params: dict[Any, Any] = dict(model_config.get("parameters") or {})
         self.chat_template_params: dict[Any, Any] = model_config.get("chat_template_params") or {}
         self.hf_chat_template_model_id = model_config.get("hf_chat_template_model_id")
         self._validate_completions_api_support()
@@ -160,7 +161,7 @@ class BaseCustomModel(ABC):
                 "total_tokens": getattr(response.usage, "total_tokens", 0),
             }
 
-            self._last_request_usage = usage_dict
+            self._report_usage(usage_dict)
 
         # When usage stats are not present in the response, try to extract from model_extra
         elif hasattr(response, "model_extra") and response.model_extra.get("usage"):
@@ -171,7 +172,18 @@ class BaseCustomModel(ABC):
                 "total_tokens": getattr(usage, "total_tokens", 0),
             }
 
-            self._last_request_usage = usage_dict
+            self._report_usage(usage_dict)
+
+    def _report_usage(self, usage: dict[str, Any]) -> None:
+        """Record token usage for the request in progress.
+
+        Stored on the request's call state, so concurrent requests on this model
+        don't overwrite each other, and as ``_last_request_usage`` for compatibility.
+        """
+        self._last_request_usage = usage
+        state = current_model_call()
+        if state is not None:
+            state.usage = usage
 
     def _set_chat_template(self):
         """
@@ -939,11 +951,13 @@ class CustomTGI(BaseCustomModel):
             total_tokens = prompt_tokens + completion_tokens
 
             # Store in the standard format
-            self._last_request_usage = {
-                "prompt_tokens": prompt_tokens,
-                "completion_tokens": completion_tokens,
-                "total_tokens": total_tokens,
-            }
+            self._report_usage(
+                {
+                    "prompt_tokens": prompt_tokens,
+                    "completion_tokens": completion_tokens,
+                    "total_tokens": total_tokens,
+                }
+            )
 
             logger.debug(
                 f"[{self.name()}] Extracted token usage from TGI: "
@@ -2184,12 +2198,14 @@ class CustomOllama(BaseCustomModel):
             if isinstance(completion, dict) and (
                 "prompt_eval_count" in completion or "eval_count" in completion
             ):
-                self._last_request_usage = {
-                    "prompt_tokens": completion.get("prompt_eval_count", 0),
-                    "completion_tokens": completion.get("eval_count", 0),
-                    "total_tokens": completion.get("prompt_eval_count", 0)
-                    + completion.get("eval_count", 0),
-                }
+                self._report_usage(
+                    {
+                        "prompt_tokens": completion.get("prompt_eval_count", 0),
+                        "completion_tokens": completion.get("eval_count", 0),
+                        "total_tokens": completion.get("prompt_eval_count", 0)
+                        + completion.get("eval_count", 0),
+                    }
+                )
 
             if self.model_config.get("completions_api", False):
                 resp_text = completion["response"]

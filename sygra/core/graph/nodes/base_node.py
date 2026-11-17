@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, List, Optional
 
+from sygra.core.models.model_response import TokenUsage
 from sygra.metadata.metadata_collector import get_metadata_collector
 from sygra.utils import utils
 
@@ -201,17 +202,27 @@ class BaseNode(ABC):
             return str(name) if name is not None else None
         return None
 
-    def _capture_token_usage(self, model: Any) -> dict[str, int]:
+    def _capture_token_usage(self, model: Any, response: Any = None) -> dict[str, int]:
         """
-        Capture token usage from a model's last request.
+        Capture token usage for a model request.
 
         Args:
             model: The model instance to capture tokens from
+            response: Optional response of the request. Its ``usage`` is per request,
+                so it is preferred over the model's last-request usage, which
+                concurrent requests can overwrite.
 
         Returns:
             Dictionary with prompt, completion, and total tokens
         """
         tokens = {"prompt": 0, "completion": 0, "total": 0}
+
+        usage = getattr(response, "usage", None)
+        if isinstance(usage, TokenUsage):
+            tokens["prompt"] = usage.prompt_tokens
+            tokens["completion"] = usage.completion_tokens
+            tokens["total"] = usage.total_tokens
+            return tokens
 
         # Unwrap if model is wrapped
         actual_model = model

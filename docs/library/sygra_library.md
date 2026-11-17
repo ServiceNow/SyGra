@@ -503,6 +503,8 @@ async def generate(rows: list[dict]):
 
 - **Records run on the caller's event loop.** Model calls are tasks on that loop, so an [external provider](../features/external_llm_providers.md) can use clients, semaphores and other resources bound to it.
 - **Blocking steps run in worker threads,** so they don't stall the loop. These are dataset loading, the graph build and post-generation steps (data quality, sinks and metadata).
+- **Concurrent runs are isolated.** Each run has its own task name, metadata collector and weighted-sampler state, so several `arun()` calls can run at the same time in one process. Token usage is tracked per request.
+- **Signal handlers:** `arun()` never installs them, because the host owns signal handling. `run()` still installs SIGINT/SIGTERM handlers for resumable runs, but only on the main thread, and restores the previous handlers afterwards.
 - **`run()` is a thin wrapper:** `asyncio.run(workflow.arun(...))`.
 - **For task executors:** `await executor.aexecute()` is the async counterpart of `executor.execute()`.
 

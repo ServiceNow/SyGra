@@ -223,7 +223,7 @@ class ResumableExecutionManager:
             for k, v in sampler_key_pointer.items():
                 logger.info(f"Loading sampler pointer for data source {k}: {v}")
                 # set dataset object as None, this will be filled at utils.fetch_next_record()
-                utils.sampler_cache[k] = (None, v)
+                utils.get_sampler_cache()[k] = (None, v)
 
         if metadata.get(constants.META_TASK_NAME) != self.task_name:
             logger.warning("Metadata file is for a different task, starting fresh")
@@ -382,8 +382,8 @@ class ResumableExecutionManager:
             try:
                 # initialize the sampler cache
                 sampler_key_pointer = (
-                    {k: v[1] for k, v in utils.sampler_cache.items()}
-                    if len(utils.sampler_cache) > 0
+                    {k: v[1] for k, v in utils.get_sampler_cache().items()}
+                    if len(utils.get_sampler_cache()) > 0
                     else {}
                 )
 
@@ -463,8 +463,8 @@ class ResumableExecutionManager:
 
         # initialize the sampler cache
         sampler_key_pointer = (
-            {k: v[1] for k, v in utils.sampler_cache.items()}
-            if len(utils.sampler_cache) > 0
+            {k: v[1] for k, v in utils.get_sampler_cache().items()}
+            if len(utils.get_sampler_cache()) > 0
             else {}
         )
 

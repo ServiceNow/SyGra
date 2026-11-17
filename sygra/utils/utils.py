@@ -21,6 +21,7 @@ from langchain_core.prompts.chat import (
 from sygra.core.dataset.dataset_config import DataSourceConfig
 from sygra.core.dataset.file_handler import FileHandler
 from sygra.core.dataset.huggingface_handler import HuggingFaceHandler
+from sygra.core.run_context import get_run_context
 from sygra.data_mapper.helper import JSONEncoder
 from sygra.logger.logger_config import logger
 from sygra.utils import constants
@@ -552,7 +553,7 @@ def get_graph_factory(backend: str):
 
 
 def get_graph_properties(task_name: Optional[str] = None) -> Any:
-    task = task_name or current_task
+    task = task_name or get_current_task()
     if not task:
         logger.error("Current task name is not initialized.")
         return {}
@@ -608,9 +609,18 @@ sampler_cache: dict[
 cache_lock = threading.Lock()
 
 
+def get_sampler_cache() -> dict[str, tuple[Any, int]]:
+    """Weighted-sampler cache of the active run, or the process-wide one outside a run."""
+    ctx = get_run_context()
+    if ctx is not None:
+        return ctx.sampler_cache
+    return sampler_cache
+
+
 def fetch_next_record(datasrc: dict, column: str):
     key = str(datasrc)
     record: Any = None
+    sampler_cache = get_sampler_cache()
     with cache_lock:
         if key in sampler_cache:
             dataset, pointer = sampler_cache[key]
@@ -715,3 +725,11 @@ backend_factory = BackendFactoryProxy()
 
 # store the current task to access it later to fetch properties
 current_task: Optional[str] = None
+
+
+def get_current_task() -> Optional[str]:
+    """Task name of the active run, falling back to the module-level ``current_task``."""
+    ctx = get_run_context()
+    if ctx is not None and ctx.task_name:
+        return ctx.task_name
+    return current_task
