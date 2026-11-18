@@ -16,12 +16,17 @@ jobs:
 
   build:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        # Lowest and highest supported versions; pinned patches keep the cached venv valid
-        python-version: ["3.9.25", "3.13.13"]
+        # Lowest and highest supported versions; pinned patches keep the cached venv valid.
+        # Python 3.9 builds exist only up to Ubuntu 24.04.
+        include:
+          - python-version: "3.9.25"
+            os: ubuntu-24.04
+          - python-version: "3.13.13"
+            os: ubuntu-latest
     env:
       UV_PROJECT_ENVIRONMENT: .venv
       UV_PYTHON: ${{ matrix.python-version }}
