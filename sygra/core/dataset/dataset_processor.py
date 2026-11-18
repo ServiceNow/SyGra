@@ -454,7 +454,7 @@ class DatasetProcessor:
         previous_handlers: dict[signal.Signals, Any] = {}
         if self.resumable and self.resume_manager and self._may_install_signal_handlers():
             for sig in [signal.SIGTERM, signal.SIGINT]:
-                previous_handlers[sig] = signal.signal(sig, lambda s, f: self._handle_signal(s, f))
+                previous_handlers[sig] = signal.signal(sig, self._handle_signal)
 
         # Use asyncio tasks to process records in parallel up to batch_size
         pending_tasks: set[asyncio.Task] = set()

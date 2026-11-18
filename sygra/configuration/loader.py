@@ -10,7 +10,6 @@ try:
     from sygra.core.dataset.dataset_config import DataSourceConfig, OutputConfig  # noqa: F401
     from sygra.core.graph.graph_config import GraphConfig  # noqa: F401
     from sygra.utils import utils
-    from sygra.workflow import AutoNestedDict  # noqa: F401
 
     UTILS_AVAILABLE = True
 except ImportError:

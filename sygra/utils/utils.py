@@ -459,6 +459,7 @@ def hook_reference(hook: Any) -> Any:
             if get_func_from_str(path) is hook:
                 return path
         except Exception:
+            # Best effort: if the path doesn't import back to this object, keep the object.
             pass
     return hook
 
