@@ -14,7 +14,7 @@ permissions:
 
 jobs:
 
-  build:
+  test:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ${{ matrix.os }}
     strategy:
@@ -108,6 +108,15 @@ jobs:
         if: matrix.python-version == '3.9.25'
         with:
           path: site
+
+  # ---- Required status check: passes only if every matrix job passed ----
+  build:
+    if: always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check matrix result
+        run: test "${{ needs.test.result }}" = "success"
 
   # ---- Deploy Docs ----
   deploy_docs:
