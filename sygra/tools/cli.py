@@ -2,6 +2,7 @@ import argparse
 
 from sygra.tools.executor import ToolExecutor
 from sygra.tools.registry import ToolRegistry
+from sygra.utils.dotenv import load_dotenv
 
 
 def main():
@@ -10,6 +11,8 @@ def main():
     parser.add_argument("--list-tools", action="store_true", help="List all registered tools")
 
     args = parser.parse_args()
+
+    load_dotenv()
 
     # Discover tools before doing anything else
     ToolRegistry.auto_discover()

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import shutil
 import tempfile
 import uuid
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import yaml
 
@@ -37,8 +38,28 @@ except ImportError:
     CORE_AVAILABLE = False
     from sygra.logger.logger_config import logger
 
-from sygra.exceptions import ConfigurationError, ExecutionError, GraSPError
+from sygra.core.run_result import CostFn, RunResult
+from sygra.exceptions import ConfigurationError, ExecutionError, GraSPError, ModelServerDownError
 from sygra.models import ModelConfigBuilder
+
+if TYPE_CHECKING:
+    from sygra.core.models.external import LLMProvider
+
+
+def _read_records(output_file: Optional[str]) -> list[Any]:
+    """Read output records from a ``.json`` / ``.jsonl`` file; empty if unavailable."""
+    if not output_file or not os.path.exists(output_file):
+        return []
+    try:
+        with open(output_file, "r") as f:
+            if output_file.endswith(".jsonl"):
+                return [json.loads(line) for line in f if line.strip()]
+            data = json.load(f)
+    except Exception as e:
+        logger.warning(f"Could not read output file {output_file}: {e}")
+        return []
+    return data if isinstance(data, list) else [data]
+
 
 # Import node builders with conditional availability
 try:
@@ -182,6 +203,9 @@ class Workflow:
         self._node_builders: dict[str, Any] = {}
         self._messages: list[str] = []
         self._is_existing_task: bool = False
+        self._from_config: bool = False
+        self._llm_providers: dict[str, LLMProvider] = {}
+        self._model_roles: dict[str, Any] = {}
 
         # Feature support flags
         self._supports_subgraphs = True
@@ -191,6 +215,86 @@ class Workflow:
         self._supports_oasst = True
 
         self._load_existing_config_if_present()
+
+    @classmethod
+    def from_config(
+        cls,
+        config: Union[str, Path, dict[str, Any]],
+        *,
+        base_dir: Optional[Union[str, Path]] = None,
+        name: Optional[str] = None,
+    ) -> "Workflow":
+        """Create a Workflow from a config dictionary or a YAML file.
+
+        The config has the same shape as a task's ``graph_config.yaml``. It doesn't need
+        to live in a task directory: like other programmatic workflows, output goes to a
+        temporary directory unless ``run(output_dir=...)`` is given.
+
+        A prompt message can be inline text or ``{"file": path}``, which is replaced by
+        the file's text. Relative prompt files are resolved against ``base_dir`` or, for
+        a YAML file, the file's directory. They are never resolved against the working
+        directory.
+
+        When ``base_dir`` is given, relative ``file_path`` values of data sources and
+        sinks are resolved against it too. Without it they are left unchanged.
+
+        Args:
+            config: Config dictionary, or path to a YAML config file. The dictionary is
+                not modified.
+            base_dir: Directory for relative prompt files and data paths.
+            name: Workflow name. Defaults to the config's ``task_name``, then the YAML
+                file's directory name.
+
+        Returns:
+            Workflow: A workflow ready to ``run()``.
+
+        Example:
+            >>> config = {
+            ...     "data_config": {"source": {"type": "disk", "file_path": "data.json"}},
+            ...     "graph_config": {
+            ...         "nodes": {
+            ...             "gen": {
+            ...                 "node_type": "llm",
+            ...                 "model": {"name": "gpt-4o"},
+            ...                 "prompt": [
+            ...                     {"system": {"file": "prompts/system.txt"}},
+            ...                     {"user": "{text}"},
+            ...                 ],
+            ...             }
+            ...         },
+            ...         "edges": [{"from": "START", "to": "gen"}, {"from": "gen", "to": "END"}],
+            ...     },
+            ... }
+            >>> workflow = Workflow.from_config(config, base_dir="/srv/my_flow")
+        """
+        from sygra.configuration.loader import (
+            ConfigLoader,
+            resolve_data_paths,
+            resolve_prompt_files,
+        )
+
+        loader = ConfigLoader()
+        config_dir: Optional[Path] = None
+        if isinstance(config, dict):
+            loaded = utils.copy_config(config)
+        else:
+            config_dir = loader.resolve_path(config).resolve().parent
+            loaded = loader.load(config)
+
+        base = Path(base_dir).expanduser().resolve() if base_dir is not None else None
+        resolve_prompt_files(loaded, base or config_dir)
+        if base is not None:
+            resolve_data_paths(loaded, base)
+
+        workflow = cls(name or loaded.get("task_name") or (config_dir.name if config_dir else None))
+        roles = loaded.pop("model_roles", None)
+        if roles:
+            workflow.model_roles(roles)
+        workflow._config = AutoNestedDict.convert_dict(loaded)
+        workflow._is_existing_task = False
+        workflow._from_config = True
+        workflow._node_counter = len((loaded.get("graph_config") or {}).get("nodes") or {})
+        return workflow
 
     def _load_existing_config_if_present(self):
         """Load existing task configuration if this appears to be a task path."""
@@ -224,7 +328,12 @@ class Workflow:
     def source(
         self, source: Union[str, Path, dict[str, Any], list[dict[str, Any]], DataSource]
     ) -> "Workflow":
-        """Add data source with full framework support."""
+        """Add data source with full framework support.
+
+        A list of dicts (or ``{"data": [...]}``) is an in-memory source: the records
+        are read from memory and never written to disk.
+        """
+        source_config: dict[str, Any]
         if isinstance(source, (str, Path)):
             source_config = {
                 "type": "disk",
@@ -232,20 +341,10 @@ class Workflow:
                 "file_format": self._detect_file_format(str(source)),
             }
         elif isinstance(source, list):
-            temp_file = self._create_temp_file(source)
-            source_config = {
-                "type": "disk",
-                "file_path": temp_file,
-                "file_format": "json",
-            }
+            source_config = {"type": "memory", "records": source}
         elif isinstance(source, dict):
             if "data" in source:
-                temp_file = self._create_temp_file(source["data"])
-                source_config = {
-                    "type": "disk",
-                    "file_path": temp_file,
-                    "file_format": "json",
-                }
+                source_config = {"type": "memory", "records": source["data"]}
             else:
                 source_config = source
         elif DATA_UTILS_AVAILABLE and isinstance(source, DataSource):
@@ -314,28 +413,12 @@ class Workflow:
         if kwargs.get("chat_history"):
             node_config["chat_history"] = True
 
-        # Handle pre-processors
+        # Processors: dotted path, function, class or configured instance
         if pre_process:
-            if isinstance(pre_process, type) and issubclass(pre_process, NodePreProcessor):
-                # Class reference - convert to string path
-                node_config["pre_process"] = f"{pre_process.__module__}.{pre_process.__name__}"
-            elif callable(pre_process):
-                node_config["pre_process"] = self._callable_to_string_path(pre_process)
-            else:
-                node_config["pre_process"] = pre_process
+            node_config["pre_process"] = utils.hook_reference(pre_process)
 
-        # Handle post-processors
         if post_process:
-            if isinstance(post_process, type) and (
-                issubclass(post_process, NodePostProcessor)
-                or issubclass(post_process, NodePostProcessorWithState)
-            ):
-                # Class reference - convert to string path
-                node_config["post_process"] = f"{post_process.__module__}.{post_process.__name__}"
-            elif callable(post_process):
-                node_config["post_process"] = self._callable_to_string_path(post_process)
-            else:
-                node_config["post_process"] = post_process
+            node_config["post_process"] = utils.hook_reference(post_process)
 
         if kwargs.get("structured_output"):
             node_config["structured_output"] = kwargs["structured_output"]
@@ -374,7 +457,9 @@ class Workflow:
             node_config["output_keys"] = kwargs["output_keys"]
 
         if kwargs.get("multi_llm_post_process"):
-            node_config["multi_llm_post_process"] = kwargs["multi_llm_post_process"]
+            node_config["multi_llm_post_process"] = utils.hook_reference(
+                kwargs["multi_llm_post_process"]
+            )
 
         self._add_node_with_edge(node_name, node_config)
         return self
@@ -416,18 +501,9 @@ class Workflow:
         """Add lambda function node supporting direct function/class references."""
         node_name = self._generate_node_name("lambda")
 
-        # Handle different types of function references
-        if isinstance(func, type):
-            # Class reference
-            func_path = f"{func.__module__}.{func.__name__}"
-        elif callable(func):
-            func_path = self._callable_to_string_path(func)
-        else:
-            func_path = func
-
         node_config = {
             "node_type": "lambda",
-            "lambda": func_path,
+            "lambda": utils.hook_reference(func),
             "output_keys": output,
         }
 
@@ -526,14 +602,9 @@ class Workflow:
         self, from_node: str, condition: Union[str, Callable], path_map: dict[str, str]
     ) -> "Workflow":
         """Add conditional edge with path mapping."""
-        if callable(condition):
-            condition_path = self._callable_to_string_path(condition)
-        else:
-            condition_path = condition
-
         edge_config = {
             "from": from_node,
-            "condition": condition_path,
+            "condition": utils.hook_reference(condition),
             "path_map": path_map,
         }
         self._config["graph_config"]["edges"].append(edge_config)
@@ -628,13 +699,16 @@ class Workflow:
         if "source" not in self._config["data_config"]:
             self._config["data_config"]["source"] = {}
 
-        transformations_list: list[Union[dict[str, Any], str]] = []  # <-- CORRECT TYPE
+        transformations_list: list[dict[str, Any]] = []
 
         for transform in transforms:
-            if callable(transform):
-                transformations_list.append(self._callable_to_string_path(transform))
+            if isinstance(transform, dict):
+                transformations_list.append(
+                    {**transform, "transform": utils.hook_reference(transform["transform"])}
+                )
             else:
-                transformations_list.append(transform)
+                # DataTransform class or instance, without params
+                transformations_list.append({"transform": utils.hook_reference(transform)})
 
         self._config["data_config"]["source"]["transformations"] = transformations_list
         return self
@@ -721,13 +795,7 @@ class Workflow:
         if "output_config" not in self._config:
             self._config["output_config"] = {}
 
-        if isinstance(generator, str):
-            self._config["output_config"]["generator"] = generator
-        elif isinstance(generator, type):
-            self._config["output_config"][
-                "generator"
-            ] = f"{generator.__module__}.{generator.__name__}"
-
+        self._config["output_config"]["generator"] = utils.hook_reference(generator)
         return self
 
     def preserve_fields(self, *field_names: str) -> "Workflow":
@@ -800,25 +868,234 @@ class Workflow:
         num_records: Optional[int] = None,
         start_index: int = 0,
         output_dir: Optional[str] = None,
+        env_file: Optional[Union[str, Path]] = None,
+        cost_fn: Optional[CostFn] = None,
+        write_output: bool = True,
+        model_roles: Optional[dict[str, Any]] = None,
         **kwargs,
-    ) -> Any:
-        """Execute workflow with full framework feature support."""
+    ) -> RunResult:
+        """Execute workflow with full framework feature support.
+
+        Synchronous wrapper around :meth:`arun`. It starts its own event loop, so it
+        can't be called from code that is already running in one (async web apps,
+        job workers, notebooks): use ``await workflow.arun(...)`` there.
+
+        Args:
+            env_file: Optional ``.env`` file to load before the run (for example
+                ``".env"``). Variables that are already set are not overridden.
+                Without it, the run reads only the existing environment.
+            cost_fn: Optional ``cost_fn(model_name, usage) -> float`` used to price
+                each model's usage in the returned :class:`RunResult`. SyGra ships
+                no prices.
+            write_output: If ``False``, output records are kept only in the returned
+                :class:`RunResult`; no output file is written. Sinks, data quality,
+                ``graph_post_process`` and resumable runs need the output file, so
+                they raise :class:`ConfigurationError` with ``write_output=False``.
+            model_roles: Role name -> model name or model config dict for this run.
+                Nodes whose model is ``{"role": ...}`` use it. Entries override
+                those set with :meth:`model_roles`.
+
+        Returns:
+            A :class:`RunResult`: the list of output records, plus failed records,
+            usage per model, node and record, and cost.
+        """
+        return asyncio.run(
+            self._arun(
+                num_records,
+                start_index,
+                output_dir,
+                install_signal_handlers=True,
+                env_file=env_file,
+                cost_fn=cost_fn,
+                write_output=write_output,
+                model_roles=model_roles,
+                **kwargs,
+            )
+        )
+
+    async def arun(
+        self,
+        num_records: Optional[int] = None,
+        start_index: int = 0,
+        output_dir: Optional[str] = None,
+        env_file: Optional[Union[str, Path]] = None,
+        cost_fn: Optional[CostFn] = None,
+        write_output: bool = True,
+        model_roles: Optional[dict[str, Any]] = None,
+        **kwargs,
+    ) -> RunResult:
+        """Execute the workflow on the running event loop.
+
+        Takes the same arguments and returns the same result as :meth:`run`. Records
+        are processed as tasks on the caller's loop, so LLM providers can use
+        loop-bound clients. Blocking setup (dataset loading, graph build) and
+        post-processing run in worker threads.
+
+        Each run has its own state (task name, metadata collector, sampler cache), so
+        several ``arun()`` calls can run concurrently in one process. Unlike
+        :meth:`run`, ``arun()`` never installs signal handlers; the host owns them.
+
+        Example:
+            >>> records = await Workflow("demo").source([...]).llm(...).arun(num_records=10)
+        """
+        return await self._arun(
+            num_records,
+            start_index,
+            output_dir,
+            install_signal_handlers=False,
+            env_file=env_file,
+            cost_fn=cost_fn,
+            write_output=write_output,
+            model_roles=model_roles,
+            **kwargs,
+        )
+
+    def _check_no_output_file_needed(self, kwargs: dict[str, Any]) -> None:
+        """Raise if a configured feature reads the output file (``write_output=False``)."""
+        config = self._config.to_dict()
+        data_config = config.get("data_config") or {}
+        output_config = config.get("output_config") or {}
+        needs_file = {
+            "a sink (data_config.sink)": bool(data_config.get("sink")),
+            "data quality": bool(
+                output_config.get("data_quality")
+                or kwargs.get("quality")
+                or kwargs.get("quality_only")
+            ),
+            "graph_post_process": bool(config.get("graph_post_process")),
+            "resumable execution": bool(kwargs.get("resume", data_config.get("resumable"))),
+        }
+        blocking = [name for name, used in needs_file.items() if used]
+        if blocking:
+            raise ConfigurationError(
+                "write_output=False can't be used with "
+                + ", ".join(blocking)
+                + ": these read the output file"
+            )
+
+    async def _arun(
+        self,
+        num_records: Optional[int],
+        start_index: int,
+        output_dir: Optional[str],
+        *,
+        install_signal_handlers: bool,
+        env_file: Optional[Union[str, Path]] = None,
+        cost_fn: Optional[CostFn] = None,
+        write_output: bool = True,
+        model_roles: Optional[dict[str, Any]] = None,
+        **kwargs,
+    ) -> RunResult:
         if not CORE_AVAILABLE:
             raise GraSPError("Core framework not available")
 
+        if env_file is not None:
+            from sygra.utils.dotenv import load_dotenv
+
+            if not load_dotenv(dotenv_path=str(env_file), override=False):
+                raise ConfigurationError(f"env_file not found: {env_file}")
+
         # Apply node builders before execution
         self.build()
+        if not write_output:
+            self._check_no_output_file_needed(kwargs)
 
         has_nodes = len(self._config["graph_config"]["nodes"]) > 0
 
-        if self._is_existing_task:
-            return self._execute_existing_task(num_records, start_index, output_dir, **kwargs)
-        elif has_nodes:
-            return self._execute_programmatic_workflow(
-                num_records, start_index, output_dir, **kwargs
-            )
+        from sygra.core.models.external.provider import use_llm_providers
+        from sygra.core.models.server_down import server_down_action
+        from sygra.core.run_context import RunContext, run_context
+        from sygra.metadata.metadata_collector import MetadataCollector, get_metadata_collector
+
+        collector = MetadataCollector.create_isolated()
+        if not get_metadata_collector().is_enabled():
+            collector.set_enabled(False)
+        context = RunContext(
+            task_name=self.name,
+            metadata_collector=collector,
+            install_signal_handlers=install_signal_handlers,
+            graph_properties=dict(
+                self._config.to_dict().get("graph_config", {}).get("graph_properties") or {}
+            ),
+            write_output=write_output,
+            model_roles={**self._model_roles, **(model_roles or {})},
+        )
+
+        try:
+            with use_llm_providers(self._llm_providers), server_down_action("raise"):
+                with run_context(context):
+                    if self._is_existing_task:
+                        output = await self._execute_existing_task(
+                            num_records, start_index, output_dir, **kwargs
+                        )
+                    elif has_nodes:
+                        output = await self._execute_programmatic_workflow(
+                            num_records, start_index, output_dir, **kwargs
+                        )
+                    else:
+                        raise ConfigurationError("Incomplete workflow. Add processing nodes.")
+        finally:
+            # Keep get_metadata_collector() after a run returning that run's metadata.
+            get_metadata_collector().load_from(collector)
+
+        if not write_output:
+            output_file = None
+            records = context.output_records
         else:
-            raise ConfigurationError("Incomplete workflow. Add processing nodes.")
+            output_file = context.output_file
+            if output_file and not os.path.exists(output_file):
+                output_file = None  # temporary output directory, already removed
+            records = output if isinstance(output, list) else _read_records(output_file)
+        return RunResult(
+            records,
+            failed_records=context.failed_records,
+            usage=context.usage,
+            output_file=output_file,
+            cost_fn=cost_fn,
+        )
+
+    def llm_provider(self, provider: LLMProvider, name: str = "default") -> "Workflow":
+        """Serve this workflow's ``model_type: external`` models with ``provider``.
+
+        The provider is registered only for the duration of :meth:`run` / :meth:`arun`
+        and only in the calling context, so different workflows (or threads) can use
+        different providers. Models select a provider by name via the ``provider`` key
+        of their model config (default ``"default"``).
+
+        Args:
+            provider: Object with an async ``generate(LLMRequest) -> ModelResponse`` method.
+            name: Name that model configs refer to.
+
+        Example:
+            >>> workflow = Workflow("demo") \\
+            ...     .source([{"text": "hi"}]) \\
+            ...     .llm({"name": "gen", "model_type": "external"}, "Echo: {text}") \\
+            ...     .llm_provider(FakeProvider("hello"))
+        """
+        from sygra.core.models.external.provider import _validate
+
+        self._llm_providers[name] = _validate(provider)
+        return self
+
+    def model_roles(self, roles: dict[str, Any]) -> "Workflow":
+        """Set the default model for each role used by this workflow's nodes.
+
+        A node can name a role instead of a model: ``{"role": "generator"}``. Each
+        run maps the role to a model, so one graph can run against different model
+        mixes without edits. SyGra only resolves names; it enforces no policy.
+
+        Args:
+            roles: Role name -> model name (``"gpt-4o"``) or model config dict (with
+                ``name``). The node's own keys, such as ``parameters``, are applied
+                on top. ``run(model_roles=...)`` overrides entries for one run.
+
+        Example:
+            >>> workflow.llm({"role": "generator"}, "{question}", output="answer")
+            >>> workflow.model_roles({"generator": "gpt-4o"}).run(
+            ...     model_roles={"generator": "claude-sonnet"})  # doctest: +SKIP
+        """
+        self._model_roles.update(roles)
+        return self
 
     def save_config(self, path: Union[str, Path]) -> None:
         """Save workflow configuration as YAML file."""
@@ -828,7 +1105,7 @@ class Workflow:
         with open(path, "w") as f:
             yaml.dump(self._config.to_dict(), f, default_flow_style=False)
 
-    def _execute_existing_task(
+    async def _execute_existing_task(
         self,
         num_records: Optional[int],
         start_index: int,
@@ -858,17 +1135,21 @@ class Workflow:
             quality=kwargs.get("quality", False),
         )
 
-        try:
+        def create_executor() -> BaseTaskExecutor:
             executor: BaseTaskExecutor
             if kwargs.get("quality_only", False):
                 executor = JudgeQualityTaskExecutor(args, kwargs.get("quality_config"))
             else:
-                executor = DefaultTaskExecutor(args)
-                BaseTaskExecutor.__init__(executor, args, modified_config)
+                executor = DefaultTaskExecutor(args, modified_config)
+            return executor
 
-            result = executor.execute()
+        try:
+            executor = await asyncio.to_thread(create_executor)
+            result = await executor.aexecute()
             logger.info(f"Successfully executed task: {task_name}")
             return result
+        except ModelServerDownError:
+            raise
         except Exception as e:
             if "model_type" in str(e).lower() or "model" in str(e).lower():
                 logger.error("Model configuration error")
@@ -876,7 +1157,7 @@ class Workflow:
                 logger.error(f"Task context initialization failed for '{task_name}'")
             raise ExecutionError(f"Failed to execute task '{task_name}': {e}")
 
-    def _execute_programmatic_workflow(
+    async def _execute_programmatic_workflow(
         self,
         num_records: Optional[int],
         start_index: int,
@@ -895,7 +1176,14 @@ class Workflow:
             else:
                 os.makedirs(output_dir, exist_ok=True)
 
-            if not kwargs.get("enable_default_transforms", False):
+            # Keep transformations the workflow declares (config or .transformations()).
+            source = self._config.to_dict().get("data_config", {}).get("source")
+            declares_transforms = isinstance(source, dict) and bool(source.get("transformations"))
+            if (
+                not self._from_config
+                and not declares_transforms
+                and not kwargs.get("enable_default_transforms", False)
+            ):
                 self.disable_default_transforms()
 
             config_dict = self._config.to_dict()
@@ -926,13 +1214,13 @@ class Workflow:
                 ),
             )
 
-            executor: BaseTaskExecutor
-            if kwargs.get("quality_only", False):
-                executor = JudgeQualityTaskExecutor(args, kwargs.get("quality_config"))
-            else:
-                executor = DefaultTaskExecutor(args, config_dict)
+            def create_executor() -> BaseTaskExecutor:
+                if kwargs.get("quality_only", False):
+                    return JudgeQualityTaskExecutor(args, kwargs.get("quality_config"))
+                return DefaultTaskExecutor(args, config_dict)
 
-            result = executor.execute()
+            executor = await asyncio.to_thread(create_executor)
+            result = await executor.aexecute()
 
             output_file = None
             if self._config.get("data_config", {}).get("sink", {}).get("file_path"):
@@ -957,6 +1245,8 @@ class Workflow:
 
             return result
 
+        except (ModelServerDownError, ConfigurationError):
+            raise
         except Exception as e:
             raise ExecutionError(f"Programmatic workflow execution failed: {e}")
         finally:
@@ -1000,30 +1290,10 @@ class Workflow:
         else:
             current[final_key] = value
 
-    def _callable_to_string_path(self, func: Union[str, Callable]) -> str:
-        """Convert callable to string path for YAML serialization."""
-        if callable(func):
-            if hasattr(func, "__module__") and hasattr(func, "__name__"):
-                return f"{func.__module__}.{func.__name__}"
-            elif hasattr(func, "__class__"):
-                return f"{func.__class__.__module__}.{func.__class__.__name__}"
-            else:
-                class_name = func.__class__.__name__
-                return f"__main__.{class_name}"
-        return func
-
     def _detect_file_format(self, file_path: str) -> str:
         """Detect file format from extension."""
         ext = Path(file_path).suffix.lower()
         return ext[1:] if ext in [".json", ".jsonl", ".csv", ".parquet"] else "json"
-
-    def _create_temp_file(self, data: list[dict[str, Any]]) -> str:
-        """Create temporary file for data."""
-        temp_file = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False)
-        with temp_file as f:
-            json.dump(data, f, indent=2)
-        self._temp_files.append(temp_file.name)
-        return temp_file.name
 
     def _generate_node_name(self, node_type: str) -> str:
         """Generate unique node name."""

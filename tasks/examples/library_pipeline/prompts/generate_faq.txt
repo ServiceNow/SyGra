@@ -1,0 +1,3 @@
+Write one FAQ entry for this help article. Reply with JSON: {{"question": ..., "answer": ...}}.
+Title: {title}
+Article: {body}

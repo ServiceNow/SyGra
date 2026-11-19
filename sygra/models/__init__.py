@@ -1,5 +1,17 @@
 from typing import Any, Optional, cast
 
+from sygra.core.models.external import (
+    FakeProvider,
+    LLMProvider,
+    LLMRequest,
+    get_llm_provider,
+    register_llm_provider,
+    unregister_llm_provider,
+    use_llm_providers,
+)
+from sygra.core.models.model_response import ModelResponse, TokenUsage
+from sygra.core.models.server_down import server_down_action
+
 try:
     from sygra.core.models.custom_models import CustomAzure  # noqa: F401
     from sygra.core.models.custom_models import CustomMistralAPI  # noqa: F401
@@ -51,7 +63,8 @@ class ModelConfigBuilder:
         """Validate and ensure model config has required fields."""
         config = model_config.copy()
 
-        if "name" not in config:
+        # {"role": ...} is resolved per run from model_roles
+        if "name" not in config and "role" not in config:
             if "model" in config:
                 config["name"] = config["model"]
             else:
@@ -60,4 +73,18 @@ class ModelConfigBuilder:
         return config
 
 
-__all__ = ["ModelConfigBuilder"]
+__all__ = [
+    "ModelConfigBuilder",
+    # Pluggable LLM providers (model_type: external)
+    "LLMProvider",
+    "LLMRequest",
+    "ModelResponse",
+    "TokenUsage",
+    "FakeProvider",
+    "register_llm_provider",
+    "unregister_llm_provider",
+    "get_llm_provider",
+    "use_llm_providers",
+    # Server-down handling
+    "server_down_action",
+]

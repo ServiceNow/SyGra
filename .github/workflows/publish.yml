@@ -8,6 +8,8 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.13"
 
     steps:
       - name: Checkout repository
@@ -16,7 +18,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.9"
+          python-version: "3.13"
 
       - name: Install uv
         run: |

@@ -1,6 +1,6 @@
 import ast
+import asyncio
 import copy
-import hashlib
 import json
 import os
 from abc import ABC
@@ -22,10 +22,13 @@ from sygra.core.dataset.dataset_config import (
 from sygra.core.dataset.dataset_processor import DatasetProcessor
 from sygra.core.dataset.file_handler import FileHandler
 from sygra.core.dataset.huggingface_handler import HuggingFaceHandler
+from sygra.core.dataset.memory_handler import MemoryHandler
 from sygra.core.dataset.servicenow_handler import ServiceNowHandler
 from sygra.core.graph.graph_config import GraphConfig
 from sygra.core.graph.langgraph.graph_builder import LangGraphBuilder
 from sygra.core.graph.sygra_state import SygraState
+from sygra.core.run_context import get_run_context
+from sygra.exceptions import ConfigurationError
 from sygra.logger.logger_config import logger
 from sygra.metadata.metadata_collector import get_metadata_collector
 from sygra.processors.output_record_generator import BaseOutputGenerator
@@ -53,6 +56,15 @@ class BaseTaskExecutor(ABC):
         self.id_column = data_config.get("id_column") or None
 
         self.resumable = self._configure_resume_behavior(args, config_resumable)
+        source = data_config.get("source")
+        if (
+            self.resumable
+            and isinstance(source, dict)
+            and source.get("type") == DataSourceType.MEMORY.value
+        ):
+            raise ConfigurationError(
+                "Resumable runs need a file or dataset source; a memory source can't be resumed"
+            )
 
         self.dataset = self.init_dataset()
         output_transform_args = {"oasst": args.oasst, "quality": args.quality}
@@ -269,8 +281,12 @@ class BaseTaskExecutor(ABC):
             return None
 
         try:
-            generator_cls = utils.get_func_from_str(gen_class_str)
-            output_generator = cast(BaseOutputGenerator, generator_cls(output_config))
+            generator_cls = utils.resolve_hook(gen_class_str)
+            # A generator instance is used as is; a class is built with the output config
+            output_generator = cast(
+                BaseOutputGenerator,
+                generator_cls(output_config) if callable(generator_cls) else generator_cls,
+            )
             logger.info(f"Initialized output generator: {gen_class_str}")
             return output_generator
         except Exception as e:
@@ -799,7 +815,7 @@ class BaseTaskExecutor(ABC):
 
     def _get_data_reader(
         self, source_config: DataSourceConfig
-    ) -> Union[HuggingFaceHandler, FileHandler, ServiceNowHandler]:
+    ) -> Union[HuggingFaceHandler, FileHandler, ServiceNowHandler, MemoryHandler]:
         """Get appropriate data reader based on source type"""
         if source_config is None:
             raise ValueError("source_config must be set to get a data reader")
@@ -810,6 +826,8 @@ class BaseTaskExecutor(ABC):
             return FileHandler(source_config)
         elif source_config.type == DataSourceType.SERVICENOW:
             return ServiceNowHandler(source_config)
+        elif source_config.type == DataSourceType.MEMORY:
+            return MemoryHandler(source_config)
         else:
             raise ValueError(f"Unsupported data source type: {source_config.type}")
 
@@ -876,7 +894,8 @@ class BaseTaskExecutor(ABC):
         for cfg in transform_cfgs:
             if "transform" not in cfg:
                 raise ValueError(f"Missing 'transform' key in transformation config: {cfg}")
-            transform_fn = utils.get_func_from_str(cfg["transform"])()
+            transform = utils.resolve_hook(cfg["transform"])
+            transform_fn = transform() if callable(transform) else transform
             params = cfg.get("params", {})
             instances.append((transform_fn, params))
         return instances
@@ -928,10 +947,7 @@ class BaseTaskExecutor(ABC):
         elif "id" in record and record["id"] is not None:
             return record
         else:
-            record_for_hash = record.copy()
-            record_str = json.dumps(record_for_hash, sort_keys=True)
-            content_hash = hashlib.sha256(record_str.encode()).hexdigest()
-            record["id"] = content_hash
+            record["id"] = utils.record_id(record, strict=get_run_context() is None)
             return record
 
     # Function to assign "id" to every record of full_data
@@ -947,8 +963,9 @@ class BaseTaskExecutor(ABC):
 
             return full_data.map(self.add_id, features=features)
 
-        # Handle list/dict data
-        if full_data and full_data[0].get("id"):
+        # Handle list/dict data. Library runs give every record an id, so output can be
+        # joined back to input; the CLI keeps checking only the first record.
+        if full_data and full_data[0].get("id") and get_run_context() is None:
             return full_data
 
         for i in range(len(full_data)):
@@ -991,6 +1008,31 @@ class BaseTaskExecutor(ABC):
         Args:
             execution_callbacks: Optional ExecutionCallbacks for real-time node tracking.
         """
+        dataset_processor, out_file, out_file_type = self._prepare_execution(execution_callbacks)
+        dataset_processor.process_and_store_results()
+        self._finalize_execution(dataset_processor, out_file, out_file_type)
+
+    async def aexecute(self, execution_callbacks=None):
+        """
+        Async variant of :meth:`execute`, for use inside a running event loop.
+
+        Records are processed on the caller's event loop. Setup (graph build, output
+        file resolution) and post-processing (data quality, sinks, metadata) are
+        blocking, so they run in a worker thread.
+
+        Args:
+            execution_callbacks: Optional ExecutionCallbacks for real-time node tracking.
+        """
+        dataset_processor, out_file, out_file_type = await asyncio.to_thread(
+            self._prepare_execution, execution_callbacks
+        )
+        await dataset_processor.aprocess_and_store_results()
+        await asyncio.to_thread(
+            self._finalize_execution, dataset_processor, out_file, out_file_type
+        )
+
+    def _prepare_execution(self, execution_callbacks=None) -> tuple[DatasetProcessor, str, str]:
+        """Build the graph, resolve the output file and create the DatasetProcessor."""
         graph = self.init_graph()
         compiled_graph = graph.compile()
         logger.info("Graph compiled successfully")
@@ -1044,7 +1086,9 @@ class BaseTaskExecutor(ABC):
                     self.args.task,
                     f"{run_name_prefix}output{ts_suffix}.{out_file_type}",
                 )
-        if not self.resumable and os.path.exists(out_file):
+        ctx = get_run_context()
+        writes_output = ctx is None or ctx.write_output
+        if writes_output and not self.resumable and os.path.exists(out_file):
             logger.info(f"Deleting existing output file since resumable=False: {out_file}")
             utils.delete_file(out_file)
 
@@ -1082,8 +1126,15 @@ class BaseTaskExecutor(ABC):
             task_name=self.task_name,
             execution_callbacks=execution_callbacks,
         )
-        dataset_processor.process_and_store_results()
+        ctx = get_run_context()
+        if ctx is not None:
+            ctx.output_file = out_file
+        return dataset_processor, out_file, out_file_type
 
+    def _finalize_execution(
+        self, dataset_processor: DatasetProcessor, out_file: str, out_file_type: str
+    ) -> None:
+        """Run post-generation steps: data quality, sink upload, final state and metadata."""
         if "data_quality" in self.graph_config.config.get("output_config", {}):
             logger.info("Performing data quality checks")
             data_quality_processor = DataQuality(

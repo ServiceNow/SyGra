@@ -15,6 +15,8 @@ from openai.types.chat import ChatCompletion, ChatCompletionMessage
 import sygra.utils.constants as constants
 from sygra.core.models.custom_models import ModelParams
 from sygra.core.models.langgraph.sygra_base_chat_model import SygraBaseChatModel
+from sygra.core.models.server_down import server_down_action
+from sygra.exceptions import ModelServerDownError
 
 
 class TestBaseChatModel(unittest.TestCase):
@@ -594,6 +596,42 @@ class TestBaseChatModel(unittest.TestCase):
         # The queue should have the most recent timestamps
         self.assertEqual(model._model_failed_response_timestamp[0], timestamps[3])
         self.assertEqual(model._model_failed_response_timestamp[-1], timestamps[-1])
+
+    @patch("sygra.core.models.langgraph.sygra_base_chat_model.time")
+    @patch("sygra.core.models.langgraph.sygra_base_chat_model.sys.exit")
+    @patch("sygra.core.models.langgraph.sygra_base_chat_model.logger")
+    @patch("sygra.core.models.langgraph.sygra_base_chat_model.ClientFactory")
+    def test_handle_server_down_raise_action(
+        self, mock_client_factory, mock_logger, mock_exit, mock_time
+    ):
+        """Test _handle_server_down raises instead of exiting when the action is 'raise'"""
+        constants.HANDLE_SERVER_DOWN = True
+        constants.SERVER_DOWN_ERROR_CODE = [404, 500, 501, 502, 503]
+        constants.MAX_FAILED_ERROR = 3
+        constants.MODEL_FAILURE_WINDOW_IN_SEC = 30
+        mock_time.time.side_effect = [1000.0, 1001.0, 1002.0]
+
+        model = self.TestChatModel(self.base_config)
+        with server_down_action("raise"):
+            model._handle_server_down(500)
+            model._handle_server_down(500)
+            with self.assertRaises(ModelServerDownError) as ctx:
+                model._handle_server_down(500)
+
+        mock_exit.assert_not_called()
+        self.assertEqual(ctx.exception.model_name, "test_model")
+        self.assertEqual(ctx.exception.failures, 3)
+
+    @patch("sygra.core.models.langgraph.sygra_base_chat_model.ClientFactory")
+    def test_handle_server_down_ignore_action(self, mock_client_factory):
+        """Test server_down_action: ignore in model config disables tracking"""
+        constants.HANDLE_SERVER_DOWN = True
+        constants.SERVER_DOWN_ERROR_CODE = [404, 500, 501, 502, 503]
+        model = self.TestChatModel({**self.base_config, "server_down_action": "ignore"})
+
+        model._handle_server_down(500)
+
+        self.assertEqual(len(model._model_failed_response_timestamp), 0)
 
     @patch("sygra.core.models.langgraph.sygra_base_chat_model.ClientFactory")
     def test_is_retryable_error(self, mock_client_factory):

@@ -63,6 +63,8 @@ print(f"Models used: {list(metadata['models'].keys())}")
 print(f"Nodes executed: {list(metadata['nodes'].keys())}")
 ```
 
+**With `Workflow.run()` / `arun()`:** each run collects into its own collector, so concurrent runs in one process don't mix their metrics. While a run is active, `get_metadata_collector()` returns that run's collector. After the run, the process-wide collector holds the metadata of the run that finished last.
+
 ---
 
 ## Configuration

@@ -8,9 +8,6 @@ from sygra.logger.logger_config import logger
 from sygra.tools.base_tool import BaseTool
 from sygra.tools.registry import register_tool
 from sygra.utils import utils
-from sygra.utils.dotenv import load_dotenv
-
-load_dotenv()
 
 OASST_REPRESENTATIVE_FIELDS = [
     "message_id",

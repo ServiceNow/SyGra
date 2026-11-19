@@ -5,6 +5,9 @@ from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.runnables import RunnableConfig
 from langgraph.graph.state import CompiledStateGraph
 
+from sygra.core.run_context import get_run_context
+from sygra.core.run_result import FailedRecord
+from sygra.exceptions import ModelServerDownError
 from sygra.logger.logger_config import logger
 
 if TYPE_CHECKING:
@@ -79,9 +82,19 @@ async def execute_graph(
 
     try:
         return await graph.ainvoke(record, debug=debug, config=config)
+    except ModelServerDownError:
+        raise
     except Exception as e:
         logger.error(
             f"Exception occured when executing graph for record id {record.get('id', None)}: {e}"
         )
         logger.error(traceback.format_exc())
+        ctx = get_run_context()
+        if ctx is not None:
+            rec_id = record.get("id")
+            ctx.failed_records.append(
+                FailedRecord(
+                    id=None if rec_id is None else str(rec_id), kind="exception", error=str(e)
+                )
+            )
         return {"execution_error": True}

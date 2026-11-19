@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Any, Optional, Union, cast
 
 from datasets import Dataset, IterableDataset  # type: ignore[import-untyped]
@@ -62,7 +61,7 @@ class GraphConfig:
 
         self.config = config
 
-        self.graph_config = deepcopy(config["graph_config"])
+        self.graph_config = utils.copy_config(config["graph_config"])
         self.schema_config = config.get("schema_config")
         # Normalize output_config to a dict to satisfy mypy and avoid Optional access
         output_cfg = config.get("output_config") or {}
@@ -157,7 +156,7 @@ class GraphConfig:
         Returns:
             Merged dictionary with overrides applied.
         """
-        merged = deepcopy(base)
+        merged: dict[str, Any] = utils.copy_config(base)
         for key, value in updates.items():
             if isinstance(value, dict) and isinstance(merged.get(key), dict):
                 merged[key] = self._recur_merge_dicts(merged[key], value)
@@ -200,7 +199,7 @@ class GraphConfig:
         """
         updated_nodes = {}
 
-        for node_name, node_config in deepcopy(self.graph_config.get("nodes", {})).items():
+        for node_name, node_config in utils.copy_config(self.graph_config.get("nodes", {})).items():
             if node_config.get("node_type") == "subgraph":
                 # Extract the override configuration from node_config_map (if any)
                 override_config = node_config.get("node_config_map", {})
@@ -237,7 +236,7 @@ class GraphConfig:
             return
 
         updated_edges = []
-        for edge in deepcopy(self.graph_config.get("edges", [])):
+        for edge in utils.copy_config(self.graph_config.get("edges", [])):
             # Prefix the "from" field if it's not "START"
             edge["from"] = (
                 f"{self.parent_node}.{edge['from']}" if edge["from"] != "START" else "START"

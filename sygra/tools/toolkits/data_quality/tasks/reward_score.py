@@ -9,8 +9,6 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from sygra.logger.logger_config import logger
 from sygra.utils import constants, dotenv, utils
 
-dotenv.load_dotenv()
-
 
 class RewardScoringTask:
     """
@@ -162,6 +160,7 @@ class RewardScoringTask:
 
 
 if __name__ == "__main__":
+    dotenv.load_dotenv()
     parser = argparse.ArgumentParser(description="Compute reward scores for a dataset.")
     parser.add_argument("--input_file", type=str, required=True)
     parser.add_argument("--output_dir", type=str, required=True)

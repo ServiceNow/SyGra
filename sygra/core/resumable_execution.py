@@ -9,6 +9,7 @@ from typing import Any, Deque, Dict, Optional, Set
 
 import datasets  # type: ignore[import-untyped]
 
+from sygra.core.run_context import get_run_context
 from sygra.logger.logger_config import logger
 from sygra.utils import constants, utils
 
@@ -146,6 +147,9 @@ class ResumableExecutionManager:
 
     def _setup_handlers(self):
         """Set up signal and exit handlers to ensure metadata is saved."""
+        if get_run_context() is not None:
+            # Library runs: the host owns signals and process exit; state is saved by the run.
+            return
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP]:
             try:
                 original_handler = signal.getsignal(sig)
@@ -223,7 +227,7 @@ class ResumableExecutionManager:
             for k, v in sampler_key_pointer.items():
                 logger.info(f"Loading sampler pointer for data source {k}: {v}")
                 # set dataset object as None, this will be filled at utils.fetch_next_record()
-                utils.sampler_cache[k] = (None, v)
+                utils.get_sampler_cache()[k] = (None, v)
 
         if metadata.get(constants.META_TASK_NAME) != self.task_name:
             logger.warning("Metadata file is for a different task, starting fresh")
@@ -382,8 +386,8 @@ class ResumableExecutionManager:
             try:
                 # initialize the sampler cache
                 sampler_key_pointer = (
-                    {k: v[1] for k, v in utils.sampler_cache.items()}
-                    if len(utils.sampler_cache) > 0
+                    {k: v[1] for k, v in utils.get_sampler_cache().items()}
+                    if len(utils.get_sampler_cache()) > 0
                     else {}
                 )
 
@@ -463,8 +467,8 @@ class ResumableExecutionManager:
 
         # initialize the sampler cache
         sampler_key_pointer = (
-            {k: v[1] for k, v in utils.sampler_cache.items()}
-            if len(utils.sampler_cache) > 0
+            {k: v[1] for k, v in utils.get_sampler_cache().items()}
+            if len(utils.get_sampler_cache()) > 0
             else {}
         )
 

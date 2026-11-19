@@ -9,17 +9,30 @@ import logging
 from typing import Any, Callable, Union
 
 from .configuration import ConfigLoader, load_config
+from .core.run_result import FailedRecord, RunResult, UsageStats
 from .exceptions import (
     ConfigurationError,
     DataError,
     ExecutionError,
     GraSPError,
     ModelError,
+    ModelServerDownError,
     NodeError,
     TimeoutError,
     ValidationError,
 )
-from .models import ModelConfigBuilder
+from .models import (
+    FakeProvider,
+    LLMProvider,
+    LLMRequest,
+    ModelConfigBuilder,
+    ModelResponse,
+    TokenUsage,
+    register_llm_provider,
+    server_down_action,
+    unregister_llm_provider,
+    use_llm_providers,
+)
 from .workflow import Workflow, create_graph
 
 try:
@@ -35,6 +48,19 @@ try:
     from .core.graph.sygra_state import SygraState  # noqa: F401
     from .core.judge_task_executor import JudgeQualityTaskExecutor  # noqa: F401
     from .core.resumable_execution import ResumableExecutionManager  # noqa: F401
+    from .hooks import (  # noqa: F401
+        HOOKS_API_VERSION,
+        AsyncLambdaFunction,
+        BaseOutputGenerator,
+        DataTransform,
+        EdgeCondition,
+        GraphPostProcessor,
+        LambdaFunction,
+        NodePostProcessor,
+        NodePostProcessorWithState,
+        NodePreProcessor,
+    )
+    from .utils.utils import record_id  # noqa: F401
 
     CORE_AVAILABLE = True
 except ImportError as e:
@@ -315,6 +341,20 @@ __all__ = [
     "ConfigLoader",
     # Model utilities
     "ModelConfigBuilder",
+    # Pluggable LLM providers
+    "LLMProvider",
+    "LLMRequest",
+    "ModelResponse",
+    "TokenUsage",
+    "FakeProvider",
+    "register_llm_provider",
+    "unregister_llm_provider",
+    "use_llm_providers",
+    "server_down_action",
+    # Run results
+    "RunResult",
+    "UsageStats",
+    "FailedRecord",
     # Quick functions
     "quick_llm",
     "quick_agent",
@@ -346,6 +386,7 @@ __all__ = [
     "NodeError",
     "DataError",
     "ModelError",
+    "ModelServerDownError",
     "TimeoutError",
 ]
 
@@ -364,6 +405,17 @@ if CORE_AVAILABLE:
             "ExecutionCallbacks",
             "NodeExecutionTracker",
             "create_execution_tracker",
+            "HOOKS_API_VERSION",
+            "AsyncLambdaFunction",
+            "BaseOutputGenerator",
+            "DataTransform",
+            "EdgeCondition",
+            "GraphPostProcessor",
+            "LambdaFunction",
+            "NodePostProcessor",
+            "NodePostProcessorWithState",
+            "NodePreProcessor",
+            "record_id",
         ]
     )
 

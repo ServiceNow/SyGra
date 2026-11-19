@@ -8,9 +8,7 @@ from huggingface_hub import hf_hub_download
 from tqdm import tqdm
 
 from sygra.logger.logger_config import logger
-from sygra.utils import constants, dotenv, utils
-
-dotenv.load_dotenv()
+from sygra.utils import constants, utils
 
 
 class LanguageTaggingTask:

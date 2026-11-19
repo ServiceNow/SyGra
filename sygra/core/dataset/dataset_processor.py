@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import signal
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -13,11 +14,35 @@ from langgraph.graph.state import CompiledStateGraph
 
 from sygra.core.graph.graph_config import GraphConfig
 from sygra.core.resumable_execution import ResumableExecutionManager
+from sygra.core.run_context import RunContext, current_record_id, get_run_context
+from sygra.core.run_result import FailedRecord
 from sygra.data_mapper.mapper import DataMapper
+from sygra.exceptions import ModelServerDownError
 from sygra.logger.logger_config import logger
 from sygra.metadata.metadata_collector import get_metadata_collector
 from sygra.utils import constants, graph_utils, multimodal_processor, utils
 from sygra.validators.schema_validator_base import SchemaValidator
+
+
+def _keep_input_id(generator: Optional[Callable]) -> Callable[[Any], Any]:
+    """Wrap an output generator so records keep the input ``id`` (library runs).
+
+    If the generated record is a dict without ``id``, the graph state's ``id`` is
+    added. Records that already have an ``id`` are unchanged.
+    """
+
+    def generate(state: Any) -> Any:
+        record = generator(state) if generator is not None else state
+        if (
+            isinstance(record, dict)
+            and "id" not in record
+            and isinstance(state, dict)
+            and state.get("id") is not None
+        ):
+            record["id"] = state["id"]
+        return record
+
+    return generate
 
 
 class DatasetProcessor:
@@ -176,6 +201,10 @@ class DatasetProcessor:
         """Main entry point to process the dataset and store results."""
         asyncio.run(self._process_and_store_results())
 
+    async def aprocess_and_store_results(self):
+        """Async entry point: process the dataset and store results on the running event loop."""
+        await self._process_and_store_results()
+
     @staticmethod
     def is_error_code_in_output(output_record: dict[str, Any]) -> bool:
         """
@@ -192,6 +221,17 @@ class DatasetProcessor:
                 return True
         return False
 
+    @staticmethod
+    def _record_failure(record: Any, kind: str, error: str) -> None:
+        """Add a failed record to the active run's result (library runs only)."""
+        ctx = get_run_context()
+        if ctx is None:
+            return
+        rec_id = record.get("id") if isinstance(record, dict) else None
+        ctx.failed_records.append(
+            FailedRecord(id=None if rec_id is None else str(rec_id), kind=kind, error=error)
+        )
+
     async def _add_graph_result(self, output: dict[str, Any], record: dict[str, Any]) -> None:
         """
         Add a result from graph execution to the results list and handle resumable state.
@@ -203,6 +243,15 @@ class DatasetProcessor:
         # Check if execution had an error - don't mark as processed if it did
         if self.is_error_code_in_output(output):
             self.failed_records += 1
+            self._record_failure(
+                record,
+                "model_error",
+                "; ".join(
+                    value
+                    for value in output.values()
+                    if isinstance(value, str) and value.startswith(constants.ERROR_PREFIX)
+                ),
+            )
             # Record failed record in metadata collector
             collector = get_metadata_collector()
             collector.record_processed_record(success=False)
@@ -237,6 +286,10 @@ class DatasetProcessor:
             self.is_valid_schema = schema_validator.validate(output)
             if not self.is_valid_schema:
                 logger.error("Output data validation failed, skipping record")
+                if output.get("execution_error") is not True:
+                    self._record_failure(
+                        record, "schema_validation", "Output failed schema validation"
+                    )
                 if self.resumable and self.resume_manager:
                     record_id = self.resume_manager.get_record_id(record)
                     self.resume_manager.in_process_records.discard(record_id)
@@ -293,18 +346,25 @@ class DatasetProcessor:
             is_oasst_mapper_required: Whether OASST mapping is required
         """
         file_write_start = time.time()
+        ctx = get_run_context()
+        write_files = ctx is None or ctx.write_output
 
-        # Convert graph outputs to records
+        # Convert graph outputs to records. Library runs keep the input id on each
+        # record, so callers can join output to input.
+        record_generator = self.output_record_generator
+        if ctx is not None:
+            record_generator = _keep_input_id(record_generator)
         output_records = graph_utils.convert_graph_output_to_records(
-            self.graph_results, self.output_record_generator
+            self.graph_results, record_generator
         )
 
         # Process multimodal data: save base64 data URLs to files and replace with file paths
         try:
-            multimodal_output_dir = ".".join(self.output_file.split(".")[:-1])
-            output_records = multimodal_processor.process_batch_multimodal_data(
-                output_records, Path(multimodal_output_dir)
-            )
+            if write_files:
+                multimodal_output_dir = ".".join(self.output_file.split(".")[:-1])
+                output_records = multimodal_processor.process_batch_multimodal_data(
+                    output_records, Path(multimodal_output_dir)
+                )
         except Exception as e:
             logger.warning(
                 f"Failed to process multimodal data: {e}. Continuing with original records."
@@ -312,7 +372,8 @@ class DatasetProcessor:
 
         # Handle intermediate writing if needed
         if (
-            is_oasst_mapper_required
+            write_files
+            and is_oasst_mapper_required
             and isinstance(self.graph_config.oasst_mapper, dict)
             and self.graph_config.oasst_mapper.get("intermediate_writing") == "yes"
         ):
@@ -340,16 +401,20 @@ class DatasetProcessor:
             logger.info("OASST Mapping has been disabled. Skipping OASST mapping.")
             oasst_mapped_output = output_records
 
-        # Write to output file
-        if ".jsonl" in self.output_file:
-            utils.append_to_jsonl_file(self.output_file, oasst_mapped_output)
-        else:
-            utils.append_to_json_file(self.output_file, oasst_mapped_output)
+        if not write_files:
+            cast(RunContext, ctx).output_records.extend(oasst_mapped_output)
 
-        logger.info(
-            f"Updated {self.output_file} with the latest {len(self.graph_results)} records "
-            f"in {(time.time() - file_write_start):0.2f} secs"
-        )
+        # Write to output file
+        if write_files:
+            if ".jsonl" in self.output_file:
+                utils.append_to_jsonl_file(self.output_file, oasst_mapped_output)
+            else:
+                utils.append_to_json_file(self.output_file, oasst_mapped_output)
+
+            logger.info(
+                f"Updated {self.output_file} with the latest {len(self.graph_results)} records "
+                f"in {(time.time() - file_write_start):0.2f} secs"
+            )
 
         # Clear the processed results after writing to the file
         self.graph_results = []
@@ -375,17 +440,27 @@ class DatasetProcessor:
         signal.signal(signum, signal.SIG_DFL)
         os.kill(os.getpid(), signum)
 
+    @staticmethod
+    def _may_install_signal_handlers() -> bool:
+        """Signal handlers can only be set on the main thread, and not when the host owns them."""
+        ctx = get_run_context()
+        if ctx is not None and not ctx.install_signal_handlers:
+            return False
+        return threading.current_thread() is threading.main_thread()
+
     async def _process_and_store_results(self):
         """Main processing loop for dataset records."""
         # Register signal handlers for graceful shutdown if resumable
-        if self.resumable and self.resume_manager:
+        previous_handlers: dict[signal.Signals, Any] = {}
+        if self.resumable and self.resume_manager and self._may_install_signal_handlers():
             for sig in [signal.SIGTERM, signal.SIGINT]:
-                signal.signal(sig, lambda s, f: self._handle_signal(s, f))
+                previous_handlers[sig] = signal.signal(sig, self._handle_signal)
 
         # Use asyncio tasks to process records in parallel up to batch_size
         pending_tasks: set[asyncio.Task] = set()
         # Track how many records we've started processing to limit total for streaming datasets
         records_started = 0
+        aborted = False
 
         try:
             while True:
@@ -422,18 +497,40 @@ class DatasetProcessor:
                     try:
                         task.result()  # This will raise any exceptions from the task
                         self.pbar.update(1)
+                    except ModelServerDownError:
+                        raise
                     except Exception as e:
                         logger.error(f"Task failed with error: {e}")
+
+        except ModelServerDownError:
+            aborted = True
+            for pending in pending_tasks:
+                pending.cancel()
+            await asyncio.gather(*pending_tasks, return_exceptions=True)
+            raise
 
         except Exception as e:
             logger.error(f"Error in main processing loop: {e}")
 
         finally:
+            # Library runs hand signals back to the host; the CLI keeps its handlers.
+            if get_run_context() is not None:
+                for handled_sig, handler in previous_handlers.items():
+                    if handler is not None:
+                        signal.signal(handled_sig, handler)
             # Close the progress bar
             self.pbar.close()
+            # Write results no checkpoint picked up, e.g. when the last record to finish
+            # failed. Resumable runs do this below, after saving their state.
+            if self.graph_results and not (self.resumable and self.resume_manager):
+                logger.info(f"Writing {len(self.graph_results)} remaining results")
+                await self._write_checkpoint(
+                    isinstance(self.graph_config.oasst_mapper, dict)
+                    and self.graph_config.oasst_mapper.get("required") == "yes"
+                )
             # Run Graph post Processors
             post_processors = self.graph_config.config.get("graph_post_process", [])
-            if post_processors:
+            if post_processors and not aborted:
                 output_file = self.output_file
                 logger.info(f"Doing post processing on {output_file} to generate metrics")
                 output_data = []
@@ -443,11 +540,12 @@ class DatasetProcessor:
                 for post_processor in post_processors:
                     processor_path = None
                     processor_params: dict[str, Any] = {}
-                    if isinstance(post_processor, str):
-                        processor_path = post_processor
-                    elif isinstance(post_processor, dict):
+                    if isinstance(post_processor, dict):
                         processor_path = post_processor.get("processor")
                         processor_params = post_processor.get("params", {}) or {}
+                    elif isinstance(post_processor, str) or hasattr(post_processor, "process"):
+                        # dotted path, GraphPostProcessor class or instance
+                        processor_path = post_processor
                     else:
                         raise ValueError(
                             "Invalid graph_post_process entry. Must be a string or dict with 'processor'."
@@ -457,17 +555,24 @@ class DatasetProcessor:
                         raise ValueError("graph_post_process processor path is missing")
 
                     metadata = {"output_file": output_file, "params": processor_params}
-                    processor_cls = utils.get_func_from_str(processor_path)
-                    processor_name = processor_path.split(".")[-1]
+                    processor_cls = utils.resolve_hook(processor_path)
+                    if isinstance(processor_path, str):
+                        processor_name = processor_path.split(".")[-1]
+                    else:
+                        processor_name = getattr(
+                            processor_cls, "__name__", type(processor_cls).__name__
+                        )
+                    # an instance is used as is; a class is built with the params
+                    processor = (
+                        processor_cls(**processor_params)
+                        if callable(processor_cls)
+                        else processor_cls
+                    )
                     use_previous_output = processor_params.get("use_previous_output", False)
                     if use_previous_output:
-                        processed_output_data = processor_cls(**processor_params).process(
-                            processed_output_data, metadata
-                        )
+                        processed_output_data = processor.process(processed_output_data, metadata)
                     else:
-                        processed_output_data = processor_cls(**processor_params).process(
-                            output_data, metadata
-                        )
+                        processed_output_data = processor.process(output_data, metadata)
                     new_output_file = output_file[: output_file.rfind("/") + 1] + output_file[
                         output_file.rfind("/") + 1 :
                     ].replace("output", processor_name, 1)
@@ -506,6 +611,9 @@ class DatasetProcessor:
                 )
                 return
 
+            if get_run_context() is not None:
+                current_record_id.set(str(record.get("id")))
+
             graph_result = await graph_utils.execute_graph(
                 record,
                 self.graph,
@@ -518,11 +626,14 @@ class DatasetProcessor:
             if self.num_records_processed < self.num_records_total:
                 await self._add_graph_result(graph_result, record)
 
+        except ModelServerDownError:
+            raise
         except Exception as e:
             rec_id_str = "unknown"
             if isinstance(record, dict):
                 rec_id_str = str(record.get("id", "unknown"))
             logger.error(f"Error processing record {rec_id_str}: {e}")
+            self._record_failure(record, "exception", str(e))
 
             if self.resumable and self.resume_manager:
                 safe_record: dict[str, Any] = record if isinstance(record, dict) else {}

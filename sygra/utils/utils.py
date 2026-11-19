@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import hashlib
 import importlib
 import json
 import os
 import re
 import threading
+from inspect import isclass
 from pathlib import Path
 from typing import Any, Callable, Optional, Sequence, Union, cast
 
@@ -21,6 +23,7 @@ from langchain_core.prompts.chat import (
 from sygra.core.dataset.dataset_config import DataSourceConfig
 from sygra.core.dataset.file_handler import FileHandler
 from sygra.core.dataset.huggingface_handler import HuggingFaceHandler
+from sygra.core.run_context import get_run_context
 from sygra.data_mapper.helper import JSONEncoder
 from sygra.logger.logger_config import logger
 from sygra.utils import constants
@@ -48,14 +51,13 @@ def load_model_config(config_path: Optional[str] = None, include_custom: bool = 
         include_custom: If True, automatically load custom models from CUSTOM_MODELS_CONFIG_YAML.
                        Set to False to only load builtin models.
 
+    Environment variables are read from ``os.environ`` only. This function doesn't
+    load a ``.env`` file: the CLI (``main.py``) loads ``.env`` at startup, and library
+    runs load one only when asked (``Workflow.run(env_file=...)``).
+
     Returns:
         Dict containing combined model configurations
     """
-    from sygra.utils.dotenv import load_dotenv
-
-    # Load environment variables from .env file
-    load_dotenv(dotenv_path=".env", override=True)
-
     # Load base configurations from models.yaml (builtin SyGra models)
     base_configs = load_yaml_file(constants.MODEL_CONFIG_YAML)
 
@@ -415,6 +417,98 @@ def get_func_from_str(func_str: str) -> Callable[..., Any]:
     return cast(Callable[..., Any], obj)
 
 
+def record_id(record: dict[str, Any], *, strict: bool = False) -> str:
+    """Return the id SyGra gives a record that has no ``id``: a SHA-256 of its content.
+
+    The hash is over the record after source transformations, as sorted-key JSON.
+    Values that aren't JSON types use ``str()``, unless ``strict`` is set (the CLI),
+    which raises ``TypeError`` for them as before. Identical records get the same id.
+    """
+    record_str = json.dumps(record, sort_keys=True, default=None if strict else str)
+    return hashlib.sha256(record_str.encode()).hexdigest()
+
+
+def resolve_hook(hook: Any) -> Any:
+    """Return the code that a hook config value refers to.
+
+    Hooks are pre-processors, post-processors, lambdas, edge conditions, data
+    transforms, output generators and graph post-processors. A dotted-path string
+    (as written in YAML) is imported. A Python object (function, class or instance)
+    is returned unchanged, so library users can pass hooks directly.
+    """
+    if isinstance(hook, str):
+        return get_func_from_str(hook)
+    return hook
+
+
+def hook_reference(hook: Any) -> Any:
+    """Return the value to store in a config for ``hook``.
+
+    Strings are kept. A module-level function or class that its dotted path imports
+    back to is stored as that path, so the config can still be saved as YAML. Any
+    other object (a local function or class, a lambda, a configured instance) is
+    stored as the object itself.
+    """
+    if isinstance(hook, str):
+        return hook
+    module = getattr(hook, "__module__", None)
+    name = getattr(hook, "__name__", None)
+    if module and name:
+        path = f"{module}.{name}"
+        try:
+            if get_func_from_str(path) is hook:
+                return path
+        except Exception:
+            # Best effort: if the path doesn't import back to this object, keep the object.
+            pass
+    return hook
+
+
+def copy_config(value: Any) -> Any:
+    """Copy a config's dicts and lists; share every other value.
+
+    For YAML configs (immutable scalars only) this equals ``copy.deepcopy``. Hook
+    objects in library configs stay the same objects, so a configured instance keeps
+    its state and doesn't need to be deep-copyable (it may hold a lock or a client).
+    """
+    if isinstance(value, dict):
+        return {key: copy_config(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [copy_config(item) for item in value]
+    return value
+
+
+def _is_hook_instance(hook: Any) -> bool:
+    """True for instances of hook classes: objects with ``apply`` that aren't callable.
+
+    Dotted paths always resolve to callables, so they never count as instances and
+    keep their YAML behavior. A callable object is called directly.
+    """
+    return not isclass(hook) and not callable(hook) and hasattr(hook, "apply")
+
+
+def hook_processor(hook: Any) -> Any:
+    """Return the object to call ``apply`` on, or ``None`` if ``hook`` is a plain callable.
+
+    A class is instantiated (a new instance on each call, as for YAML tasks). A hook
+    instance, such as a configured ``NodePostProcessorWithState``, is returned as is.
+    """
+    if isclass(hook):
+        return hook()
+    return hook if _is_hook_instance(hook) else None
+
+
+def hook_apply(hook: Any) -> Any:
+    """Return the callable for hooks whose class form has a static ``apply``.
+
+    Used for lambdas and edge conditions: classes and hook instances give their
+    ``apply``; plain callables are returned unchanged.
+    """
+    if isclass(hook) or _is_hook_instance(hook):
+        return hook.apply
+    return hook
+
+
 def flatten_dict(d, parent_key="", sep="_"):
     items = {}
     for k, v in d.items():
@@ -552,7 +646,10 @@ def get_graph_factory(backend: str):
 
 
 def get_graph_properties(task_name: Optional[str] = None) -> Any:
-    task = task_name or current_task
+    task = task_name or get_current_task()
+    ctx = get_run_context()
+    if ctx is not None and ctx.graph_properties is not None and task == ctx.task_name:
+        return ctx.graph_properties
     if not task:
         logger.error("Current task name is not initialized.")
         return {}
@@ -608,9 +705,18 @@ sampler_cache: dict[
 cache_lock = threading.Lock()
 
 
+def get_sampler_cache() -> dict[str, tuple[Any, int]]:
+    """Weighted-sampler cache of the active run, or the process-wide one outside a run."""
+    ctx = get_run_context()
+    if ctx is not None:
+        return ctx.sampler_cache
+    return sampler_cache
+
+
 def fetch_next_record(datasrc: dict, column: str):
     key = str(datasrc)
     record: Any = None
+    sampler_cache = get_sampler_cache()
     with cache_lock:
         if key in sampler_cache:
             dataset, pointer = sampler_cache[key]
@@ -715,3 +821,11 @@ backend_factory = BackendFactoryProxy()
 
 # store the current task to access it later to fetch properties
 current_task: Optional[str] = None
+
+
+def get_current_task() -> Optional[str]:
+    """Task name of the active run, falling back to the module-level ``current_task``."""
+    ctx = get_run_context()
+    if ctx is not None and ctx.task_name:
+        return ctx.task_name
+    return current_task

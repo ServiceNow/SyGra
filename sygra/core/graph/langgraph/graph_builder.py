@@ -1,4 +1,3 @@
-from inspect import isclass
 from typing import Any, Optional
 
 from langgraph.constants import END, START
@@ -9,7 +8,7 @@ from sygra.core.graph.edges.edge_factory import BaseEdge, EdgeFactory
 from sygra.core.graph.graph_config import GraphConfig
 from sygra.core.graph.nodes.base_node import BaseNode
 from sygra.logger.logger_config import logger
-from sygra.utils.utils import backend_factory, get_func_from_str
+from sygra.utils.utils import backend_factory, hook_apply, resolve_hook
 
 
 class LangGraphBuilder:
@@ -138,9 +137,7 @@ class LangGraphBuilder:
 
             if condition and path_map:
                 # convert the condition to method object
-                condition = get_func_from_str(condition)
-                if isclass(condition):
-                    condition = condition.apply
+                condition = hook_apply(resolve_hook(condition))
 
                 # START/END string mapping to START/END langgraph object in path_map
                 path_map = {

@@ -9,6 +9,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Any, Optional, Union
 
+from sygra.core.run_context import get_run_context
 from sygra.logger.logger_config import logger
 
 
@@ -460,6 +461,17 @@ class MetadataCollector:
                 cls._instance._initialized = False
             return cls._instance
 
+    @classmethod
+    def create_isolated(cls) -> "MetadataCollector":
+        """Create a collector that is separate from the process-wide singleton.
+
+        Used for run-scoped collection, so concurrent runs don't mix their metrics.
+        """
+        instance = super().__new__(cls)
+        instance._initialized = False
+        cls.__init__(instance)
+        return instance
+
     def __init__(self):
         """Initialize the metadata collector."""
         if self._initialized:
@@ -502,6 +514,22 @@ class MetadataCollector:
                 logger.info("Metadata collection ENABLED")
             else:
                 logger.info("Metadata collection DISABLED")
+
+    def load_from(self, other: "MetadataCollector") -> None:
+        """Replace this collector's collected metadata with ``other``'s.
+
+        The enabled flag is left unchanged. Used to expose a run-scoped collector's
+        results through the global collector after the run.
+        """
+        if other is self:
+            return
+        with self._lock:
+            self.model_metrics = other.model_metrics
+            self.node_metrics = other.node_metrics
+            self.dataset_metadata = other.dataset_metadata
+            self.execution_context = other.execution_context
+            self.total_records_processed = other.total_records_processed
+            self.total_records_failed = other.total_records_failed
 
     def reset(self):
         """Reset all collected metadata (useful for testing or new runs)."""
@@ -922,8 +950,11 @@ _metadata_collector = None
 
 
 def get_metadata_collector() -> MetadataCollector:
-    """Get the global metadata collector instance."""
+    """Get the metadata collector of the active run, or the global one outside a run."""
     global _metadata_collector
+    ctx = get_run_context()
+    if ctx is not None and ctx.metadata_collector is not None:
+        return ctx.metadata_collector
     if _metadata_collector is None:
         _metadata_collector = MetadataCollector()
     return _metadata_collector

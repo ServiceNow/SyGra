@@ -11,6 +11,7 @@ from sygra.core.models.custom_models import (
     CustomTriton,
     CustomVLLM,
 )
+from sygra.core.models.external.external_model import ExternalModel
 from sygra.core.models.langgraph.openai_chat_model import CustomOpenAIChatModel
 from sygra.core.models.langgraph.vllm_chat_model import CustomVLLMChatModel
 from sygra.core.models.lite_llm.azure_model import CustomAzure as CustomLiteLLMAzure
@@ -23,6 +24,8 @@ from sygra.core.models.lite_llm.openai_model import CustomOpenAI as CustomLiteLL
 from sygra.core.models.lite_llm.triton_model import CustomTriton as CustomLiteLLMTriton
 from sygra.core.models.lite_llm.vertex_ai_model import CustomVertexAI as CustomLiteLLMVertexAI
 from sygra.core.models.lite_llm.vllm_model import CustomVLLM as CustomLiteLLMVLLM
+from sygra.core.run_context import get_run_context
+from sygra.exceptions import ConfigurationError
 from sygra.logger.logger_config import logger
 from sygra.utils import utils
 from sygra.utils.constants import (
@@ -51,6 +54,8 @@ class ModelFactory:
             "azure_openai": CustomOpenAI,
             "ollama": CustomOllama,
             "triton": CustomTriton,
+            # calls are served by a host-registered LLMProvider (see sygra.core.models.external)
+            "external": ExternalModel,
         },
         MODEL_BACKEND_PROXY: {
             # list of supported models through proxy layer in enterprise network
@@ -75,6 +80,35 @@ class ModelFactory:
     }
 
     @classmethod
+    def register_model_type(
+        cls,
+        model_type: str,
+        model_cls: Type[Any],
+        backend: str = MODEL_BACKEND_CUSTOM,
+        override: bool = False,
+    ) -> None:
+        """
+        Register a model class for a ``model_type`` under a backend.
+
+        Args:
+            model_type: Value used as ``model_type`` in model configs.
+            model_cls: Class constructed as ``model_cls(model_config)``.
+            backend: Backend to register under (default: ``custom``, which the default
+                ``litellm`` backend also falls back to).
+            override: Allow replacing an existing registration.
+
+        Raises:
+            ValueError: If the type is already registered and ``override`` is False.
+        """
+        backend_map = cls.MODEL_TYPE_MAP.setdefault(backend, {})
+        if model_type in backend_map and not override:
+            raise ValueError(
+                f"Model type '{model_type}' is already registered for backend '{backend}'. "
+                f"Pass override=True to replace it."
+            )
+        backend_map[model_type] = model_cls
+
+    @classmethod
     def create_model(
         cls, model_config: Dict[str, Any], backend: str = MODEL_BACKEND_LITELLM
     ) -> Any:
@@ -92,6 +126,9 @@ class ModelFactory:
             ValueError: If required configuration keys are missing
             NotImplementedError: If the specified model type is not supported
         """
+        # Library runs: a node may name a role instead of a model
+        model_config = cls._resolve_model_role(model_config)
+
         # Validate required keys
         utils.validate_required_keys(["name"], model_config, "model")
 
@@ -128,6 +165,45 @@ class ModelFactory:
             )
 
         return model_cls(model_config)
+
+    @staticmethod
+    def _resolve_model_role(model_config: Dict[str, Any]) -> Dict[str, Any]:
+        """Replace ``role`` in a node's model config with the run's model for that role.
+
+        The run's ``model_roles`` maps a role to a model name or a model config dict.
+        The node's other keys are applied on top, so node ``parameters`` override the
+        role's. Without a library run context (the CLI), the config is unchanged.
+        """
+        role = model_config.get("role")
+        ctx = get_run_context()
+        if role is None or ctx is None:
+            return model_config
+        if "name" in model_config:
+            raise ConfigurationError(
+                f"Model config sets both 'name' and 'role' ('{role}'); use one of them"
+            )
+        if role not in ctx.model_roles:
+            known = ", ".join(sorted(ctx.model_roles)) or "none"
+            raise ConfigurationError(
+                f"No model for role '{role}'. Pass model_roles={{'{role}': <model>}} to "
+                f"run()/arun() or Workflow.model_roles(). Known roles: {known}"
+            )
+        target = ctx.model_roles[role]
+        resolved: Dict[str, Any] = (
+            {"name": target} if isinstance(target, str) else utils.copy_config(target)
+        )
+        if not isinstance(resolved, dict) or not resolved.get("name"):
+            raise ConfigurationError(
+                f"Model for role '{role}' must be a model name or a config dict with 'name'"
+            )
+        for key, value in model_config.items():
+            if key == "role":
+                continue
+            if isinstance(value, dict) and isinstance(resolved.get(key), dict):
+                resolved[key] = {**resolved[key], **value}
+            else:
+                resolved[key] = value
+        return resolved
 
     @staticmethod
     def _update_model_config(model_config: Dict[str, Any]) -> Dict[str, Any]:
